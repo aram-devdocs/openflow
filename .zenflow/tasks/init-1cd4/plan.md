@@ -2538,7 +2538,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Icon and Spinner Components
+### [x] Step: Create Icon and Spinner Components
+<!-- chat-id: bf9cf6b7-a6e8-48b5-b00c-f5425c21bdfe -->
 
 Create remaining atom components.
 
