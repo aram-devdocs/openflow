@@ -5,6 +5,7 @@ pub mod message;
 pub mod process;
 pub mod executor;
 pub mod workflow;
+pub mod git;
 
 pub use project::*;
 pub use task::*;
@@ -13,3 +14,4 @@ pub use message::*;
 pub use process::*;
 pub use executor::*;
 pub use workflow::*;
+pub use git::*;
