@@ -1235,7 +1235,8 @@ cat packages/hooks/useProcessOutput.ts | grep "useEffect"
 
 ---
 
-### [ ] Step: Create packages/hooks - Keyboard Shortcuts
+### [x] Step: Create packages/hooks - Keyboard Shortcuts
+<!-- chat-id: 4c12ebfc-b22e-4e59-81ae-4b5ce38b6e74 -->
 
 Add keyboard shortcuts hook.
 
