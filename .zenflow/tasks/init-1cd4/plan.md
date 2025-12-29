@@ -2244,7 +2244,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create Message Commands
+### [x] Step: Create Message Commands
+<!-- chat-id: e15c7627-3f0f-4573-8a9a-43854f0a721b -->
 
 Create Tauri commands for messages.
 
