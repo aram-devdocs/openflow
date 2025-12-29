@@ -3249,7 +3249,8 @@ cat packages/ui/templates/AppLayout.tsx | grep "AppLayoutProps"
 
 ---
 
-### [ ] Step: Create TaskLayout Template
+### [x] Step: Create TaskLayout Template
+<!-- chat-id: d609fc7b-d33b-4412-a10b-9bc6040ab117 -->
 
 Create task detail page layout template.
 

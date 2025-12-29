@@ -7,5 +7,5 @@
  */
 
 export { AppLayout, type AppLayoutProps } from './AppLayout';
-// export { TaskLayout } from './TaskLayout';
+export { TaskLayout, type TaskLayoutProps } from './TaskLayout';
 // export { SettingsLayout } from './SettingsLayout';
