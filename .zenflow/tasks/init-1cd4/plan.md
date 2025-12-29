@@ -3520,7 +3520,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Update main.tsx with Router
+### [x] Step: Update main.tsx with Router
+<!-- chat-id: 76085b98-1096-4b8b-97b6-876881aa86a1 -->
 
 Update main.tsx to use TanStack Router.
 
