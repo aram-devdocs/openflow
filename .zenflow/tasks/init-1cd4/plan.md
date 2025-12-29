@@ -469,7 +469,7 @@ cat src-tauri/Cargo.toml | grep "tauri"
 
 ---
 
-### [ ] Step: Create tauri.conf.json
+### [x] Step: Create tauri.conf.json
 <!-- chat-id: e2701678-3df0-4c94-ae34-fe032ba4e443 -->
 
 Create Tauri application configuration.
@@ -506,7 +506,8 @@ cat src-tauri/tauri.conf.json | grep '"identifier"'
 
 ---
 
-### [ ] Step: Create build.rs
+### [x] Step: Create build.rs
+<!-- chat-id: 9b3ae154-4e47-4ee6-8e42-dcdfc323a3ca -->
 
 Create Tauri build script.
 
