@@ -11,7 +11,7 @@ export { TaskList, type TaskListProps } from './TaskList';
 export { ProjectSelector, type ProjectSelectorProps } from './ProjectSelector';
 export { ChatMessage, type ChatMessageProps } from './ChatMessage';
 export { ChatPanel, type ChatPanelProps } from './ChatPanel';
-// export { StepsPanel } from './StepsPanel';
+export { StepsPanel, type StepsPanelProps } from './StepsPanel';
 // export { DiffViewer } from './DiffViewer';
 // export { CommitList } from './CommitList';
 // export { CommandPalette } from './CommandPalette';
