@@ -38,6 +38,8 @@
       "build",
       ".cache",
       "target",
+      "src-tauri/gen",
+      "src-tauri/target",
       "packages/generated/types.ts",
       "src/routeTree.gen.ts",
       "storybook-static"
