@@ -651,7 +651,8 @@ cat packages/utils/index.ts | grep "export"
 
 ---
 
-### [ ] Step: Create packages/utils - Date and Markdown
+### [x] Step: Create packages/utils - Date and Markdown
+<!-- chat-id: 6b633d75-1d2e-48b1-9fb5-2e21f6f6b506 -->
 
 Add date formatting and markdown parsing utilities.
 
