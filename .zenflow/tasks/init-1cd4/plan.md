@@ -686,7 +686,8 @@ cat packages/utils/markdown.ts | grep "parseWorkflowSteps"
 
 ---
 
-### [ ] Step: Create packages/generated (Placeholder)
+### [x] Step: Create packages/generated (Placeholder)
+<!-- chat-id: 8318e29c-f65a-4e91-9563-713514725e78 -->
 
 Create generated types package (Level 0 - auto-generated, no imports).
 
