@@ -21,4 +21,4 @@ export {
   type RecentItem,
 } from './CommandPalette';
 export { Sidebar, type SidebarProps, type StatusFilter } from './Sidebar';
-// export { Header } from './Header';
+export { Header, type HeaderProps } from './Header';
