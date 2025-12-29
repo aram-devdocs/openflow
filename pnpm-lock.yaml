@@ -90,6 +90,15 @@ importers:
 
   packages/generated: {}
 
+  packages/queries:
+    dependencies:
+      '@openflow/generated':
+        specifier: workspace:*
+        version: link:../generated
+      '@tauri-apps/api':
+        specifier: ^2.1.1
+        version: 2.9.1
+
   packages/utils:
     dependencies:
       clsx:

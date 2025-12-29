@@ -784,7 +784,8 @@ cat packages/validation/package.json | grep "@openflow/generated"
 
 ---
 
-### [ ] Step: Create packages/queries - Projects
+### [x] Step: Create packages/queries - Projects
+<!-- chat-id: 00a41da5-f577-4a94-ba71-3cb1147825c5 -->
 
 Create queries package with Tauri invoke wrappers (Level 2 - imports generated, utils).
 
