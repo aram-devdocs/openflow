@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Pre-push validation suite
+# Runs comprehensive checks before pushing to remote
+
+echo "Running pre-push validation suite..."
+
+# Regenerate TypeScript types from Rust
+echo "Generating types..."
+pnpm generate:types || exit 1
+
+# Full TypeScript check
+echo "Running typecheck..."
+pnpm typecheck || exit 1
+
+# Full Biome lint check
+echo "Running lint..."
+pnpm lint || exit 1
+
+# Unit tests
+echo "Running tests..."
+pnpm test || exit 1
+
+# Architecture validation
+echo "Validating architecture..."
+pnpm validate:arch || exit 1
+
+# Rust checks
+echo "Running Rust checks..."
+cd src-tauri
+cargo check || exit 1
+cargo test || exit 1
+cargo clippy -- -D warnings || exit 1
+cd ..
+
+echo "Pre-push validation complete!"
