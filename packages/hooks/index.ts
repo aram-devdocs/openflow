@@ -16,3 +16,4 @@ export * from './useProcesses';
 export * from './useProcessOutput';
 export * from './useExecutorProfiles';
 export * from './useSettings';
+export * from './useKeyboardShortcuts';
