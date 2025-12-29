@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use typeshare::typeshare;
 
 use super::Chat;
@@ -42,16 +43,25 @@ impl std::str::FromStr for TaskStatus {
     }
 }
 
+impl TryFrom<String> for TaskStatus {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+}
+
 /// A task represents a unit of work following a workflow.
 /// Tasks belong to a project and contain one or more chats (workflow steps).
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Task {
     pub id: String,
     pub project_id: String,
     pub title: String,
     pub description: Option<String>,
+    #[sqlx(try_from = "String")]
     pub status: TaskStatus,
     /// Path to the workflow template file
     pub workflow_template: Option<String>,

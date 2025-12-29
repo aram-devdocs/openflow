@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use typeshare::typeshare;
 
 use super::Message;
@@ -39,15 +40,24 @@ impl std::str::FromStr for ChatRole {
     }
 }
 
+impl TryFrom<String> for ChatRole {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+}
+
 /// A chat session within a task.
 /// Each chat corresponds to a workflow step and has its own git worktree.
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Chat {
     pub id: String,
     pub task_id: String,
     pub title: Option<String>,
+    #[sqlx(try_from = "String")]
     pub chat_role: ChatRole,
     pub executor_profile_id: Option<String>,
     pub base_branch: String,
