@@ -8,7 +8,7 @@
 
 export { TaskCard, type TaskCardProps } from './TaskCard';
 export { TaskList, type TaskListProps } from './TaskList';
-// export { ProjectSelector } from './ProjectSelector';
+export { ProjectSelector, type ProjectSelectorProps } from './ProjectSelector';
 // export { ChatMessage } from './ChatMessage';
 // export { ChatPanel } from './ChatPanel';
 // export { StepsPanel } from './StepsPanel';
