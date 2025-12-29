@@ -10,6 +10,14 @@
  * - openflow_rust_check: Run cargo check
  */
 
+import {
+  parseCargoOutput,
+  parseLintOutput,
+  parseTestOutput,
+  parseTypecheckOutput,
+  runCargoCommand,
+  runPnpmScript,
+} from '../services/command-runner.js';
 import type { ToolDefinition, ToolResponse, ToolResult } from '../types.js';
 
 /**
@@ -146,13 +154,23 @@ function formatToolResponse(result: ToolResult): ToolResponse {
 /**
  * Run linting.
  */
-export async function runLint(_options: {
-  fix?: boolean;
-}): Promise<ToolResult> {
-  // TODO: Implement in Phase 2 - Implement Command Runner Service step
+export async function runLint(options: { fix?: boolean }): Promise<ToolResult> {
+  const script = options.fix ? 'lint:fix' : 'lint';
+  const result = await runPnpmScript(script);
+
+  const output = result.stdout + result.stderr;
+  const parsed = parseLintOutput(output);
+
   return {
-    success: false,
-    error: 'Not implemented - will be completed in Phase 2',
+    success: result.success,
+    data: {
+      exitCode: result.exitCode,
+      errors: parsed.errors,
+      warnings: parsed.warnings,
+      fixed: parsed.fixed,
+      output: output.slice(0, 5000), // Limit output size
+    },
+    error: result.success ? undefined : (result.error ?? 'Linting failed'),
   };
 }
 
@@ -160,24 +178,56 @@ export async function runLint(_options: {
  * Run TypeScript type checking.
  */
 export async function runTypecheck(): Promise<ToolResult> {
-  // TODO: Implement in Phase 2 - Implement Command Runner Service step
+  const result = await runPnpmScript('typecheck');
+
+  const output = result.stdout + result.stderr;
+  const parsed = parseTypecheckOutput(output);
+
   return {
-    success: false,
-    error: 'Not implemented - will be completed in Phase 2',
+    success: result.success,
+    data: {
+      exitCode: result.exitCode,
+      errors: parsed.errors,
+      filesWithErrors: parsed.files,
+      output: output.slice(0, 5000), // Limit output size
+    },
+    error: result.success ? undefined : (result.error ?? 'Type checking failed'),
   };
 }
 
 /**
  * Run tests.
  */
-export async function runTest(_options: {
+export async function runTest(options: {
   filter?: string;
   watch?: boolean;
 }): Promise<ToolResult> {
-  // TODO: Implement in Phase 2 - Implement Command Runner Service step
+  const args: string[] = [];
+
+  // Add filter if provided
+  if (options.filter) {
+    args.push('-t', options.filter);
+  }
+
+  // Run tests in run mode (not watch)
+  args.push('--run');
+
+  const result = await runPnpmScript('test', args);
+
+  const output = result.stdout + result.stderr;
+  const parsed = parseTestOutput(output);
+
   return {
-    success: false,
-    error: 'Not implemented - will be completed in Phase 2',
+    success: result.success,
+    data: {
+      exitCode: result.exitCode,
+      passed: parsed.passed,
+      failed: parsed.failed,
+      skipped: parsed.skipped,
+      total: parsed.total,
+      output: output.slice(0, 5000), // Limit output size
+    },
+    error: result.success ? undefined : (result.error ?? 'Tests failed'),
   };
 }
 
@@ -185,10 +235,18 @@ export async function runTest(_options: {
  * Build the application.
  */
 export async function runBuild(): Promise<ToolResult> {
-  // TODO: Implement in Phase 2 - Implement Command Runner Service step
+  // Build has a longer timeout (10 minutes)
+  const result = await runPnpmScript('build', [], { timeout: 600000 });
+
+  const output = result.stdout + result.stderr;
+
   return {
-    success: false,
-    error: 'Not implemented - will be completed in Phase 2',
+    success: result.success,
+    data: {
+      exitCode: result.exitCode,
+      output: output.slice(0, 5000), // Limit output size
+    },
+    error: result.success ? undefined : (result.error ?? 'Build failed'),
   };
 }
 
@@ -196,10 +254,17 @@ export async function runBuild(): Promise<ToolResult> {
  * Generate TypeScript types from Rust.
  */
 export async function generateTypes(): Promise<ToolResult> {
-  // TODO: Implement in Phase 2 - Implement Command Runner Service step
+  const result = await runPnpmScript('generate:types');
+
+  const output = result.stdout + result.stderr;
+
   return {
-    success: false,
-    error: 'Not implemented - will be completed in Phase 2',
+    success: result.success,
+    data: {
+      exitCode: result.exitCode,
+      output: output.slice(0, 5000), // Limit output size
+    },
+    error: result.success ? undefined : (result.error ?? 'Type generation failed'),
   };
 }
 
@@ -207,9 +272,20 @@ export async function generateTypes(): Promise<ToolResult> {
  * Run cargo check on the Rust code.
  */
 export async function runRustCheck(): Promise<ToolResult> {
-  // TODO: Implement in Phase 2 - Implement Command Runner Service step
+  const result = await runCargoCommand('check', ['--message-format=short']);
+
+  const output = result.stdout + result.stderr;
+  const parsed = parseCargoOutput(output);
+
   return {
-    success: false,
-    error: 'Not implemented - will be completed in Phase 2',
+    success: result.success,
+    data: {
+      exitCode: result.exitCode,
+      errors: parsed.errors,
+      warnings: parsed.warnings,
+      filesWithErrors: parsed.files,
+      output: output.slice(0, 5000), // Limit output size
+    },
+    error: result.success ? undefined : (result.error ?? 'Cargo check failed'),
   };
 }

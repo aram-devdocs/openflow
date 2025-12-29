@@ -12,4 +12,5 @@ export {
   parseLintOutput,
   parseTestOutput,
   parseTypecheckOutput,
+  parseCargoOutput,
 } from './command-runner.js';
