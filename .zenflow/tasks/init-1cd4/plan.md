@@ -2144,7 +2144,8 @@ cat src-tauri/src/commands/mod.rs | grep "AppState"
 
 ---
 
-### [ ] Step: Create Project Commands
+### [x] Step: Create Project Commands
+<!-- chat-id: 956527a8-0284-46ef-acdd-161378ae1980 -->
 
 Create Tauri commands for projects.
 
