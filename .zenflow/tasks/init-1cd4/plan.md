@@ -1056,7 +1056,8 @@ cat packages/hooks/useProjects.ts | grep "projectKeys"
 
 ---
 
-### [ ] Step: Create packages/hooks - Tasks
+### [x] Step: Create packages/hooks - Tasks
+<!-- chat-id: 78a0536b-65ef-48d5-9c71-d9f64b61c79d -->
 
 Add task hooks module.
 
