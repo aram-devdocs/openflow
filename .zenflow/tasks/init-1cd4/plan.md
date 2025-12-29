@@ -4234,7 +4234,23 @@ cat .github/workflows/ci.yml | grep "runs-on"
 ---
 
 
-### [ ] Step: test pre commit and pre push
+### [x] Step: test pre commit and pre push
+<!-- chat-id: 9f6fb0ca-3465-4ee5-8f7d-cc81a2a0cd2c -->
+
+Tested and verified both git hooks work correctly.
+
+**Tasks completed:**
+1. Fixed pre-commit hook - added proper shebang and made executable
+2. Updated biome.json to ignore generated Tauri files (`src-tauri/gen`, `src-tauri/target`)
+3. Fixed tauri.conf.json formatting
+4. Verified pre-commit runs lint-staged on staged TypeScript files
+5. Verified pre-push runs full validation suite:
+   - Type generation
+   - TypeScript typecheck
+   - Biome lint
+   - Vitest tests (47 tests passed)
+   - Architecture validation (10 rules passed)
+   - Cargo check, test, clippy (190 tests passed)
 
 ### [ ] Step: remove .zenflow/tasks/* from git as shown in git ignore
 
