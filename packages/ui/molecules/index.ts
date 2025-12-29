@@ -33,5 +33,5 @@ export type { TabsProps, TabPanelProps, Tab } from './Tabs';
 export { Tooltip } from './Tooltip';
 export type { TooltipProps, TooltipPosition } from './Tooltip';
 
-// Components will be exported here as they are created
-// export { Menu } from './Menu';
+export { Menu } from './Menu';
+export type { MenuProps, MenuItem, MenuPosition } from './Menu';
