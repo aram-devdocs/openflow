@@ -31,7 +31,9 @@
       "@openflow/hooks": ["packages/hooks/index.ts"],
       "@openflow/hooks/*": ["packages/hooks/*"],
       "@openflow/ui": ["packages/ui/index.ts"],
-      "@openflow/ui/*": ["packages/ui/*"]
+      "@openflow/ui/*": ["packages/ui/*"],
+      "@openflow/mcp-server": ["packages/mcp-server/index.ts"],
+      "@openflow/mcp-server/*": ["packages/mcp-server/*"]
     }
   },
   "include": ["src", "packages", "tests"],
