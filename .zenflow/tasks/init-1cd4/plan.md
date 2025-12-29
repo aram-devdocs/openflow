@@ -2738,7 +2738,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Tabs Component
+### [x] Step: Create Tabs Component
+<!-- chat-id: 02ecd6cd-85b4-43b5-8a88-df80fed94853 -->
 
 Create Tabs molecule for tabbed interfaces.
 
