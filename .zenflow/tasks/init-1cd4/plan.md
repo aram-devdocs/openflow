@@ -1472,7 +1472,8 @@ cat src-tauri/src/types/task.rs | grep "CreateTaskRequest"
 
 ---
 
-### [ ] Step: Create Rust Chat Types
+### [x] Step: Create Rust Chat Types
+<!-- chat-id: 1efbb034-3045-40fa-832d-444c3cf81f0d -->
 
 Create chat.rs with Chat types and ChatRole enum.
 
