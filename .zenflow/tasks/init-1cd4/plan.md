@@ -1648,7 +1648,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create TypeShare Generation Script
+### [x] Step: Create TypeShare Generation Script
+<!-- chat-id: 06a7e158-ca83-4850-8cb4-3f5d43b5f3e1 -->
 
 Create script to generate TypeScript from Rust types.
 

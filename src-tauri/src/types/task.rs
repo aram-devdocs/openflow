@@ -76,7 +76,6 @@ pub struct Task {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskWithChats {
-    #[serde(flatten)]
     pub task: Task,
     pub chats: Vec<Chat>,
 }

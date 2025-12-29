@@ -69,7 +69,6 @@ pub struct Chat {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatWithMessages {
-    #[serde(flatten)]
     pub chat: Chat,
     pub messages: Vec<Message>,
 }
