@@ -874,7 +874,8 @@ cat packages/queries/index.ts | grep "tasks"
 
 ---
 
-### [ ] Step: Create packages/queries - Chats, Messages
+### [x] Step: Create packages/queries - Chats, Messages
+<!-- chat-id: 9f61b052-913f-4f94-8d27-6f14b9851a01 -->
 
 Add chat and message queries modules.
 
