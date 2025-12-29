@@ -18,7 +18,7 @@
 | Frontend Framework | React | 18.x | UI component rendering |
 | Language | TypeScript | 5.5+ | Type-safe frontend code |
 | Build Tool | Vite | 6.x | Fast frontend bundling |
-| Styling | Tailwind CSS | 4.x | Utility-first CSS framework |
+| Styling | Tailwind CSS | 3.4.x | Utility-first CSS framework |
 | State Management | TanStack Query | 5.x | Server state caching and synchronization |
 | Routing | TanStack Router | 1.x | Type-safe file-based routing |
 | Type Generation | typeshare | 1.x | Rust → TypeScript type generation |
@@ -244,7 +244,9 @@ openflow/
 │   │   │   ├── messages.rs
 │   │   │   ├── processes.rs
 │   │   │   ├── git.rs
-│   │   │   └── executor.rs
+│   │   │   ├── executor.rs
+│   │   │   ├── search.rs
+│   │   │   └── settings.rs
 │   │   ├── db/
 │   │   │   ├── mod.rs
 │   │   │   └── pool.rs
@@ -257,7 +259,9 @@ openflow/
 │   │   │   ├── process_service.rs
 │   │   │   ├── git_service.rs
 │   │   │   ├── executor_service.rs
-│   │   │   └── workflow_service.rs
+│   │   │   ├── workflow_service.rs
+│   │   │   ├── search_service.rs
+│   │   │   └── settings_service.rs
 │   │   ├── types/
 │   │   │   ├── mod.rs
 │   │   │   ├── project.rs
@@ -291,6 +295,28 @@ openflow/
 ### 4.1 Complete Database Schema
 
 ```sql
+-- ===========================================
+-- NOTE: Tables are ordered to satisfy foreign key dependencies.
+-- executor_profiles is defined early since tasks references it.
+-- ===========================================
+
+-- ===========================================
+-- EXECUTOR TABLES (defined first due to FK dependencies)
+-- ===========================================
+
+-- Executor profiles (CLI tool configurations)
+CREATE TABLE executor_profiles (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    command         TEXT NOT NULL,  -- CLI command: claude, gemini, codex, cursor
+    args            TEXT,           -- JSON array of default arguments
+    env             TEXT,           -- JSON object of environment variables
+    model           TEXT,           -- Model identifier if applicable
+    is_default      BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec'))
+);
+
 -- ===========================================
 -- CORE TABLES
 -- ===========================================
@@ -382,19 +408,6 @@ CREATE INDEX idx_messages_created ON messages(chat_id, created_at);
 -- ===========================================
 -- EXECUTION TABLES
 -- ===========================================
-
--- Executor profiles (CLI tool configurations)
-CREATE TABLE executor_profiles (
-    id              TEXT PRIMARY KEY,
-    name            TEXT NOT NULL,
-    command         TEXT NOT NULL,  -- CLI command: claude, gemini, codex, cursor
-    args            TEXT,           -- JSON array of default arguments
-    env             TEXT,           -- JSON object of environment variables
-    model           TEXT,           -- Model identifier if applicable
-    is_default      BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec')),
-    updated_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec'))
-);
 
 -- Execution processes (tracking CLI runs)
 CREATE TABLE execution_processes (
@@ -586,6 +599,14 @@ pub enum RunReason {
     Devserver,
     Terminal,
     Verification,
+}
+
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum OutputType {
+    Stdout,
+    Stderr,
 }
 
 #[typeshare]
@@ -1215,7 +1236,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Rust
-        uses: dtolnay/rust-action@stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -1561,4 +1582,239 @@ impl TaskService {
   },
   "plugins": {}
 }
+```
+
+---
+
+## 11. Keyboard Shortcuts
+
+### 11.1 Global Shortcuts
+
+| Shortcut | Action | Context |
+|----------|--------|---------|
+| `Cmd/Ctrl + K` | Open command palette / search | Global |
+| `Cmd/Ctrl + N` | Create new task | Global |
+| `Cmd/Ctrl + ,` | Open settings | Global |
+| `Cmd/Ctrl + \`` | Toggle terminal | Task view |
+| `Escape` | Close modal / cancel action | Global |
+
+### 11.2 Task View Shortcuts
+
+| Shortcut | Action | Context |
+|----------|--------|---------|
+| `Cmd/Ctrl + Enter` | Send message | Chat input focused |
+| `Cmd/Ctrl + Shift + Enter` | Send and start next step | Chat input focused |
+| `Cmd/Ctrl + S` | Save current step | Task view |
+| `Cmd/Ctrl + .` | Quick actions menu | Task view |
+| `Up/Down` | Navigate steps | Steps panel focused |
+| `Enter` | Start selected step | Step selected |
+
+### 11.3 Implementation Approach
+
+Keyboard shortcuts are implemented using a centralized hook:
+
+```typescript
+// packages/hooks/useKeyboardShortcuts.ts
+import { useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+
+interface ShortcutConfig {
+  key: string;
+  meta?: boolean;  // Cmd on Mac, Ctrl on Windows/Linux
+  shift?: boolean;
+  alt?: boolean;
+  action: () => void;
+  when?: () => boolean;  // Condition for shortcut to be active
+}
+
+export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      for (const shortcut of shortcuts) {
+        const metaMatch = shortcut.meta
+          ? (e.metaKey || e.ctrlKey)
+          : (!e.metaKey && !e.ctrlKey);
+        const shiftMatch = shortcut.shift ? e.shiftKey : !e.shiftKey;
+        const altMatch = shortcut.alt ? e.altKey : !e.altKey;
+        const keyMatch = e.key.toLowerCase() === shortcut.key.toLowerCase();
+
+        if (metaMatch && shiftMatch && altMatch && keyMatch) {
+          if (!shortcut.when || shortcut.when()) {
+            e.preventDefault();
+            shortcut.action();
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [shortcuts]);
+}
+```
+
+---
+
+## 12. Search Functionality
+
+### 12.1 Search API
+
+```rust
+// src-tauri/src/commands/search.rs
+
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SearchResult {
+    pub result_type: SearchResultType,
+    pub id: String,
+    pub title: String,
+    pub subtitle: Option<String>,
+    pub project_id: Option<String>,
+}
+
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum SearchResultType {
+    Task,
+    Project,
+    Chat,
+    WorkflowTemplate,
+}
+
+#[tauri::command]
+pub async fn search(
+    state: tauri::State<'_, AppState>,
+    query: String,
+    project_id: Option<String>,  // Scope to project if provided
+    result_types: Option<Vec<SearchResultType>>,  // Filter result types
+    limit: Option<i32>,  // Default 20
+) -> Result<Vec<SearchResult>, String>;
+```
+
+### 12.2 Search Implementation
+
+Search uses SQLite FTS5 (Full-Text Search) for efficient querying:
+
+```sql
+-- FTS virtual table for search
+CREATE VIRTUAL TABLE search_index USING fts5(
+    id,
+    type,
+    title,
+    description,
+    project_id,
+    content='',  -- External content (we manage manually)
+    tokenize='porter unicode61'
+);
+
+-- Trigger to update search index on task changes
+CREATE TRIGGER tasks_search_insert AFTER INSERT ON tasks BEGIN
+    INSERT INTO search_index(id, type, title, description, project_id)
+    VALUES (NEW.id, 'task', NEW.title, NEW.description, NEW.project_id);
+END;
+
+CREATE TRIGGER tasks_search_update AFTER UPDATE ON tasks BEGIN
+    DELETE FROM search_index WHERE id = OLD.id;
+    INSERT INTO search_index(id, type, title, description, project_id)
+    VALUES (NEW.id, 'task', NEW.title, NEW.description, NEW.project_id);
+END;
+
+CREATE TRIGGER tasks_search_delete AFTER DELETE ON tasks BEGIN
+    DELETE FROM search_index WHERE id = OLD.id;
+END;
+```
+
+### 12.3 Command Palette UI
+
+The command palette (`Cmd+K`) provides:
+1. **Quick search** - Find tasks, projects, workflows
+2. **Actions** - Create task, open settings, switch project
+3. **Recent items** - Recently viewed tasks and chats
+
+---
+
+## 13. Git Worktree Conventions
+
+### 13.1 Branch Naming
+
+All branches created by OpenFlow follow this pattern:
+
+```
+openflow/{task_id}/{chat_role}
+```
+
+Examples:
+- `openflow/abc123/main` - Main implementation branch
+- `openflow/abc123/review` - Review agent branch
+- `openflow/abc123/test` - Test agent branch
+
+### 13.2 Worktree Directory Structure
+
+Worktrees are stored in a dedicated directory outside the main repo:
+
+```
+~/.openflow/worktrees/
+├── {project_id}/
+│   ├── {task_id}-main/      # Main agent worktree
+│   ├── {task_id}-review/    # Review agent worktree
+│   └── {task_id}-test/      # Test agent worktree
+```
+
+### 13.3 Worktree Lifecycle Commands
+
+```rust
+// Create worktree
+git worktree add -b openflow/{task_id}/{role} {worktree_path} {base_branch}
+
+// List worktrees
+git worktree list
+
+// Remove worktree
+git worktree remove {worktree_path}
+
+// Prune stale worktrees
+git worktree prune
+```
+
+---
+
+## 14. App Settings Keys
+
+### 14.1 Expected Settings
+
+The `app_settings` table stores global configuration as key-value pairs:
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `default_executor_profile_id` | string | null | Default CLI tool for new tasks |
+| `theme` | string | "dark" | UI theme ("dark", "light", "system") |
+| `worktrees_base_path` | string | "~/.openflow/worktrees" | Base directory for worktrees |
+| `auto_start_steps` | boolean | false | Global default for auto-start |
+| `telemetry_enabled` | boolean | true | Anonymous usage analytics |
+| `last_project_id` | string | null | Last opened project (for restore) |
+| `sidebar_collapsed` | boolean | false | Sidebar state |
+| `chat_font_size` | number | 14 | Chat panel font size in pixels |
+
+### 14.2 Settings API
+
+```rust
+#[tauri::command]
+pub async fn get_setting(
+    state: tauri::State<'_, AppState>,
+    key: String,
+) -> Result<Option<String>, String>;
+
+#[tauri::command]
+pub async fn set_setting(
+    state: tauri::State<'_, AppState>,
+    key: String,
+    value: String,
+) -> Result<(), String>;
+
+#[tauri::command]
+pub async fn get_all_settings(
+    state: tauri::State<'_, AppState>,
+) -> Result<HashMap<String, String>, String>;
 ```
