@@ -3552,7 +3552,8 @@ pnpm dev  # Should start without errors
 
 **Goal:** Set up Storybook for component development.
 
-### [ ] Step: Create Storybook Configuration
+### [x] Step: Create Storybook Configuration
+<!-- chat-id: 001ab650-ac84-4abe-94d7-96b805f685a3 -->
 
 Create Storybook main configuration.
 
@@ -3585,7 +3586,7 @@ pnpm storybook  # Should launch Storybook
 
 ---
 
-### [ ] Step: Add Storybook Dependencies
+### [x] Step: Add Storybook Dependencies
 
 Add Storybook packages to package.json.
 
