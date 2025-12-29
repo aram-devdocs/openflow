@@ -1587,7 +1587,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create Rust Workflow Types
+### [x] Step: Create Rust Workflow Types
+<!-- chat-id: 43b4e3bb-084f-40f0-bd00-0520cc097624 -->
 
 Create workflow.rs with Workflow types.
 
