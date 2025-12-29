@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use typeshare::typeshare;
 
 /// ExecutorProfile represents a CLI tool configuration for running AI coding agents.
 /// Profiles define which CLI tool to use (Claude Code, Gemini CLI, Codex CLI, etc.)
 /// along with default arguments and environment variables.
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct ExecutorProfile {
     pub id: String,
@@ -16,8 +17,8 @@ pub struct ExecutorProfile {
     pub args: Option<String>,
     /// JSON object of environment variables to set
     pub env: Option<String>,
-    /// Description of this profile's purpose
-    pub description: Option<String>,
+    /// Model identifier if applicable
+    pub model: Option<String>,
     /// Whether this is the default profile for new tasks
     pub is_default: bool,
     pub created_at: String,
@@ -33,7 +34,7 @@ pub struct CreateExecutorProfileRequest {
     pub command: String,
     pub args: Option<String>,
     pub env: Option<String>,
-    pub description: Option<String>,
+    pub model: Option<String>,
     pub is_default: Option<bool>,
 }
 
@@ -47,6 +48,6 @@ pub struct UpdateExecutorProfileRequest {
     pub command: Option<String>,
     pub args: Option<String>,
     pub env: Option<String>,
-    pub description: Option<String>,
+    pub model: Option<String>,
     pub is_default: Option<bool>,
 }
