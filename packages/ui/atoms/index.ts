@@ -5,15 +5,16 @@
  * Examples: Button, Input, Label, Badge, Icon, Spinner
  */
 
+export { Button } from './Button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
+
+export { Spinner } from './Spinner';
+export type { SpinnerProps } from './Spinner';
+
 // Components will be exported here as they are created
-// export { Button } from './Button';
 // export { Input } from './Input';
 // export { Label } from './Label';
 // export { Badge } from './Badge';
 // export { Icon } from './Icon';
-// export { Spinner } from './Spinner';
 // export { Textarea } from './Textarea';
 // export { Checkbox } from './Checkbox';
-
-// Placeholder export to make this a valid module
-export {};
