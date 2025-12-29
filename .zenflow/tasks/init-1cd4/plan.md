@@ -1393,7 +1393,8 @@ cat src-tauri/src/types/mod.rs | grep "pub mod"
 
 ---
 
-### [ ] Step: Create Rust Project Types
+### [x] Step: Create Rust Project Types
+<!-- chat-id: 54378301-8f1b-4fbf-9a1e-a44801c0aabd -->
 
 Create project.rs with Project types.
 
