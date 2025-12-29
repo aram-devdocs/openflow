@@ -955,7 +955,8 @@ cat packages/queries/index.ts | grep "settings"
 
 ---
 
-### [ ] Step: Create packages/queries - Git and Search
+### [x] Step: Create packages/queries - Git and Search
+<!-- chat-id: f2bfcc82-e08d-4437-adc2-4e6ef5810c2e -->
 
 Add git and search query modules.
 
