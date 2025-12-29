@@ -17,6 +17,8 @@
     "build-storybook": "storybook build",
     "generate:types": "bash scripts/generate-types.sh",
     "validate:arch": "tsx scripts/validate-architecture.ts",
+    "mcp:start": "tsx packages/mcp-server/index.ts",
+    "mcp:dev": "tsx watch packages/mcp-server/index.ts",
     "prepare": "husky"
   },
   "dependencies": {
