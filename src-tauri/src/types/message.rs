@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use typeshare::typeshare;
 
 /// Role of a message in a chat conversation.
@@ -34,14 +35,23 @@ impl std::str::FromStr for MessageRole {
     }
 }
 
+impl TryFrom<String> for MessageRole {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        s.parse()
+    }
+}
+
 /// A message in a chat conversation.
 /// Messages store the conversation history between the user and AI assistant.
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Message {
     pub id: String,
     pub chat_id: String,
+    #[sqlx(try_from = "String")]
     pub role: MessageRole,
     pub content: String,
     /// JSON array of tool call objects
