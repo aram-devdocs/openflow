@@ -1764,7 +1764,8 @@ cat src-tauri/migrations/001_initial.sql | wc -l  # Should be 100+ lines
 
 ---
 
-### [ ] Step: Create Search Index Migration
+### [x] Step: Create Search Index Migration
+<!-- chat-id: e1b7ce24-2bb0-4bcc-a8f1-045173e93fe8 -->
 
 Create FTS5 migration for full-text search.
 
