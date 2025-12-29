@@ -13,5 +13,6 @@ export * from './useTasks';
 export * from './useChats';
 export * from './useMessages';
 export * from './useProcesses';
+export * from './useProcessOutput';
 export * from './useExecutorProfiles';
 export * from './useSettings';
