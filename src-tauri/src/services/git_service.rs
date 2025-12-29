@@ -294,16 +294,16 @@ impl GitService {
                 let range_str = &header[start + 2..start + 2 + end].trim();
 
                 for part in range_str.split_whitespace() {
-                    if part.starts_with('-') {
-                        let nums: Vec<&str> = part[1..].split(',').collect();
+                    if let Some(stripped) = part.strip_prefix('-') {
+                        let nums: Vec<&str> = stripped.split(',').collect();
                         if !nums.is_empty() {
                             old_start = nums[0].parse().unwrap_or(0);
                         }
                         if nums.len() > 1 {
                             old_lines = nums[1].parse().unwrap_or(1);
                         }
-                    } else if part.starts_with('+') {
-                        let nums: Vec<&str> = part[1..].split(',').collect();
+                    } else if let Some(stripped) = part.strip_prefix('+') {
+                        let nums: Vec<&str> = stripped.split(',').collect();
                         if !nums.is_empty() {
                             new_start = nums[0].parse().unwrap_or(0);
                         }

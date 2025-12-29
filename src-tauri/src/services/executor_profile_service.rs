@@ -380,6 +380,9 @@ mod tests {
             .await
             .expect("Failed to create executor profile");
 
+        // Wait a small amount to ensure updated_at will be different
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+
         // Update partial fields
         let update_request = UpdateExecutorProfileRequest {
             name: Some("Updated Name".to_string()),
