@@ -90,6 +90,21 @@ importers:
 
   packages/generated: {}
 
+  packages/hooks:
+    dependencies:
+      '@openflow/generated':
+        specifier: workspace:*
+        version: link:../generated
+      '@openflow/queries':
+        specifier: workspace:*
+        version: link:../queries
+      '@tanstack/react-query':
+        specifier: ^5.62.0
+        version: 5.90.14(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+
   packages/queries:
     dependencies:
       '@openflow/generated':

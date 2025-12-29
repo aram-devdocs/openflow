@@ -991,7 +991,8 @@ cat packages/queries/search.ts | grep "searchQueries"
 
 ---
 
-### [ ] Step: Create packages/hooks - Projects
+### [x] Step: Create packages/hooks - Projects
+<!-- chat-id: 8712a4ab-98f4-4de6-86a0-9d45ca4f5c0c -->
 
 Create hooks package with TanStack Query hooks (Level 3 - imports queries, validation, generated, utils).
 
