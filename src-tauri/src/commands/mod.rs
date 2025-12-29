@@ -19,19 +19,21 @@
 //! }
 //! ```
 
-pub mod projects;
-pub mod tasks;
 pub mod chats;
-pub mod messages;
 pub mod executor;
-pub mod settings;
-pub mod processes;
 pub mod git;
+pub mod messages;
+pub mod processes;
+pub mod projects;
 pub mod search;
+pub mod settings;
+pub mod tasks;
 
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+
+use crate::services::ProcessService;
 
 /// Application state shared across all Tauri commands.
 ///
@@ -40,6 +42,8 @@ use tokio::sync::Mutex;
 pub struct AppState {
     /// SQLite connection pool wrapped in Arc<Mutex> for thread-safe access.
     pub db: Arc<Mutex<SqlitePool>>,
+    /// Process service for managing execution processes and PTYs.
+    pub process_service: Arc<ProcessService>,
 }
 
 impl AppState {
@@ -47,17 +51,18 @@ impl AppState {
     pub fn new(pool: SqlitePool) -> Self {
         Self {
             db: Arc::new(Mutex::new(pool)),
+            process_service: Arc::new(ProcessService::new()),
         }
     }
 }
 
 // Re-export all command functions for registration in lib.rs
-pub use projects::*;
-pub use tasks::*;
 pub use chats::*;
-pub use messages::*;
 pub use executor::*;
-pub use settings::*;
+pub use git::*;
+pub use messages::*;
+pub use processes::*;
+pub use projects::*;
 pub use search::*;
-// Note: processes and git modules have placeholder implementations
-// and will be exported once commands are added
+pub use settings::*;
+pub use tasks::*;

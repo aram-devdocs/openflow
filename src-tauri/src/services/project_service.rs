@@ -79,7 +79,10 @@ impl ProjectService {
     }
 
     /// Create a new project.
-    pub async fn create(pool: &SqlitePool, request: CreateProjectRequest) -> ServiceResult<Project> {
+    pub async fn create(
+        pool: &SqlitePool,
+        request: CreateProjectRequest,
+    ) -> ServiceResult<Project> {
         let id = Uuid::new_v4().to_string();
         let base_branch = request.base_branch.unwrap_or_else(|| "main".to_string());
         let setup_script = request.setup_script.unwrap_or_default();
@@ -137,8 +140,12 @@ impl ProjectService {
         let copy_files = request.copy_files.or(existing.copy_files);
         let icon = request.icon.unwrap_or(existing.icon);
         let rule_folders = request.rule_folders.or(existing.rule_folders);
-        let always_included_rules = request.always_included_rules.or(existing.always_included_rules);
-        let workflows_folder = request.workflows_folder.unwrap_or(existing.workflows_folder);
+        let always_included_rules = request
+            .always_included_rules
+            .or(existing.always_included_rules);
+        let workflows_folder = request
+            .workflows_folder
+            .unwrap_or(existing.workflows_folder);
         let verification_config = request.verification_config.or(existing.verification_config);
 
         sqlx::query(
@@ -334,9 +341,15 @@ mod tests {
         let request2 = test_create_request("Project A", "/path/a");
         let request3 = test_create_request("Project C", "/path/c");
 
-        ProjectService::create(&test_db.pool, request1).await.unwrap();
-        ProjectService::create(&test_db.pool, request2).await.unwrap();
-        ProjectService::create(&test_db.pool, request3).await.unwrap();
+        ProjectService::create(&test_db.pool, request1)
+            .await
+            .unwrap();
+        ProjectService::create(&test_db.pool, request2)
+            .await
+            .unwrap();
+        ProjectService::create(&test_db.pool, request3)
+            .await
+            .unwrap();
 
         // List should return all projects ordered by name
         let projects = ProjectService::list(&test_db.pool)

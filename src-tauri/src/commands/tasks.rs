@@ -23,9 +23,14 @@ pub async fn list_tasks(
     include_archived: Option<bool>,
 ) -> Result<Vec<Task>, String> {
     let pool = state.db.lock().await;
-    TaskService::list(&pool, &project_id, status, include_archived.unwrap_or(false))
-        .await
-        .map_err(|e| e.to_string())
+    TaskService::list(
+        &pool,
+        &project_id,
+        status,
+        include_archived.unwrap_or(false),
+    )
+    .await
+    .map_err(|e| e.to_string())
 }
 
 /// Get a single task by ID with its associated chats.

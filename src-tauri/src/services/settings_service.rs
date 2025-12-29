@@ -95,7 +95,11 @@ impl SettingsService {
     /// Get a setting with a default value.
     ///
     /// Returns the default if the key doesn't exist.
-    pub async fn get_or_default(pool: &SqlitePool, key: &str, default: &str) -> ServiceResult<String> {
+    pub async fn get_or_default(
+        pool: &SqlitePool,
+        key: &str,
+        default: &str,
+    ) -> ServiceResult<String> {
         let result = Self::get(pool, key).await?;
         Ok(result.unwrap_or_else(|| default.to_string()))
     }

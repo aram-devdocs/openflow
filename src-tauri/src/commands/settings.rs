@@ -60,10 +60,7 @@ pub async fn get_all_settings(
 ///
 /// Returns an error if the key doesn't exist.
 #[tauri::command]
-pub async fn delete_setting(
-    state: State<'_, AppState>,
-    key: String,
-) -> Result<(), String> {
+pub async fn delete_setting(state: State<'_, AppState>, key: String) -> Result<(), String> {
     let pool = state.db.lock().await;
     SettingsService::delete(&pool, &key)
         .await
@@ -90,10 +87,7 @@ pub async fn get_setting_or_default(
 ///
 /// Returns true if the key exists, false otherwise.
 #[tauri::command]
-pub async fn setting_exists(
-    state: State<'_, AppState>,
-    key: String,
-) -> Result<bool, String> {
+pub async fn setting_exists(state: State<'_, AppState>, key: String) -> Result<bool, String> {
     let pool = state.db.lock().await;
     SettingsService::exists(&pool, &key)
         .await

@@ -67,7 +67,10 @@ impl MessageService {
     /// * `request` - Message creation request
     ///
     /// Returns the created message.
-    pub async fn create(pool: &SqlitePool, request: CreateMessageRequest) -> ServiceResult<Message> {
+    pub async fn create(
+        pool: &SqlitePool,
+        request: CreateMessageRequest,
+    ) -> ServiceResult<Message> {
         let id = Uuid::new_v4().to_string();
 
         sqlx::query(
@@ -678,7 +681,11 @@ mod tests {
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
         let chat_id = create_test_chat(&test_db.pool, &task_id).await;
 
-        let roles = vec![MessageRole::User, MessageRole::Assistant, MessageRole::System];
+        let roles = vec![
+            MessageRole::User,
+            MessageRole::Assistant,
+            MessageRole::System,
+        ];
 
         for role in roles {
             let request = CreateMessageRequest {

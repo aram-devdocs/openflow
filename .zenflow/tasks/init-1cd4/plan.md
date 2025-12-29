@@ -3697,7 +3697,8 @@ git add . && git commit -m "test"  # Should trigger pre-commit
 
 **Goal:** Implement process spawning and PTY management.
 
-### [ ] Step: Create Process Module Structure
+### [x] Step: Create Process Module Structure
+<!-- chat-id: 9aab6ce9-ef27-4123-8e49-36ad5302eb90 -->
 
 Create process management module structure.
 
@@ -3722,7 +3723,8 @@ cat src-tauri/src/process/mod.rs | grep "pub mod"
 
 ---
 
-### [ ] Step: Create Process Spawn Module
+### [x] Step: Create Process Spawn Module
+<!-- chat-id: 67a31085-3dbc-4f8e-a7be-578132ff6a83 -->
 
 Create process spawning functionality.
 
@@ -3748,7 +3750,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create PTY Module
+### [x] Step: Create PTY Module
+<!-- chat-id: 7df82636-851f-4345-81b5-7973bfdd8589 -->
 
 Create PTY management for interactive processes.
 
@@ -3776,7 +3779,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create Output Streaming Module
+### [x] Step: Create Output Streaming Module
+<!-- chat-id: aee235ee-54ff-41d7-8f57-b8bc1d31f2a7 -->
 
 Create output streaming with Tauri events.
 
@@ -3802,7 +3806,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create ProcessService
+### [x] Step: Create ProcessService
+<!-- chat-id: 4af10afb-1943-4a35-a7a3-6f278a7eec46 -->
 
 Create process management service.
 
@@ -3829,7 +3834,8 @@ cd src-tauri && cargo test process
 
 ---
 
-### [ ] Step: Create Process Commands
+### [x] Step: Create Process Commands
+<!-- chat-id: d39ef2fe-0dcf-4851-a819-06d4559ddbad -->
 
 Create Tauri commands for process management.
 
@@ -3858,7 +3864,8 @@ cd src-tauri && cargo check
 
 **Goal:** Implement git worktree management.
 
-### [ ] Step: Create GitService
+### [x] Step: Create GitService
+<!-- chat-id: 2a9b6001-f75d-48dd-90dd-0b8d16cfd1e2 -->
 
 Create git operations service.
 
@@ -3890,7 +3897,8 @@ cd src-tauri && cargo test git
 
 ---
 
-### [ ] Step: Create Git Commands
+### [x] Step: Create Git Commands
+<!-- chat-id: 4ef7f874-5a69-4729-b06e-7b3269804309 -->
 
 Create Tauri commands for git operations.
 
@@ -3916,7 +3924,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Register Git and Process Commands
+### [x] Step: Register Git and Process Commands
+<!-- chat-id: 4a5b80d7-02b0-487e-b811-9f44e1d968ae -->
 
 Update lib.rs to register new commands.
 
@@ -3946,7 +3955,8 @@ cd src-tauri && cargo test
 
 **Goal:** Implement workflow parsing and execution.
 
-### [ ] Step: Create Built-in Workflows
+### [x] Step: Create Built-in Workflows
+<!-- chat-id: a9ae858e-1eb0-421a-abf1-d15609f9e48e -->
 
 Create built-in workflow templates.
 

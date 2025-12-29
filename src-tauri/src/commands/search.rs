@@ -40,13 +40,7 @@ pub async fn search(
     limit: Option<i32>,
 ) -> Result<Vec<SearchResult>, String> {
     let pool = state.db.lock().await;
-    SearchService::search(
-        &pool,
-        &query,
-        project_id.as_deref(),
-        result_types,
-        limit,
-    )
-    .await
-    .map_err(|e| e.to_string())
+    SearchService::search(&pool, &query, project_id.as_deref(), result_types, limit)
+        .await
+        .map_err(|e| e.to_string())
 }

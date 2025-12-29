@@ -6,9 +6,7 @@
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use crate::types::{
-    CreateExecutorProfileRequest, ExecutorProfile, UpdateExecutorProfileRequest,
-};
+use crate::types::{CreateExecutorProfileRequest, ExecutorProfile, UpdateExecutorProfileRequest};
 
 use super::{ServiceError, ServiceResult};
 
@@ -280,8 +278,14 @@ mod tests {
         assert_eq!(profile.name, "Claude Code Pro");
         assert_eq!(profile.command, "claude");
         assert!(profile.is_default);
-        assert_eq!(profile.args, Some(r#"["--verbose", "--no-confirm"]"#.to_string()));
-        assert_eq!(profile.env, Some(r#"{"ANTHROPIC_API_KEY": "test"}"#.to_string()));
+        assert_eq!(
+            profile.args,
+            Some(r#"["--verbose", "--no-confirm"]"#.to_string())
+        );
+        assert_eq!(
+            profile.env,
+            Some(r#"{"ANTHROPIC_API_KEY": "test"}"#.to_string())
+        );
         assert_eq!(profile.model, Some("claude-3-opus".to_string()));
     }
 
@@ -336,9 +340,15 @@ mod tests {
         let request2 = test_create_request("Claude Code", "claude");
         let request3 = test_create_request("Cursor CLI", "cursor");
 
-        ExecutorProfileService::create(&test_db.pool, request1).await.unwrap();
-        ExecutorProfileService::create(&test_db.pool, request2).await.unwrap();
-        ExecutorProfileService::create(&test_db.pool, request3).await.unwrap();
+        ExecutorProfileService::create(&test_db.pool, request1)
+            .await
+            .unwrap();
+        ExecutorProfileService::create(&test_db.pool, request2)
+            .await
+            .unwrap();
+        ExecutorProfileService::create(&test_db.pool, request3)
+            .await
+            .unwrap();
 
         // List should return all profiles ordered by name
         let profiles = ExecutorProfileService::list(&test_db.pool)
@@ -396,7 +406,8 @@ mod tests {
             is_default: None,
         };
 
-        let result = ExecutorProfileService::update(&test_db.pool, "non-existent-id", update_request).await;
+        let result =
+            ExecutorProfileService::update(&test_db.pool, "non-existent-id", update_request).await;
 
         assert!(result.is_err());
         match result.unwrap_err() {
@@ -561,9 +572,10 @@ mod tests {
             model: None,
             is_default: Some(true),
         };
-        let second_updated = ExecutorProfileService::update(&test_db.pool, &second.id, update_request)
-            .await
-            .expect("Failed to update second profile");
+        let second_updated =
+            ExecutorProfileService::update(&test_db.pool, &second.id, update_request)
+                .await
+                .expect("Failed to update second profile");
         assert!(second_updated.is_default);
 
         // First should no longer be default

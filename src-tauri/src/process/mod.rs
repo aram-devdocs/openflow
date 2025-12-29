@@ -19,6 +19,9 @@ pub mod pty;
 pub mod spawn;
 
 // Re-export commonly used types and functions
-pub use output::OutputStreamer;
-pub use pty::PtyManager;
-pub use spawn::ProcessSpawner;
+pub use output::{
+    stream_output, stream_output_buffered, OutputAggregator, OutputBuffer, OutputCollector,
+    OutputConfig, OutputError, OutputResult, OutputStreamer,
+};
+pub use pty::{PtyConfig, PtyManager, PtySize};
+pub use spawn::{ProcessSpawner, SpawnConfig};

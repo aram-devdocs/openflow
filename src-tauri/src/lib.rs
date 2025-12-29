@@ -99,6 +99,27 @@ pub fn run() {
             commands::setting_exists,
             // Search commands
             commands::search,
+            // Process commands
+            commands::get_process,
+            commands::list_processes,
+            commands::list_running_processes,
+            commands::kill_process,
+            commands::send_process_input,
+            commands::resize_process,
+            commands::is_process_running,
+            commands::running_process_count,
+            // Git commands
+            commands::create_worktree,
+            commands::delete_worktree,
+            commands::get_diff,
+            commands::get_commits,
+            commands::push_branch,
+            commands::get_current_branch,
+            commands::get_head_commit,
+            commands::has_uncommitted_changes,
+            commands::list_worktrees,
+            commands::generate_branch_name,
+            commands::generate_worktree_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

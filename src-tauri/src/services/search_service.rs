@@ -115,8 +115,14 @@ impl SearchService {
                     }
                     _ => {
                         // For more than 2 types, use a simpler approach
-                        Self::search_with_many_types(pool, &sanitized_query, Some(pid), types, limit)
-                            .await?
+                        Self::search_with_many_types(
+                            pool,
+                            &sanitized_query,
+                            Some(pid),
+                            types,
+                            limit,
+                        )
+                        .await?
                     }
                 }
             }
@@ -663,7 +669,10 @@ mod tests {
                 .await
                 .expect("Search should succeed");
 
-        assert!(results.is_empty(), "Should return no results for unmatched query");
+        assert!(
+            results.is_empty(),
+            "Should return no results for unmatched query"
+        );
     }
 
     #[tokio::test]

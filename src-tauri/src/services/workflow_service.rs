@@ -618,7 +618,10 @@ Done.
         assert_eq!(templates.len(), 3);
 
         // Check Feature template
-        let feature = templates.iter().find(|t| t.id == "builtin:feature").unwrap();
+        let feature = templates
+            .iter()
+            .find(|t| t.id == "builtin:feature")
+            .unwrap();
         assert_eq!(feature.name, "Feature");
         assert!(feature.is_builtin);
         assert_eq!(feature.steps.len(), 4);
@@ -638,7 +641,10 @@ Done.
         assert_eq!(bugfix.steps[3].name, "Verify");
 
         // Check Refactor template
-        let refactor = templates.iter().find(|t| t.id == "builtin:refactor").unwrap();
+        let refactor = templates
+            .iter()
+            .find(|t| t.id == "builtin:refactor")
+            .unwrap();
         assert_eq!(refactor.name, "Refactor");
         assert!(refactor.is_builtin);
         assert_eq!(refactor.steps.len(), 4);

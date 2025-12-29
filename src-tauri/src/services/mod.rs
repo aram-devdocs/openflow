@@ -9,27 +9,27 @@
 //! - Services return `Result<T, ServiceError>`
 //! - Services are called by thin command handlers in `commands/`
 
-pub mod project_service;
-pub mod task_service;
 pub mod chat_service;
-pub mod message_service;
 pub mod executor_profile_service;
-pub mod settings_service;
-pub mod process_service;
 pub mod git_service;
-pub mod workflow_service;
+pub mod message_service;
+pub mod process_service;
+pub mod project_service;
 pub mod search_service;
+pub mod settings_service;
+pub mod task_service;
+pub mod workflow_service;
 
-pub use project_service::ProjectService;
-pub use task_service::TaskService;
 pub use chat_service::ChatService;
-pub use message_service::MessageService;
 pub use executor_profile_service::ExecutorProfileService;
-pub use settings_service::SettingsService;
-pub use process_service::ProcessService;
 pub use git_service::GitService;
-pub use workflow_service::WorkflowService;
+pub use message_service::MessageService;
+pub use process_service::ProcessService;
+pub use project_service::ProjectService;
 pub use search_service::SearchService;
+pub use settings_service::SettingsService;
+pub use task_service::TaskService;
+pub use workflow_service::WorkflowService;
 
 use thiserror::Error;
 

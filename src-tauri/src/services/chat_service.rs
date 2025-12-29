@@ -132,7 +132,9 @@ impl ChatService {
         let executor_profile_id = request.executor_profile_id.or(existing.executor_profile_id);
         let branch = request.branch.or(existing.branch);
         let worktree_path = request.worktree_path.or(existing.worktree_path);
-        let worktree_deleted = request.worktree_deleted.unwrap_or(existing.worktree_deleted);
+        let worktree_deleted = request
+            .worktree_deleted
+            .unwrap_or(existing.worktree_deleted);
         let setup_completed_at = request.setup_completed_at.or(existing.setup_completed_at);
         let initial_prompt = request.initial_prompt.or(existing.initial_prompt);
         let hidden_prompt = request.hidden_prompt.or(existing.hidden_prompt);
@@ -752,7 +754,12 @@ mod tests {
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
 
-        let roles = vec![ChatRole::Main, ChatRole::Review, ChatRole::Test, ChatRole::Terminal];
+        let roles = vec![
+            ChatRole::Main,
+            ChatRole::Review,
+            ChatRole::Test,
+            ChatRole::Terminal,
+        ];
 
         for role in roles {
             let request = CreateChatRequest {

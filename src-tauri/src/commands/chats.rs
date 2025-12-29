@@ -7,7 +7,9 @@ use tauri::State;
 
 use crate::commands::AppState;
 use crate::services::ChatService;
-use crate::types::{Chat, ChatWithMessages, CreateChatRequest, ExecutionProcess, UpdateChatRequest};
+use crate::types::{
+    Chat, ChatWithMessages, CreateChatRequest, ExecutionProcess, UpdateChatRequest,
+};
 
 /// List chats for a task.
 ///
@@ -97,5 +99,8 @@ pub async fn start_workflow_step(
     // 3. Create a new ExecutionProcess record
     // 4. Start the executor process (CLI tool)
     // 5. Return the process record
-    Err("Workflow step execution not yet implemented. See Phase 13 of the implementation plan.".to_string())
+    Err(
+        "Workflow step execution not yet implemented. See Phase 13 of the implementation plan."
+            .to_string(),
+    )
 }

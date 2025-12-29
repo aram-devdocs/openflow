@@ -255,7 +255,10 @@ mod tests {
 
         let content = "Save to {@artifacts_path}/spec.md in {@project_root}";
         let result = context.substitute(content);
-        assert_eq!(result, "Save to /path/to/artifacts/spec.md in /path/to/project");
+        assert_eq!(
+            result,
+            "Save to /path/to/artifacts/spec.md in /path/to/project"
+        );
     }
 
     #[test]

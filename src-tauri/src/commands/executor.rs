@@ -11,7 +11,7 @@ use tauri::State;
 use crate::commands::AppState;
 use crate::services::ExecutorProfileService;
 use crate::types::{
-    CreateExecutorProfileRequest, ExecutorProfile, ExecutionProcess, UpdateExecutorProfileRequest,
+    CreateExecutorProfileRequest, ExecutionProcess, ExecutorProfile, UpdateExecutorProfileRequest,
 };
 
 /// List all executor profiles.
@@ -90,10 +90,7 @@ pub async fn update_executor_profile(
 ///
 /// Returns an error if the profile is not found.
 #[tauri::command]
-pub async fn delete_executor_profile(
-    state: State<'_, AppState>,
-    id: String,
-) -> Result<(), String> {
+pub async fn delete_executor_profile(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
     ExecutorProfileService::delete(&pool, &id)
         .await

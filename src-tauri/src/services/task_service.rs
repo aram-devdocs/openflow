@@ -5,9 +5,7 @@
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use crate::types::{
-    Chat, CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest,
-};
+use crate::types::{Chat, CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest};
 
 use super::{ServiceError, ServiceResult};
 
