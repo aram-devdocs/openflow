@@ -1501,7 +1501,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create Rust Message Types
+### [x] Step: Create Rust Message Types
+<!-- chat-id: 8d669907-9d37-4f25-be23-c3526cd4900c -->
 
 Create message.rs with Message types.
 
