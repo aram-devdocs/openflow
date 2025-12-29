@@ -175,14 +175,30 @@ function formatToolResponse(result: ToolResult): ToolResponse {
 /**
  * Start the application.
  */
-export async function startApp(_options: {
+export async function startApp(options: {
   waitForReady?: boolean;
   timeout?: number;
 }): Promise<ToolResult> {
-  // TODO: Implement in Phase 1 - Implement App Manager Service step
+  const manager = getAppManager();
+  const result = await manager.start({
+    waitForReady: options.waitForReady ?? true,
+    timeout: options.timeout,
+  });
+
+  if (result.success) {
+    return {
+      success: true,
+      data: {
+        pid: result.pid,
+        devServerUrl: result.devServerUrl,
+        message: `App started successfully with PID ${result.pid}`,
+      },
+    };
+  }
+
   return {
     success: false,
-    error: 'Not implemented - will be completed in Implement App Manager Service step',
+    error: result.error ?? 'Failed to start app',
   };
 }
 
@@ -190,10 +206,33 @@ export async function startApp(_options: {
  * Stop the application.
  */
 export async function stopApp(): Promise<ToolResult> {
-  // TODO: Implement in Phase 1 - Implement App Manager Service step
+  const manager = getAppManager();
+  const status = manager.getStatus();
+
+  // Check if already stopped
+  if (status.state === 'stopped') {
+    return {
+      success: true,
+      data: {
+        message: 'App is not running',
+      },
+    };
+  }
+
+  const result = await manager.stop();
+
+  if (result.success) {
+    return {
+      success: true,
+      data: {
+        message: 'App stopped successfully',
+      },
+    };
+  }
+
   return {
     success: false,
-    error: 'Not implemented - will be completed in Implement App Manager Service step',
+    error: result.error ?? 'Failed to stop app',
   };
 }
 
