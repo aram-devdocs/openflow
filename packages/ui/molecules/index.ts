@@ -16,8 +16,10 @@ export type {
   CardFooterProps,
 } from './Card';
 
+export { Dropdown } from './Dropdown';
+export type { DropdownProps, DropdownOption } from './Dropdown';
+
 // Components will be exported here as they are created
-// export { Dropdown } from './Dropdown';
 // export { Dialog } from './Dialog';
 // export { Tabs } from './Tabs';
 // export { Tooltip } from './Tooltip';
