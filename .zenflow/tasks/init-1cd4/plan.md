@@ -1732,7 +1732,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create Initial Database Migration
+### [x] Step: Create Initial Database Migration
+<!-- chat-id: 650ee0ed-93ba-41b9-b24d-193f379d7887 -->
 
 Create SQL migration with all tables from spec section 4.1.
 
