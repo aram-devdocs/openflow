@@ -3353,7 +3353,8 @@ cat src/routes/__root.tsx | grep "createRootRoute"
 
 ---
 
-### [ ] Step: Create Index Route (Dashboard)
+### [x] Step: Create Index Route (Dashboard)
+<!-- chat-id: 691dade0-7016-4b1a-b508-8003b1c62f10 -->
 
 Create home page route.
 
