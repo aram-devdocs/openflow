@@ -1128,7 +1128,8 @@ cat packages/hooks/useMessages.ts | grep "messageKeys"
 
 ---
 
-### [ ] Step: Create packages/hooks - Processes, Executor, Settings
+### [x] Step: Create packages/hooks - Processes, Executor, Settings
+<!-- chat-id: 106d0100-fd73-4297-a934-fa6def0a5ec9 -->
 
 Add remaining hook modules.
 
