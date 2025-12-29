@@ -23,6 +23,8 @@ export type { BadgeProps, BadgeVariant, BadgeSize } from './Badge';
 export { Icon } from './Icon';
 export type { IconProps, IconSize } from './Icon';
 
-// Components will be exported here as they are created
-// export { Label } from './Label';
-// export { Checkbox } from './Checkbox';
+export { Label } from './Label';
+export type { LabelProps } from './Label';
+
+export { Checkbox } from './Checkbox';
+export type { CheckboxProps } from './Checkbox';

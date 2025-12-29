@@ -2570,7 +2570,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Label and Checkbox Components
+### [x] Step: Create Label and Checkbox Components
+<!-- chat-id: 94848543-877b-4f25-946e-cb6cd4031e5e -->
 
 Create form-related atom components.
 
