@@ -126,6 +126,99 @@ cd src-tauri && cargo clippy -- -D warnings
 - Pre-push runs full verification suite
 - Never skip hooks unless explicitly needed
 
+## MCP Server for AI Agents
+
+OpenFlow includes a Model Context Protocol (MCP) server that enables AI agents to start, stop, and interact with the application. This creates a feedback loop for AI-assisted development.
+
+### MCP Server Configuration
+
+Configure Claude Code or other MCP clients to use the OpenFlow MCP server:
+
+```json
+{
+  "mcpServers": {
+    "openflow": {
+      "command": "npx",
+      "args": ["tsx", "packages/mcp-server/index.ts"],
+      "cwd": "/path/to/openflow"
+    }
+  }
+}
+```
+
+### Available MCP Tools
+
+**Lifecycle Tools:**
+- `openflow_start` - Start the Tauri dev server (includes MCP GUI plugin)
+- `openflow_stop` - Stop the running application
+- `openflow_status` - Get current app state (running, stopped, uptime, etc.)
+- `openflow_restart` - Restart the application
+- `openflow_logs` - Get recent dev server output
+- `openflow_wait_ready` - Wait for dev server to be ready
+
+**Development Tools:**
+- `openflow_lint` - Run Biome linting (with optional fix mode)
+- `openflow_typecheck` - Run TypeScript type checking
+- `openflow_test` - Run Vitest tests (with optional filter)
+- `openflow_build` - Build the application
+- `openflow_generate_types` - Regenerate TypeScript types from Rust
+- `openflow_rust_check` - Run cargo check on the Rust backend
+
+**UI Tools (require visible window):**
+- `openflow_screenshot` - Take a screenshot of the app window
+- `openflow_inspect` - Get DOM/HTML content
+- `openflow_click` - Click an element or coordinates
+- `openflow_type` - Type text into an element
+- `openflow_key` - Send keyboard shortcuts
+- `openflow_evaluate` - Execute JavaScript in the webview
+- `openflow_console` - Get browser console messages
+- `openflow_wait_for_element` - Wait for a DOM element to appear
+
+### AI Agent Workflow
+
+Typical development cycle using MCP tools:
+
+1. Make code changes
+2. Run `openflow_typecheck` to verify types
+3. Run `openflow_lint` to check code style
+4. Run `openflow_start` to launch the app
+5. Use `openflow_screenshot` / `openflow_inspect` to verify UI
+6. Run `openflow_test` to ensure tests pass
+7. Run `openflow_stop` when done
+
+### Process Cleanup
+
+If orphaned processes are left running after a session:
+
+```bash
+# Run the cleanup script
+pnpm mcp:cleanup
+
+# Manual cleanup if needed
+pkill -f "pnpm.*dev.*openflow"
+pkill -f "vite.*openflow"
+pkill -f "tauri.*openflow"
+rm -f /tmp/openflow-mcp.sock
+```
+
+The MCP server automatically cleans up on graceful shutdown (SIGINT/SIGTERM). Always use `openflow_stop` before ending a session to ensure proper cleanup.
+
+### Troubleshooting
+
+**App won't start:**
+- Check if another instance is already running: `pnpm mcp:cleanup`
+- Check port conflicts: `lsof -i :5173` or `lsof -i :1420`
+
+**UI tools not working:**
+- UI tools require the app window to be visible on the desktop
+- The tauri-plugin-mcp-gui socket must be active (`/tmp/openflow-mcp.sock`)
+- If window is minimized/hidden, use Playwright MCP as fallback
+
+**Socket connection failures:**
+- Ensure the app was started with `openflow_start` (not `pnpm dev`)
+- Check socket exists: `ls -la /tmp/openflow-mcp.sock`
+- Run cleanup and restart: `pnpm mcp:cleanup && openflow_start`
+
 ## Implementation Notes
 
 When implementing new features:

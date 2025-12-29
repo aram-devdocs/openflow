@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
+    "dev:mcp": "tauri dev --features mcp-gui",
     "dev:frontend": "vite",
     "build": "tauri build",
     "build:frontend": "vite build",
@@ -17,6 +18,9 @@
     "build-storybook": "storybook build",
     "generate:types": "bash scripts/generate-types.sh",
     "validate:arch": "tsx scripts/validate-architecture.ts",
+    "mcp:start": "tsx packages/mcp-server/index.ts",
+    "mcp:dev": "tsx watch packages/mcp-server/index.ts",
+    "mcp:cleanup": "tsx packages/mcp-server/cleanup.ts",
     "prepare": "husky"
   },
   "dependencies": {

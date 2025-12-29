@@ -21,10 +21,20 @@ use db::init_db;
 /// - Database initialization in setup hook
 /// - AppState management with database pool
 /// - All IPC command registration
+/// - MCP GUI plugin (when mcp-gui feature is enabled)
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_shell::init())
+    let builder = tauri::Builder::default().plugin(tauri_plugin_shell::init());
+
+    // Add MCP GUI plugin when feature is enabled (for AI agent interaction)
+    #[cfg(feature = "mcp-gui")]
+    let builder = builder.plugin(tauri_plugin_mcp_gui::init_with_config(
+        tauri_plugin_mcp_gui::PluginConfig::new("openflow".to_string())
+            .socket_path("/tmp/openflow-mcp.sock".into())
+            .start_socket_server(true),
+    ));
+
+    builder
         .setup(|app| {
             // Get the app data directory for database storage
             let app_data_dir = app
