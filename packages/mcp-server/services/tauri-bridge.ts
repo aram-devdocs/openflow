@@ -186,6 +186,10 @@ export class TauriBridge extends EventEmitter {
   constructor(socketPath: string = DEFAULT_SOCKET_PATH) {
     super();
     this.socketPath = socketPath;
+    // Prevent unhandled 'error' event crashes - we handle errors in connect()
+    this.on('error', () => {
+      // Error is already handled in the connect method and stored in this.error
+    });
   }
 
   // --------------------------------------------------------------------------
@@ -417,7 +421,7 @@ export class TauriBridge extends EventEmitter {
    * Ping the Tauri plugin to check connectivity.
    */
   async ping(): Promise<string> {
-    const result = await this.sendCommand<{ value?: string }>('PING', {});
+    const result = await this.sendCommand<{ value?: string }>('ping', {});
     return result?.value || 'pong';
   }
 
@@ -425,57 +429,60 @@ export class TauriBridge extends EventEmitter {
    * Take a screenshot of the application window.
    * Returns base64-encoded image data.
    */
-  async screenshot(params: ScreenshotParams = {}): Promise<ScreenshotResult> {
-    return this.sendCommand<ScreenshotResult>('TAKE_SCREENSHOT', { ...params });
+  async screenshot(params: ScreenshotParams = {}, windowLabel = 'main'): Promise<ScreenshotResult> {
+    return this.sendCommand<ScreenshotResult>('take_screenshot', {
+      window_label: windowLabel,
+      ...params,
+    });
   }
 
   /**
    * Get the DOM/HTML content of the webview.
    */
   async getDom(windowLabel = 'main'): Promise<DomResult> {
-    return this.sendCommand<DomResult>('GET_DOM', { window_label: windowLabel });
+    return this.sendCommand<DomResult>('get_dom', { window_label: windowLabel });
   }
 
   /**
    * Execute JavaScript code in the webview.
    */
   async executeJs(params: ExecuteJsParams): Promise<ExecuteJsResult> {
-    return this.sendCommand<ExecuteJsResult>('EXECUTE_JS', { ...params });
+    return this.sendCommand<ExecuteJsResult>('execute_js', { ...params });
   }
 
   /**
    * Simulate mouse movement and optionally click.
    */
   async mouseMove(params: MouseParams): Promise<MouseResult> {
-    return this.sendCommand<MouseResult>('SIMULATE_MOUSE_MOVEMENT', { ...params });
+    return this.sendCommand<MouseResult>('simulate_mouse_movement', { ...params });
   }
 
   /**
    * Simulate text input (keyboard typing).
    */
   async typeText(params: TextInputParams): Promise<TextInputResult> {
-    return this.sendCommand<TextInputResult>('SIMULATE_TEXT_INPUT', { ...params });
+    return this.sendCommand<TextInputResult>('simulate_text_input', { ...params });
   }
 
   /**
    * Get the position of a DOM element.
    */
   async getElementPosition(params: GetElementPositionParams): Promise<ElementPositionResult> {
-    return this.sendCommand<ElementPositionResult>('GET_ELEMENT_POSITION', { ...params });
+    return this.sendCommand<ElementPositionResult>('get_element_position', { ...params });
   }
 
   /**
    * Send text to a specific DOM element.
    */
   async sendTextToElement(params: SendTextToElementParams): Promise<void> {
-    await this.sendCommand<void>('SEND_TEXT_TO_ELEMENT', { ...params });
+    await this.sendCommand<void>('send_text_to_element', { ...params });
   }
 
   /**
    * Manage localStorage in the webview.
    */
   async localStorage(params: LocalStorageParams): Promise<LocalStorageResult> {
-    return this.sendCommand<LocalStorageResult>('MANAGE_LOCAL_STORAGE', { ...params });
+    return this.sendCommand<LocalStorageResult>('manage_local_storage', { ...params });
   }
 
   /**
@@ -485,7 +492,7 @@ export class TauriBridge extends EventEmitter {
     operation: string,
     params: Record<string, unknown> = {}
   ): Promise<{ success: boolean; message?: string }> {
-    return this.sendCommand<{ success: boolean; message?: string }>('MANAGE_WINDOW', {
+    return this.sendCommand<{ success: boolean; message?: string }>('manage_window', {
       operation,
       ...params,
     });
