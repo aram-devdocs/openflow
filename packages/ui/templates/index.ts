@@ -6,10 +6,6 @@
  * Examples: AppLayout, TaskLayout, SettingsLayout
  */
 
-// Components will be exported here as they are created
-// export { AppLayout } from './AppLayout';
+export { AppLayout, type AppLayoutProps } from './AppLayout';
 // export { TaskLayout } from './TaskLayout';
 // export { SettingsLayout } from './SettingsLayout';
-
-// Placeholder export to make this a valid module
-export {};

@@ -3214,7 +3214,8 @@ pnpm typecheck
 
 **Goal:** Create page layout templates.
 
-### [ ] Step: Create AppLayout Template
+### [x] Step: Create AppLayout Template
+<!-- chat-id: 814e6f9d-783d-4fe3-964d-32a6a9e2fc5f -->
 
 Create main application layout template.
 
