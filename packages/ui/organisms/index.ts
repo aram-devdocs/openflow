@@ -18,3 +18,6 @@
 // export { CommandPalette } from './CommandPalette';
 // export { Sidebar } from './Sidebar';
 // export { Header } from './Header';
+
+// Placeholder export to make this a valid module
+export {};

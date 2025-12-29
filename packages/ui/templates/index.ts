@@ -10,3 +10,6 @@
 // export { AppLayout } from './AppLayout';
 // export { TaskLayout } from './TaskLayout';
 // export { SettingsLayout } from './SettingsLayout';
+
+// Placeholder export to make this a valid module
+export {};
