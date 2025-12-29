@@ -841,7 +841,8 @@ cat packages/queries/projects.ts | grep "invoke"
 
 ---
 
-### [ ] Step: Create packages/queries - Tasks
+### [x] Step: Create packages/queries - Tasks
+<!-- chat-id: b9172609-4cea-40f8-ab74-fe948fda3719 -->
 
 Add task queries module.
 
