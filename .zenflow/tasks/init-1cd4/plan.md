@@ -2476,7 +2476,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Textarea Component
+### [x] Step: Create Textarea Component
+<!-- chat-id: fccc8f9f-50e9-41bc-8b17-5bfd8f41147f -->
 
 Create Textarea atom.
 
