@@ -1,5 +1,7 @@
 use tauri::Manager;
 
+pub mod types;
+
 /// Initialize and run the Tauri application.
 ///
 /// This function sets up the Tauri builder with:
