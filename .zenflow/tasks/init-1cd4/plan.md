@@ -470,6 +470,7 @@ cat src-tauri/Cargo.toml | grep "tauri"
 ---
 
 ### [ ] Step: Create tauri.conf.json
+<!-- chat-id: e2701678-3df0-4c94-ae34-fe032ba4e443 -->
 
 Create Tauri application configuration.
 
@@ -4022,6 +4023,12 @@ cat .github/workflows/ci.yml | grep "runs-on"
 
 ---
 
+
+### [ ] Step: test pre commit and pre push
+
+### [ ] Step: remove .zenflow/tasks/* from git as shown in git ignore
+
+### [ ] Step: create pull request template, and pull request using gh cli
 ## Verification Checklist
 
 After completing all phases, verify:
