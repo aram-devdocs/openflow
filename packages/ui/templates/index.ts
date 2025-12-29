@@ -8,4 +8,4 @@
 
 export { AppLayout, type AppLayoutProps } from './AppLayout';
 export { TaskLayout, type TaskLayoutProps } from './TaskLayout';
-// export { SettingsLayout } from './SettingsLayout';
+export { SettingsLayout, type SettingsLayoutProps, type SettingsNavItem } from './SettingsLayout';
