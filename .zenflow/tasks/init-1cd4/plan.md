@@ -2269,7 +2269,9 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create Executor Commands
+### [x] Step: Create Executor Commands
+<!-- chat-id: executor-commands-impl -->
+<!-- chat-id: 7b5bfa4a-1dfc-4d06-ae02-1636614e71bb -->
 
 Create Tauri commands for executor profiles.
 
