@@ -190,7 +190,8 @@ cat package.json | grep '"type"'  # Should show "module"
 
 ---
 
-### [ ] Step: Create pnpm-workspace.yaml
+### [x] Step: Create pnpm-workspace.yaml
+<!-- chat-id: 9951285a-3f63-46dc-b880-c82766b34811 -->
 
 Create pnpm workspace configuration. USE CLI TOOLS TO DO EVERYTHING, pnpm init, pnpm add, etc. 
 
