@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use typeshare::typeshare;
 
 /// Project represents a local git repository that OpenFlow manages.
 /// It contains configuration for scripts, rules, and workflows.
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     pub id: String,
