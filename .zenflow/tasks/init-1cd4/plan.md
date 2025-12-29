@@ -2096,7 +2096,8 @@ cd src-tauri && cargo test search
 
 **Goal:** Create IPC command handlers that call services.
 
-### [ ] Step: Create Commands Module Structure
+### [x] Step: Create Commands Module Structure
+<!-- chat-id: bf9bb7d4-0af0-462d-806a-1abe64ba9274 -->
 
 Create commands module with AppState.
 
