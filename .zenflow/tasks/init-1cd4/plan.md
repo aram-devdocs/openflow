@@ -2033,7 +2033,8 @@ cd src-tauri && cargo test settings
 
 ---
 
-### [ ] Step: Create WorkflowService
+### [x] Step: Create WorkflowService
+<!-- chat-id: 0e36e656-de16-47f7-b4d6-1230f3076323 -->
 
 Create workflow parsing and management service.
 
