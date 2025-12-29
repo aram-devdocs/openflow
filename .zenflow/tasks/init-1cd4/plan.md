@@ -3461,7 +3461,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Settings Routes
+### [x] Step: Create Settings Routes
+<!-- chat-id: 7c2f0375-c8a0-41ce-963d-f3d8b6d660f3 -->
 
 Create settings-related routes.
 
