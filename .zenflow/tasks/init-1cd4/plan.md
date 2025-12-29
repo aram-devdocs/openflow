@@ -4121,7 +4121,8 @@ pnpm lint 2>&1 | grep -c "useProcessOutput"  # Should be 0
 
 ---
 
-### [ ] Step: Fix useWorkflows Hook Lint Errors
+### [x] Step: Fix useWorkflows Hook Lint Errors
+<!-- chat-id: 18d1a0f0-e41f-44ea-9806-c76217db6485 -->
 
 Fix lint errors in useWorkflows hook.
 

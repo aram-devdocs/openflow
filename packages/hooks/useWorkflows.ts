@@ -201,26 +201,15 @@ export function useSubstituteVariables(
     if (!context) return content;
 
     // Convert WorkflowContext to a Record<string, string> for substitution
-    const variables: Record<string, string> = {};
-
-    if (context.artifactsPath) {
-      variables['artifacts_path'] = context.artifactsPath;
-    }
-    if (context.projectRoot) {
-      variables['project_root'] = context.projectRoot;
-    }
-    if (context.worktreePath) {
-      variables['worktree_path'] = context.worktreePath;
-    }
-    if (context.taskId) {
-      variables['task_id'] = context.taskId;
-    }
-    if (context.taskTitle) {
-      variables['task_title'] = context.taskTitle;
-    }
-    if (context.projectName) {
-      variables['project_name'] = context.projectName;
-    }
+    // Using object literal with computed keys for variable naming convention
+    const variables: Record<string, string> = {
+      ...(context.artifactsPath && { artifacts_path: context.artifactsPath }),
+      ...(context.projectRoot && { project_root: context.projectRoot }),
+      ...(context.worktreePath && { worktree_path: context.worktreePath }),
+      ...(context.taskId && { task_id: context.taskId }),
+      ...(context.taskTitle && { task_title: context.taskTitle }),
+      ...(context.projectName && { project_name: context.projectName }),
+    };
 
     return substituteVariables(content, variables);
   }, [content, context]);
