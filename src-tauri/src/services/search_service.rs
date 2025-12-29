@@ -168,7 +168,7 @@ impl SearchService {
         // Convert raw results to SearchResult
         let results = raw_results
             .into_iter()
-            .map(|raw| Self::raw_to_search_result(raw))
+            .map(Self::raw_to_search_result)
             .collect();
 
         Ok(results)

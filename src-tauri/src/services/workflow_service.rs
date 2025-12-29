@@ -86,12 +86,14 @@ impl WorkflowService {
         let after_hashes = trimmed[4..].trim();
 
         // Parse the status from brackets
-        let (status, rest) = if after_hashes.starts_with("[ ]") {
-            (WorkflowStepStatus::Pending, &after_hashes[3..])
-        } else if after_hashes.starts_with("[-]") {
-            (WorkflowStepStatus::InProgress, &after_hashes[3..])
-        } else if after_hashes.starts_with("[x]") || after_hashes.starts_with("[X]") {
-            (WorkflowStepStatus::Completed, &after_hashes[3..])
+        let (status, rest) = if let Some(rest) = after_hashes.strip_prefix("[ ]") {
+            (WorkflowStepStatus::Pending, rest)
+        } else if let Some(rest) = after_hashes.strip_prefix("[-]") {
+            (WorkflowStepStatus::InProgress, rest)
+        } else if let Some(rest) = after_hashes.strip_prefix("[x]") {
+            (WorkflowStepStatus::Completed, rest)
+        } else if let Some(rest) = after_hashes.strip_prefix("[X]") {
+            (WorkflowStepStatus::Completed, rest)
         } else {
             return None;
         };
@@ -130,7 +132,7 @@ impl WorkflowService {
                     let name = Self::extract_title(&content).unwrap_or_else(|| {
                         // Convert filename to title case
                         file_name
-                            .split(|c: char| c == '_' || c == '-')
+                            .split(['_', '-'])
                             .map(|word| {
                                 let mut chars = word.chars();
                                 match chars.next() {

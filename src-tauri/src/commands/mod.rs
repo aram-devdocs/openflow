@@ -58,6 +58,6 @@ pub use chats::*;
 pub use messages::*;
 pub use executor::*;
 pub use settings::*;
-pub use processes::*;
-pub use git::*;
 pub use search::*;
+// Note: processes and git modules have placeholder implementations
+// and will be exported once commands are added

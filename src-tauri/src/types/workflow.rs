@@ -3,19 +3,14 @@ use typeshare::typeshare;
 
 /// Status of a workflow step.
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum WorkflowStepStatus {
+    #[default]
     Pending,
     InProgress,
     Completed,
     Skipped,
-}
-
-impl Default for WorkflowStepStatus {
-    fn default() -> Self {
-        WorkflowStepStatus::Pending
-    }
 }
 
 impl std::fmt::Display for WorkflowStepStatus {
