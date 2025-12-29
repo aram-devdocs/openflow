@@ -563,7 +563,8 @@ cat src-tauri/src/lib.rs | grep "tauri::Builder"
 
 ---
 
-### [ ] Step: Install Dependencies and Verify Build
+### [x] Step: Install Dependencies and Verify Build
+<!-- chat-id: 1d5dc7db-74de-41ec-95e3-8297c3cc1036 -->
 
 Install all dependencies and verify the project builds.
 
