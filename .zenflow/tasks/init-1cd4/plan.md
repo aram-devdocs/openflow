@@ -596,7 +596,8 @@ cd src-tauri && cargo check
 
 **Goal:** Create pnpm workspace packages following dependency hierarchy.
 
-### [ ] Step: Create packages/utils
+### [x] Step: Create packages/utils
+<!-- chat-id: a1722245-827d-4ef2-8677-5fabb5285b13 -->
 
 Create utilities package (Level 0 - no internal imports).
 
