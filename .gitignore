@@ -90,3 +90,6 @@ temp/
 
 # Optional: local development overrides
 *.local
+
+# Zenflow task artifacts (local workspace data)
+.zenflow/tasks/
