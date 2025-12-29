@@ -19,8 +19,15 @@ export type {
 export { Dropdown } from './Dropdown';
 export type { DropdownProps, DropdownOption } from './Dropdown';
 
+export { Dialog, DialogHeader, DialogContent, DialogFooter } from './Dialog';
+export type {
+  DialogProps,
+  DialogHeaderProps,
+  DialogContentProps,
+  DialogFooterProps,
+} from './Dialog';
+
 // Components will be exported here as they are created
-// export { Dialog } from './Dialog';
 // export { Tabs } from './Tabs';
 // export { Tooltip } from './Tooltip';
 // export { Menu } from './Menu';
