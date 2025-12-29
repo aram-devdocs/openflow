@@ -72,6 +72,7 @@ lerna-debug.log*
 # Tauri
 src-tauri/WixTools/
 src-tauri/bundle/
+src-tauri/gen/schemas/
 
 # TypeScript
 *.tsbuildinfo

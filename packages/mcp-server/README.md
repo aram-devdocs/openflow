@@ -95,26 +95,6 @@ Add the following to your Claude Code MCP settings (typically in `~/.claude/sett
 
 Or copy from the provided `mcp-server.json` in the project root.
 
-### Playwright MCP Integration
-
-For full UI testing capabilities, also configure the Playwright MCP server:
-
-```json
-{
-  "mcpServers": {
-    "openflow": {
-      "command": "npx",
-      "args": ["tsx", "packages/mcp-server/index.ts"],
-      "cwd": "/path/to/openflow"
-    },
-    "playwright": {
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    }
-  }
-}
-```
-
 ## Available Tools
 
 ### Lifecycle Tools

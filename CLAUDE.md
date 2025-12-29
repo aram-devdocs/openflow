@@ -212,7 +212,8 @@ The MCP server automatically cleans up on graceful shutdown (SIGINT/SIGTERM). Al
 **UI tools not working:**
 - UI tools require the app window to be visible on the desktop
 - The tauri-plugin-mcp-gui socket must be active (`/tmp/openflow-mcp.sock`)
-- If window is minimized/hidden, use Playwright MCP as fallback
+- If window is minimized/hidden, stop and guide the user to start the app and bring it to focus, then retry the UI tool.
+
 
 **Socket connection failures:**
 - Ensure the app was started with `openflow_start` (not `pnpm dev`)
