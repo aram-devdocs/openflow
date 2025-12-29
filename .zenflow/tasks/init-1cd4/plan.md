@@ -34,7 +34,7 @@ PRD completed in `requirements.md`.
 <!-- chat-id: 6bc34eb7-80d8-4863-9cd1-a220ea507d4e -->
 Technical spec completed in `spec.md`.
 
-### [ ] Step: Planning
+### [x] Step: Planning
 <!-- chat-id: 7fcee9e2-087b-4816-91ba-a48b764b4772 -->
 Implementation plan created with micro-steps for AI agent execution.
 
@@ -128,7 +128,8 @@ grep "target" .gitignore  # Must exist
 
 ---
 
-### [ ] Step: Create package.json
+### [x] Step: Create package.json
+<!-- chat-id: de340f6c-e500-4ad5-be9a-f5362a4d3360 -->
 
 Create root package.json with workspace configuration.
 
@@ -191,7 +192,7 @@ cat package.json | grep '"type"'  # Should show "module"
 
 ### [ ] Step: Create pnpm-workspace.yaml
 
-Create pnpm workspace configuration.
+Create pnpm workspace configuration. USE CLI TOOLS TO DO EVERYTHING, pnpm init, pnpm add, etc. 
 
 **Tasks:**
 1. Create `pnpm-workspace.yaml` with packages glob
