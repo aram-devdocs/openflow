@@ -8,7 +8,7 @@
 
 ---
 
-## Workflow Progress
+## Workflow Steps
 
 ### [x] Step: Requirements
 <!-- chat-id: 02b58aa2-9d97-4608-8118-5da0ea097de3 -->
@@ -20,7 +20,7 @@ Technical spec completed in `spec.md`.
 
 ### [x] Step: Planning
 <!-- chat-id: 7fcee9e2-087b-4816-91ba-a48b764b4772 -->
-Implementation plan created below.
+Implementation plan created with 39 steps across 7 phases.
 
 ---
 
@@ -28,8 +28,7 @@ Implementation plan created below.
 
 **Goal:** Working Tauri app with type-safe IPC and database.
 
-### [ ] Step 1.1: Project Initialization
-<!-- chat-id: impl-1-1 -->
+### [ ] Step: Project Initialization
 
 Initialize the Tauri project with React frontend and pnpm workspace.
 
@@ -37,14 +36,18 @@ Initialize the Tauri project with React frontend and pnpm workspace.
 1. Create `.gitignore` with standard exclusions (node_modules, dist, target, etc.)
 2. Initialize pnpm workspace with `pnpm-workspace.yaml`
 3. Create root `package.json` with workspace scripts
-4. Run `pnpm create tauri-app` or manually scaffold Tauri 2.x structure
+4. Scaffold Tauri 2.x structure manually
 5. Configure Vite with React + TypeScript
+6. Create `index.html` and `src/main.tsx` entry points
 
 **Files to create:**
 - `.gitignore`
 - `pnpm-workspace.yaml`
 - `package.json`
 - `vite.config.ts`
+- `index.html`
+- `src/main.tsx`
+- `src/vite-env.d.ts`
 - `src-tauri/Cargo.toml`
 - `src-tauri/tauri.conf.json`
 - `src-tauri/build.rs`
@@ -55,8 +58,7 @@ Initialize the Tauri project with React frontend and pnpm workspace.
 - `pnpm install` completes successfully
 - `pnpm tauri dev` launches empty app window
 
-### [ ] Step 1.2: TypeScript & Biome Configuration
-<!-- chat-id: impl-1-2 -->
+### [ ] Step: TypeScript & Biome Configuration
 
 Set up strict TypeScript and Biome for linting/formatting.
 
@@ -73,8 +75,7 @@ Set up strict TypeScript and Biome for linting/formatting.
 - `pnpm lint` runs without errors
 - `pnpm typecheck` passes
 
-### [ ] Step 1.3: Package Structure Setup
-<!-- chat-id: impl-1-3 -->
+### [ ] Step: Package Structure Setup
 
 Create the pnpm workspace package structure for frontend code.
 
@@ -111,8 +112,7 @@ Create the pnpm workspace package structure for frontend code.
 - `pnpm install` resolves workspace packages
 - Imports between packages work correctly
 
-### [ ] Step 1.4: Rust Types with TypeShare
-<!-- chat-id: impl-1-4 -->
+### [ ] Step: Rust Types with TypeShare
 
 Define core Rust types with `#[typeshare]` and set up generation script.
 
@@ -142,8 +142,7 @@ Define core Rust types with `#[typeshare]` and set up generation script.
 - `cargo check` passes
 - `pnpm generate:types` produces valid TypeScript in `packages/generated/types.ts`
 
-### [ ] Step 1.5: SQLite Database Setup
-<!-- chat-id: impl-1-5 -->
+### [ ] Step: SQLite Database Setup
 
 Set up SQLite with SQLx and initial migrations.
 
@@ -153,20 +152,17 @@ Set up SQLite with SQLx and initial migrations.
 3. Create `src-tauri/src/db/pool.rs` with connection management
 4. Create initial migration `001_initial.sql` with all tables
 5. Configure SQLx for compile-time checking
-6. Create `.env` with DATABASE_URL for development
 
 **Files to create:**
 - `src-tauri/src/db/mod.rs`
 - `src-tauri/src/db/pool.rs`
 - `src-tauri/migrations/001_initial.sql`
-- `.env` (DATABASE_URL)
 
 **Verification:**
 - Database file creates on app start
 - Tables exist after migration
 
-### [ ] Step 1.6: Rust Services Layer
-<!-- chat-id: impl-1-6 -->
+### [ ] Step: Rust Services Layer
 
 Implement business logic services for CRUD operations.
 
@@ -188,8 +184,7 @@ Implement business logic services for CRUD operations.
 - `cargo check` passes
 - `cargo test` passes for service unit tests
 
-### [ ] Step 1.7: Tauri Commands (IPC Handlers)
-<!-- chat-id: impl-1-7 -->
+### [ ] Step: Tauri Commands
 
 Create Tauri commands for frontend-backend communication.
 
@@ -215,8 +210,7 @@ Create Tauri commands for frontend-backend communication.
 - App launches without errors
 - Commands respond to frontend invocations
 
-### [ ] Step 1.8: Git Hooks Setup
-<!-- chat-id: impl-1-8 -->
+### [ ] Step: Git Hooks Setup
 
 Configure Husky and lint-staged for pre-commit checks.
 
@@ -239,8 +233,7 @@ Configure Husky and lint-staged for pre-commit checks.
 
 **Goal:** Stateless UI component library with Storybook.
 
-### [ ] Step 2.1: Tailwind CSS Setup
-<!-- chat-id: impl-2-1 -->
+### [ ] Step: Tailwind CSS Setup
 
 Configure Tailwind CSS with dark theme support.
 
@@ -259,8 +252,7 @@ Configure Tailwind CSS with dark theme support.
 - Tailwind classes apply correctly
 - Dark mode toggle works
 
-### [ ] Step 2.2: Storybook Setup
-<!-- chat-id: impl-2-2 -->
+### [ ] Step: Storybook Setup
 
 Set up Storybook for isolated component development.
 
@@ -278,8 +270,7 @@ Set up Storybook for isolated component development.
 - `pnpm storybook` launches Storybook
 - Tailwind styles work in Storybook
 
-### [ ] Step 2.3: Atom Components
-<!-- chat-id: impl-2-3 -->
+### [ ] Step: Atom Components
 
 Create foundational atomic UI components.
 
@@ -305,8 +296,7 @@ Create foundational atomic UI components.
 - All atoms render in Storybook
 - No hooks or data fetching in atom components
 
-### [ ] Step 2.4: Molecule Components
-<!-- chat-id: impl-2-4 -->
+### [ ] Step: Molecule Components
 
 Create molecule components (combinations of atoms).
 
@@ -330,8 +320,7 @@ Create molecule components (combinations of atoms).
 - All molecules render in Storybook
 - Molecules only use atoms and primitives
 
-### [ ] Step 2.5: Organism Components
-<!-- chat-id: impl-2-5 -->
+### [ ] Step: Organism Components
 
 Create organism components for domain-specific UI.
 
@@ -353,8 +342,7 @@ Create organism components for domain-specific UI.
 - Organisms render with mock data in Storybook
 - No invoke() calls or hooks in organisms
 
-### [ ] Step 2.6: Template Components
-<!-- chat-id: impl-2-6 -->
+### [ ] Step: Template Components
 
 Create layout templates for pages.
 
@@ -371,8 +359,7 @@ Create layout templates for pages.
 - Templates render in Storybook
 - Layouts accept children as slots
 
-### [ ] Step 2.7: Architecture Validation Script
-<!-- chat-id: impl-2-7 -->
+### [ ] Step: Architecture Validation Script
 
 Create script to enforce dependency hierarchy.
 
@@ -394,8 +381,7 @@ Create script to enforce dependency hierarchy.
 
 **Goal:** Full task board with kanban and routing.
 
-### [ ] Step 3.1: Query Layer
-<!-- chat-id: impl-3-1 -->
+### [ ] Step: Query Layer
 
 Create Tauri invoke wrappers for all entities.
 
@@ -415,8 +401,7 @@ Create Tauri invoke wrappers for all entities.
 - TypeScript compiles without errors
 - Invoke calls match Tauri command signatures
 
-### [ ] Step 3.2: Hooks Layer
-<!-- chat-id: impl-3-2 -->
+### [ ] Step: Hooks Layer
 
 Create TanStack Query hooks for data fetching.
 
@@ -437,8 +422,7 @@ Create TanStack Query hooks for data fetching.
 - Hooks work with TanStack Query
 - Query invalidation works on mutations
 
-### [ ] Step 3.3: TanStack Router Setup
-<!-- chat-id: impl-3-3 -->
+### [ ] Step: TanStack Router Setup
 
 Configure file-based routing with TanStack Router.
 
@@ -458,8 +442,7 @@ Configure file-based routing with TanStack Router.
 - App renders with router
 - Navigation works
 
-### [ ] Step 3.4: Project List Page
-<!-- chat-id: impl-3-4 -->
+### [ ] Step: Project List Page
 
 Create project list and management page.
 
@@ -476,8 +459,7 @@ Create project list and management page.
 - Projects list renders
 - Can create and view projects
 
-### [ ] Step 3.5: Task Board Page
-<!-- chat-id: impl-3-5 -->
+### [ ] Step: Task Board Page
 
 Create task board with kanban columns.
 
@@ -496,8 +478,7 @@ Create task board with kanban columns.
 - Tasks display in correct columns
 - Can create new tasks
 
-### [ ] Step 3.6: Task Detail Page
-<!-- chat-id: impl-3-6 -->
+### [ ] Step: Task Detail Page
 
 Create task detail page with tabs.
 
@@ -514,8 +495,7 @@ Create task detail page with tabs.
 - Tabs switch correctly
 - Task updates persist
 
-### [ ] Step 3.7: Zod Validation Schemas
-<!-- chat-id: impl-3-7 -->
+### [ ] Step: Zod Validation Schemas
 
 Create Zod schemas for form validation.
 
@@ -537,8 +517,7 @@ Create Zod schemas for form validation.
 
 **Goal:** Workflow parsing and chat interface.
 
-### [ ] Step 4.1: Chat Services & Commands
-<!-- chat-id: impl-4-1 -->
+### [ ] Step: Chat Services & Commands
 
 Implement chat backend in Rust.
 
@@ -559,8 +538,7 @@ Implement chat backend in Rust.
 - Chat CRUD works via Tauri commands
 - Messages persist and retrieve
 
-### [ ] Step 4.2: Workflow Parser
-<!-- chat-id: impl-4-2 -->
+### [ ] Step: Workflow Parser
 
 Create markdown workflow parser.
 
@@ -578,8 +556,7 @@ Create markdown workflow parser.
 - Workflows parse correctly from markdown
 - Built-in templates load
 
-### [ ] Step 4.3: Chat Panel UI
-<!-- chat-id: impl-4-3 -->
+### [ ] Step: Chat Panel UI
 
 Create chat interface components.
 
@@ -603,8 +580,7 @@ Create chat interface components.
 - Chat panel renders messages
 - Messages scroll correctly
 
-### [ ] Step 4.4: Steps Panel UI
-<!-- chat-id: impl-4-4 -->
+### [ ] Step: Steps Panel UI
 
 Create workflow steps panel.
 
@@ -627,8 +603,7 @@ Create workflow steps panel.
 
 **Goal:** Spawn and manage CLI tool processes.
 
-### [ ] Step 5.1: Process Manager Core
-<!-- chat-id: impl-5-1 -->
+### [ ] Step: Process Manager Core
 
 Implement process spawning and management in Rust.
 
@@ -650,8 +625,7 @@ Implement process spawning and management in Rust.
 - Processes spawn correctly
 - Exit codes captured
 
-### [ ] Step 5.2: PTY Support
-<!-- chat-id: impl-5-2 -->
+### [ ] Step: PTY Support
 
 Add pseudo-terminal support for interactive processes.
 
@@ -668,8 +642,7 @@ Add pseudo-terminal support for interactive processes.
 - Interactive processes work
 - Terminal input/output streams
 
-### [ ] Step 5.3: Tauri Event Streaming
-<!-- chat-id: impl-5-3 -->
+### [ ] Step: Tauri Event Streaming
 
 Stream process output to frontend via Tauri events.
 
@@ -687,8 +660,7 @@ Stream process output to frontend via Tauri events.
 - Output streams to frontend in real-time
 - Status changes emit events
 
-### [ ] Step 5.4: Process Output Display
-<!-- chat-id: impl-5-4 -->
+### [ ] Step: Process Output Display
 
 Display process output in chat panel.
 
@@ -706,8 +678,7 @@ Display process output in chat panel.
 - Output displays in real-time
 - ANSI colors render correctly
 
-### [ ] Step 5.5: Executor Integration
-<!-- chat-id: impl-5-5 -->
+### [ ] Step: Executor Integration
 
 Connect executor profiles to process spawning.
 
@@ -731,8 +702,7 @@ Connect executor profiles to process spawning.
 
 **Goal:** Full git worktree lifecycle management.
 
-### [ ] Step 6.1: Git Service
-<!-- chat-id: impl-6-1 -->
+### [ ] Step: Git Service
 
 Implement git operations in Rust.
 
@@ -750,8 +720,7 @@ Implement git operations in Rust.
 - Git operations work via service
 - Worktrees create in correct location
 
-### [ ] Step 6.2: Git Commands
-<!-- chat-id: impl-6-2 -->
+### [ ] Step: Git Commands
 
 Create Tauri commands for git operations.
 
@@ -768,8 +737,7 @@ Create Tauri commands for git operations.
 - Commands callable from frontend
 - Worktrees create/delete correctly
 
-### [ ] Step 6.3: Diff Viewer Component
-<!-- chat-id: impl-6-3 -->
+### [ ] Step: Diff Viewer Component
 
 Create diff viewer UI.
 
@@ -786,8 +754,7 @@ Create diff viewer UI.
 - Diffs display correctly
 - Syntax highlighting works
 
-### [ ] Step 6.4: Commit List Component
-<!-- chat-id: impl-6-4 -->
+### [ ] Step: Commit List Component
 
 Create commit history UI.
 
@@ -805,8 +772,7 @@ Create commit history UI.
 - Commit list renders
 - Can view commit details
 
-### [ ] Step 6.5: Changes Tab Integration
-<!-- chat-id: impl-6-5 -->
+### [ ] Step: Changes Tab Integration
 
 Integrate git components into task detail.
 
@@ -826,8 +792,7 @@ Integrate git components into task detail.
 
 **Goal:** Complete agent orchestration and verification.
 
-### [ ] Step 7.1: Multiple Chat Roles
-<!-- chat-id: impl-7-1 -->
+### [ ] Step: Multiple Chat Roles
 
 Support multiple agents per task.
 
@@ -840,8 +805,7 @@ Support multiple agents per task.
 - Multiple chats per task work
 - Chat roles display correctly
 
-### [ ] Step 7.2: Verification Commands
-<!-- chat-id: impl-7-2 -->
+### [ ] Step: Verification Commands
 
 Run verification (test, lint) commands.
 
@@ -854,8 +818,7 @@ Run verification (test, lint) commands.
 - Verification commands run
 - Results display correctly
 
-### [ ] Step 7.3: Auto-Start Next Step
-<!-- chat-id: impl-7-3 -->
+### [ ] Step: Auto-Start Next Step
 
 Implement auto-start workflow progression.
 
@@ -868,8 +831,7 @@ Implement auto-start workflow progression.
 - Steps auto-start when enabled
 - Can disable auto-start
 
-### [ ] Step 7.4: Action Required State
-<!-- chat-id: impl-7-4 -->
+### [ ] Step: Action Required State
 
 Track and display action required count.
 
@@ -882,8 +844,7 @@ Track and display action required count.
 - Action required count updates
 - Badge displays correctly
 
-### [ ] Step 7.5: Settings Pages
-<!-- chat-id: impl-7-5 -->
+### [ ] Step: Settings Pages
 
 Create settings UI.
 
@@ -904,8 +865,7 @@ Create settings UI.
 - Can manage executor profiles
 - Can configure projects
 
-### [ ] Step 7.6: Search & Command Palette
-<!-- chat-id: impl-7-6 -->
+### [ ] Step: Search & Command Palette
 
 Implement global search and command palette.
 
@@ -926,8 +886,7 @@ Implement global search and command palette.
 - Search returns results
 - Actions execute from palette
 
-### [ ] Step 7.7: Archive Page
-<!-- chat-id: impl-7-7 -->
+### [ ] Step: Archive Page
 
 Create archive view for completed tasks.
 
@@ -943,8 +902,7 @@ Create archive view for completed tasks.
 - Archived tasks display
 - Can restore tasks
 
-### [ ] Step 7.8: CI Pipeline
-<!-- chat-id: impl-7-8 -->
+### [ ] Step: CI Pipeline
 
 Set up GitHub Actions CI.
 
