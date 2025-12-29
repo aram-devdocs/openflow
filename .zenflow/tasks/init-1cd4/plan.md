@@ -1176,7 +1176,8 @@ cat packages/hooks/useSettings.ts | grep "settingsKeys"
 
 ---
 
-### [ ] Step: Create packages/hooks - Process Output (Event Subscription)
+### [x] Step: Create packages/hooks - Process Output (Event Subscription)
+<!-- chat-id: 1c5b37a4-5e66-47c6-a4ef-ef1af4002e14 -->
 
 Add real-time process output subscription hook.
 
