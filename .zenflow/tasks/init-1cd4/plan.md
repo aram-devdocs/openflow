@@ -2909,7 +2909,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create ProjectSelector Component
+### [x] Step: Create ProjectSelector Component
+<!-- chat-id: 5043a03a-0b18-4258-b5e6-429ac89147fc -->
 
 Create ProjectSelector organism for project switching.
 
