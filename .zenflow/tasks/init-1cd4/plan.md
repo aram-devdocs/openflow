@@ -34,7 +34,7 @@ PRD completed in `requirements.md`.
 <!-- chat-id: 6bc34eb7-80d8-4863-9cd1-a220ea507d4e -->
 Technical spec completed in `spec.md`.
 
-### [x] Step: Planning
+### [ ] Step: Planning
 <!-- chat-id: 7fcee9e2-087b-4816-91ba-a48b764b4772 -->
 Implementation plan created with micro-steps for AI agent execution.
 
@@ -62,6 +62,8 @@ This is the FIRST file created. It defines all conventions, patterns, and rules 
    - Commit message format
    - Error handling patterns
    - Common commands reference
+
+   IMPORTANT - HIGH LEVEL ONLY. No magic strings, no magic constants. Talk about high level system architecture, rather than code snippets or directories that may change. Codebases are fluid, patterns and design are solid, and CLAUDE.md should stand the tests of time.
 
 **File to create:**
 ```
@@ -633,6 +635,40 @@ cat packages/utils/index.ts | grep "export"
 
 ---
 
+### [ ] Step: Create packages/utils - Date and Markdown
+
+Add date formatting and markdown parsing utilities.
+
+**Tasks:**
+1. Create `packages/utils/date.ts`:
+   - formatDate() function
+   - formatRelativeTime() function
+   - parseDate() function
+
+2. Create `packages/utils/markdown.ts`:
+   - parseWorkflowSteps() function for workflow markdown parsing
+   - extractStepStatus() function
+
+3. Update `packages/utils/index.ts` to re-export all
+
+**Files to create:**
+```
+packages/utils/date.ts
+packages/utils/markdown.ts
+```
+
+**Verification:**
+```bash
+cat packages/utils/date.ts | grep "formatDate"
+cat packages/utils/markdown.ts | grep "parseWorkflowSteps"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/utils/ && git commit -m "feat: add date and markdown utilities"`
+
+---
+
 ### [ ] Step: Create packages/generated (Placeholder)
 
 Create generated types package (Level 0 - auto-generated, no imports).
@@ -658,6 +694,8 @@ This package will contain TypeScript types generated from Rust via typeshare. Fo
      - Chat interface
      - ProcessStatus enum
      - ExecutionProcess interface
+     - Message interface
+     - ExecutorProfile interface
 
 **Files to create:**
 ```
@@ -703,6 +741,9 @@ Zod schemas derived from generated types. Used for form validation.
      - createProjectSchema
      - createTaskSchema
      - updateTaskSchema
+     - createChatSchema
+     - createMessageSchema
+     - createExecutorProfileSchema
    - Export inferred types from schemas
 
 **Files to create:**
@@ -724,7 +765,7 @@ cat packages/validation/package.json | grep "@openflow/generated"
 
 ---
 
-### [ ] Step: Create packages/queries
+### [ ] Step: Create packages/queries - Projects
 
 Create queries package with Tauri invoke wrappers (Level 2 - imports generated, utils).
 
@@ -780,36 +821,153 @@ cat packages/queries/projects.ts | grep "invoke"
 
 ---
 
-### [ ] Step: Create packages/queries - Tasks, Settings
+### [ ] Step: Create packages/queries - Tasks
 
-Add remaining query modules.
+Add task queries module.
 
 **Tasks:**
-1. Create `packages/queries/tasks.ts` with taskQueries object
-2. Create `packages/queries/executor-profiles.ts` with executorProfileQueries object
-3. Create `packages/queries/settings.ts` with settingsQueries object
-4. Update `packages/queries/index.ts` to re-export all
+1. Create `packages/queries/tasks.ts` with taskQueries object:
+   - list(projectId, status?, includeArchived?): Promise<Task[]>
+   - get(id): Promise<TaskWithChats>
+   - create(request): Promise<Task>
+   - update(id, request): Promise<Task>
+   - archive(id): Promise<Task>
+   - delete(id): Promise<void>
+
+2. Update `packages/queries/index.ts` to re-export
 
 **Files to create:**
 ```
 packages/queries/tasks.ts
+```
+
+**Verification:**
+```bash
+cat packages/queries/tasks.ts | grep "taskQueries"
+cat packages/queries/index.ts | grep "tasks"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/queries/ && git commit -m "feat: add task queries"`
+
+---
+
+### [ ] Step: Create packages/queries - Chats, Messages
+
+Add chat and message queries modules.
+
+**Tasks:**
+1. Create `packages/queries/chats.ts` with chatQueries object:
+   - list(taskId): Promise<Chat[]>
+   - get(id): Promise<ChatWithMessages>
+   - create(request): Promise<Chat>
+   - startWorkflowStep(chatId): Promise<ExecutionProcess>
+
+2. Create `packages/queries/messages.ts` with messageQueries object:
+   - list(chatId): Promise<Message[]>
+   - create(request): Promise<Message>
+
+3. Update `packages/queries/index.ts` to re-export all
+
+**Files to create:**
+```
+packages/queries/chats.ts
+packages/queries/messages.ts
+```
+
+**Verification:**
+```bash
+cat packages/queries/chats.ts | grep "chatQueries"
+cat packages/queries/messages.ts | grep "messageQueries"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/queries/ && git commit -m "feat: add chat and message queries"`
+
+---
+
+### [ ] Step: Create packages/queries - Processes, Executor, Settings
+
+Add remaining query modules.
+
+**Tasks:**
+1. Create `packages/queries/processes.ts` with processQueries object:
+   - get(id): Promise<ExecutionProcess>
+   - kill(id): Promise<ExecutionProcess>
+   - sendInput(processId, input): Promise<void>
+
+2. Create `packages/queries/executor-profiles.ts` with executorProfileQueries object:
+   - list(): Promise<ExecutorProfile[]>
+   - create(request): Promise<ExecutorProfile>
+   - update(id, request): Promise<ExecutorProfile>
+   - delete(id): Promise<void>
+   - runExecutor(chatId, prompt): Promise<ExecutionProcess>
+
+3. Create `packages/queries/settings.ts` with settingsQueries object:
+   - get(key): Promise<string | null>
+   - set(key, value): Promise<void>
+   - getAll(): Promise<Record<string, string>>
+
+4. Update `packages/queries/index.ts` to re-export all
+
+**Files to create:**
+```
+packages/queries/processes.ts
 packages/queries/executor-profiles.ts
 packages/queries/settings.ts
 ```
 
 **Verification:**
 ```bash
-cat packages/queries/index.ts | grep "tasks"
+cat packages/queries/index.ts | grep "processes"
+cat packages/queries/index.ts | grep "executorProfile"
 cat packages/queries/index.ts | grep "settings"
 ```
 
 **After completion:**
 - Edit this plan.md: Change `[ ]` to `[x]` for this step
-- Commit: `git add packages/queries/ && git commit -m "feat: add task, executor, and settings queries"`
+- Commit: `git add packages/queries/ && git commit -m "feat: add process, executor, and settings queries"`
 
 ---
 
-### [ ] Step: Create packages/hooks
+### [ ] Step: Create packages/queries - Git and Search
+
+Add git and search query modules.
+
+**Tasks:**
+1. Create `packages/queries/git.ts` with gitQueries object:
+   - createWorktree(chatId, branchName, baseBranch): Promise<string>
+   - deleteWorktree(chatId): Promise<void>
+   - getDiff(chatId): Promise<FileDiff[]>
+   - getCommits(chatId, limit?): Promise<Commit[]>
+   - pushBranch(chatId): Promise<void>
+
+2. Create `packages/queries/search.ts` with searchQueries object:
+   - search(query, projectId?, resultTypes?, limit?): Promise<SearchResult[]>
+
+3. Update `packages/queries/index.ts` to re-export all
+
+**Files to create:**
+```
+packages/queries/git.ts
+packages/queries/search.ts
+```
+
+**Verification:**
+```bash
+cat packages/queries/git.ts | grep "gitQueries"
+cat packages/queries/search.ts | grep "searchQueries"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/queries/ && git commit -m "feat: add git and search queries"`
+
+---
+
+### [ ] Step: Create packages/hooks - Projects
 
 Create hooks package with TanStack Query hooks (Level 3 - imports queries, validation, generated, utils).
 
@@ -873,9 +1031,9 @@ cat packages/hooks/useProjects.ts | grep "projectKeys"
 
 ---
 
-### [ ] Step: Create packages/hooks - Tasks, Settings
+### [ ] Step: Create packages/hooks - Tasks
 
-Add remaining hook modules.
+Add task hooks module.
 
 **Tasks:**
 1. Create `packages/hooks/useTasks.ts` with:
@@ -885,18 +1043,13 @@ Add remaining hook modules.
    - useCreateTask()
    - useUpdateTask()
    - useArchiveTask()
+   - useDeleteTask()
 
-2. Create `packages/hooks/useExecutorProfiles.ts`
-
-3. Create `packages/hooks/useSettings.ts`
-
-4. Update `packages/hooks/index.ts` to re-export all
+2. Update `packages/hooks/index.ts` to re-export
 
 **Files to create:**
 ```
 packages/hooks/useTasks.ts
-packages/hooks/useExecutorProfiles.ts
-packages/hooks/useSettings.ts
 ```
 
 **Verification:**
@@ -907,7 +1060,181 @@ cat packages/hooks/index.ts | grep "useTasks"
 
 **After completion:**
 - Edit this plan.md: Change `[ ]` to `[x]` for this step
-- Commit: `git add packages/hooks/ && git commit -m "feat: add task, executor, and settings hooks"`
+- Commit: `git add packages/hooks/ && git commit -m "feat: add task hooks"`
+
+---
+
+### [ ] Step: Create packages/hooks - Chats, Messages
+
+Add chat and message hooks modules.
+
+**Tasks:**
+1. Create `packages/hooks/useChats.ts` with:
+   - chatKeys factory
+   - useChats(taskId)
+   - useChat(id)
+   - useCreateChat()
+   - useStartWorkflowStep()
+
+2. Create `packages/hooks/useMessages.ts` with:
+   - messageKeys factory
+   - useMessages(chatId)
+   - useCreateMessage()
+
+3. Update `packages/hooks/index.ts` to re-export all
+
+**Files to create:**
+```
+packages/hooks/useChats.ts
+packages/hooks/useMessages.ts
+```
+
+**Verification:**
+```bash
+cat packages/hooks/useChats.ts | grep "chatKeys"
+cat packages/hooks/useMessages.ts | grep "messageKeys"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/hooks/ && git commit -m "feat: add chat and message hooks"`
+
+---
+
+### [ ] Step: Create packages/hooks - Processes, Executor, Settings
+
+Add remaining hook modules.
+
+**Tasks:**
+1. Create `packages/hooks/useProcesses.ts` with:
+   - processKeys factory
+   - useProcess(id)
+   - useKillProcess()
+   - useSendInput()
+
+2. Create `packages/hooks/useExecutorProfiles.ts` with:
+   - executorProfileKeys factory
+   - useExecutorProfiles()
+   - useCreateExecutorProfile()
+   - useUpdateExecutorProfile()
+   - useDeleteExecutorProfile()
+   - useRunExecutor()
+
+3. Create `packages/hooks/useSettings.ts` with:
+   - settingsKeys factory
+   - useSetting(key)
+   - useAllSettings()
+   - useSetSetting()
+
+4. Update `packages/hooks/index.ts` to re-export all
+
+**Files to create:**
+```
+packages/hooks/useProcesses.ts
+packages/hooks/useExecutorProfiles.ts
+packages/hooks/useSettings.ts
+```
+
+**Verification:**
+```bash
+cat packages/hooks/useProcesses.ts | grep "processKeys"
+cat packages/hooks/useExecutorProfiles.ts | grep "executorProfileKeys"
+cat packages/hooks/useSettings.ts | grep "settingsKeys"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/hooks/ && git commit -m "feat: add process, executor, and settings hooks"`
+
+---
+
+### [ ] Step: Create packages/hooks - Process Output (Event Subscription)
+
+Add real-time process output subscription hook.
+
+**Context:**
+Uses Tauri events for real-time streaming from CLI processes.
+
+**Tasks:**
+1. Create `packages/hooks/useProcessOutput.ts` with:
+   - useProcessOutput(processId) - subscribes to Tauri events
+   - Returns output array and status
+   - Cleanup on unmount
+
+2. Update `packages/hooks/index.ts` to re-export
+
+**Files to create:**
+```
+packages/hooks/useProcessOutput.ts
+```
+
+**Code pattern (from spec 8.3):**
+```typescript
+import { useEffect, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
+import type { ProcessOutputEvent } from '@openflow/generated';
+
+export function useProcessOutput(processId: string) {
+  const [output, setOutput] = useState<string[]>([]);
+
+  useEffect(() => {
+    const unlisten = listen<ProcessOutputEvent>(
+      `process-output-${processId}`,
+      (event) => {
+        setOutput((prev) => [...prev, event.payload.content]);
+      }
+    );
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [processId]);
+
+  return output;
+}
+```
+
+**Verification:**
+```bash
+cat packages/hooks/useProcessOutput.ts | grep "listen"
+cat packages/hooks/useProcessOutput.ts | grep "useEffect"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/hooks/ && git commit -m "feat: add useProcessOutput event subscription hook"`
+
+---
+
+### [ ] Step: Create packages/hooks - Keyboard Shortcuts
+
+Add keyboard shortcuts hook.
+
+**Context:**
+Centralized keyboard shortcut handling from spec section 11.
+
+**Tasks:**
+1. Create `packages/hooks/useKeyboardShortcuts.ts` with:
+   - ShortcutConfig interface
+   - useKeyboardShortcuts(shortcuts) hook
+   - Handle meta/ctrl key normalization for cross-platform
+
+2. Update `packages/hooks/index.ts` to re-export
+
+**Files to create:**
+```
+packages/hooks/useKeyboardShortcuts.ts
+```
+
+**Verification:**
+```bash
+cat packages/hooks/useKeyboardShortcuts.ts | grep "ShortcutConfig"
+cat packages/hooks/useKeyboardShortcuts.ts | grep "useEffect"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/hooks/ && git commit -m "feat: add useKeyboardShortcuts hook"`
 
 ---
 
@@ -1011,6 +1338,7 @@ pub mod chat;
 pub mod message;
 pub mod process;
 pub mod executor;
+pub mod workflow;
 
 pub use project::*;
 pub use task::*;
@@ -1018,6 +1346,7 @@ pub use chat::*;
 pub use message::*;
 pub use process::*;
 pub use executor::*;
+pub use workflow::*;
 ```
 
 **Verification:**
@@ -1219,6 +1548,65 @@ cd src-tauri && cargo check
 
 ---
 
+### [ ] Step: Create Rust Workflow Types
+
+Create workflow.rs with Workflow types.
+
+**Tasks:**
+1. Create `src-tauri/src/types/workflow.rs` with:
+   - WorkflowTemplate struct
+   - WorkflowStep struct
+   - WorkflowVariable enum
+
+**File to create:**
+```
+src-tauri/src/types/workflow.rs
+```
+
+**Verification:**
+```bash
+cat src-tauri/src/types/workflow.rs | grep "WorkflowTemplate"
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/types/workflow.rs && git commit -m "feat: add Rust Workflow types"`
+
+---
+
+### [ ] Step: Create Rust Git Types
+
+Create git.rs with Git-related types.
+
+**Tasks:**
+1. Create `src-tauri/src/types/git.rs` with:
+   - FileDiff struct
+   - DiffHunk struct
+   - Commit struct
+   - SearchResult struct
+   - SearchResultType enum
+
+2. Update `src-tauri/src/types/mod.rs` to include git module
+
+**File to create:**
+```
+src-tauri/src/types/git.rs
+```
+
+**Verification:**
+```bash
+cat src-tauri/src/types/git.rs | grep "FileDiff"
+cat src-tauri/src/types/git.rs | grep "Commit"
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/types/ && git commit -m "feat: add Rust Git types"`
+
+---
+
 ### [ ] Step: Create TypeShare Generation Script
 
 Create script to generate TypeScript from Rust types.
@@ -1332,6 +1720,36 @@ cat src-tauri/migrations/001_initial.sql | wc -l  # Should be 100+ lines
 
 ---
 
+### [ ] Step: Create Search Index Migration
+
+Create FTS5 migration for full-text search.
+
+**Context:**
+SQLite FTS5 for efficient search from spec section 12.2.
+
+**Tasks:**
+1. Create `src-tauri/migrations/002_search_index.sql` with:
+   - FTS5 virtual table for search_index
+   - Triggers for task insert/update/delete
+   - Triggers for project insert/update/delete
+
+**File to create:**
+```
+src-tauri/migrations/002_search_index.sql
+```
+
+**Verification:**
+```bash
+cat src-tauri/migrations/002_search_index.sql | grep "fts5"
+cat src-tauri/migrations/002_search_index.sql | grep "TRIGGER"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/migrations/ && git commit -m "feat: add search index migration with FTS5"`
+
+---
+
 ## Phase 3: Rust Services (TDD)
 
 **Goal:** Implement business logic services with tests first.
@@ -1354,13 +1772,25 @@ src-tauri/src/services/mod.rs
 ```rust
 pub mod project_service;
 pub mod task_service;
+pub mod chat_service;
+pub mod message_service;
 pub mod executor_profile_service;
 pub mod settings_service;
+pub mod process_service;
+pub mod git_service;
+pub mod workflow_service;
+pub mod search_service;
 
 pub use project_service::ProjectService;
 pub use task_service::TaskService;
+pub use chat_service::ChatService;
+pub use message_service::MessageService;
 pub use executor_profile_service::ExecutorProfileService;
 pub use settings_service::SettingsService;
+pub use process_service::ProcessService;
+pub use git_service::GitService;
+pub use workflow_service::WorkflowService;
+pub use search_service::SearchService;
 ```
 
 **Verification:**
@@ -1443,6 +1873,62 @@ cd src-tauri && cargo test task
 
 ---
 
+### [ ] Step: Create ChatService - Tests First
+
+Create chat service with TDD approach.
+
+**Tasks:**
+1. Create `src-tauri/src/services/chat_service.rs`:
+   - Write tests first
+   - Implement ChatService with:
+     - list(pool, task_id) -> Result<Vec<Chat>>
+     - get(pool, id) -> Result<ChatWithMessages>
+     - create(pool, request) -> Result<Chat>
+     - update(pool, id, request) -> Result<Chat>
+
+**File to create:**
+```
+src-tauri/src/services/chat_service.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo test chat
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/services/chat_service.rs && git commit -m "feat: add ChatService with tests"`
+
+---
+
+### [ ] Step: Create MessageService - Tests First
+
+Create message service with TDD approach.
+
+**Tasks:**
+1. Create `src-tauri/src/services/message_service.rs`:
+   - Write tests first
+   - Implement MessageService with:
+     - list(pool, chat_id) -> Result<Vec<Message>>
+     - create(pool, request) -> Result<Message>
+
+**File to create:**
+```
+src-tauri/src/services/message_service.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo test message
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/services/message_service.rs && git commit -m "feat: add MessageService with tests"`
+
+---
+
 ### [ ] Step: Create ExecutorProfileService
 
 Create executor profile service.
@@ -1495,6 +1981,63 @@ cd src-tauri && cargo test settings
 
 ---
 
+### [ ] Step: Create WorkflowService
+
+Create workflow parsing and management service.
+
+**Context:**
+Parses markdown workflow files from spec section 3.2.1.
+
+**Tasks:**
+1. Create `src-tauri/src/services/workflow_service.rs`:
+   - parse_workflow(content) -> Result<Vec<WorkflowStep>>
+   - list_templates(folder_path) -> Result<Vec<WorkflowTemplate>>
+   - get_builtin_templates() -> Vec<WorkflowTemplate>
+   - substitute_variables(content, vars) -> String
+
+**File to create:**
+```
+src-tauri/src/services/workflow_service.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo test workflow
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/services/workflow_service.rs && git commit -m "feat: add WorkflowService with markdown parsing"`
+
+---
+
+### [ ] Step: Create SearchService
+
+Create full-text search service.
+
+**Context:**
+Uses FTS5 from spec section 12.2.
+
+**Tasks:**
+1. Create `src-tauri/src/services/search_service.rs`:
+   - search(pool, query, project_id?, result_types?, limit?) -> Result<Vec<SearchResult>>
+
+**File to create:**
+```
+src-tauri/src/services/search_service.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo test search
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/services/search_service.rs && git commit -m "feat: add SearchService with FTS5"`
+
+---
+
 ## Phase 4: Tauri Commands
 
 **Goal:** Create IPC command handlers that call services.
@@ -1518,8 +2061,13 @@ src-tauri/src/commands/mod.rs
 ```rust
 pub mod projects;
 pub mod tasks;
+pub mod chats;
+pub mod messages;
 pub mod executor;
 pub mod settings;
+pub mod processes;
+pub mod git;
+pub mod search;
 
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -1613,13 +2161,62 @@ cd src-tauri && cargo check
 
 ---
 
+### [ ] Step: Create Chat Commands
+
+Create Tauri commands for chats.
+
+**Tasks:**
+1. Create `src-tauri/src/commands/chats.rs`:
+   - list_chats, get_chat, create_chat, start_workflow_step
+
+**File to create:**
+```
+src-tauri/src/commands/chats.rs
+```
+
+**Verification:**
+```bash
+cat src-tauri/src/commands/chats.rs | grep "#\[tauri::command\]"
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/commands/chats.rs && git commit -m "feat: add chat commands"`
+
+---
+
+### [ ] Step: Create Message Commands
+
+Create Tauri commands for messages.
+
+**Tasks:**
+1. Create `src-tauri/src/commands/messages.rs`:
+   - list_messages, create_message
+
+**File to create:**
+```
+src-tauri/src/commands/messages.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/commands/messages.rs && git commit -m "feat: add message commands"`
+
+---
+
 ### [ ] Step: Create Executor Commands
 
 Create Tauri commands for executor profiles.
 
 **Tasks:**
 1. Create `src-tauri/src/commands/executor.rs`:
-   - list_executor_profiles, create_executor_profile, update_executor_profile, delete_executor_profile
+   - list_executor_profiles, create_executor_profile, update_executor_profile, delete_executor_profile, run_executor
 
 **File to create:**
 ```
@@ -1658,6 +2255,30 @@ cd src-tauri && cargo check
 **After completion:**
 - Edit this plan.md: Change `[ ]` to `[x]` for this step
 - Commit: `git add src-tauri/src/commands/settings.rs && git commit -m "feat: add settings commands"`
+
+---
+
+### [ ] Step: Create Search Commands
+
+Create Tauri commands for search.
+
+**Tasks:**
+1. Create `src-tauri/src/commands/search.rs`:
+   - search(query, project_id?, result_types?, limit?)
+
+**File to create:**
+```
+src-tauri/src/commands/search.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/commands/search.rs && git commit -m "feat: add search commands"`
 
 ---
 
@@ -1789,6 +2410,37 @@ pnpm typecheck
 
 ---
 
+### [ ] Step: Create Textarea Component
+
+Create Textarea atom.
+
+**Tasks:**
+1. Create `packages/ui/atoms/Textarea.tsx`:
+   - TextareaProps extending React TextareaHTMLAttributes
+   - Error state styling
+   - Resizable control
+
+2. Create `packages/ui/atoms/Textarea.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/atoms/Textarea.tsx
+packages/ui/atoms/Textarea.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/atoms/Textarea* && git commit -m "feat: add Textarea component"`
+
+---
+
 ### [ ] Step: Create Badge Component
 
 Create Badge atom for status display.
@@ -1849,21 +2501,1513 @@ pnpm typecheck
 
 ---
 
-## Continue with remaining phases...
+### [ ] Step: Create Label and Checkbox Components
 
-*Note: The plan continues with similar detailed steps for:*
-- Phase 6: UI Molecules (FormField, Card, Dropdown, Dialog, Tabs)
-- Phase 7: UI Organisms (TaskCard, TaskList, ProjectSelector, ChatPanel, etc.)
-- Phase 8: UI Templates (AppLayout, TaskLayout)
-- Phase 9: Routing (TanStack Router setup, route files)
-- Phase 10: Storybook Setup
-- Phase 11: Architecture Validation
-- Phase 12: Git Hooks (Husky, lint-staged)
-- Phase 13: Chat & Workflow (services, commands, UI)
-- Phase 14: Process Execution (PTY, streaming)
-- Phase 15: Git Integration (worktrees, diff, commits)
-- Phase 16: Settings & Search
-- Phase 17: CI Pipeline
+Create form-related atom components.
+
+**Tasks:**
+1. Create `packages/ui/atoms/Label.tsx`:
+   - LabelProps extending React LabelHTMLAttributes
+   - Required indicator
+
+2. Create `packages/ui/atoms/Checkbox.tsx`:
+   - CheckboxProps with checked, onChange, disabled
+   - Custom styling
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/atoms/Label.tsx
+packages/ui/atoms/Checkbox.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/atoms/ && git commit -m "feat: add Label and Checkbox components"`
+
+---
+
+## Phase 6: UI Molecules
+
+**Goal:** Create composite UI components from atoms.
+
+### [ ] Step: Create FormField Component
+
+Create FormField molecule combining Label + Input + error.
+
+**Tasks:**
+1. Create `packages/ui/molecules/FormField.tsx`:
+   - FormFieldProps (label, error, required, children)
+   - Composes Label + any input + error message
+   - Accessibility: label htmlFor, error aria
+
+2. Create `packages/ui/molecules/FormField.stories.tsx`
+
+3. Update `packages/ui/molecules/index.ts`
+
+**Files to create:**
+```
+packages/ui/molecules/FormField.tsx
+packages/ui/molecules/FormField.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+cat packages/ui/molecules/FormField.tsx | grep "FormFieldProps"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/molecules/FormField* && git commit -m "feat: add FormField component"`
+
+---
+
+### [ ] Step: Create Card Component
+
+Create Card molecule for content containers.
+
+**Tasks:**
+1. Create `packages/ui/molecules/Card.tsx`:
+   - CardProps (children, className, onClick, isSelected)
+   - CardHeader, CardContent, CardFooter sub-components
+   - Hover and selected states
+
+2. Create `packages/ui/molecules/Card.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/molecules/Card.tsx
+packages/ui/molecules/Card.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/molecules/Card* && git commit -m "feat: add Card component"`
+
+---
+
+### [ ] Step: Create Dropdown Component
+
+Create Dropdown molecule for selection.
+
+**Tasks:**
+1. Create `packages/ui/molecules/Dropdown.tsx`:
+   - DropdownProps (options, value, onChange, placeholder)
+   - DropdownOption type { value, label, icon? }
+   - Open/closed state styling
+   - Keyboard navigation
+
+2. Create `packages/ui/molecules/Dropdown.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/molecules/Dropdown.tsx
+packages/ui/molecules/Dropdown.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/molecules/Dropdown* && git commit -m "feat: add Dropdown component"`
+
+---
+
+### [ ] Step: Create Dialog Component
+
+Create Dialog molecule for modals.
+
+**Tasks:**
+1. Create `packages/ui/molecules/Dialog.tsx`:
+   - DialogProps (isOpen, onClose, title, children)
+   - Backdrop with click-to-close
+   - Header, content, footer sections
+   - Escape key handling (via callback)
+
+2. Create `packages/ui/molecules/Dialog.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/molecules/Dialog.tsx
+packages/ui/molecules/Dialog.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/molecules/Dialog* && git commit -m "feat: add Dialog component"`
+
+---
+
+### [ ] Step: Create Tabs Component
+
+Create Tabs molecule for tabbed interfaces.
+
+**Tasks:**
+1. Create `packages/ui/molecules/Tabs.tsx`:
+   - TabsProps (tabs, activeTab, onTabChange)
+   - Tab type { id, label, icon?, badge? }
+   - Active tab indicator
+   - Keyboard navigation
+
+2. Create `packages/ui/molecules/Tabs.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/molecules/Tabs.tsx
+packages/ui/molecules/Tabs.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/molecules/Tabs* && git commit -m "feat: add Tabs component"`
+
+---
+
+### [ ] Step: Create Tooltip Component
+
+Create Tooltip molecule for hints.
+
+**Tasks:**
+1. Create `packages/ui/molecules/Tooltip.tsx`:
+   - TooltipProps (content, position, children)
+   - Positions: top, bottom, left, right
+   - Hover trigger
+
+2. Create `packages/ui/molecules/Tooltip.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/molecules/Tooltip.tsx
+packages/ui/molecules/Tooltip.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/molecules/Tooltip* && git commit -m "feat: add Tooltip component"`
+
+---
+
+### [ ] Step: Create Menu Component
+
+Create Menu molecule for context menus.
+
+**Tasks:**
+1. Create `packages/ui/molecules/Menu.tsx`:
+   - MenuProps (items, isOpen, onClose, position)
+   - MenuItem type { label, icon?, onClick, divider?, disabled? }
+   - Keyboard navigation
+   - Click outside handling
+
+2. Create `packages/ui/molecules/Menu.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/molecules/Menu.tsx
+packages/ui/molecules/Menu.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/molecules/Menu* && git commit -m "feat: add Menu component"`
+
+---
+
+## Phase 7: UI Organisms
+
+**Goal:** Create complex UI components composed of molecules and atoms.
+
+### [ ] Step: Create TaskCard Component
+
+Create TaskCard organism for task display.
+
+**Context:**
+Pattern from spec section 8.1 - stateless UI components.
+
+**Tasks:**
+1. Create `packages/ui/organisms/TaskCard.tsx`:
+   - TaskCardProps (task, isSelected?, onSelect?, onStatusChange?)
+   - Display title, status badge, description preview
+   - Actions required badge when count > 0
+   - Status dropdown integration
+
+2. Create `packages/ui/organisms/TaskCard.stories.tsx`
+
+3. Update `packages/ui/organisms/index.ts`
+
+**Files to create:**
+```
+packages/ui/organisms/TaskCard.tsx
+packages/ui/organisms/TaskCard.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+cat packages/ui/organisms/TaskCard.tsx | grep "TaskCardProps"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/TaskCard* && git commit -m "feat: add TaskCard component"`
+
+---
+
+### [ ] Step: Create TaskList Component
+
+Create TaskList organism for displaying task columns.
+
+**Tasks:**
+1. Create `packages/ui/organisms/TaskList.tsx`:
+   - TaskListProps (tasks, selectedTaskId?, onSelectTask?, onStatusChange?)
+   - Groups tasks by status for kanban view
+   - Empty state handling
+
+2. Create `packages/ui/organisms/TaskList.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/TaskList.tsx
+packages/ui/organisms/TaskList.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/TaskList* && git commit -m "feat: add TaskList component"`
+
+---
+
+### [ ] Step: Create ProjectSelector Component
+
+Create ProjectSelector organism for project switching.
+
+**Tasks:**
+1. Create `packages/ui/organisms/ProjectSelector.tsx`:
+   - ProjectSelectorProps (projects, selectedProjectId, onSelectProject, onNewProject)
+   - Project icons
+   - New project button
+
+2. Create `packages/ui/organisms/ProjectSelector.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/ProjectSelector.tsx
+packages/ui/organisms/ProjectSelector.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/ProjectSelector* && git commit -m "feat: add ProjectSelector component"`
+
+---
+
+### [ ] Step: Create ChatMessage Component
+
+Create ChatMessage organism for message display.
+
+**Tasks:**
+1. Create `packages/ui/organisms/ChatMessage.tsx`:
+   - ChatMessageProps (message, isStreaming?)
+   - Role-based styling (user, assistant, system)
+   - Markdown content rendering
+   - Tool calls display
+   - Timestamp
+
+2. Create `packages/ui/organisms/ChatMessage.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/ChatMessage.tsx
+packages/ui/organisms/ChatMessage.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/ChatMessage* && git commit -m "feat: add ChatMessage component"`
+
+---
+
+### [ ] Step: Create ChatPanel Component
+
+Create ChatPanel organism for chat interface.
+
+**Tasks:**
+1. Create `packages/ui/organisms/ChatPanel.tsx`:
+   - ChatPanelProps (messages, onSendMessage, isProcessing?, executorProfile?)
+   - Message list with ChatMessage
+   - Input area with send button
+   - Executor profile selector
+   - Auto-scroll behavior
+
+2. Create `packages/ui/organisms/ChatPanel.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/ChatPanel.tsx
+packages/ui/organisms/ChatPanel.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/ChatPanel* && git commit -m "feat: add ChatPanel component"`
+
+---
+
+### [ ] Step: Create StepsPanel Component
+
+Create StepsPanel organism for workflow steps.
+
+**Tasks:**
+1. Create `packages/ui/organisms/StepsPanel.tsx`:
+   - StepsPanelProps (steps, activeStepIndex?, onStartStep?, onAddStep?, autoStart?, onAutoStartChange?)
+   - Step list with checkboxes and status
+   - Start button per step
+   - Add step button
+   - Auto-start toggle
+
+2. Create `packages/ui/organisms/StepsPanel.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/StepsPanel.tsx
+packages/ui/organisms/StepsPanel.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/StepsPanel* && git commit -m "feat: add StepsPanel component"`
+
+---
+
+### [ ] Step: Create DiffViewer Component
+
+Create DiffViewer organism for git diffs.
+
+**Tasks:**
+1. Create `packages/ui/organisms/DiffViewer.tsx`:
+   - DiffViewerProps (diffs, expandedFiles?, onFileToggle?)
+   - File-by-file diff display
+   - Collapsible file sections
+   - Line numbers
+   - Add/remove highlighting
+
+2. Create `packages/ui/organisms/DiffViewer.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/DiffViewer.tsx
+packages/ui/organisms/DiffViewer.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/DiffViewer* && git commit -m "feat: add DiffViewer component"`
+
+---
+
+### [ ] Step: Create CommitList Component
+
+Create CommitList organism for git history.
+
+**Tasks:**
+1. Create `packages/ui/organisms/CommitList.tsx`:
+   - CommitListProps (commits, onViewCommit?)
+   - Commit hash, message, author, date
+   - Expandable commit details
+
+2. Create `packages/ui/organisms/CommitList.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/CommitList.tsx
+packages/ui/organisms/CommitList.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/CommitList* && git commit -m "feat: add CommitList component"`
+
+---
+
+### [ ] Step: Create CommandPalette Component
+
+Create CommandPalette organism for quick search (Cmd+K).
+
+**Tasks:**
+1. Create `packages/ui/organisms/CommandPalette.tsx`:
+   - CommandPaletteProps (isOpen, onClose, onSearch, searchResults?, recentItems?)
+   - Search input with keyboard navigation
+   - Result groups (tasks, projects, actions)
+   - Recent items section
+
+2. Create `packages/ui/organisms/CommandPalette.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/CommandPalette.tsx
+packages/ui/organisms/CommandPalette.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/CommandPalette* && git commit -m "feat: add CommandPalette component"`
+
+---
+
+### [ ] Step: Create Sidebar Component
+
+Create Sidebar organism for navigation.
+
+**Tasks:**
+1. Create `packages/ui/organisms/Sidebar.tsx`:
+   - SidebarProps (projects, tasks, selectedProjectId, selectedTaskId, statusFilter, onSelectProject, onSelectTask, onNewTask, onStatusFilter, isCollapsed?, onToggleCollapse?)
+   - Project selector
+   - New task button
+   - Status filter
+   - Task list
+   - Settings/Archive links
+
+2. Create `packages/ui/organisms/Sidebar.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/Sidebar.tsx
+packages/ui/organisms/Sidebar.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/Sidebar* && git commit -m "feat: add Sidebar component"`
+
+---
+
+### [ ] Step: Create Header Component
+
+Create Header organism for top navigation.
+
+**Tasks:**
+1. Create `packages/ui/organisms/Header.tsx`:
+   - HeaderProps (onSearch, onNewChat?, onNewTerminal?)
+   - Search button (opens CommandPalette)
+   - New chat button
+   - New terminal button
+
+2. Create `packages/ui/organisms/Header.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/organisms/Header.tsx
+packages/ui/organisms/Header.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/organisms/Header* && git commit -m "feat: add Header component"`
+
+---
+
+## Phase 8: UI Templates
+
+**Goal:** Create page layout templates.
+
+### [ ] Step: Create AppLayout Template
+
+Create main application layout template.
+
+**Tasks:**
+1. Create `packages/ui/templates/AppLayout.tsx`:
+   - AppLayoutProps (sidebar, header, children)
+   - Sidebar with collapsible behavior
+   - Header bar
+   - Main content area
+   - Dark mode by default
+
+2. Create `packages/ui/templates/AppLayout.stories.tsx`
+
+3. Update `packages/ui/templates/index.ts`
+
+**Files to create:**
+```
+packages/ui/templates/AppLayout.tsx
+packages/ui/templates/AppLayout.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+cat packages/ui/templates/AppLayout.tsx | grep "AppLayoutProps"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/templates/AppLayout* && git commit -m "feat: add AppLayout template"`
+
+---
+
+### [ ] Step: Create TaskLayout Template
+
+Create task detail page layout template.
+
+**Tasks:**
+1. Create `packages/ui/templates/TaskLayout.tsx`:
+   - TaskLayoutProps (task, chats, stepsPanel, mainPanel, tabs, activeTab, onTabChange, onStatusChange, onTitleChange, onCreatePR)
+   - Task header with title and status
+   - Branch indicator
+   - Tabs (Steps, Changes, Commits)
+   - Split pane layout
+
+2. Create `packages/ui/templates/TaskLayout.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/templates/TaskLayout.tsx
+packages/ui/templates/TaskLayout.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/templates/TaskLayout* && git commit -m "feat: add TaskLayout template"`
+
+---
+
+### [ ] Step: Create SettingsLayout Template
+
+Create settings page layout template.
+
+**Tasks:**
+1. Create `packages/ui/templates/SettingsLayout.tsx`:
+   - SettingsLayoutProps (navigation, children)
+   - Settings navigation sidebar
+   - Content area
+   - Section headers
+
+2. Create `packages/ui/templates/SettingsLayout.stories.tsx`
+
+3. Update index.ts
+
+**Files to create:**
+```
+packages/ui/templates/SettingsLayout.tsx
+packages/ui/templates/SettingsLayout.stories.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/templates/SettingsLayout* && git commit -m "feat: add SettingsLayout template"`
+
+---
+
+## Phase 9: Routing
+
+**Goal:** Set up TanStack Router with file-based routes.
+
+### [ ] Step: Create Route Configuration
+
+Create TanStack Router configuration.
+
+**Tasks:**
+1. Create `src/routes/__root.tsx`:
+   - Root layout component
+   - Query client provider
+   - Router devtools (dev only)
+
+2. Create `src/routerContext.ts`:
+   - Router context type
+   - QueryClient integration
+
+**Files to create:**
+```
+src/routes/__root.tsx
+src/routerContext.ts
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+cat src/routes/__root.tsx | grep "createRootRoute"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src/routes/ src/routerContext.ts && git commit -m "feat: add TanStack Router root configuration"`
+
+---
+
+### [ ] Step: Create Index Route (Dashboard)
+
+Create home page route.
+
+**Tasks:**
+1. Create `src/routes/index.tsx`:
+   - Dashboard/home page
+   - Recent tasks
+   - Project overview
+   - Quick actions
+
+**Files to create:**
+```
+src/routes/index.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src/routes/index.tsx && git commit -m "feat: add dashboard route"`
+
+---
+
+### [ ] Step: Create Projects Routes
+
+Create project-related routes.
+
+**Tasks:**
+1. Create `src/routes/projects.tsx`:
+   - Projects list page
+   - Create project button
+
+2. Create `src/routes/projects.$projectId.tsx`:
+   - Project detail page
+   - Task board for project
+
+**Files to create:**
+```
+src/routes/projects.tsx
+src/routes/projects.$projectId.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src/routes/projects* && git commit -m "feat: add project routes"`
+
+---
+
+### [ ] Step: Create Tasks Routes
+
+Create task-related routes.
+
+**Tasks:**
+1. Create `src/routes/tasks.tsx`:
+   - Task board layout
+   - Status columns
+
+2. Create `src/routes/tasks.$taskId.tsx`:
+   - Task detail page with tabs
+   - Steps, Changes, Commits tabs
+   - Chat interface
+
+**Files to create:**
+```
+src/routes/tasks.tsx
+src/routes/tasks.$taskId.tsx
+```
+
+**Code pattern (from spec 8.2):**
+```typescript
+import { createFileRoute } from '@tanstack/react-router';
+import { TaskLayout } from '@openflow/ui';
+import { useTask, useUpdateTask, useChats } from '@openflow/hooks';
+
+export const Route = createFileRoute('/tasks/$taskId')({
+  component: TaskDetailPage,
+});
+
+function TaskDetailPage() {
+  const { taskId } = Route.useParams();
+  const { data: task, isLoading } = useTask(taskId);
+  // ... orchestration logic
+}
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src/routes/tasks* && git commit -m "feat: add task routes"`
+
+---
+
+### [ ] Step: Create Settings Routes
+
+Create settings-related routes.
+
+**Tasks:**
+1. Create `src/routes/settings.tsx`:
+   - Settings layout
+
+2. Create `src/routes/settings.profiles.tsx`:
+   - Executor profiles management
+
+3. Create `src/routes/settings.projects.tsx`:
+   - Project settings
+
+**Files to create:**
+```
+src/routes/settings.tsx
+src/routes/settings.profiles.tsx
+src/routes/settings.projects.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src/routes/settings* && git commit -m "feat: add settings routes"`
+
+---
+
+### [ ] Step: Create Archive Route
+
+Create archive page route.
+
+**Tasks:**
+1. Create `src/routes/archive.tsx`:
+   - Archived tasks list
+   - Restore functionality
+
+**Files to create:**
+```
+src/routes/archive.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src/routes/archive.tsx && git commit -m "feat: add archive route"`
+
+---
+
+### [ ] Step: Update main.tsx with Router
+
+Update main.tsx to use TanStack Router.
+
+**Tasks:**
+1. Update `src/main.tsx`:
+   - Import router
+   - Wrap app with RouterProvider
+   - Add QueryClientProvider
+
+**Update file:**
+```
+src/main.tsx
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+pnpm dev  # Should start without errors
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src/main.tsx && git commit -m "feat: integrate TanStack Router"`
+
+---
+
+## Phase 10: Storybook Setup
+
+**Goal:** Set up Storybook for component development.
+
+### [ ] Step: Create Storybook Configuration
+
+Create Storybook main configuration.
+
+**Tasks:**
+1. Create `.storybook/main.ts`:
+   - Stories glob pattern
+   - Addons configuration
+   - Framework: @storybook/react-vite
+   - Vite config reference
+
+2. Create `.storybook/preview.ts`:
+   - Global decorators
+   - Dark theme default
+   - Viewport configuration
+
+**Files to create:**
+```
+.storybook/main.ts
+.storybook/preview.ts
+```
+
+**Verification:**
+```bash
+pnpm storybook  # Should launch Storybook
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add .storybook/ && git commit -m "feat: add Storybook configuration"`
+
+---
+
+### [ ] Step: Add Storybook Dependencies
+
+Add Storybook packages to package.json.
+
+**Tasks:**
+1. Update `package.json` devDependencies:
+   - @storybook/react: ^8.4.0
+   - @storybook/react-vite: ^8.4.0
+   - @storybook/addon-essentials: ^8.4.0
+   - @storybook/addon-interactions: ^8.4.0
+   - @storybook/addon-a11y: ^8.4.0
+   - storybook: ^8.4.0
+
+2. Add scripts:
+   - "storybook": "storybook dev -p 6006"
+   - "build-storybook": "storybook build"
+
+**Update file:**
+```
+package.json
+```
+
+**Verification:**
+```bash
+pnpm install
+pnpm storybook
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add package.json pnpm-lock.yaml && git commit -m "chore: add Storybook dependencies"`
+
+---
+
+## Phase 11: Architecture Validation
+
+**Goal:** Create architecture validation script.
+
+### [ ] Step: Create Architecture Validation Script
+
+Create script to enforce dependency hierarchy.
+
+**Context:**
+Enforces rules from spec section 2.3 and 7.3.
+
+**Tasks:**
+1. Create `scripts/validate-architecture.ts`:
+   - Define RULES array with pattern and forbidden imports
+   - Validate UI cannot import hooks/queries
+   - Validate queries cannot import hooks
+   - Validate packages cannot import from src/
+   - Return exit code 1 on failure
+
+2. Add script to package.json: "validate:arch": "tsx scripts/validate-architecture.ts"
+
+**Files to create:**
+```
+scripts/validate-architecture.ts
+```
+
+**Verification:**
+```bash
+pnpm validate:arch
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add scripts/validate-architecture.ts package.json && git commit -m "feat: add architecture validation script"`
+
+---
+
+## Phase 12: Git Hooks
+
+**Goal:** Set up Husky and lint-staged for pre-commit and pre-push.
+
+### [ ] Step: Create Husky Configuration
+
+Set up Husky for git hooks.
+
+**Tasks:**
+1. Initialize Husky: `pnpm exec husky init`
+
+2. Create `.husky/pre-commit`:
+   - Run lint-staged
+
+3. Create `.husky/pre-push`:
+   - Run full validation suite from spec 7.2
+
+**Files to create:**
+```
+.husky/pre-commit
+.husky/pre-push
+```
+
+**Verification:**
+```bash
+git add . && git commit -m "test"  # Should trigger pre-commit
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add .husky/ && git commit -m "feat: add Husky git hooks"`
+
+---
+
+## Phase 13: Process Execution
+
+**Goal:** Implement process spawning and PTY management.
+
+### [ ] Step: Create Process Module Structure
+
+Create process management module structure.
+
+**Tasks:**
+1. Create `src-tauri/src/process/mod.rs`:
+   - Declare submodules: pty, spawn, output
+   - Re-export public types
+
+**File to create:**
+```
+src-tauri/src/process/mod.rs
+```
+
+**Verification:**
+```bash
+cat src-tauri/src/process/mod.rs | grep "pub mod"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/process/ && git commit -m "feat: add process module structure"`
+
+---
+
+### [ ] Step: Create Process Spawn Module
+
+Create process spawning functionality.
+
+**Tasks:**
+1. Create `src-tauri/src/process/spawn.rs`:
+   - spawn_process(command, args, cwd, env) -> Result<Child>
+   - Handle stdin/stdout/stderr pipes
+   - Track PID
+
+**File to create:**
+```
+src-tauri/src/process/spawn.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/process/spawn.rs && git commit -m "feat: add process spawning"`
+
+---
+
+### [ ] Step: Create PTY Module
+
+Create PTY management for interactive processes.
+
+**Tasks:**
+1. Add portable-pty to Cargo.toml dependencies
+
+2. Create `src-tauri/src/process/pty.rs`:
+   - create_pty(command, args, cwd, env) -> Result<PtyPair>
+   - Handle interactive mode
+   - Window resize support
+
+**File to create:**
+```
+src-tauri/src/process/pty.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/process/pty.rs src-tauri/Cargo.toml && git commit -m "feat: add PTY support"`
+
+---
+
+### [ ] Step: Create Output Streaming Module
+
+Create output streaming with Tauri events.
+
+**Tasks:**
+1. Create `src-tauri/src/process/output.rs`:
+   - stream_output(process_id, reader, output_type, app_handle)
+   - Emit ProcessOutputEvent via Tauri events
+   - Buffer management
+
+**File to create:**
+```
+src-tauri/src/process/output.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/process/output.rs && git commit -m "feat: add output streaming"`
+
+---
+
+### [ ] Step: Create ProcessService
+
+Create process management service.
+
+**Tasks:**
+1. Create `src-tauri/src/services/process_service.rs`:
+   - start_process(pool, chat_id, executor_profile, prompt) -> Result<ExecutionProcess>
+   - kill_process(pool, id) -> Result<ExecutionProcess>
+   - send_input(id, input) -> Result<()>
+   - Track running processes
+
+**File to create:**
+```
+src-tauri/src/services/process_service.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo test process
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/services/process_service.rs && git commit -m "feat: add ProcessService"`
+
+---
+
+### [ ] Step: Create Process Commands
+
+Create Tauri commands for process management.
+
+**Tasks:**
+1. Create `src-tauri/src/commands/processes.rs`:
+   - get_process, kill_process, send_input
+   - Event emission for status changes
+
+**File to create:**
+```
+src-tauri/src/commands/processes.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/commands/processes.rs && git commit -m "feat: add process commands"`
+
+---
+
+## Phase 14: Git Integration
+
+**Goal:** Implement git worktree management.
+
+### [ ] Step: Create GitService
+
+Create git operations service.
+
+**Context:**
+Git worktree conventions from spec section 13.
+
+**Tasks:**
+1. Create `src-tauri/src/services/git_service.rs`:
+   - create_worktree(repo_path, branch_name, base_branch, worktree_path) -> Result<String>
+   - delete_worktree(repo_path, worktree_path) -> Result<()>
+   - get_diff(worktree_path) -> Result<Vec<FileDiff>>
+   - get_commits(worktree_path, limit?) -> Result<Vec<Commit>>
+   - push_branch(worktree_path, remote?) -> Result<()>
+   - Branch naming: openflow/{task_id}/{chat_role}
+
+**File to create:**
+```
+src-tauri/src/services/git_service.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo test git
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/services/git_service.rs && git commit -m "feat: add GitService with worktree management"`
+
+---
+
+### [ ] Step: Create Git Commands
+
+Create Tauri commands for git operations.
+
+**Tasks:**
+1. Create `src-tauri/src/commands/git.rs`:
+   - create_worktree, delete_worktree
+   - get_diff, get_commits
+   - push_branch
+
+**File to create:**
+```
+src-tauri/src/commands/git.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo check
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/commands/git.rs && git commit -m "feat: add git commands"`
+
+---
+
+### [ ] Step: Register Git and Process Commands
+
+Update lib.rs to register new commands.
+
+**Tasks:**
+1. Update `src-tauri/src/lib.rs`:
+   - Import process and git modules
+   - Register all new commands
+
+**Update file:**
+```
+src-tauri/src/lib.rs
+```
+
+**Verification:**
+```bash
+cd src-tauri && cargo check
+cd src-tauri && cargo test
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/src/lib.rs && git commit -m "feat: register git and process commands"`
+
+---
+
+## Phase 15: Workflow System
+
+**Goal:** Implement workflow parsing and execution.
+
+### [ ] Step: Create Built-in Workflows
+
+Create built-in workflow templates.
+
+**Tasks:**
+1. Create `src-tauri/workflows/feature.md`:
+   - Requirements → Spec → Planning → Implementation
+
+2. Create `src-tauri/workflows/bugfix.md`:
+   - Reproduce → Root Cause → Fix → Verify
+
+3. Create `src-tauri/workflows/refactor.md`:
+   - Analysis → Planning → Implementation → Verification
+
+**Files to create:**
+```
+src-tauri/workflows/feature.md
+src-tauri/workflows/bugfix.md
+src-tauri/workflows/refactor.md
+```
+
+**Verification:**
+```bash
+cat src-tauri/workflows/feature.md | grep "### \[ \] Step:"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add src-tauri/workflows/ && git commit -m "feat: add built-in workflow templates"`
+
+---
+
+### [ ] Step: Integrate Workflow Parsing in Frontend
+
+Add workflow parsing utilities to frontend.
+
+**Tasks:**
+1. Update `packages/utils/markdown.ts`:
+   - Enhanced parseWorkflowSteps() function
+   - Variable substitution support
+
+2. Create `packages/hooks/useWorkflows.ts`:
+   - useWorkflowTemplates(projectId)
+   - useParseWorkflow(content)
+
+**Update files:**
+```
+packages/utils/markdown.ts
+packages/hooks/useWorkflows.ts
+```
+
+**Verification:**
+```bash
+pnpm typecheck
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/utils/markdown.ts packages/hooks/useWorkflows.ts && git commit -m "feat: add workflow parsing to frontend"`
+
+---
+
+## Phase 16: Final Integration
+
+**Goal:** Complete end-to-end integration and testing.
+
+### [ ] Step: Create E2E Test Setup
+
+Set up end-to-end testing with Vitest.
+
+**Tasks:**
+1. Create `tests/e2e/setup.ts`:
+   - Test database setup
+   - Mock Tauri invoke
+
+2. Create `tests/e2e/project.test.ts`:
+   - Project CRUD tests
+
+3. Create `tests/e2e/task.test.ts`:
+   - Task CRUD tests
+
+**Files to create:**
+```
+tests/e2e/setup.ts
+tests/e2e/project.test.ts
+tests/e2e/task.test.ts
+```
+
+**Verification:**
+```bash
+pnpm test
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add tests/ && git commit -m "feat: add E2E test setup"`
+
+---
+
+### [ ] Step: Verify Full Application
+
+Run complete verification suite.
+
+**Tasks:**
+1. Run all verification commands:
+   - pnpm install
+   - pnpm generate:types
+   - pnpm typecheck
+   - pnpm lint
+   - pnpm test
+   - pnpm validate:arch
+   - cd src-tauri && cargo check
+   - cd src-tauri && cargo test
+   - cd src-tauri && cargo clippy -- -D warnings
+
+2. Launch application:
+   - pnpm tauri dev
+
+**Verification:**
+```bash
+pnpm install && pnpm generate:types && pnpm typecheck && pnpm lint && pnpm test && pnpm validate:arch
+cd src-tauri && cargo check && cargo test && cargo clippy -- -D warnings
+pnpm tauri dev
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git commit -m "chore: verify full application builds and runs"`
+
+---
+
+## Phase 17: CI Pipeline
+
+**Goal:** Set up GitHub Actions CI/CD.
+
+### [ ] Step: Create CI Workflow
+
+Create GitHub Actions workflow.
+
+**Context:**
+CI pipeline from spec section 7.4.
+
+**Tasks:**
+1. Create `.github/workflows/ci.yml`:
+   - Trigger on push to main, PRs to main
+   - Install Rust, pnpm, Node.js
+   - Cache dependencies
+   - Run all verification steps
+   - Upload test results
+
+**File to create:**
+```
+.github/workflows/ci.yml
+```
+
+**Verification:**
+```bash
+cat .github/workflows/ci.yml | grep "runs-on"
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add .github/workflows/ && git commit -m "feat: add CI pipeline"`
 
 ---
 
@@ -1882,3 +4026,33 @@ After completing all phases, verify:
 - [ ] `cd src-tauri && cargo test` passes
 - [ ] `cd src-tauri && cargo clippy -- -D warnings` passes
 - [ ] `pnpm tauri dev` launches app without errors
+
+---
+
+## Summary
+
+This plan contains **93 implementation steps** across **18 phases**:
+
+| Phase | Name | Steps |
+|-------|------|-------|
+| 0 | Project Bootstrap | 10 |
+| 1 | Tauri Backend Foundation | 5 |
+| 1B | Frontend Package Structure | 16 |
+| 2 | Rust Types and Database | 12 |
+| 3 | Rust Services (TDD) | 10 |
+| 4 | Tauri Commands | 10 |
+| 5 | UI Atoms | 6 |
+| 6 | UI Molecules | 7 |
+| 7 | UI Organisms | 10 |
+| 8 | UI Templates | 3 |
+| 9 | Routing | 7 |
+| 10 | Storybook Setup | 2 |
+| 11 | Architecture Validation | 1 |
+| 12 | Git Hooks | 1 |
+| 13 | Process Execution | 5 |
+| 14 | Git Integration | 3 |
+| 15 | Workflow System | 2 |
+| 16 | Final Integration | 2 |
+| 17 | CI Pipeline | 1 |
+
+Each step is designed to be completable by a single AI agent in one session without context compaction.
