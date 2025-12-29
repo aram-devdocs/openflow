@@ -250,40 +250,122 @@ export async function getStatus(): Promise<ToolResult> {
 
 /**
  * Restart the application.
+ * Stops the app if running, then starts it fresh.
  */
-export async function restartApp(_options: {
+export async function restartApp(options: {
   waitForReady?: boolean;
   timeout?: number;
 }): Promise<ToolResult> {
-  // TODO: Implement in Phase 3
+  const manager = getAppManager();
+  const currentStatus = manager.getStatus();
+
+  // Stop if currently running
+  if (currentStatus.state === 'running' || currentStatus.state === 'starting') {
+    const stopResult = await manager.stop();
+    if (!stopResult.success) {
+      return {
+        success: false,
+        error: `Failed to stop app before restart: ${stopResult.error}`,
+      };
+    }
+  }
+
+  // Start the app
+  const startResult = await manager.start({
+    waitForReady: options.waitForReady ?? true,
+    timeout: options.timeout,
+  });
+
+  if (startResult.success) {
+    return {
+      success: true,
+      data: {
+        pid: startResult.pid,
+        devServerUrl: startResult.devServerUrl,
+        message: 'App restarted successfully',
+      },
+    };
+  }
+
   return {
     success: false,
-    error: 'Not implemented - will be completed in Phase 3',
+    error: startResult.error ?? 'Failed to start app during restart',
   };
 }
 
 /**
  * Wait for the application to be ready.
+ * Polls the dev server until it responds or timeout is reached.
  */
-export async function waitForReady(_timeout?: number): Promise<ToolResult> {
-  // TODO: Implement in Phase 3
+export async function waitForReady(timeout = 60000): Promise<ToolResult> {
+  const manager = getAppManager();
+  const status = manager.getStatus();
+
+  // Check if the app is even running or starting
+  if (status.state === 'stopped') {
+    return {
+      success: false,
+      error: 'App is not running. Start the app first with openflow_start.',
+    };
+  }
+
+  if (status.state === 'error') {
+    return {
+      success: false,
+      error: `App is in error state: ${status.error}`,
+    };
+  }
+
+  // Wait for the dev server to be ready
+  const ready = await manager.waitForReady(timeout);
+
+  if (ready) {
+    const updatedStatus = manager.getStatus();
+    return {
+      success: true,
+      data: {
+        message: 'App is ready',
+        devServerUrl: updatedStatus.devServerUrl,
+        uptime: updatedStatus.uptime,
+      },
+    };
+  }
+
   return {
     success: false,
-    error: 'Not implemented - will be completed in Phase 3',
+    error: `Dev server did not become ready within ${timeout}ms`,
   };
 }
 
 /**
  * Get application logs.
+ * Returns buffered stdout/stderr from the dev server process.
  */
 export async function getLogs(options: {
   level?: 'debug' | 'info' | 'warn' | 'error';
   limit?: number;
 }): Promise<ToolResult> {
   const manager = getAppManager();
+  const status = manager.getStatus();
   const logs = manager.getLogs(options);
+
+  // Format logs for better readability
+  const formattedLogs = logs.map((entry) => ({
+    timestamp: entry.timestamp.toISOString(),
+    level: entry.level,
+    message: entry.message,
+  }));
+
   return {
     success: true,
-    data: logs,
+    data: {
+      appState: status.state,
+      logCount: logs.length,
+      filter: {
+        level: options.level ?? 'info',
+        limit: options.limit ?? 50,
+      },
+      logs: formattedLogs,
+    },
   };
 }
