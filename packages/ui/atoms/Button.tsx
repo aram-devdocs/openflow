@@ -1,5 +1,5 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '@openflow/utils';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Spinner } from './Spinner';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
@@ -21,8 +21,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))] hover:bg-[rgb(var(--primary))]/90',
   secondary:
     'bg-[rgb(var(--secondary))] text-[rgb(var(--secondary-foreground))] hover:bg-[rgb(var(--secondary))]/80',
-  ghost:
-    'bg-transparent text-[rgb(var(--foreground))] hover:bg-[rgb(var(--muted))]',
+  ghost: 'bg-transparent text-[rgb(var(--foreground))] hover:bg-[rgb(var(--muted))]',
   destructive:
     'bg-[rgb(var(--destructive))] text-[rgb(var(--destructive-foreground))] hover:bg-[rgb(var(--destructive))]/90',
 };

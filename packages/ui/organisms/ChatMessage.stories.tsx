@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import type { Message } from '@openflow/generated';
 import { MessageRole } from '@openflow/generated';
+import type { Meta, StoryObj } from '@storybook/react';
 import { ChatMessage } from './ChatMessage';
 
 const meta: Meta<typeof ChatMessage> = {
@@ -126,7 +126,7 @@ export const WithToolCalls: Story = {
   args: {
     message: createMessage(
       MessageRole.Assistant,
-      'I\'ll read the file to understand its structure.',
+      "I'll read the file to understand its structure.",
       {
         toolCalls: JSON.stringify([
           {

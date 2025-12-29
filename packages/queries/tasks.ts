@@ -1,11 +1,11 @@
-import { invoke } from '@tauri-apps/api/core';
 import type {
+  CreateTaskRequest,
   Task,
   TaskStatus,
   TaskWithChats,
-  CreateTaskRequest,
   UpdateTaskRequest,
 } from '@openflow/generated';
+import { invoke } from '@tauri-apps/api/core';
 
 /**
  * Task query wrappers for Tauri IPC.
@@ -18,11 +18,7 @@ export const taskQueries = {
    * @param status - Optional status filter
    * @param includeArchived - Whether to include archived tasks (default: false)
    */
-  list: (
-    projectId: string,
-    status?: TaskStatus,
-    includeArchived?: boolean
-  ): Promise<Task[]> =>
+  list: (projectId: string, status?: TaskStatus, includeArchived?: boolean): Promise<Task[]> =>
     invoke('list_tasks', { projectId, status, includeArchived }),
 
   /**
@@ -33,8 +29,7 @@ export const taskQueries = {
   /**
    * Create a new task.
    */
-  create: (request: CreateTaskRequest): Promise<Task> =>
-    invoke('create_task', { request }),
+  create: (request: CreateTaskRequest): Promise<Task> => invoke('create_task', { request }),
 
   /**
    * Update an existing task.

@@ -1,5 +1,5 @@
 import { cn } from '@openflow/utils';
-import { Search, MessageSquarePlus, TerminalSquare } from 'lucide-react';
+import { MessageSquarePlus, Search, TerminalSquare } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 
@@ -63,20 +63,10 @@ export function Header({
     >
       {/* Left section: Title and subtitle */}
       <div className="flex flex-col justify-center">
-        {title && (
-          <h1 className="text-sm font-semibold text-[rgb(var(--foreground))]">
-            {title}
-          </h1>
-        )}
-        {subtitle && (
-          <p className="text-xs text-[rgb(var(--muted-foreground))]">
-            {subtitle}
-          </p>
-        )}
+        {title && <h1 className="text-sm font-semibold text-[rgb(var(--foreground))]">{title}</h1>}
+        {subtitle && <p className="text-xs text-[rgb(var(--muted-foreground))]">{subtitle}</p>}
         {!title && !subtitle && (
-          <span className="text-sm font-medium text-[rgb(var(--foreground))]">
-            OpenFlow
-          </span>
+          <span className="text-sm font-medium text-[rgb(var(--foreground))]">OpenFlow</span>
         )}
       </div>
 
@@ -101,12 +91,7 @@ export function Header({
 
         {/* New chat button */}
         {newChatEnabled && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onNewChat}
-            aria-label="New Chat"
-          >
+          <Button variant="ghost" size="sm" onClick={onNewChat} aria-label="New Chat">
             <Icon icon={MessageSquarePlus} size="sm" />
             <span className="hidden sm:inline">New Chat</span>
           </Button>
@@ -114,12 +99,7 @@ export function Header({
 
         {/* New terminal button */}
         {newTerminalEnabled && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onNewTerminal}
-            aria-label="New Terminal"
-          >
+          <Button variant="ghost" size="sm" onClick={onNewTerminal} aria-label="New Terminal">
             <Icon icon={TerminalSquare} size="sm" />
             <span className="hidden sm:inline">Terminal</span>
           </Button>

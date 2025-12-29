@@ -1,7 +1,7 @@
+import { cn } from '@openflow/utils';
+import { X } from 'lucide-react';
 import type { HTMLAttributes, ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
-import { cn } from '@openflow/utils';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 
@@ -147,10 +147,7 @@ export function Dialog({
   };
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center"
-    >
+    <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
@@ -184,10 +181,7 @@ export function Dialog({
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-3">
             {title && (
-              <h2
-                id="dialog-title"
-                className="text-lg font-semibold text-[rgb(var(--foreground))]"
-              >
+              <h2 id="dialog-title" className="text-lg font-semibold text-[rgb(var(--foreground))]">
                 {title}
               </h2>
             )}
@@ -235,11 +229,7 @@ export function DialogHeader({ children, className, ...props }: DialogHeaderProp
  * Dialog content section.
  * Main content area of the dialog.
  */
-export function DialogContent({
-  children,
-  className,
-  ...props
-}: DialogContentProps) {
+export function DialogContent({ children, className, ...props }: DialogContentProps) {
   return (
     <div className={cn('flex-1 overflow-auto p-4', className)} {...props}>
       {children}

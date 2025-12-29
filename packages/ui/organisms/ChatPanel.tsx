@@ -1,11 +1,11 @@
-import { useCallback, useRef, useEffect, useState } from 'react';
-import type { Message, ExecutorProfile } from '@openflow/generated';
+import type { ExecutorProfile, Message } from '@openflow/generated';
 import { cn } from '@openflow/utils';
-import { Send, StopCircle, ChevronDown } from 'lucide-react';
+import { ChevronDown, Send, StopCircle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../atoms/Button';
-import { Textarea } from '../atoms/Textarea';
-import { Spinner } from '../atoms/Spinner';
 import { Icon } from '../atoms/Icon';
+import { Spinner } from '../atoms/Spinner';
+import { Textarea } from '../atoms/Textarea';
 import { Dropdown, type DropdownOption } from '../molecules/Dropdown';
 import { ChatMessage } from './ChatMessage';
 
@@ -144,17 +144,10 @@ export function ChatPanel({
   const hasMessages = messages.length > 0;
 
   // Check if the last message is streaming
-  const isLastMessageStreaming =
-    hasMessages && messages[messages.length - 1]?.isStreaming;
+  const isLastMessageStreaming = hasMessages && messages[messages.length - 1]?.isStreaming;
 
   return (
-    <div
-      className={cn(
-        'flex h-full flex-col',
-        'bg-[rgb(var(--background))]',
-        className
-      )}
-    >
+    <div className={cn('flex h-full flex-col', 'bg-[rgb(var(--background))]', className)}>
       {/* Messages area */}
       <div
         ref={messagesContainerRef}
@@ -170,9 +163,7 @@ export function ChatPanel({
             <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center">
               <div className="text-[rgb(var(--muted-foreground))]">
                 <p className="text-sm">No messages yet.</p>
-                <p className="mt-1 text-xs">
-                  Send a message to start the conversation.
-                </p>
+                <p className="mt-1 text-xs">Send a message to start the conversation.</p>
               </div>
             </div>
           )}
@@ -241,10 +232,7 @@ export function ChatPanel({
             placeholder={placeholder}
             disabled={isProcessing}
             resize="none"
-            className={cn(
-              'min-h-[44px] max-h-[200px] flex-1',
-              'py-2.5'
-            )}
+            className={cn('min-h-[44px] max-h-[200px] flex-1', 'py-2.5')}
             aria-label="Message input"
           />
 
@@ -277,8 +265,15 @@ export function ChatPanel({
 
         {/* Helper text */}
         <p className="mt-2 text-xs text-[rgb(var(--muted-foreground))]">
-          Press <kbd className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1">Enter</kbd> to send,{' '}
-          <kbd className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1">Shift+Enter</kbd> for new line
+          Press{' '}
+          <kbd className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1">
+            Enter
+          </kbd>{' '}
+          to send,{' '}
+          <kbd className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1">
+            Shift+Enter
+          </kbd>{' '}
+          for new line
         </p>
       </div>
     </div>

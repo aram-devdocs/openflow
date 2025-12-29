@@ -1,17 +1,17 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryResult,
-  type UseMutationResult,
-} from '@tanstack/react-query';
-import { chatQueries } from '@openflow/queries';
 import type {
   Chat,
   ChatWithMessages,
   CreateChatRequest,
   ExecutionProcess,
 } from '@openflow/generated';
+import { chatQueries } from '@openflow/queries';
+import {
+  type UseMutationResult,
+  type UseQueryResult,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { taskKeys } from './useTasks';
 
 /**
@@ -59,11 +59,7 @@ export function useChat(id: string): UseQueryResult<ChatWithMessages> {
  *
  * @returns Mutation for creating a chat
  */
-export function useCreateChat(): UseMutationResult<
-  Chat,
-  Error,
-  CreateChatRequest
-> {
+export function useCreateChat(): UseMutationResult<Chat, Error, CreateChatRequest> {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -81,11 +77,7 @@ export function useCreateChat(): UseMutationResult<
  *
  * @returns Mutation for starting a workflow step
  */
-export function useStartWorkflowStep(): UseMutationResult<
-  ExecutionProcess,
-  Error,
-  string
-> {
+export function useStartWorkflowStep(): UseMutationResult<ExecutionProcess, Error, string> {
   const queryClient = useQueryClient();
 
   return useMutation({

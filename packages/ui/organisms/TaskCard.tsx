@@ -1,10 +1,10 @@
 import type { Task, TaskStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
 import { AlertCircle, MoreVertical } from 'lucide-react';
-import { Card, CardContent } from '../molecules/Card';
-import { Badge, taskStatusToVariant, taskStatusToLabel } from '../atoms/Badge';
-import { Dropdown, type DropdownOption } from '../molecules/Dropdown';
+import { Badge, taskStatusToLabel, taskStatusToVariant } from '../atoms/Badge';
 import { Icon } from '../atoms/Icon';
+import { Card, CardContent } from '../molecules/Card';
+import { Dropdown, type DropdownOption } from '../molecules/Dropdown';
 
 export interface TaskCardProps {
   /** Task data to display */
@@ -82,8 +82,7 @@ export function TaskCard({
             className={cn(
               'flex-1 font-medium leading-tight',
               'line-clamp-2',
-              task.status === 'cancelled' &&
-                'text-[rgb(var(--muted-foreground))] line-through'
+              task.status === 'cancelled' && 'text-[rgb(var(--muted-foreground))] line-through'
             )}
           >
             {task.title}
@@ -112,12 +111,7 @@ export function TaskCard({
 
         {/* Description preview */}
         {task.description && (
-          <p
-            className={cn(
-              'mt-2 text-sm text-[rgb(var(--muted-foreground))]',
-              'line-clamp-2'
-            )}
-          >
+          <p className={cn('mt-2 text-sm text-[rgb(var(--muted-foreground))]', 'line-clamp-2')}>
             {task.description}
           </p>
         )}

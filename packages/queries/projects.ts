@@ -1,9 +1,5 @@
+import type { CreateProjectRequest, Project, UpdateProjectRequest } from '@openflow/generated';
 import { invoke } from '@tauri-apps/api/core';
-import type {
-  Project,
-  CreateProjectRequest,
-  UpdateProjectRequest,
-} from '@openflow/generated';
 
 /**
  * Project query wrappers for Tauri IPC.

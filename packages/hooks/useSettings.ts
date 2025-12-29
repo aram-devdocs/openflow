@@ -1,11 +1,11 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryResult,
-  type UseMutationResult,
-} from '@tanstack/react-query';
 import { settingsQueries } from '@openflow/queries';
+import {
+  type UseMutationResult,
+  type UseQueryResult,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 /**
  * Query key factory for settings.
@@ -50,11 +50,7 @@ export function useAllSettings(): UseQueryResult<Record<string, string>> {
  *
  * @returns Mutation for setting a value
  */
-export function useSetSetting(): UseMutationResult<
-  void,
-  Error,
-  { key: string; value: string }
-> {
+export function useSetSetting(): UseMutationResult<void, Error, { key: string; value: string }> {
   const queryClient = useQueryClient();
 
   return useMutation({

@@ -1,5 +1,5 @@
-import { forwardRef, type InputHTMLAttributes } from 'react';
 import { cn } from '@openflow/utils';
+import { type InputHTMLAttributes, forwardRef } from 'react';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   /** Show error styling */

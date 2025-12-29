@@ -1,7 +1,7 @@
+import { type Task, TaskStatus } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { TaskCard } from './TaskCard';
-import { TaskStatus, type Task } from '@openflow/generated';
 
 const meta: Meta<typeof TaskCard> = {
   title: 'Organisms/TaskCard',
@@ -46,8 +46,7 @@ const mockTaskWithActions: Task = {
   ...mockTask,
   id: 'task-2',
   title: 'Fix checkout validation',
-  description:
-    'Validation errors are not showing correctly on the checkout form.',
+  description: 'Validation errors are not showing correctly on the checkout form.',
   status: TaskStatus.Inprogress,
   actionsRequiredCount: 2,
 };
@@ -206,13 +205,7 @@ export const CardList: Story = {
   render: function TaskCardList() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
-    const tasks = [
-      mockTaskTodo,
-      mockTask,
-      mockTaskWithActions,
-      mockTaskInReview,
-      mockTaskDone,
-    ];
+    const tasks = [mockTaskTodo, mockTask, mockTaskWithActions, mockTaskInReview, mockTaskDone];
 
     return (
       <div className="flex flex-col gap-2">

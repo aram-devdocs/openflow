@@ -1,18 +1,18 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryResult,
-  type UseMutationResult,
-} from '@tanstack/react-query';
-import { taskQueries } from '@openflow/queries';
 import type {
+  CreateTaskRequest,
   Task,
   TaskStatus,
   TaskWithChats,
-  CreateTaskRequest,
   UpdateTaskRequest,
 } from '@openflow/generated';
+import { taskQueries } from '@openflow/queries';
+import {
+  type UseMutationResult,
+  type UseQueryResult,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 /**
  * Query key factory for tasks.
@@ -34,10 +34,7 @@ export const taskKeys = {
  * @param status - Optional status filter
  * @returns Query result with array of tasks
  */
-export function useTasks(
-  projectId: string,
-  status?: TaskStatus
-): UseQueryResult<Task[]> {
+export function useTasks(projectId: string, status?: TaskStatus): UseQueryResult<Task[]> {
   return useQuery({
     queryKey: taskKeys.list(projectId, status),
     queryFn: () => taskQueries.list(projectId, status),
@@ -64,11 +61,7 @@ export function useTask(id: string): UseQueryResult<TaskWithChats> {
  *
  * @returns Mutation for creating a task
  */
-export function useCreateTask(): UseMutationResult<
-  Task,
-  Error,
-  CreateTaskRequest
-> {
+export function useCreateTask(): UseMutationResult<Task, Error, CreateTaskRequest> {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -152,11 +145,7 @@ export function useArchivedTasks(projectId?: string): UseQueryResult<Task[]> {
  *
  * @returns Mutation for restoring an archived task
  */
-export function useRestoreTask(): UseMutationResult<
-  Task,
-  Error,
-  { id: string }
-> {
+export function useRestoreTask(): UseMutationResult<Task, Error, { id: string }> {
   const queryClient = useQueryClient();
 
   return useMutation({

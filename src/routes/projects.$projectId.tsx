@@ -12,35 +12,30 @@
  * Keeps page logic minimal (<200 lines) by delegating to UI components.
  */
 
-import { useState, useCallback } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import type { CreateTaskRequest, TaskStatus } from '@openflow/generated';
 import {
-  Plus,
-  Settings,
-  FolderGit2,
-  ChevronLeft,
-} from 'lucide-react';
-import {
-  AppLayout,
-  Header,
-  Sidebar,
-  TaskList,
-  Dialog,
-  FormField,
-  Button,
-  Input,
-  Textarea,
-} from '@openflow/ui';
-import {
+  useCreateTask,
+  useKeyboardShortcuts,
   useProject,
   useProjects,
   useTasks,
-  useCreateTask,
   useUpdateTask,
-  useKeyboardShortcuts,
 } from '@openflow/hooks';
-import type { TaskStatus, CreateTaskRequest } from '@openflow/generated';
+import {
+  AppLayout,
+  Button,
+  Dialog,
+  FormField,
+  Header,
+  Input,
+  Sidebar,
+  TaskList,
+  Textarea,
+} from '@openflow/ui';
 import type { StatusFilter } from '@openflow/ui';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { ChevronLeft, FolderGit2, Plus, Settings } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/projects/$projectId')({
   component: ProjectDetailPage,
@@ -169,9 +164,7 @@ function ProjectDetailPage() {
 
   // Filter tasks based on status filter
   const filteredTasks =
-    statusFilter === 'all'
-      ? tasks
-      : tasks.filter((task) => task.status === statusFilter);
+    statusFilter === 'all' ? tasks : tasks.filter((task) => task.status === statusFilter);
 
   // Loading state
   if (isLoadingProject) {
@@ -182,9 +175,7 @@ function ProjectDetailPage() {
         header={<Header title="Loading..." onSearch={handleSearch} />}
       >
         <div className="flex h-full items-center justify-center">
-          <div className="text-sm text-[rgb(var(--muted-foreground))]">
-            Loading project...
-          </div>
+          <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading project...</div>
         </div>
       </AppLayout>
     );
@@ -200,17 +191,11 @@ function ProjectDetailPage() {
       >
         <div className="flex h-full flex-col items-center justify-center p-8">
           <FolderGit2 className="mb-4 h-16 w-16 text-[rgb(var(--muted-foreground))]" />
-          <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">
-            Project not found
-          </h2>
+          <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">Project not found</h2>
           <p className="mt-2 text-sm text-[rgb(var(--muted-foreground))]">
             The project you're looking for doesn't exist or has been deleted.
           </p>
-          <Button
-            variant="primary"
-            className="mt-4"
-            onClick={handleBackToProjects}
-          >
+          <Button variant="primary" className="mt-4" onClick={handleBackToProjects}>
             <ChevronLeft className="mr-2 h-4 w-4" />
             Back to Projects
           </Button>
@@ -267,7 +252,16 @@ function ProjectDetailPage() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/settings/projects' as string, search: { projectId } as Record<string, string> })}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                navigate({
+                  to: '/settings/projects' as string,
+                  search: { projectId } as Record<string, string>,
+                })
+              }
+            >
               <Settings className="h-4 w-4" />
             </Button>
             <Button variant="primary" size="sm" onClick={handleNewTask}>
@@ -281,23 +275,15 @@ function ProjectDetailPage() {
         <div className="flex-1 overflow-auto p-6">
           {isLoadingTasks ? (
             <div className="flex h-full items-center justify-center">
-              <div className="text-sm text-[rgb(var(--muted-foreground))]">
-                Loading tasks...
-              </div>
+              <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading tasks...</div>
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center">
-              <h3 className="text-lg font-medium text-[rgb(var(--foreground))]">
-                No tasks yet
-              </h3>
+              <h3 className="text-lg font-medium text-[rgb(var(--foreground))]">No tasks yet</h3>
               <p className="mt-2 text-sm text-[rgb(var(--muted-foreground))]">
                 Create your first task to get started.
               </p>
-              <Button
-                variant="primary"
-                className="mt-4"
-                onClick={handleNewTask}
-              >
+              <Button variant="primary" className="mt-4" onClick={handleNewTask}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Task
               </Button>
@@ -341,19 +327,13 @@ function ProjectDetailPage() {
             />
           </FormField>
 
-          {createError && (
-            <p className="text-sm text-red-400">{createError}</p>
-          )}
+          {createError && <p className="text-sm text-red-400">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="ghost" onClick={handleCloseCreateDialog}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              onClick={handleCreateTask}
-              loading={createTask.isPending}
-            >
+            <Button variant="primary" onClick={handleCreateTask} loading={createTask.isPending}>
               Create Task
             </Button>
           </div>

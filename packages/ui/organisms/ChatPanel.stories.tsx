@@ -1,8 +1,8 @@
+import { MessageRole } from '@openflow/generated';
+import type { ExecutorProfile, Message } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
 import { ChatPanel } from './ChatPanel';
-import { MessageRole } from '@openflow/generated';
-import type { Message, ExecutorProfile } from '@openflow/generated';
 
 const meta = {
   title: 'Organisms/ChatPanel',
@@ -82,7 +82,7 @@ const streamingMessage: Message = {
   id: 'msg-streaming',
   chatId: 'chat-1',
   role: MessageRole.Assistant,
-  content: 'Let me analyze your codebase and create the component. I\'ll start by...',
+  content: "Let me analyze your codebase and create the component. I'll start by...",
   isStreaming: true,
   createdAt: '2024-01-15T10:02:00Z',
 };
@@ -91,7 +91,8 @@ const systemMessage: Message = {
   id: 'msg-system',
   chatId: 'chat-1',
   role: MessageRole.System,
-  content: 'The assistant is configured to help with React development. All code will follow TypeScript best practices.',
+  content:
+    'The assistant is configured to help with React development. All code will follow TypeScript best practices.',
   isStreaming: false,
   createdAt: '2024-01-15T09:59:00Z',
 };

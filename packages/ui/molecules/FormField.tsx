@@ -1,5 +1,5 @@
-import { type ReactNode, useId } from 'react';
 import { cn } from '@openflow/utils';
+import { type ReactNode, useId } from 'react';
 import { Label } from '../atoms/Label';
 
 export interface FormFieldProps {
@@ -56,11 +56,7 @@ export function FormField({
 
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
-      <Label
-        htmlFor={fieldId}
-        required={required ?? false}
-        disabled={disabled ?? false}
-      >
+      <Label htmlFor={fieldId} required={required ?? false} disabled={disabled ?? false}>
         {label}
       </Label>
 
@@ -69,10 +65,7 @@ export function FormField({
       {helperText && !hasError && (
         <p
           id={helperId}
-          className={cn(
-            'text-xs text-[rgb(var(--muted-foreground))]',
-            disabled && 'opacity-70'
-          )}
+          className={cn('text-xs text-[rgb(var(--muted-foreground))]', disabled && 'opacity-70')}
         >
           {helperText}
         </p>

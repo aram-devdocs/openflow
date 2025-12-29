@@ -1,15 +1,15 @@
 import type { Project } from '@openflow/generated';
 import { cn } from '@openflow/utils';
 import {
-  ChevronDown,
   Check,
-  Plus,
+  ChevronDown,
   Folder,
-  FolderGit2,
   FolderCode,
+  FolderGit2,
   FolderKanban,
   FolderOpen,
   type LucideIcon,
+  Plus,
 } from 'lucide-react';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Icon } from '../atoms/Icon';
@@ -313,8 +313,7 @@ export function ProjectSelector({
                     'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
                     'transition-colors duration-75',
                     // Highlighted state
-                    isHighlighted &&
-                      'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]',
+                    isHighlighted && 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]',
                     // Selected state
                     isSelected && 'font-medium'
                   )}
@@ -331,11 +330,7 @@ export function ProjectSelector({
                   />
                   <span className="flex-1 truncate">{project.name}</span>
                   {isSelected && (
-                    <Icon
-                      icon={Check}
-                      size="sm"
-                      className="text-[rgb(var(--primary))]"
-                    />
+                    <Icon icon={Check} size="sm" className="text-[rgb(var(--primary))]" />
                   )}
                 </li>
               );
@@ -344,10 +339,7 @@ export function ProjectSelector({
 
           {/* Divider */}
           {projects.length > 0 && (
-            <li
-              role="separator"
-              className="my-1 h-px bg-[rgb(var(--border))]"
-            />
+            <li role="separator" className="my-1 h-px bg-[rgb(var(--border))]" />
           )}
 
           {/* New Project button */}
@@ -364,11 +356,7 @@ export function ProjectSelector({
                 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
             )}
           >
-            <Icon
-              icon={Plus}
-              size="sm"
-              className="shrink-0 text-[rgb(var(--primary))]"
-            />
+            <Icon icon={Plus} size="sm" className="shrink-0 text-[rgb(var(--primary))]" />
             <span className="flex-1">New Project</span>
           </li>
         </ul>

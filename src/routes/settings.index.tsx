@@ -7,11 +7,11 @@
  * Follows the orchestration pattern: connects hooks to UI components.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useAllSettings, useKeyboardShortcuts, useSetSetting } from '@openflow/hooks';
+import { Badge, Button, Card, FormField } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
-import { Save, Moon, Sun, Monitor, HardDrive } from 'lucide-react';
-import { Button, FormField, Card, Badge } from '@openflow/ui';
-import { useAllSettings, useSetSetting, useKeyboardShortcuts } from '@openflow/hooks';
+import { HardDrive, Monitor, Moon, Save, Sun } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/settings/')({
   component: GeneralSettingsPage,
@@ -89,9 +89,7 @@ function GeneralSettingsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">
-          Loading settings...
-        </div>
+        <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading settings...</div>
       </div>
     );
   }

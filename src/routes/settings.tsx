@@ -10,12 +10,12 @@
  * Follows the orchestration pattern: connects hooks to UI components.
  */
 
-import { useCallback } from 'react';
-import { createFileRoute, useNavigate, Outlet, useMatches } from '@tanstack/react-router';
-import { Settings, User, FolderGit2, Palette, Bell, Keyboard } from 'lucide-react';
+import { useKeyboardShortcuts } from '@openflow/hooks';
 import { AppLayout, Header, SettingsLayout } from '@openflow/ui';
 import type { SettingsNavItem } from '@openflow/ui';
-import { useKeyboardShortcuts } from '@openflow/hooks';
+import { Outlet, createFileRoute, useMatches, useNavigate } from '@tanstack/react-router';
+import { Bell, FolderGit2, Keyboard, Palette, Settings, User } from 'lucide-react';
+import { useCallback } from 'react';
 
 export const Route = createFileRoute('/settings')({
   component: SettingsPage,

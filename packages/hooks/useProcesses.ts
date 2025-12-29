@@ -1,12 +1,12 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryResult,
-  type UseMutationResult,
-} from '@tanstack/react-query';
-import { processQueries } from '@openflow/queries';
 import type { ExecutionProcess } from '@openflow/generated';
+import { processQueries } from '@openflow/queries';
+import {
+  type UseMutationResult,
+  type UseQueryResult,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 /**
  * Query key factory for processes.
@@ -37,11 +37,7 @@ export function useProcess(id: string): UseQueryResult<ExecutionProcess> {
  *
  * @returns Mutation for killing a process
  */
-export function useKillProcess(): UseMutationResult<
-  ExecutionProcess,
-  Error,
-  string
-> {
+export function useKillProcess(): UseMutationResult<ExecutionProcess, Error, string> {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -63,7 +59,6 @@ export function useSendInput(): UseMutationResult<
   { processId: string; input: string }
 > {
   return useMutation({
-    mutationFn: ({ processId, input }) =>
-      processQueries.sendInput(processId, input),
+    mutationFn: ({ processId, input }) => processQueries.sendInput(processId, input),
   });
 }

@@ -1,10 +1,10 @@
-import { invoke } from '@tauri-apps/api/core';
 import type {
-  ExecutorProfile,
   CreateExecutorProfileRequest,
-  UpdateExecutorProfileRequest,
   ExecutionProcess,
+  ExecutorProfile,
+  UpdateExecutorProfileRequest,
 } from '@openflow/generated';
+import { invoke } from '@tauri-apps/api/core';
 
 /**
  * Executor profile query wrappers for Tauri IPC.
@@ -25,17 +25,13 @@ export const executorProfileQueries = {
   /**
    * Update an existing executor profile.
    */
-  update: (
-    id: string,
-    request: UpdateExecutorProfileRequest
-  ): Promise<ExecutorProfile> =>
+  update: (id: string, request: UpdateExecutorProfileRequest): Promise<ExecutorProfile> =>
     invoke('update_executor_profile', { id, request }),
 
   /**
    * Delete an executor profile by ID.
    */
-  delete: (id: string): Promise<void> =>
-    invoke('delete_executor_profile', { id }),
+  delete: (id: string): Promise<void> => invoke('delete_executor_profile', { id }),
 
   /**
    * Run an executor (start a process) for a chat with a given prompt.

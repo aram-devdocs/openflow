@@ -1,8 +1,8 @@
+import { type SearchResult, SearchResultType } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
-import { Plus, Settings, Archive, FileText, GitBranch } from 'lucide-react';
-import { CommandPalette, type CommandAction, type RecentItem } from './CommandPalette';
-import { SearchResultType, type SearchResult } from '@openflow/generated';
+import { Archive, FileText, GitBranch, Plus, Settings } from 'lucide-react';
+import { type CommandAction, CommandPalette, type RecentItem } from './CommandPalette';
 
 const meta = {
   title: 'Organisms/CommandPalette',

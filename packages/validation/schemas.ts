@@ -4,13 +4,7 @@ import { z } from 'zod';
 // Enum Schemas
 // =============================================================================
 
-export const taskStatusSchema = z.enum([
-  'todo',
-  'inprogress',
-  'inreview',
-  'done',
-  'cancelled',
-]);
+export const taskStatusSchema = z.enum(['todo', 'inprogress', 'inreview', 'done', 'cancelled']);
 export type TaskStatusInput = z.infer<typeof taskStatusSchema>;
 
 export const chatRoleSchema = z.enum(['main', 'review', 'test', 'terminal']);
@@ -19,12 +13,7 @@ export type ChatRoleInput = z.infer<typeof chatRoleSchema>;
 export const messageRoleSchema = z.enum(['user', 'assistant', 'system']);
 export type MessageRoleInput = z.infer<typeof messageRoleSchema>;
 
-export const processStatusSchema = z.enum([
-  'running',
-  'completed',
-  'failed',
-  'killed',
-]);
+export const processStatusSchema = z.enum(['running', 'completed', 'failed', 'killed']);
 export type ProcessStatusInput = z.infer<typeof processStatusSchema>;
 
 export const runReasonSchema = z.enum([
@@ -39,12 +28,7 @@ export type RunReasonInput = z.infer<typeof runReasonSchema>;
 export const outputTypeSchema = z.enum(['stdout', 'stderr']);
 export type OutputTypeInput = z.infer<typeof outputTypeSchema>;
 
-export const searchResultTypeSchema = z.enum([
-  'task',
-  'project',
-  'chat',
-  'message',
-]);
+export const searchResultTypeSchema = z.enum(['task', 'project', 'chat', 'message']);
 export type SearchResultTypeInput = z.infer<typeof searchResultTypeSchema>;
 
 // =============================================================================
@@ -142,9 +126,7 @@ export const createExecutorProfileSchema = z.object({
   args: z.string().optional().default(''),
   isDefault: z.boolean().optional().default(false),
 });
-export type CreateExecutorProfileInput = z.infer<
-  typeof createExecutorProfileSchema
->;
+export type CreateExecutorProfileInput = z.infer<typeof createExecutorProfileSchema>;
 
 export const updateExecutorProfileSchema = z.object({
   name: z.string().min(1).max(255).optional(),
@@ -152,9 +134,7 @@ export const updateExecutorProfileSchema = z.object({
   args: z.string().optional(),
   isDefault: z.boolean().optional(),
 });
-export type UpdateExecutorProfileInput = z.infer<
-  typeof updateExecutorProfileSchema
->;
+export type UpdateExecutorProfileInput = z.infer<typeof updateExecutorProfileSchema>;
 
 // =============================================================================
 // Search Schemas

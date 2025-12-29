@@ -1,5 +1,5 @@
+import type { CreateMessageRequest, Message } from '@openflow/generated';
 import { invoke } from '@tauri-apps/api/core';
-import type { Message, CreateMessageRequest } from '@openflow/generated';
 
 /**
  * Message query wrappers for Tauri IPC.
@@ -10,8 +10,7 @@ export const messageQueries = {
    * List all messages for a chat.
    * @param chatId - Chat ID to filter messages
    */
-  list: (chatId: string): Promise<Message[]> =>
-    invoke('list_messages', { chatId }),
+  list: (chatId: string): Promise<Message[]> => invoke('list_messages', { chatId }),
 
   /**
    * Create a new message.

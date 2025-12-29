@@ -1,17 +1,17 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryResult,
-  type UseMutationResult,
-} from '@tanstack/react-query';
-import { executorProfileQueries } from '@openflow/queries';
 import type {
-  ExecutorProfile,
   CreateExecutorProfileRequest,
-  UpdateExecutorProfileRequest,
   ExecutionProcess,
+  ExecutorProfile,
+  UpdateExecutorProfileRequest,
 } from '@openflow/generated';
+import { executorProfileQueries } from '@openflow/queries';
+import {
+  type UseMutationResult,
+  type UseQueryResult,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 /**
  * Query key factory for executor profiles.
@@ -48,8 +48,7 @@ export function useCreateExecutorProfile(): UseMutationResult<
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: CreateExecutorProfileRequest) =>
-      executorProfileQueries.create(request),
+    mutationFn: (request: CreateExecutorProfileRequest) => executorProfileQueries.create(request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: executorProfileKeys.lists() });
     },
@@ -81,11 +80,7 @@ export function useUpdateExecutorProfile(): UseMutationResult<
  *
  * @returns Mutation for deleting an executor profile
  */
-export function useDeleteExecutorProfile(): UseMutationResult<
-  void,
-  Error,
-  string
-> {
+export function useDeleteExecutorProfile(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -108,7 +103,6 @@ export function useRunExecutor(): UseMutationResult<
   { chatId: string; prompt: string }
 > {
   return useMutation({
-    mutationFn: ({ chatId, prompt }) =>
-      executorProfileQueries.runExecutor(chatId, prompt),
+    mutationFn: ({ chatId, prompt }) => executorProfileQueries.runExecutor(chatId, prompt),
   });
 }

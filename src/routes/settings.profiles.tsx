@@ -12,22 +12,22 @@
  * Follows the orchestration pattern: connects hooks to UI components.
  */
 
-import { useState, useCallback } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
-import { Plus, Pencil, Trash2, Star, Terminal, Check } from 'lucide-react';
-import { Button, Dialog, FormField, Input, Textarea, Card, Badge } from '@openflow/ui';
-import {
-  useExecutorProfiles,
-  useCreateExecutorProfile,
-  useUpdateExecutorProfile,
-  useDeleteExecutorProfile,
-  useKeyboardShortcuts,
-} from '@openflow/hooks';
 import type {
-  ExecutorProfile,
   CreateExecutorProfileRequest,
+  ExecutorProfile,
   UpdateExecutorProfileRequest,
 } from '@openflow/generated';
+import {
+  useCreateExecutorProfile,
+  useDeleteExecutorProfile,
+  useExecutorProfiles,
+  useKeyboardShortcuts,
+  useUpdateExecutorProfile,
+} from '@openflow/hooks';
+import { Badge, Button, Card, Dialog, FormField, Input, Textarea } from '@openflow/ui';
+import { createFileRoute } from '@tanstack/react-router';
+import { Check, Pencil, Plus, Star, Terminal, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/settings/profiles')({
   component: ExecutorProfilesPage,
@@ -218,11 +218,7 @@ function ExecutorProfilesPage() {
           <p className="mt-1 text-sm text-[rgb(var(--muted-foreground))]">
             Create your first profile to start using AI CLI tools.
           </p>
-          <Button
-            variant="primary"
-            className="mt-4"
-            onClick={handleOpenCreateDialog}
-          >
+          <Button variant="primary" className="mt-4" onClick={handleOpenCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
             Create Profile
           </Button>
@@ -305,14 +301,10 @@ function ExecutorProfilesPage() {
             <input
               type="checkbox"
               checked={formData.isDefault}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, isDefault: e.target.checked }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, isDefault: e.target.checked }))}
               className="h-4 w-4 rounded border-[rgb(var(--border))] bg-[rgb(var(--background))] text-[rgb(var(--primary))] focus:ring-[rgb(var(--primary))]"
             />
-            <span className="text-sm text-[rgb(var(--foreground))]">
-              Set as default profile
-            </span>
+            <span className="text-sm text-[rgb(var(--foreground))]">Set as default profile</span>
           </label>
 
           {formError && <p className="text-sm text-red-400">{formError}</p>}
@@ -371,9 +363,7 @@ function ProfileCard({ profile, onEdit, onDelete, onSetDefault }: ProfileCardPro
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <Terminal className="h-4 w-4 text-[rgb(var(--primary))]" />
-            <h3 className="font-medium text-[rgb(var(--foreground))]">
-              {profile.name}
-            </h3>
+            <h3 className="font-medium text-[rgb(var(--foreground))]">{profile.name}</h3>
             {profile.isDefault && (
               <Badge variant="success" className="ml-1">
                 <Star className="mr-1 h-3 w-3" />

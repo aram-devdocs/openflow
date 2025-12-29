@@ -1,10 +1,10 @@
-import { invoke } from '@tauri-apps/api/core';
 import type {
   Chat,
   ChatWithMessages,
   CreateChatRequest,
   ExecutionProcess,
 } from '@openflow/generated';
+import { invoke } from '@tauri-apps/api/core';
 
 /**
  * Chat query wrappers for Tauri IPC.
@@ -15,8 +15,7 @@ export const chatQueries = {
    * List all chats for a task.
    * @param taskId - Task ID to filter chats
    */
-  list: (taskId: string): Promise<Chat[]> =>
-    invoke('list_chats', { taskId }),
+  list: (taskId: string): Promise<Chat[]> => invoke('list_chats', { taskId }),
 
   /**
    * Get a single chat by ID with its messages.
@@ -26,8 +25,7 @@ export const chatQueries = {
   /**
    * Create a new chat.
    */
-  create: (request: CreateChatRequest): Promise<Chat> =>
-    invoke('create_chat', { request }),
+  create: (request: CreateChatRequest): Promise<Chat> => invoke('create_chat', { request }),
 
   /**
    * Start a workflow step execution for a chat.

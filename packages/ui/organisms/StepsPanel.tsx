@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
 import type { WorkflowStep } from '@openflow/generated';
 import { WorkflowStepStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
-import { Play, Plus, Check, Loader2, Circle, SkipForward } from 'lucide-react';
+import { Check, Circle, Loader2, Play, Plus, SkipForward } from 'lucide-react';
+import { useCallback } from 'react';
 import { Button } from '../atoms/Button';
 import { Checkbox } from '../atoms/Checkbox';
 import { Icon } from '../atoms/Icon';
@@ -144,25 +144,16 @@ export function StepsPanel({
   );
 
   // Check if any step is in progress
-  const hasInProgressStep = steps.some(
-    (step) => step.status === WorkflowStepStatus.InProgress
-  );
+  const hasInProgressStep = steps.some((step) => step.status === WorkflowStepStatus.InProgress);
 
   return (
-    <div
-      className={cn(
-        'flex h-full flex-col',
-        'bg-[rgb(var(--background))]',
-        className
-      )}
-    >
+    <div className={cn('flex h-full flex-col', 'bg-[rgb(var(--background))]', className)}>
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-3">
-        <h3 className="text-sm font-semibold text-[rgb(var(--foreground))]">
-          Workflow Steps
-        </h3>
+        <h3 className="text-sm font-semibold text-[rgb(var(--foreground))]">Workflow Steps</h3>
         <span className="text-xs text-[rgb(var(--muted-foreground))]">
-          {steps.filter((s) => s.status === WorkflowStepStatus.Completed).length}/{steps.length} completed
+          {steps.filter((s) => s.status === WorkflowStepStatus.Completed).length}/{steps.length}{' '}
+          completed
         </span>
       </div>
 
@@ -175,9 +166,7 @@ export function StepsPanel({
             const isInProgress = step.status === WorkflowStepStatus.InProgress;
             const isSkipped = step.status === WorkflowStepStatus.Skipped;
             const canStart =
-              !disabled &&
-              !hasInProgressStep &&
-              step.status === WorkflowStepStatus.Pending;
+              !disabled && !hasInProgressStep && step.status === WorkflowStepStatus.Pending;
             const StepIcon = getStepIcon(step.status);
 
             return (
@@ -221,7 +210,10 @@ export function StepsPanel({
                         isCompleted && 'text-[rgb(var(--success))]',
                         isInProgress && 'text-[rgb(var(--primary))] animate-spin',
                         isSkipped && 'text-[rgb(var(--muted-foreground))]',
-                        !isCompleted && !isInProgress && !isSkipped && 'text-[rgb(var(--muted-foreground))]'
+                        !isCompleted &&
+                          !isInProgress &&
+                          !isSkipped &&
+                          'text-[rgb(var(--muted-foreground))]'
                       )}
                     />
 

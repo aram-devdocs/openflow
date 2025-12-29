@@ -49,7 +49,8 @@ export const Default: Story = {
 /** Textarea with value */
 export const WithValue: Story = {
   args: {
-    defaultValue: 'This is some text content that spans multiple lines.\n\nIt can contain paragraphs and more.',
+    defaultValue:
+      'This is some text content that spans multiple lines.\n\nIt can contain paragraphs and more.',
   },
 };
 
@@ -168,7 +169,9 @@ export const AllResizeOptions: Story = {
         <Textarea placeholder="resize: none" resize="none" />
       </div>
       <div>
-        <label className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block">Vertical (default)</label>
+        <label className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block">
+          Vertical (default)
+        </label>
         <Textarea placeholder="resize: vertical" resize="vertical" />
       </div>
       <div>

@@ -21,6 +21,7 @@ impl ExecutorProfileService {
             SELECT
                 id,
                 name,
+                description,
                 command,
                 args,
                 env,
@@ -45,6 +46,7 @@ impl ExecutorProfileService {
             SELECT
                 id,
                 name,
+                description,
                 command,
                 args,
                 env,
@@ -84,13 +86,14 @@ impl ExecutorProfileService {
         sqlx::query(
             r#"
             INSERT INTO executor_profiles (
-                id, name, command, args, env, model, is_default
+                id, name, description, command, args, env, model, is_default
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(&id)
         .bind(&request.name)
+        .bind(&request.description)
         .bind(&request.command)
         .bind(&request.args)
         .bind(&request.env)
@@ -114,6 +117,7 @@ impl ExecutorProfileService {
 
         // Apply updates, falling back to existing values
         let name = request.name.unwrap_or(existing.name);
+        let description = request.description.or(existing.description);
         let command = request.command.unwrap_or(existing.command);
         let args = request.args.or(existing.args);
         let env = request.env.or(existing.env);
@@ -130,6 +134,7 @@ impl ExecutorProfileService {
             UPDATE executor_profiles
             SET
                 name = ?,
+                description = ?,
                 command = ?,
                 args = ?,
                 env = ?,
@@ -140,6 +145,7 @@ impl ExecutorProfileService {
             "#,
         )
         .bind(&name)
+        .bind(&description)
         .bind(&command)
         .bind(&args)
         .bind(&env)
@@ -172,6 +178,7 @@ impl ExecutorProfileService {
             SELECT
                 id,
                 name,
+                description,
                 command,
                 args,
                 env,
@@ -232,6 +239,7 @@ mod tests {
     fn test_create_request(name: &str, command: &str) -> CreateExecutorProfileRequest {
         CreateExecutorProfileRequest {
             name: name.to_string(),
+            description: None,
             command: command.to_string(),
             args: None,
             env: None,
@@ -264,6 +272,7 @@ mod tests {
 
         let request = CreateExecutorProfileRequest {
             name: "Claude Code Pro".to_string(),
+            description: Some("Pro version of Claude Code".to_string()),
             command: "claude".to_string(),
             args: Some(r#"["--verbose", "--no-confirm"]"#.to_string()),
             env: Some(r#"{"ANTHROPIC_API_KEY": "test"}"#.to_string()),
@@ -374,6 +383,7 @@ mod tests {
         // Update partial fields
         let update_request = UpdateExecutorProfileRequest {
             name: Some("Updated Name".to_string()),
+            description: None,
             command: None, // Keep original
             args: Some(r#"["--flag"]"#.to_string()),
             env: None,
@@ -399,6 +409,7 @@ mod tests {
 
         let update_request = UpdateExecutorProfileRequest {
             name: Some("New Name".to_string()),
+            description: None,
             command: None,
             args: None,
             env: None,
@@ -476,6 +487,7 @@ mod tests {
         // Create a default profile
         let request = CreateExecutorProfileRequest {
             name: "Default Profile".to_string(),
+            description: None,
             command: "claude".to_string(),
             args: None,
             env: None,
@@ -501,6 +513,7 @@ mod tests {
         // Create first default profile
         let request1 = CreateExecutorProfileRequest {
             name: "First Default".to_string(),
+            description: None,
             command: "claude".to_string(),
             args: None,
             env: None,
@@ -515,6 +528,7 @@ mod tests {
         // Create second default profile - should clear first's default
         let request2 = CreateExecutorProfileRequest {
             name: "Second Default".to_string(),
+            description: None,
             command: "gemini".to_string(),
             args: None,
             env: None,
@@ -546,6 +560,7 @@ mod tests {
         // Create a default profile
         let request1 = CreateExecutorProfileRequest {
             name: "Original Default".to_string(),
+            description: None,
             command: "claude".to_string(),
             args: None,
             env: None,
@@ -566,6 +581,7 @@ mod tests {
         // Update second to be default
         let update_request = UpdateExecutorProfileRequest {
             name: None,
+            description: None,
             command: None,
             args: None,
             env: None,

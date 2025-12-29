@@ -1,11 +1,11 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type {
-  ProcessOutputEvent,
-  ProcessStatusEvent,
-  ProcessStatus,
   OutputType,
+  ProcessOutputEvent,
+  ProcessStatus,
+  ProcessStatusEvent,
 } from '@openflow/generated';
+import { type UnlistenFn, listen } from '@tauri-apps/api/event';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * Output line with metadata for rendering.
@@ -117,7 +117,7 @@ export function useProcessOutput(processId: string): ProcessOutputState {
 
             const { status: newStatus, exitCode: newExitCode } = event.payload;
             setStatus(newStatus);
-            if (newExitCode !== null) {
+            if (newExitCode !== undefined && newExitCode !== null) {
               setExitCode(newExitCode);
             }
           }
@@ -181,12 +181,8 @@ export function useProcessOutput(processId: string): ProcessOutputState {
  * }
  * ```
  */
-export function useMultipleProcessOutput(
-  processIds: string[]
-): Map<string, ProcessOutputState> {
-  const [outputs, setOutputs] = useState<Map<string, ProcessOutputState>>(
-    new Map()
-  );
+export function useMultipleProcessOutput(processIds: string[]): Map<string, ProcessOutputState> {
+  const [outputs, setOutputs] = useState<Map<string, ProcessOutputState>>(new Map());
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -233,10 +229,7 @@ export function useMultipleProcessOutput(
                 const updated = new Map(prev);
                 const current = updated.get(processId);
                 if (current) {
-                  const newOutput = [
-                    ...current.output,
-                    { content, outputType, timestamp },
-                  ];
+                  const newOutput = [...current.output, { content, outputType, timestamp }];
                   updated.set(processId, {
                     ...current,
                     output: newOutput,
@@ -273,10 +266,7 @@ export function useMultipleProcessOutput(
           );
           unlistenFns.push(statusUnlisten);
         } catch (error) {
-          console.error(
-            `Failed to subscribe to process ${processId}:`,
-            error
-          );
+          console.error(`Failed to subscribe to process ${processId}:`, error);
         }
       }
     };

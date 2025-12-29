@@ -1,16 +1,8 @@
-import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
+import { Bell, FileText, Filter, Folder, Mail, Search, Settings, User } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
 import { Dropdown } from './Dropdown';
-import {
-  Search,
-  Filter,
-  Settings,
-  User,
-  Folder,
-  FileText,
-  Bell,
-  Mail,
-} from 'lucide-react';
 
 const meta: Meta<typeof Dropdown> = {
   title: 'Molecules/Dropdown',
@@ -84,9 +76,7 @@ export const Interactive: Story = {
           onChange={setValue}
           placeholder="Select an option"
         />
-        <p className="text-sm text-[rgb(var(--muted-foreground))]">
-          Selected: {value || 'None'}
-        </p>
+        <p className="text-sm text-[rgb(var(--muted-foreground))]">Selected: {value || 'None'}</p>
       </div>
     );
   },
@@ -161,8 +151,7 @@ export const LongLabels: Story = {
       },
       {
         value: 'longer',
-        label:
-          'This is an even longer option label that demonstrates truncation behavior',
+        label: 'This is an even longer option label that demonstrates truncation behavior',
       },
     ],
     placeholder: 'Select an option with a long label',
@@ -235,11 +224,7 @@ export const AllStates: Story = {
       <div className="flex flex-col gap-6">
         <div>
           <p className="mb-2 text-sm font-medium">Default (empty)</p>
-          <Dropdown
-            options={basicOptions}
-            placeholder="Select an option"
-            onChange={() => {}}
-          />
+          <Dropdown options={basicOptions} placeholder="Select an option" onChange={() => {}} />
         </div>
 
         <div>
@@ -266,12 +251,7 @@ export const AllStates: Story = {
 
         <div>
           <p className="mb-2 text-sm font-medium">Disabled</p>
-          <Dropdown
-            options={basicOptions}
-            value="option1"
-            disabled
-            onChange={() => {}}
-          />
+          <Dropdown options={basicOptions} value="option1" disabled onChange={() => {}} />
         </div>
 
         <div>

@@ -11,18 +11,13 @@
  * Keeps page logic minimal (<200 lines) by delegating to UI components.
  */
 
-import { useState, useCallback } from 'react';
-import { createFileRoute, useNavigate, Outlet } from '@tanstack/react-router';
-import { ListTodo } from 'lucide-react';
-import { AppLayout, Header, TaskList } from '@openflow/ui';
-import {
-  useProjects,
-  useTasks,
-  useUpdateTask,
-  useKeyboardShortcuts,
-} from '@openflow/hooks';
 import { TaskStatus } from '@openflow/generated';
+import { useKeyboardShortcuts, useProjects, useTasks, useUpdateTask } from '@openflow/hooks';
+import { AppLayout, Header, TaskList } from '@openflow/ui';
 import type { StatusFilter } from '@openflow/ui';
+import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
+import { ListTodo } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/tasks')({
   component: TasksPage,
@@ -70,9 +65,7 @@ function TasksPage() {
 
   // Filter tasks based on status filter
   const filteredTasks =
-    statusFilter === 'all'
-      ? tasks
-      : tasks.filter((task) => task.status === statusFilter);
+    statusFilter === 'all' ? tasks : tasks.filter((task) => task.status === statusFilter);
 
   // Status filter buttons
   const statusFilters: { label: string; value: StatusFilter }[] = [
@@ -118,16 +111,12 @@ function TasksPage() {
         <div className="flex-1 overflow-auto p-6">
           {isLoading ? (
             <div className="flex h-full items-center justify-center">
-              <div className="text-sm text-[rgb(var(--muted-foreground))]">
-                Loading tasks...
-              </div>
+              <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading tasks...</div>
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center">
               <ListTodo className="mb-4 h-16 w-16 text-[rgb(var(--muted-foreground))]" />
-              <h3 className="text-lg font-medium text-[rgb(var(--foreground))]">
-                No tasks found
-              </h3>
+              <h3 className="text-lg font-medium text-[rgb(var(--foreground))]">No tasks found</h3>
               <p className="mt-2 text-sm text-[rgb(var(--muted-foreground))]">
                 {statusFilter === 'all'
                   ? 'Create a task from a project to get started.'

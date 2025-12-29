@@ -1,24 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Icon } from './Icon';
 import {
-  Search,
-  Plus,
-  Settings,
-  Trash2,
-  Edit,
-  Check,
-  X,
   AlertCircle,
-  Info,
-  ChevronRight,
+  Check,
   ChevronDown,
-  Folder,
+  ChevronRight,
+  Edit,
   File,
+  Folder,
   GitBranch,
-  Play,
-  Square,
+  Info,
   Loader2,
+  Play,
+  Plus,
+  Search,
+  Settings,
+  Square,
+  Trash2,
+  X,
 } from 'lucide-react';
+import { Icon } from './Icon';
 
 const meta: Meta<typeof Icon> = {
   title: 'Atoms/Icon',

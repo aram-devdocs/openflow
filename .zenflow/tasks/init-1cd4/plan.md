@@ -3988,7 +3988,8 @@ cat src-tauri/workflows/feature.md | grep "### \[ \] Step:"
 
 ---
 
-### [ ] Step: Integrate Workflow Parsing in Frontend
+### [x] Step: Integrate Workflow Parsing in Frontend
+<!-- chat-id: 9da3f94f-9253-4d29-8ff9-9e017f9b437c -->
 
 Add workflow parsing utilities to frontend.
 
@@ -4022,7 +4023,8 @@ pnpm typecheck
 
 **Goal:** Complete end-to-end integration and testing.
 
-### [ ] Step: Create E2E Test Setup
+### [x] Step: Create E2E Test Setup
+<!-- chat-id: 3092aa65-0138-446c-a151-545f00015fb1 -->
 
 Set up end-to-end testing with Vitest.
 
@@ -4055,9 +4057,110 @@ pnpm test
 
 ---
 
-### [ ] Step: Verify Full Application
+### [x] Step: Verify Full Application Part 1
+<!-- chat-id: 247f2482-5833-4c88-8553-8fa4f253870a -->
 
-Run complete verification suite.
+Run initial verification suite - identify issues.
+
+**Tasks:**
+1. Run pnpm install - PASSED
+2. Run pnpm generate:types - PASSED
+3. Run pnpm typecheck - PASSED (after fixing tsconfig and adding description to ExecutorProfile)
+4. Run pnpm lint - FAILED (issues in storybook preview and hooks)
+
+**Issues Identified:**
+- `.storybook/preview.ts` has JSX but uses .ts extension (parse errors)
+- `packages/hooks/useProcessOutput.ts` has exhaustive dependencies and forEach issues
+- `packages/hooks/useWorkflows.ts` has literal keys issues
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git commit -m "chore: verify full application part 1 - identify issues"`
+
+---
+
+### [ ] Step: Fix Storybook Preview JSX
+
+Fix the Storybook preview file to use proper JSX extension.
+
+**Tasks:**
+1. Rename `.storybook/preview.ts` to `.storybook/preview.tsx`
+2. Update `.storybook/main.ts` if needed to recognize the new extension
+3. Run `pnpm lint` to verify fix
+
+**Verification:**
+```bash
+pnpm lint 2>&1 | grep -c "preview.ts"  # Should be 0
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add .storybook/ && git commit -m "fix: rename storybook preview to tsx for JSX support"`
+
+---
+
+### [ ] Step: Fix useProcessOutput Hook Lint Errors
+
+Fix lint errors in useProcessOutput hook.
+
+**Tasks:**
+1. Fix exhaustive dependencies in useEffect hooks
+2. Replace forEach with for...of loops
+3. Run `pnpm lint` to verify fixes
+
+**Verification:**
+```bash
+pnpm lint 2>&1 | grep -c "useProcessOutput"  # Should be 0
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/hooks/useProcessOutput.ts && git commit -m "fix: lint errors in useProcessOutput hook"`
+
+---
+
+### [ ] Step: Fix useWorkflows Hook Lint Errors
+
+Fix lint errors in useWorkflows hook.
+
+**Tasks:**
+1. Fix literal keys issues (use dot notation instead of bracket notation)
+2. Run `pnpm lint` to verify fixes
+
+**Verification:**
+```bash
+pnpm lint 2>&1 | grep -c "useWorkflows"  # Should be 0
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/hooks/useWorkflows.ts && git commit -m "fix: lint errors in useWorkflows hook"`
+
+---
+
+### [ ] Step: Fix UI Component Accessibility Lint Errors
+
+Fix accessibility lint errors in UI components.
+
+**Tasks:**
+1. Fix Label component - add proper htmlFor association
+2. Fix any other accessibility issues in atoms/molecules
+3. Run `pnpm lint` to verify fixes
+
+**Verification:**
+```bash
+pnpm lint 2>&1 | grep -c "a11y"  # Should be 0
+```
+
+**After completion:**
+- Edit this plan.md: Change `[ ]` to `[x]` for this step
+- Commit: `git add packages/ui/ && git commit -m "fix: accessibility lint errors in UI components"`
+
+---
+
+### [ ] Step: Verify Full Application Part 2
+
+Run complete verification suite after fixes.
 
 **Tasks:**
 1. Run all verification commands:

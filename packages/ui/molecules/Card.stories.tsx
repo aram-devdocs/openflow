@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Card, CardHeader, CardContent, CardFooter } from './Card';
-import { Button } from '../atoms/Button';
 import { Badge } from '../atoms/Badge';
+import { Button } from '../atoms/Button';
+import { Card, CardContent, CardFooter, CardHeader } from './Card';
 
 const meta: Meta<typeof Card> = {
   title: 'Molecules/Card',
@@ -38,15 +38,10 @@ export const Default: Story = {
     <Card {...args}>
       <CardHeader>
         <h3 className="text-lg font-semibold">Card Title</h3>
-        <p className="text-sm text-[rgb(var(--muted-foreground))]">
-          Card description goes here
-        </p>
+        <p className="text-sm text-[rgb(var(--muted-foreground))]">Card description goes here</p>
       </CardHeader>
       <CardContent>
-        <p>
-          This is the main content of the card. It can contain any elements you
-          need.
-        </p>
+        <p>This is the main content of the card. It can contain any elements you need.</p>
       </CardContent>
       <CardFooter>
         <Button variant="primary" size="sm">
@@ -77,8 +72,7 @@ export const WithHeaderAndContent: Story = {
       </CardHeader>
       <CardContent>
         <p className="text-[rgb(var(--muted-foreground))]">
-          View details about your project, including status, progress, and team
-          members.
+          View details about your project, including status, progress, and team members.
         </p>
       </CardContent>
     </Card>
@@ -171,9 +165,7 @@ export const TaskCard: Story = {
         </p>
       </CardContent>
       <CardFooter className="justify-between">
-        <span className="text-xs text-[rgb(var(--muted-foreground))]">
-          Created 2 days ago
-        </span>
+        <span className="text-xs text-[rgb(var(--muted-foreground))]">Created 2 days ago</span>
         <Badge>3 steps</Badge>
       </CardFooter>
     </Card>
@@ -191,9 +183,7 @@ export const ProjectCard: Story = {
           </div>
           <div className="flex-1">
             <h3 className="font-semibold">My Project</h3>
-            <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              /path/to/project
-            </p>
+            <p className="text-sm text-[rgb(var(--muted-foreground))]">/path/to/project</p>
           </div>
         </div>
       </CardContent>
@@ -224,9 +214,7 @@ export const AllStates: Story = {
       <Card isClickable>
         <CardContent>
           <h3 className="font-semibold">Clickable Card</h3>
-          <p className="text-sm text-[rgb(var(--muted-foreground))]">
-            Has hover and focus effects
-          </p>
+          <p className="text-sm text-[rgb(var(--muted-foreground))]">Has hover and focus effects</p>
         </CardContent>
       </Card>
 

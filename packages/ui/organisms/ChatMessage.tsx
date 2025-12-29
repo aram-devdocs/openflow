@@ -1,7 +1,7 @@
 import type { Message, MessageRole } from '@openflow/generated';
 import { cn } from '@openflow/utils';
 import { formatCompact } from '@openflow/utils';
-import { Bot, User, Settings, Wrench } from 'lucide-react';
+import { Bot, Settings, User, Wrench } from 'lucide-react';
 import { Icon } from '../atoms/Icon';
 import { Spinner } from '../atoms/Spinner';
 
@@ -69,11 +69,7 @@ const iconBgStyles: Record<MessageRole, string> = {
  * @example
  * <ChatMessage message={message} isStreaming={true} />
  */
-export function ChatMessage({
-  message,
-  isStreaming = false,
-  className,
-}: ChatMessageProps) {
+export function ChatMessage({ message, isStreaming = false, className }: ChatMessageProps) {
   const { role, content, toolCalls, createdAt } = message;
   const config = roleConfig[role];
   const parsedToolCalls = parseToolCalls(toolCalls);
@@ -83,13 +79,7 @@ export function ChatMessage({
   const showStreaming = isStreaming || message.isStreaming;
 
   return (
-    <div
-      className={cn(
-        'group flex gap-3 rounded-lg border p-4',
-        roleStyles[role],
-        className
-      )}
-    >
+    <div className={cn('group flex gap-3 rounded-lg border p-4', roleStyles[role], className)}>
       {/* Avatar */}
       <div
         className={cn(
@@ -105,9 +95,7 @@ export function ChatMessage({
       <div className="min-w-0 flex-1 space-y-2">
         {/* Header: Role label and timestamp */}
         <div className="flex items-center gap-2">
-          <span className="font-medium text-[rgb(var(--foreground))]">
-            {config.label}
-          </span>
+          <span className="font-medium text-[rgb(var(--foreground))]">{config.label}</span>
           {createdAt && (
             <span className="text-xs text-[rgb(var(--muted-foreground))]">
               {formatCompact(createdAt)}
@@ -135,9 +123,7 @@ export function ChatMessage({
           {content ? (
             <div className="whitespace-pre-wrap">{content}</div>
           ) : showStreaming ? (
-            <span className="animate-pulse text-[rgb(var(--muted-foreground))]">
-              Thinking...
-            </span>
+            <span className="animate-pulse text-[rgb(var(--muted-foreground))]">Thinking...</span>
           ) : null}
         </div>
 
@@ -150,10 +136,7 @@ export function ChatMessage({
             </div>
             <div className="space-y-1.5">
               {parsedToolCalls.map((toolCall, index) => (
-                <ToolCallItem
-                  key={toolCall.id ?? `tool-${index}`}
-                  toolCall={toolCall}
-                />
+                <ToolCallItem key={toolCall.id ?? `tool-${index}`} toolCall={toolCall} />
               ))}
             </div>
           </div>
@@ -187,9 +170,7 @@ function ToolCallItem({ toolCall }: ToolCallItemProps) {
       )}
     >
       <div className="flex items-center gap-2">
-        <code className="text-xs font-medium text-[rgb(var(--primary))]">
-          {toolCall.name}
-        </code>
+        <code className="text-xs font-medium text-[rgb(var(--primary))]">{toolCall.name}</code>
       </div>
       {toolCall.arguments && Object.keys(toolCall.arguments).length > 0 && (
         <pre className="mt-1.5 overflow-x-auto text-xs text-[rgb(var(--muted-foreground))]">

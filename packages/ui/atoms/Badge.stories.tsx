@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Badge, taskStatusToVariant, taskStatusToLabel } from './Badge';
 import { TaskStatus } from '@openflow/generated';
+import type { Meta, StoryObj } from '@storybook/react';
+import { Badge, taskStatusToLabel, taskStatusToVariant } from './Badge';
 
 const meta: Meta<typeof Badge> = {
   title: 'Atoms/Badge',

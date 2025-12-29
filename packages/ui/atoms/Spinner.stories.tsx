@@ -95,9 +95,7 @@ export const InCardContext: Story = {
     <div className="flex h-32 w-48 items-center justify-center rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
       <div className="flex flex-col items-center gap-2">
         <Spinner size="lg" />
-        <span className="text-sm text-[rgb(var(--muted-foreground))]">
-          Loading...
-        </span>
+        <span className="text-sm text-[rgb(var(--muted-foreground))]">Loading...</span>
       </div>
     </div>
   ),
@@ -109,9 +107,7 @@ export const FullPageLoading: Story = {
     <div className="flex h-64 w-full items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <Spinner size="lg" className="text-[rgb(var(--primary))]" />
-        <p className="text-sm text-[rgb(var(--muted-foreground))]">
-          Please wait...
-        </p>
+        <p className="text-sm text-[rgb(var(--muted-foreground))]">Please wait...</p>
       </div>
     </div>
   ),

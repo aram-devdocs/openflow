@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@openflow/utils';
-import { Icon } from '../atoms/Icon';
+import { Check, ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Icon } from '../atoms/Icon';
 
 export interface DropdownOption {
   /** Unique value for the option */
@@ -159,15 +159,11 @@ export function Dropdown({
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        setHighlightedIndex((prev) =>
-          prev < enabledOptions.length - 1 ? prev + 1 : 0
-        );
+        setHighlightedIndex((prev) => (prev < enabledOptions.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         event.preventDefault();
-        setHighlightedIndex((prev) =>
-          prev > 0 ? prev - 1 : enabledOptions.length - 1
-        );
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : enabledOptions.length - 1));
         break;
       case 'Enter':
       case ' ':
@@ -236,9 +232,7 @@ export function Dropdown({
             !selectedOption && 'text-[rgb(var(--muted-foreground))]'
           )}
         >
-          {selectedOption?.icon && (
-            <Icon icon={selectedOption.icon} size="sm" />
-          )}
+          {selectedOption?.icon && <Icon icon={selectedOption.icon} size="sm" />}
           {selectedOption?.label ?? placeholder}
         </span>
         <Icon
@@ -274,9 +268,7 @@ export function Dropdown({
           ) : (
             options.map((option) => {
               const isSelected = option.value === value;
-              const enabledIndex = enabledOptions.findIndex(
-                (opt) => opt.value === option.value
-              );
+              const enabledIndex = enabledOptions.findIndex((opt) => opt.value === option.value);
               const isHighlighted = enabledIndex === highlightedIndex;
 
               return (
@@ -313,11 +305,7 @@ export function Dropdown({
                   {option.icon && <Icon icon={option.icon} size="sm" />}
                   <span className="flex-1 truncate">{option.label}</span>
                   {isSelected && (
-                    <Icon
-                      icon={Check}
-                      size="sm"
-                      className="text-[rgb(var(--primary))]"
-                    />
+                    <Icon icon={Check} size="sm" className="text-[rgb(var(--primary))]" />
                   )}
                 </li>
               );

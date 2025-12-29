@@ -1,5 +1,5 @@
-import type { LucideIcon, LucideProps } from 'lucide-react';
 import { cn } from '@openflow/utils';
+import type { LucideIcon, LucideProps } from 'lucide-react';
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -31,12 +31,7 @@ const sizeClasses: Record<IconSize, string> = {
  * <Icon icon={Plus} size="lg" className="text-green-500" />
  * <Icon icon={Settings} size="sm" />
  */
-export function Icon({
-  icon: LucideIconComponent,
-  size = 'md',
-  className,
-  ...props
-}: IconProps) {
+export function Icon({ icon: LucideIconComponent, size = 'md', className, ...props }: IconProps) {
   return (
     <LucideIconComponent
       className={cn(sizeClasses[size], className)}

@@ -1,12 +1,12 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryResult,
-  type UseMutationResult,
-} from '@tanstack/react-query';
+import type { CreateMessageRequest, Message } from '@openflow/generated';
 import { messageQueries } from '@openflow/queries';
-import type { Message, CreateMessageRequest } from '@openflow/generated';
+import {
+  type UseMutationResult,
+  type UseQueryResult,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { chatKeys } from './useChats';
 
 /**
@@ -38,11 +38,7 @@ export function useMessages(chatId: string): UseQueryResult<Message[]> {
  *
  * @returns Mutation for creating a message
  */
-export function useCreateMessage(): UseMutationResult<
-  Message,
-  Error,
-  CreateMessageRequest
-> {
+export function useCreateMessage(): UseMutationResult<Message, Error, CreateMessageRequest> {
   const queryClient = useQueryClient();
 
   return useMutation({

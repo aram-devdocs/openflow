@@ -1,17 +1,17 @@
-import { useCallback, useMemo } from 'react';
-import type { FileDiff, DiffHunk } from '@openflow/generated';
+import type { DiffHunk, FileDiff } from '@openflow/generated';
 import { cn } from '@openflow/utils';
 import {
+  ArrowRight,
   ChevronDown,
   ChevronRight,
   File,
-  FilePlus,
-  FileMinus,
   FileEdit,
-  ArrowRight,
+  FileMinus,
+  FilePlus,
 } from 'lucide-react';
-import { Icon } from '../atoms/Icon';
+import { useCallback, useMemo } from 'react';
 import { Badge } from '../atoms/Badge';
+import { Icon } from '../atoms/Icon';
 
 export interface DiffViewerProps {
   /** Array of file diffs to display */
@@ -123,11 +123,7 @@ function DiffLineComponent({
   }
 
   const bgClass =
-    line.type === 'addition'
-      ? 'bg-green-500/10'
-      : line.type === 'deletion'
-        ? 'bg-red-500/10'
-        : '';
+    line.type === 'addition' ? 'bg-green-500/10' : line.type === 'deletion' ? 'bg-red-500/10' : '';
 
   const textClass =
     line.type === 'addition'
@@ -136,15 +132,11 @@ function DiffLineComponent({
         ? 'text-red-400'
         : 'text-[rgb(var(--foreground))]';
 
-  const prefix =
-    line.type === 'addition' ? '+' : line.type === 'deletion' ? '-' : ' ';
+  const prefix = line.type === 'addition' ? '+' : line.type === 'deletion' ? '-' : ' ';
 
   return (
     <div
-      className={cn(
-        'flex font-mono text-xs leading-6 hover:bg-[rgb(var(--accent))]/50',
-        bgClass
-      )}
+      className={cn('flex font-mono text-xs leading-6 hover:bg-[rgb(var(--accent))]/50', bgClass)}
     >
       {showLineNumbers && (
         <>
@@ -156,20 +148,8 @@ function DiffLineComponent({
           </span>
         </>
       )}
-      <span
-        className={cn(
-          'w-6 flex-shrink-0 select-none text-center',
-          textClass
-        )}
-      >
-        {prefix}
-      </span>
-      <pre
-        className={cn(
-          'flex-1 whitespace-pre-wrap break-all px-2',
-          textClass
-        )}
-      >
+      <span className={cn('w-6 flex-shrink-0 select-none text-center', textClass)}>{prefix}</span>
+      <pre className={cn('flex-1 whitespace-pre-wrap break-all px-2', textClass)}>
         {line.content || ' '}
       </pre>
     </div>
@@ -200,20 +180,14 @@ function FileDiffContent({
 
   if (allLines.length === 0) {
     return (
-      <div className="px-4 py-3 text-sm text-[rgb(var(--muted-foreground))] italic">
-        No changes
-      </div>
+      <div className="px-4 py-3 text-sm text-[rgb(var(--muted-foreground))] italic">No changes</div>
     );
   }
 
   return (
     <div className="overflow-x-auto">
       {allLines.map((line, index) => (
-        <DiffLineComponent
-          key={index}
-          line={line}
-          showLineNumbers={showLineNumbers}
-        />
+        <DiffLineComponent key={index} line={line} showLineNumbers={showLineNumbers} />
       ))}
     </div>
   );
@@ -345,19 +319,13 @@ export function DiffViewer({
                 />
 
                 {/* File icon */}
-                <Icon
-                  icon={FileIcon}
-                  size="sm"
-                  className={cn('flex-shrink-0', iconColor)}
-                />
+                <Icon icon={FileIcon} size="sm" className={cn('flex-shrink-0', iconColor)} />
 
                 {/* File path */}
                 <span className="flex-1 min-w-0 text-sm font-mono truncate text-[rgb(var(--foreground))]">
                   {diff.isRenamed && diff.oldPath ? (
                     <>
-                      <span className="text-[rgb(var(--muted-foreground))]">
-                        {diff.oldPath}
-                      </span>
+                      <span className="text-[rgb(var(--muted-foreground))]">{diff.oldPath}</span>
                       <Icon
                         icon={ArrowRight}
                         size="sm"
@@ -394,22 +362,15 @@ export function DiffViewer({
 
                 {/* Change stats */}
                 <div className="flex items-center gap-2 text-xs flex-shrink-0">
-                  {diff.additions > 0 && (
-                    <span className="text-green-400">+{diff.additions}</span>
-                  )}
-                  {diff.deletions > 0 && (
-                    <span className="text-red-400">-{diff.deletions}</span>
-                  )}
+                  {diff.additions > 0 && <span className="text-green-400">+{diff.additions}</span>}
+                  {diff.deletions > 0 && <span className="text-red-400">-{diff.deletions}</span>}
                 </div>
               </button>
 
               {/* Diff content */}
               {expanded && (
                 <div className="border-t border-[rgb(var(--border))] bg-[rgb(var(--background))]">
-                  <FileDiffContent
-                    diff={diff}
-                    showLineNumbers={showLineNumbers}
-                  />
+                  <FileDiffContent diff={diff} showLineNumbers={showLineNumbers} />
                 </div>
               )}
             </div>

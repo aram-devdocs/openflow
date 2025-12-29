@@ -1,8 +1,8 @@
+import { WorkflowStepStatus } from '@openflow/generated';
+import type { WorkflowStep } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
 import { StepsPanel } from './StepsPanel';
-import { WorkflowStepStatus } from '@openflow/generated';
-import type { WorkflowStep } from '@openflow/generated';
 
 const meta = {
   title: 'Organisms/StepsPanel',
@@ -66,8 +66,7 @@ const sampleSteps: WorkflowStep[] = [
   {
     index: 4,
     name: 'Testing & QA',
-    description:
-      'Run comprehensive tests and verify the feature works correctly in all scenarios.',
+    description: 'Run comprehensive tests and verify the feature works correctly in all scenarios.',
     status: WorkflowStepStatus.Pending,
   },
 ];
@@ -116,8 +115,24 @@ const mixedSteps: WorkflowStep[] = [
 ];
 
 const longSteps: WorkflowStep[] = Array.from({ length: 10 }, (_, i) => {
-  const stepNames = ['Setup', 'Research', 'Design', 'Build', 'Test', 'Deploy', 'Monitor', 'Optimize', 'Document', 'Review'];
-  const status = i < 3 ? WorkflowStepStatus.Completed : i === 3 ? WorkflowStepStatus.InProgress : WorkflowStepStatus.Pending;
+  const stepNames = [
+    'Setup',
+    'Research',
+    'Design',
+    'Build',
+    'Test',
+    'Deploy',
+    'Monitor',
+    'Optimize',
+    'Document',
+    'Review',
+  ];
+  const status =
+    i < 3
+      ? WorkflowStepStatus.Completed
+      : i === 3
+        ? WorkflowStepStatus.InProgress
+        : WorkflowStepStatus.Pending;
   const base = {
     index: i,
     name: `Step ${i + 1}: ${stepNames[i]}`,

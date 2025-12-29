@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 /**
  * Configuration for a keyboard shortcut.
@@ -74,9 +74,7 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]): void {
     for (const shortcut of shortcutsRef.current) {
       // Check meta key (Cmd on Mac, Ctrl on Windows/Linux)
       // When meta is required, accept either metaKey OR ctrlKey for cross-platform support
-      const metaMatch = shortcut.meta
-        ? e.metaKey || e.ctrlKey
-        : !e.metaKey && !e.ctrlKey;
+      const metaMatch = shortcut.meta ? e.metaKey || e.ctrlKey : !e.metaKey && !e.ctrlKey;
 
       // Check shift key
       const shiftMatch = shortcut.shift ? e.shiftKey : !e.shiftKey;
@@ -139,8 +137,7 @@ export function getShortcutLabel(
   config: Pick<ShortcutConfig, 'key' | 'meta' | 'shift' | 'alt'>
 ): string {
   const isMac =
-    typeof navigator !== 'undefined' &&
-    navigator.platform.toUpperCase().includes('MAC');
+    typeof navigator !== 'undefined' && navigator.platform.toUpperCase().includes('MAC');
 
   const parts: string[] = [];
 

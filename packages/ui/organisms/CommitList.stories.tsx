@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import type { Commit } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
+import { useState } from 'react';
 import { CommitList } from './CommitList';
-import type { Commit } from '@openflow/generated';
 
 const meta = {
   title: 'Organisms/CommitList',
@@ -91,15 +91,7 @@ const sampleCommits: Commit[] = [
     89,
     15
   ),
-  createCommit(
-    'mno7890',
-    'test: add integration tests for auth flow',
-    'Eve Johnson',
-    5,
-    4,
-    312,
-    8
-  ),
+  createCommit('mno7890', 'test: add integration tests for auth flow', 'Eve Johnson', 5, 4, 312, 8),
   createCommit(
     'pqr1234',
     'chore: update dependencies to latest versions',
@@ -138,9 +130,7 @@ const oldCommit: Commit = createCommit(
 
 // Interactive wrapper for controlled expand/collapse
 function InteractiveCommitList({ commits }: { commits: Commit[] }) {
-  const [expandedCommits, setExpandedCommits] = useState<Set<string>>(
-    new Set()
-  );
+  const [expandedCommits, setExpandedCommits] = useState<Set<string>>(new Set());
 
   const handleToggle = (hash: string) => {
     setExpandedCommits((prev) => {
@@ -181,7 +171,10 @@ export const Default: Story = {
  * Interactive commit list with controlled expand/collapse state
  */
 export const Interactive: Story = {
-  render: () => <InteractiveCommitList commits={sampleCommits} />,
+  args: {
+    commits: sampleCommits,
+  },
+  render: (args) => <InteractiveCommitList {...args} />,
 };
 
 /**

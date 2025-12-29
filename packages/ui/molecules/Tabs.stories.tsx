@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { Tabs, TabPanel } from './Tabs';
-import { ListTodo, GitCommit, FileDiff, Settings, Home, User, Bell } from 'lucide-react';
+import { Bell, FileDiff, GitCommit, Home, ListTodo, Settings, User } from 'lucide-react';
+import { useState } from 'react';
+import { TabPanel, Tabs } from './Tabs';
 
 const meta: Meta<typeof Tabs> = {
   title: 'Molecules/Tabs',
@@ -64,9 +64,7 @@ const tabsWithDisabled = [
 export const Default: Story = {
   render: () => {
     const [activeTab, setActiveTab] = useState('steps');
-    return (
-      <Tabs tabs={simpleTabs} activeTab={activeTab} onTabChange={setActiveTab} />
-    );
+    return <Tabs tabs={simpleTabs} activeTab={activeTab} onTabChange={setActiveTab} />;
   },
 };
 
@@ -74,13 +72,7 @@ export const Default: Story = {
 export const WithIcons: Story = {
   render: () => {
     const [activeTab, setActiveTab] = useState('steps');
-    return (
-      <Tabs
-        tabs={tabsWithIcons}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-    );
+    return <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} />;
   },
 };
 
@@ -88,13 +80,7 @@ export const WithIcons: Story = {
 export const WithBadges: Story = {
   render: () => {
     const [activeTab, setActiveTab] = useState('steps');
-    return (
-      <Tabs
-        tabs={tabsWithBadges}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-    );
+    return <Tabs tabs={tabsWithBadges} activeTab={activeTab} onTabChange={setActiveTab} />;
   },
 };
 
@@ -118,12 +104,7 @@ export const PillsVariant: Story = {
   render: () => {
     const [activeTab, setActiveTab] = useState('steps');
     return (
-      <Tabs
-        tabs={tabsWithIcons}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        variant="pills"
-      />
+      <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} variant="pills" />
     );
   },
 };
@@ -132,14 +113,7 @@ export const PillsVariant: Story = {
 export const SmallSize: Story = {
   render: () => {
     const [activeTab, setActiveTab] = useState('steps');
-    return (
-      <Tabs
-        tabs={tabsWithIcons}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        size="sm"
-      />
-    );
+    return <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} size="sm" />;
   },
 };
 
@@ -147,14 +121,7 @@ export const SmallSize: Story = {
 export const LargeSize: Story = {
   render: () => {
     const [activeTab, setActiveTab] = useState('steps');
-    return (
-      <Tabs
-        tabs={tabsWithIcons}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        size="lg"
-      />
-    );
+    return <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} size="lg" />;
   },
 };
 
@@ -164,12 +131,7 @@ export const FullWidth: Story = {
     const [activeTab, setActiveTab] = useState('steps');
     return (
       <div className="w-[500px]">
-        <Tabs
-          tabs={simpleTabs}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          fullWidth
-        />
+        <Tabs tabs={simpleTabs} activeTab={activeTab} onTabChange={setActiveTab} fullWidth />
       </div>
     );
   },
@@ -179,13 +141,7 @@ export const FullWidth: Story = {
 export const WithDisabledTab: Story = {
   render: () => {
     const [activeTab, setActiveTab] = useState('home');
-    return (
-      <Tabs
-        tabs={tabsWithDisabled}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      />
-    );
+    return <Tabs tabs={tabsWithDisabled} activeTab={activeTab} onTabChange={setActiveTab} />;
   },
 };
 
@@ -196,37 +152,16 @@ export const AllSizes: Story = {
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Small
-          </p>
-          <Tabs
-            tabs={tabsWithIcons}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            size="sm"
-          />
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Small</p>
+          <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} size="sm" />
         </div>
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Medium (default)
-          </p>
-          <Tabs
-            tabs={tabsWithIcons}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            size="md"
-          />
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Medium (default)</p>
+          <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} size="md" />
         </div>
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Large
-          </p>
-          <Tabs
-            tabs={tabsWithIcons}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            size="lg"
-          />
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Large</p>
+          <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} size="lg" />
         </div>
       </div>
     );
@@ -240,9 +175,7 @@ export const AllVariants: Story = {
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Default
-          </p>
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Default</p>
           <Tabs
             tabs={tabsWithIcons}
             activeTab={activeTab}
@@ -251,9 +184,7 @@ export const AllVariants: Story = {
           />
         </div>
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Underline
-          </p>
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Underline</p>
           <Tabs
             tabs={tabsWithIcons}
             activeTab={activeTab}
@@ -262,9 +193,7 @@ export const AllVariants: Story = {
           />
         </div>
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Pills
-          </p>
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Pills</p>
           <Tabs
             tabs={tabsWithIcons}
             activeTab={activeTab}
@@ -283,17 +212,11 @@ export const WithTabPanels: Story = {
     const [activeTab, setActiveTab] = useState('steps');
     return (
       <div className="w-[500px]">
-        <Tabs
-          tabs={tabsWithIcons}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="mt-4 rounded-lg border border-[rgb(var(--border))] p-4">
           <TabPanel tabId="steps" activeTab={activeTab}>
             <div className="space-y-2">
-              <h3 className="font-semibold text-[rgb(var(--foreground))]">
-                Steps Panel
-              </h3>
+              <h3 className="font-semibold text-[rgb(var(--foreground))]">Steps Panel</h3>
               <p className="text-sm text-[rgb(var(--muted-foreground))]">
                 This is the content for the Steps tab. It shows workflow steps.
               </p>
@@ -301,9 +224,7 @@ export const WithTabPanels: Story = {
           </TabPanel>
           <TabPanel tabId="changes" activeTab={activeTab}>
             <div className="space-y-2">
-              <h3 className="font-semibold text-[rgb(var(--foreground))]">
-                Changes Panel
-              </h3>
+              <h3 className="font-semibold text-[rgb(var(--foreground))]">Changes Panel</h3>
               <p className="text-sm text-[rgb(var(--muted-foreground))]">
                 This is the content for the Changes tab. It shows file diffs.
               </p>
@@ -311,9 +232,7 @@ export const WithTabPanels: Story = {
           </TabPanel>
           <TabPanel tabId="commits" activeTab={activeTab}>
             <div className="space-y-2">
-              <h3 className="font-semibold text-[rgb(var(--foreground))]">
-                Commits Panel
-              </h3>
+              <h3 className="font-semibold text-[rgb(var(--foreground))]">Commits Panel</h3>
               <p className="text-sm text-[rgb(var(--muted-foreground))]">
                 This is the content for the Commits tab. It shows git commits.
               </p>
@@ -331,11 +250,7 @@ export const KeyboardNavigation: Story = {
     const [activeTab, setActiveTab] = useState('steps');
     return (
       <div className="space-y-4">
-        <Tabs
-          tabs={tabsWithIcons}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <Tabs tabs={tabsWithIcons} activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="rounded-lg border border-[rgb(var(--border))] p-4">
           <p className="text-sm text-[rgb(var(--muted-foreground))]">
             Focus on a tab and use keyboard navigation:
@@ -359,9 +274,7 @@ export const FullWidthVariants: Story = {
     return (
       <div className="flex w-[500px] flex-col gap-6">
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Default (Full Width)
-          </p>
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Default (Full Width)</p>
           <Tabs
             tabs={simpleTabs}
             activeTab={activeTab}
@@ -371,9 +284,7 @@ export const FullWidthVariants: Story = {
           />
         </div>
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Underline (Full Width)
-          </p>
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Underline (Full Width)</p>
           <Tabs
             tabs={simpleTabs}
             activeTab={activeTab}
@@ -383,9 +294,7 @@ export const FullWidthVariants: Story = {
           />
         </div>
         <div>
-          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
-            Pills (Full Width)
-          </p>
+          <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">Pills (Full Width)</p>
           <Tabs
             tabs={simpleTabs}
             activeTab={activeTab}
@@ -409,21 +318,13 @@ export const AllStates: Story = {
           <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
             Interactive tabs - Click to select, keyboard navigation supported
           </p>
-          <Tabs
-            tabs={tabsWithBadges}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
+          <Tabs tabs={tabsWithBadges} activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
         <div>
           <p className="mb-2 text-sm text-[rgb(var(--muted-foreground))]">
             With disabled tab (Profile is disabled)
           </p>
-          <Tabs
-            tabs={tabsWithDisabled}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
+          <Tabs tabs={tabsWithDisabled} activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
       </div>
     );

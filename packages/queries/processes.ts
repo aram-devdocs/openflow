@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
 import type { ExecutionProcess } from '@openflow/generated';
+import { invoke } from '@tauri-apps/api/core';
 
 /**
  * Process query wrappers for Tauri IPC.
@@ -9,14 +9,12 @@ export const processQueries = {
   /**
    * Get a single execution process by ID.
    */
-  get: (id: string): Promise<ExecutionProcess> =>
-    invoke('get_process', { id }),
+  get: (id: string): Promise<ExecutionProcess> => invoke('get_process', { id }),
 
   /**
    * Kill a running process.
    */
-  kill: (id: string): Promise<ExecutionProcess> =>
-    invoke('kill_process', { id }),
+  kill: (id: string): Promise<ExecutionProcess> => invoke('kill_process', { id }),
 
   /**
    * Send input to a running process.

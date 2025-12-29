@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
 import type { SearchResult, SearchResultType } from '@openflow/generated';
+import { invoke } from '@tauri-apps/api/core';
 
 /**
  * Search query wrappers for Tauri IPC.
@@ -19,6 +19,5 @@ export const searchQueries = {
     projectId?: string,
     resultTypes?: SearchResultType[],
     limit?: number
-  ): Promise<SearchResult[]> =>
-    invoke('search', { query, projectId, resultTypes, limit }),
+  ): Promise<SearchResult[]> => invoke('search', { query, projectId, resultTypes, limit }),
 };

@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Icon } from '../atoms/Icon';
 
 export interface SettingsNavItem {
@@ -75,13 +75,7 @@ export function SettingsLayout({
   contentClassName,
 }: SettingsLayoutProps) {
   return (
-    <div
-      className={cn(
-        'flex h-full',
-        'bg-[rgb(var(--background))]',
-        className
-      )}
-    >
+    <div className={cn('flex h-full', 'bg-[rgb(var(--background))]', className)}>
       {/* Settings Navigation Sidebar */}
       <nav
         className="shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto"
@@ -144,22 +138,16 @@ export function SettingsLayout({
         {(title || description) && (
           <header className="border-b border-[rgb(var(--border))] px-8 py-6">
             {title && (
-              <h1 className="text-2xl font-semibold text-[rgb(var(--foreground))]">
-                {title}
-              </h1>
+              <h1 className="text-2xl font-semibold text-[rgb(var(--foreground))]">{title}</h1>
             )}
             {description && (
-              <p className="mt-1 text-sm text-[rgb(var(--muted-foreground))]">
-                {description}
-              </p>
+              <p className="mt-1 text-sm text-[rgb(var(--muted-foreground))]">{description}</p>
             )}
           </header>
         )}
 
         {/* Main content */}
-        <main className="p-8">
-          {children}
-        </main>
+        <main className="p-8">{children}</main>
       </div>
     </div>
   );

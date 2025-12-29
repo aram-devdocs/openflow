@@ -1,17 +1,12 @@
-import type { ReactNode } from 'react';
-import type { Task, Chat, TaskStatus } from '@openflow/generated';
+import type { Chat, Task, TaskStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
-import {
-  GitBranch,
-  ExternalLink,
-  MoreHorizontal,
-  Pencil,
-} from 'lucide-react';
-import { Badge, taskStatusToVariant, taskStatusToLabel } from '../atoms/Badge';
+import { ExternalLink, GitBranch, MoreHorizontal, Pencil } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Badge, taskStatusToLabel, taskStatusToVariant } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 import { Dropdown, type DropdownOption } from '../molecules/Dropdown';
-import { Tabs, type Tab } from '../molecules/Tabs';
+import { type Tab, Tabs } from '../molecules/Tabs';
 import { Tooltip } from '../molecules/Tooltip';
 
 export interface TaskLayoutProps {
@@ -153,13 +148,7 @@ export function TaskLayout({
   };
 
   return (
-    <div
-      className={cn(
-        'flex h-full flex-col',
-        'bg-[rgb(var(--background))]',
-        className
-      )}
-    >
+    <div className={cn('flex h-full flex-col', 'bg-[rgb(var(--background))]', className)}>
       {/* Task Header */}
       <header className="shrink-0 border-b border-[rgb(var(--border))] px-4 py-3">
         <div className="flex items-center justify-between gap-4">
@@ -225,10 +214,10 @@ export function TaskLayout({
 
             {/* Actions required indicator */}
             {hasChanges && (
-              <Tooltip content={`${task.actionsRequiredCount} action${task.actionsRequiredCount > 1 ? 's' : ''} required`}>
-                <Badge variant="warning">
-                  {task.actionsRequiredCount}
-                </Badge>
+              <Tooltip
+                content={`${task.actionsRequiredCount} action${task.actionsRequiredCount > 1 ? 's' : ''} required`}
+              >
+                <Badge variant="warning">{task.actionsRequiredCount}</Badge>
               </Tooltip>
             )}
           </div>
@@ -254,11 +243,7 @@ export function TaskLayout({
             {/* Create PR button */}
             {onCreatePR && currentBranch && (
               <Tooltip content="Create Pull Request">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onCreatePR}
-                >
+                <Button variant="secondary" size="sm" onClick={onCreatePR}>
                   <Icon icon={ExternalLink} size="sm" />
                   <span>Create PR</span>
                 </Button>
@@ -307,18 +292,12 @@ export function TaskLayout({
             </div>
 
             {/* Main panel (right side) - chat interface */}
-            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-              {mainPanel}
-            </div>
+            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">{mainPanel}</div>
           </>
         )}
 
         {/* Tab content for other tabs (Changes, Commits) */}
-        {activeTab !== 'steps' && (
-          <div className="flex-1 overflow-auto">
-            {tabContent}
-          </div>
-        )}
+        {activeTab !== 'steps' && <div className="flex-1 overflow-auto">{tabContent}</div>}
       </div>
 
       {/* Loading overlay */}

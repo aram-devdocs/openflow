@@ -10,19 +10,14 @@
  * Keeps page logic minimal (<200 lines) by delegating to UI components.
  */
 
-import { useState, useCallback } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Plus, FolderPlus, Settings, Archive } from 'lucide-react';
-import { AppLayout, Sidebar, Header, CommandPalette } from '@openflow/ui';
-import {
-  useProjects,
-  useTasks,
-  useUpdateTask,
-  useKeyboardShortcuts,
-} from '@openflow/hooks';
 import { SearchResultType } from '@openflow/generated';
 import type { TaskStatus } from '@openflow/generated';
-import type { StatusFilter, CommandAction, RecentItem } from '@openflow/ui';
+import { useKeyboardShortcuts, useProjects, useTasks, useUpdateTask } from '@openflow/hooks';
+import { AppLayout, CommandPalette, Header, Sidebar } from '@openflow/ui';
+import type { CommandAction, RecentItem, StatusFilter } from '@openflow/ui';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Archive, FolderPlus, Plus, Settings } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/')({
   component: DashboardPage,
@@ -34,16 +29,12 @@ function DashboardPage() {
   // UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<
-    string | undefined
-  >(undefined);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Data fetching
   const { data: projects = [], isLoading: isLoadingProjects } = useProjects();
-  const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(
-    selectedProjectId ?? ''
-  );
+  const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(selectedProjectId ?? '');
   const updateTask = useUpdateTask();
 
   // Auto-select first project if none selected
@@ -176,9 +167,7 @@ function DashboardPage() {
   // Build header subtitle
   const getHeaderSubtitle = () => {
     if (isLoadingTasks) return 'Loading tasks...';
-    const inProgressCount = tasks.filter(
-      (t) => t.status === 'inprogress'
-    ).length;
+    const inProgressCount = tasks.filter((t) => t.status === 'inprogress').length;
     if (inProgressCount === 0) return `${tasks.length} tasks`;
     return `${inProgressCount} task${inProgressCount === 1 ? '' : 's'} in progress`;
   };
@@ -224,8 +213,7 @@ function DashboardPage() {
                 Welcome to OpenFlow
               </h2>
               <p className="mt-2 text-sm text-[rgb(var(--muted-foreground))]">
-                Get started by creating a project or selecting one from the
-                sidebar.
+                Get started by creating a project or selecting one from the sidebar.
               </p>
               <button
                 type="button"
@@ -241,9 +229,7 @@ function DashboardPage() {
         {/* Loading state */}
         {(isLoadingProjects || isLoadingTasks) && activeProjectId && (
           <div className="flex flex-1 items-center justify-center">
-            <div className="text-sm text-[rgb(var(--muted-foreground))]">
-              Loading...
-            </div>
+            <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading...</div>
           </div>
         )}
 
@@ -252,11 +238,7 @@ function DashboardPage() {
           <div className="flex-1 overflow-auto p-6">
             {/* Quick stats */}
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                label="Total Tasks"
-                value={tasks.length}
-                variant="default"
-              />
+              <StatCard label="Total Tasks" value={tasks.length} variant="default" />
               <StatCard
                 label="In Progress"
                 value={tasks.filter((t) => t.status === 'inprogress').length}
@@ -277,9 +259,7 @@ function DashboardPage() {
             {/* Recent tasks section */}
             <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
               <div className="border-b border-[rgb(var(--border))] px-4 py-3">
-                <h3 className="text-sm font-medium text-[rgb(var(--foreground))]">
-                  Recent Tasks
-                </h3>
+                <h3 className="text-sm font-medium text-[rgb(var(--foreground))]">Recent Tasks</h3>
               </div>
               <div className="p-4">
                 {tasks.length === 0 ? (
@@ -347,15 +327,9 @@ function StatCard({ label, value, variant = 'default' }: StatCardProps) {
   };
 
   return (
-    <div
-      className={`rounded-lg border p-4 ${variantStyles[variant]} bg-[rgb(var(--card))]`}
-    >
-      <p className="text-xs font-medium text-[rgb(var(--muted-foreground))]">
-        {label}
-      </p>
-      <p className={`mt-1 text-2xl font-semibold ${valueStyles[variant]}`}>
-        {value}
-      </p>
+    <div className={`rounded-lg border p-4 ${variantStyles[variant]} bg-[rgb(var(--card))]`}>
+      <p className="text-xs font-medium text-[rgb(var(--muted-foreground))]">{label}</p>
+      <p className={`mt-1 text-2xl font-semibold ${valueStyles[variant]}`}>{value}</p>
     </div>
   );
 }

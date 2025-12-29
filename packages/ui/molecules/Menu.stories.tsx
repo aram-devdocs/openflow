@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { Menu } from './Menu';
-import type { MenuItem } from './Menu';
 import {
+  Archive,
   Copy,
-  Edit,
-  Trash,
-  Share,
   Download,
-  MoreVertical,
-  Settings,
-  LogOut,
-  User,
-  HelpCircle,
+  Edit,
   FileText,
   Folder,
+  HelpCircle,
+  LogOut,
+  MoreVertical,
+  Settings,
+  Share,
   Star,
-  Archive,
+  Trash,
+  User,
 } from 'lucide-react';
+import type React from 'react';
+import { useState } from 'react';
 import { Button } from '../atoms/Button';
+import { Menu } from './Menu';
+import type { MenuItem } from './Menu';
 
 const meta: Meta<typeof Menu> = {
   title: 'Molecules/Menu',

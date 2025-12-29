@@ -59,11 +59,7 @@
     "vitest": "^2.1.8"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": [
-      "biome check --write"
-    ],
-    "src-tauri/**/*.rs": [
-      "bash -c 'cd src-tauri && cargo fmt --check'"
-    ]
+    "*.{ts,tsx,js,jsx}": ["biome check --write"],
+    "src-tauri/**/*.rs": ["bash -c 'cd src-tauri && cargo fmt --check'"]
   }
 }

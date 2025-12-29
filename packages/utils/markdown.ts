@@ -76,7 +76,7 @@ export function parseWorkflowSteps(content: string): ParsedWorkflow {
   let currentStep: WorkflowStep | null = null;
   let stepContent: string[] = [];
   let inPreamble = true;
-  let preambleLines: string[] = [];
+  const preambleLines: string[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i] as string;
@@ -190,11 +190,7 @@ export function extractStepStatus(line: string): {
  * updateStepStatus(content, 'First Step', true)
  * // Changes '### [ ] Step: First Step' to '### [x] Step: First Step'
  */
-export function updateStepStatus(
-  content: string,
-  stepName: string,
-  isCompleted: boolean
-): string {
+export function updateStepStatus(content: string, stepName: string, isCompleted: boolean): string {
   const lines = content.split('\n');
   const escapedName = escapeRegExp(stepName);
   const pattern = new RegExp(`^(###\\s*)\\[([ xX-])\\](\\s*Step:\\s*${escapedName}\\s*)$`);
@@ -237,10 +233,7 @@ function escapeRegExp(str: string): string {
  * )
  * // => 'Save to .zenflow/tasks/abc/output.md'
  */
-export function substituteVariables(
-  content: string,
-  variables: Record<string, string>
-): string {
+export function substituteVariables(content: string, variables: Record<string, string>): string {
   return content.replace(/\{@(\w+)\}/g, (match, varName) => {
     return variables[varName] ?? match;
   });

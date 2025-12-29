@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import type { Project } from '@openflow/generated';
+import type { Meta, StoryObj } from '@storybook/react';
 import { ProjectSelector } from './ProjectSelector';
 
 const meta: Meta<typeof ProjectSelector> = {

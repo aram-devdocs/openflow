@@ -1,20 +1,20 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import type { SearchResult, SearchResultType } from '@openflow/generated';
+import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
 import {
-  Search,
+  ArrowRight,
   CheckSquare,
+  Clock,
+  Command,
   Folder,
   MessageSquare,
-  Clock,
-  ArrowRight,
-  Command,
+  Search,
   X,
 } from 'lucide-react';
-import { cn } from '@openflow/utils';
-import type { SearchResult, SearchResultType } from '@openflow/generated';
-import { Input } from '../atoms/Input';
-import { Icon } from '../atoms/Icon';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { Button } from '../atoms/Button';
+import { Icon } from '../atoms/Icon';
+import { Input } from '../atoms/Input';
 import { Spinner } from '../atoms/Spinner';
 
 /** An action item that can be executed from the command palette */
@@ -197,9 +197,7 @@ export function CommandPalette({
   // Scroll selected item into view
   useEffect(() => {
     if (listRef.current) {
-      const selectedElement = listRef.current.querySelector(
-        '[data-selected="true"]'
-      );
+      const selectedElement = listRef.current.querySelector('[data-selected="true"]');
       selectedElement?.scrollIntoView({ block: 'nearest' });
     }
   }, [selectedIndex]);
@@ -224,10 +222,7 @@ export function CommandPalette({
       onClick={handleBackdropClick}
     >
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
 
       {/* Command palette panel */}
       <div
@@ -247,11 +242,7 @@ export function CommandPalette({
       >
         {/* Search input */}
         <div className="flex items-center gap-2 border-b border-[rgb(var(--border))] px-3">
-          <Icon
-            icon={Search}
-            size="sm"
-            className="text-[rgb(var(--muted-foreground))]"
-          />
+          <Icon icon={Search} size="sm" className="text-[rgb(var(--muted-foreground))]" />
           <Input
             ref={inputRef}
             type="text"
@@ -328,9 +319,7 @@ export function CommandPalette({
                       className="text-[rgb(var(--muted-foreground))]"
                     />
                     <div className="flex-1 truncate">
-                      <div className="truncate text-sm font-medium">
-                        {item.title}
-                      </div>
+                      <div className="truncate text-sm font-medium">{item.title}</div>
                       {item.subtitle && (
                         <div className="truncate text-xs text-[rgb(var(--muted-foreground))]">
                           {item.subtitle}
@@ -354,9 +343,7 @@ export function CommandPalette({
                 <span>Actions</span>
               </div>
               {actions.map((action, index) => {
-                const actualIndex = showRecent
-                  ? recentItems.length + index
-                  : index;
+                const actualIndex = showRecent ? recentItems.length + index : index;
                 const isSelected = actualIndex === selectedIndex;
                 const ActionIcon = action.icon || ArrowRight;
                 return (
@@ -427,9 +414,7 @@ export function CommandPalette({
                       className="text-[rgb(var(--muted-foreground))]"
                     />
                     <div className="flex-1 truncate">
-                      <div className="truncate text-sm font-medium">
-                        {result.title}
-                      </div>
+                      <div className="truncate text-sm font-medium">{result.title}</div>
                       {result.subtitle && (
                         <div className="truncate text-xs text-[rgb(var(--muted-foreground))]">
                           {result.subtitle}
@@ -449,9 +434,7 @@ export function CommandPalette({
           {!query && recentItems.length === 0 && actions.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Command className="mb-2 h-8 w-8 text-[rgb(var(--muted-foreground))]" />
-              <p className="text-sm text-[rgb(var(--muted-foreground))]">
-                Start typing to search
-              </p>
+              <p className="text-sm text-[rgb(var(--muted-foreground))]">Start typing to search</p>
               <p className="mt-1 text-xs text-[rgb(var(--muted-foreground))]">
                 Find tasks, projects, and more
               </p>

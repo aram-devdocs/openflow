@@ -1,5 +1,5 @@
-import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@openflow/utils';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   /** Card content */
@@ -85,10 +85,7 @@ export function Card({
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
         ],
         // Selected state
-        isSelected && [
-          'border-[rgb(var(--primary))]',
-          'ring-1 ring-[rgb(var(--primary))]',
-        ],
+        isSelected && ['border-[rgb(var(--primary))]', 'ring-1 ring-[rgb(var(--primary))]'],
         className
       )}
       {...props}
@@ -104,10 +101,7 @@ export function Card({
  */
 export function CardHeader({ children, className, ...props }: CardHeaderProps) {
   return (
-    <div
-      className={cn('flex flex-col space-y-1.5 p-4 pb-0', className)}
-      {...props}
-    >
+    <div className={cn('flex flex-col space-y-1.5 p-4 pb-0', className)} {...props}>
       {children}
     </div>
   );
@@ -117,11 +111,7 @@ export function CardHeader({ children, className, ...props }: CardHeaderProps) {
  * Card content section.
  * Main content area of the card.
  */
-export function CardContent({
-  children,
-  className,
-  ...props
-}: CardContentProps) {
+export function CardContent({ children, className, ...props }: CardContentProps) {
   return (
     <div className={cn('p-4', className)} {...props}>
       {children}
@@ -135,10 +125,7 @@ export function CardContent({
  */
 export function CardFooter({ children, className, ...props }: CardFooterProps) {
   return (
-    <div
-      className={cn('flex items-center p-4 pt-0', className)}
-      {...props}
-    >
+    <div className={cn('flex items-center p-4 pt-0', className)} {...props}>
       {children}
     </div>
   );

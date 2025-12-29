@@ -1,13 +1,6 @@
 import type { Project, Task, TaskStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
-import {
-  Plus,
-  Settings,
-  Archive,
-  ChevronLeft,
-  ChevronRight,
-  ListFilter,
-} from 'lucide-react';
+import { Archive, ChevronLeft, ChevronRight, ListFilter, Plus, Settings } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 import { ProjectSelector } from './ProjectSelector';
@@ -52,15 +45,14 @@ export interface SidebarProps {
 }
 
 /** Available status filter options */
-const STATUS_FILTER_OPTIONS: readonly { value: StatusFilter; label: string }[] =
-  [
-    { value: 'all' as const, label: 'All Tasks' },
-    { value: 'todo' as StatusFilter, label: 'To Do' },
-    { value: 'inprogress' as StatusFilter, label: 'In Progress' },
-    { value: 'inreview' as StatusFilter, label: 'In Review' },
-    { value: 'done' as StatusFilter, label: 'Done' },
-    { value: 'cancelled' as StatusFilter, label: 'Cancelled' },
-  ] as const;
+const STATUS_FILTER_OPTIONS: readonly { value: StatusFilter; label: string }[] = [
+  { value: 'all' as const, label: 'All Tasks' },
+  { value: 'todo' as StatusFilter, label: 'To Do' },
+  { value: 'inprogress' as StatusFilter, label: 'In Progress' },
+  { value: 'inreview' as StatusFilter, label: 'In Review' },
+  { value: 'done' as StatusFilter, label: 'Done' },
+  { value: 'cancelled' as StatusFilter, label: 'Cancelled' },
+] as const;
 
 /**
  * Filters tasks by status.
@@ -309,12 +301,7 @@ export function Sidebar({
 
       {/* New task button */}
       <div className="p-3">
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={onNewTask}
-          className="w-full"
-        >
+        <Button variant="primary" size="sm" onClick={onNewTask} className="w-full">
           <Icon icon={Plus} size="sm" />
           New Task
         </Button>

@@ -1,5 +1,5 @@
-import { forwardRef, type TextareaHTMLAttributes } from 'react';
 import { cn } from '@openflow/utils';
+import { type TextareaHTMLAttributes, forwardRef } from 'react';
 
 export type TextareaResize = 'none' | 'vertical' | 'horizontal' | 'both';
 

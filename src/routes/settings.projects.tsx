@@ -11,33 +11,20 @@
  * Follows the orchestration pattern: connects hooks to UI components.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import type { Project, UpdateProjectRequest } from '@openflow/generated';
+import { useKeyboardShortcuts, useProject, useProjects, useUpdateProject } from '@openflow/hooks';
+import { Badge, Button, Card, Dropdown, FormField, Input, Textarea } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
 import {
-  FolderGit2,
-  Save,
-  Terminal,
-  GitBranch,
   FileCode,
-  Settings,
+  FolderGit2,
+  GitBranch,
   type LucideIcon,
+  Save,
+  Settings,
+  Terminal,
 } from 'lucide-react';
-import {
-  Button,
-  FormField,
-  Input,
-  Textarea,
-  Card,
-  Dropdown,
-  Badge,
-} from '@openflow/ui';
-import {
-  useProjects,
-  useProject,
-  useUpdateProject,
-  useKeyboardShortcuts,
-} from '@openflow/hooks';
-import type { Project, UpdateProjectRequest } from '@openflow/generated';
+import { useCallback, useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/settings/projects')({
   component: ProjectSettingsPage,
@@ -89,12 +76,11 @@ function ProjectSettingsPage() {
 
   // Form handlers
   const handleFormChange = useCallback(
-    (field: keyof FormData) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFormData((prev) => (prev ? { ...prev, [field]: e.target.value } : null));
-        setHasChanges(true);
-        setSaveSuccess(false);
-      },
+    (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFormData((prev) => (prev ? { ...prev, [field]: e.target.value } : null));
+      setHasChanges(true);
+      setSaveSuccess(false);
+    },
     []
   );
 
@@ -119,8 +105,12 @@ function ProjectSettingsPage() {
       ...(formData.cleanupScript.trim() && { cleanupScript: formData.cleanupScript.trim() }),
       ...(formData.workflowsFolder.trim() && { workflowsFolder: formData.workflowsFolder.trim() }),
       ...(formData.ruleFolders.trim() && { ruleFolders: formData.ruleFolders.trim() }),
-      ...(formData.alwaysIncludedRules.trim() && { alwaysIncludedRules: formData.alwaysIncludedRules.trim() }),
-      ...(formData.verificationConfig.trim() && { verificationConfig: formData.verificationConfig.trim() }),
+      ...(formData.alwaysIncludedRules.trim() && {
+        alwaysIncludedRules: formData.alwaysIncludedRules.trim(),
+      }),
+      ...(formData.verificationConfig.trim() && {
+        verificationConfig: formData.verificationConfig.trim(),
+      }),
     };
 
     updateProject.mutate(
@@ -142,9 +132,7 @@ function ProjectSettingsPage() {
   if (isLoadingProjects) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">
-          Loading projects...
-        </div>
+        <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading projects...</div>
       </div>
     );
   }
@@ -154,9 +142,7 @@ function ProjectSettingsPage() {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[rgb(var(--border))] py-12">
         <FolderGit2 className="mb-4 h-12 w-12 text-[rgb(var(--muted-foreground))]" />
-        <h3 className="text-lg font-medium text-[rgb(var(--foreground))]">
-          No projects
-        </h3>
+        <h3 className="text-lg font-medium text-[rgb(var(--foreground))]">No projects</h3>
         <p className="mt-1 text-sm text-[rgb(var(--muted-foreground))]">
           Create a project first to configure its settings.
         </p>
@@ -184,13 +170,9 @@ function ProjectSettingsPage() {
           />
         </div>
 
-        {hasChanges && (
-          <Badge variant="warning">Unsaved changes</Badge>
-        )}
+        {hasChanges && <Badge variant="warning">Unsaved changes</Badge>}
 
-        {saveSuccess && (
-          <Badge variant="success">Saved successfully</Badge>
-        )}
+        {saveSuccess && <Badge variant="success">Saved successfully</Badge>}
       </div>
 
       {/* Loading project state */}
@@ -230,11 +212,7 @@ function ProjectSettingsPage() {
             </div>
 
             <FormField label="Repository Path">
-              <Input
-                value={selectedProject.gitRepoPath}
-                disabled
-                className="opacity-60"
-              />
+              <Input value={selectedProject.gitRepoPath} disabled className="opacity-60" />
             </FormField>
 
             <FormField label="Base Branch">
@@ -352,9 +330,7 @@ function ProjectSettingsPage() {
               Save Changes
             </Button>
 
-            {saveError && (
-              <span className="text-sm text-red-400">{saveError}</span>
-            )}
+            {saveError && <span className="text-sm text-red-400">{saveError}</span>}
           </div>
         </div>
       )}
@@ -412,9 +388,7 @@ function SettingsSection({
           <IconComponent className="h-4 w-4 text-[rgb(var(--primary))]" />
           <h3 className="font-medium text-[rgb(var(--foreground))]">{title}</h3>
         </div>
-        <p className="mt-0.5 text-xs text-[rgb(var(--muted-foreground))]">
-          {description}
-        </p>
+        <p className="mt-0.5 text-xs text-[rgb(var(--muted-foreground))]">{description}</p>
       </div>
       <div className="space-y-4 p-4">{children}</div>
     </Card>

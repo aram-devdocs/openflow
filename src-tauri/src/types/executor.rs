@@ -11,6 +11,8 @@ use typeshare::typeshare;
 pub struct ExecutorProfile {
     pub id: String,
     pub name: String,
+    /// Description of the executor profile
+    pub description: Option<String>,
     /// CLI command to execute (e.g., "claude", "gemini", "codex", "cursor")
     pub command: String,
     /// JSON array of default arguments passed to the CLI
@@ -31,6 +33,7 @@ pub struct ExecutorProfile {
 #[serde(rename_all = "camelCase")]
 pub struct CreateExecutorProfileRequest {
     pub name: String,
+    pub description: Option<String>,
     pub command: String,
     pub args: Option<String>,
     pub env: Option<String>,
@@ -45,6 +48,7 @@ pub struct CreateExecutorProfileRequest {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateExecutorProfileRequest {
     pub name: Option<String>,
+    pub description: Option<String>,
     pub command: Option<String>,
     pub args: Option<String>,
     pub env: Option<String>,

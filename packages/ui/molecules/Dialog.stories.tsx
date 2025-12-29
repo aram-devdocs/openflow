@@ -1,11 +1,11 @@
-import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from './Dialog';
+import { AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '../atoms/Button';
+import { Icon } from '../atoms/Icon';
 import { Input } from '../atoms/Input';
 import { Textarea } from '../atoms/Textarea';
-import { AlertTriangle, Info, CheckCircle } from 'lucide-react';
-import { Icon } from '../atoms/Icon';
+import { Dialog, DialogContent, DialogFooter, DialogHeader } from './Dialog';
 
 const meta: Meta<typeof Dialog> = {
   title: 'Molecules/Dialog',
@@ -53,15 +53,11 @@ export const Default: Story = {
     return (
       <>
         <Button onClick={() => setIsOpen(true)}>Open Dialog</Button>
-        <Dialog
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          title="Dialog Title"
-        >
+        <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} title="Dialog Title">
           <DialogContent>
             <p className="text-[rgb(var(--muted-foreground))]">
-              This is a simple dialog with a title and some content. Click
-              outside or press Escape to close.
+              This is a simple dialog with a title and some content. Click outside or press Escape
+              to close.
             </p>
           </DialogContent>
           <DialogFooter>
@@ -85,20 +81,11 @@ export const ConfirmationDialog: Story = {
         <Button variant="destructive" onClick={() => setIsOpen(true)}>
           Delete Item
         </Button>
-        <Dialog
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          title="Delete Item"
-          size="sm"
-        >
+        <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} title="Delete Item" size="sm">
           <DialogContent>
             <div className="flex items-start gap-3">
               <div className="rounded-full bg-[rgb(var(--destructive))]/10 p-2">
-                <Icon
-                  icon={AlertTriangle}
-                  size="md"
-                  className="text-[rgb(var(--destructive))]"
-                />
+                <Icon icon={AlertTriangle} size="md" className="text-[rgb(var(--destructive))]" />
               </div>
               <div>
                 <p className="text-sm text-[rgb(var(--foreground))]">
@@ -131,12 +118,7 @@ export const FormDialog: Story = {
     return (
       <>
         <Button onClick={() => setIsOpen(true)}>Create New Task</Button>
-        <Dialog
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          title="Create New Task"
-          size="md"
-        >
+        <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} title="Create New Task" size="md">
           <DialogContent>
             <form className="space-y-4">
               <div className="space-y-2">
@@ -155,11 +137,7 @@ export const FormDialog: Story = {
                 >
                   Description
                 </label>
-                <Textarea
-                  id="task-description"
-                  placeholder="Enter task description"
-                  rows={4}
-                />
+                <Textarea id="task-description" placeholder="Enter task description" rows={4} />
               </div>
             </form>
           </DialogContent>
@@ -184,28 +162,19 @@ export const InfoDialog: Story = {
         <Button variant="secondary" onClick={() => setIsOpen(true)}>
           Show Info
         </Button>
-        <Dialog
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          title="Information"
-          size="sm"
-        >
+        <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} title="Information" size="sm">
           <DialogContent>
             <div className="flex items-start gap-3">
               <div className="rounded-full bg-[rgb(var(--primary))]/10 p-2">
-                <Icon
-                  icon={Info}
-                  size="md"
-                  className="text-[rgb(var(--primary))]"
-                />
+                <Icon icon={Info} size="md" className="text-[rgb(var(--primary))]" />
               </div>
               <div>
                 <p className="text-sm text-[rgb(var(--foreground))]">
                   This is an informational message.
                 </p>
                 <p className="mt-1 text-sm text-[rgb(var(--muted-foreground))]">
-                  You can close this dialog by clicking outside, pressing
-                  Escape, or clicking the X button.
+                  You can close this dialog by clicking outside, pressing Escape, or clicking the X
+                  button.
                 </p>
               </div>
             </div>
@@ -223,20 +192,11 @@ export const SuccessDialog: Story = {
     return (
       <>
         <Button onClick={() => setIsOpen(true)}>Show Success</Button>
-        <Dialog
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          title="Success!"
-          size="sm"
-        >
+        <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} title="Success!" size="sm">
           <DialogContent>
             <div className="flex flex-col items-center text-center">
               <div className="rounded-full bg-green-500/10 p-3">
-                <Icon
-                  icon={CheckCircle}
-                  size="lg"
-                  className="text-green-500"
-                />
+                <Icon icon={CheckCircle} size="lg" className="text-green-500" />
               </div>
               <p className="mt-3 text-sm text-[rgb(var(--foreground))]">
                 Your action was completed successfully!
@@ -259,16 +219,10 @@ export const CustomHeader: Story = {
     return (
       <>
         <Button onClick={() => setIsOpen(true)}>Open Custom Dialog</Button>
-        <Dialog
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          showCloseButton={false}
-        >
+        <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} showCloseButton={false}>
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">
-                Custom Header
-              </h2>
+              <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">Custom Header</h2>
               <span className="rounded-full bg-[rgb(var(--primary))]/10 px-2 py-1 text-xs text-[rgb(var(--primary))]">
                 Beta
               </span>
@@ -279,8 +233,8 @@ export const CustomHeader: Story = {
           </DialogHeader>
           <DialogContent>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              When you need more control over the header, use the DialogHeader
-              component instead of the title prop.
+              When you need more control over the header, use the DialogHeader component instead of
+              the title prop.
             </p>
           </DialogContent>
           <DialogFooter>
@@ -318,8 +272,8 @@ export const Sizes: Story = {
           >
             <DialogContent>
               <p className="text-sm text-[rgb(var(--muted-foreground))]">
-                This is a {size.toUpperCase()} size dialog. The content area
-                adjusts to fit the dialog width.
+                This is a {size.toUpperCase()} size dialog. The content area adjusts to fit the
+                dialog width.
               </p>
             </DialogContent>
             <DialogFooter>
@@ -348,8 +302,8 @@ export const NoCloseButton: Story = {
         >
           <DialogContent>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              This dialog has no close button and doesn&apos;t close when
-              clicking the backdrop. You must use the action buttons.
+              This dialog has no close button and doesn&apos;t close when clicking the backdrop. You
+              must use the action buttons.
             </p>
           </DialogContent>
           <DialogFooter>
@@ -368,20 +322,14 @@ export const ScrollableContent: Story = {
     return (
       <>
         <Button onClick={() => setIsOpen(true)}>Open Scrollable Dialog</Button>
-        <Dialog
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          title="Terms of Service"
-          size="md"
-        >
+        <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} title="Terms of Service" size="md">
           <DialogContent className="max-h-[300px]">
             <div className="space-y-4 text-sm text-[rgb(var(--muted-foreground))]">
               {Array.from({ length: 10 }, (_, i) => (
                 <p key={i}>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                  laboris nisi ut aliquip ex ea commodo consequat.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                 </p>
               ))}
             </div>
@@ -457,11 +405,7 @@ export const KeyboardNavigation: Story = {
     return (
       <div className="space-y-4">
         <Button onClick={() => setIsOpen(true)}>Open Dialog</Button>
-        <Dialog
-          isOpen={isOpen}
-          onClose={() => setIsOpen(false)}
-          title="Keyboard Navigation"
-        >
+        <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} title="Keyboard Navigation">
           <DialogContent>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
               This dialog supports keyboard navigation. Try these:

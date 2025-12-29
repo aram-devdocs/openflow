@@ -15,6 +15,7 @@
 CREATE TABLE executor_profiles (
     id              TEXT PRIMARY KEY,
     name            TEXT NOT NULL,
+    description     TEXT,           -- Description of the executor profile
     command         TEXT NOT NULL,  -- CLI command: claude, gemini, codex, cursor
     args            TEXT,           -- JSON array of default arguments
     env             TEXT,           -- JSON object of environment variables

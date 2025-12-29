@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import type { DiffHunk, FileDiff } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
+import { useState } from 'react';
 import { DiffViewer } from './DiffViewer';
-import type { FileDiff, DiffHunk } from '@openflow/generated';
 
 const meta = {
   title: 'Organisms/DiffViewer',
@@ -283,13 +283,7 @@ function InteractiveDiffViewer({ diffs }: { diffs: FileDiff[] }) {
     });
   };
 
-  return (
-    <DiffViewer
-      diffs={diffs}
-      expandedFiles={expandedFiles}
-      onFileToggle={handleToggle}
-    />
-  );
+  return <DiffViewer diffs={diffs} expandedFiles={expandedFiles} onFileToggle={handleToggle} />;
 }
 
 /**
@@ -306,7 +300,10 @@ export const Default: Story = {
  * Interactive diff viewer with controlled expand/collapse state
  */
 export const Interactive: Story = {
-  render: () => <InteractiveDiffViewer diffs={sampleDiffs} />,
+  args: {
+    diffs: sampleDiffs,
+  },
+  render: (args) => <InteractiveDiffViewer {...args} />,
 };
 
 /**

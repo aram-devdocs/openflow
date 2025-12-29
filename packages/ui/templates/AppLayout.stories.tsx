@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { AppLayout } from './AppLayout';
-import { Sidebar } from '../organisms/Sidebar';
-import { Header } from '../organisms/Header';
 import { type Project, type Task, TaskStatus } from '@openflow/generated';
+import type { Meta, StoryObj } from '@storybook/react';
+import { Header } from '../organisms/Header';
+import { Sidebar } from '../organisms/Sidebar';
+import { AppLayout } from './AppLayout';
 
 const meta: Meta<typeof AppLayout> = {
   title: 'Templates/AppLayout',
@@ -144,12 +144,10 @@ function StoryHeader() {
 function SampleContent() {
   return (
     <div className="p-6">
-      <h1 className="mb-4 text-2xl font-bold text-[rgb(var(--foreground))]">
-        Welcome to OpenFlow
-      </h1>
+      <h1 className="mb-4 text-2xl font-bold text-[rgb(var(--foreground))]">Welcome to OpenFlow</h1>
       <p className="mb-4 text-[rgb(var(--muted-foreground))]">
-        This is the main content area of the application. It displays whatever
-        page or view is currently active.
+        This is the main content area of the application. It displays whatever page or view is
+        currently active.
       </p>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -157,12 +155,10 @@ function SampleContent() {
             key={i}
             className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4"
           >
-            <h3 className="mb-2 font-semibold text-[rgb(var(--card-foreground))]">
-              Card {i}
-            </h3>
+            <h3 className="mb-2 font-semibold text-[rgb(var(--card-foreground))]">Card {i}</h3>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              This is sample content for card {i}. It demonstrates how content
-              flows in the main area.
+              This is sample content for card {i}. It demonstrates how content flows in the main
+              area.
             </p>
           </div>
         ))}
@@ -204,9 +200,7 @@ export const MinimalContent: Story = {
     header: <StoryHeader />,
     children: (
       <div className="flex h-full items-center justify-center">
-        <p className="text-[rgb(var(--muted-foreground))]">
-          Select a task to view details
-        </p>
+        <p className="text-[rgb(var(--muted-foreground))]">Select a task to view details</p>
       </div>
     ),
     sidebarCollapsed: false,
@@ -222,9 +216,7 @@ export const ScrollingContent: Story = {
     header: <StoryHeader />,
     children: (
       <div className="p-6">
-        <h1 className="mb-4 text-2xl font-bold text-[rgb(var(--foreground))]">
-          Long Content Page
-        </h1>
+        <h1 className="mb-4 text-2xl font-bold text-[rgb(var(--foreground))]">Long Content Page</h1>
         {Array.from({ length: 20 }).map((_, i) => (
           <div
             key={i}
@@ -234,9 +226,8 @@ export const ScrollingContent: Story = {
               Section {i + 1}
             </h3>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              This is content section {i + 1}. It demonstrates how the layout
-              handles scrolling content in the main area while keeping the
-              sidebar and header fixed.
+              This is content section {i + 1}. It demonstrates how the layout handles scrolling
+              content in the main area while keeping the sidebar and header fixed.
             </p>
           </div>
         ))}
@@ -313,12 +304,9 @@ export const EmptyState: Story = {
             />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-[rgb(var(--foreground))]">
-          No tasks yet
-        </h2>
+        <h2 className="text-xl font-semibold text-[rgb(var(--foreground))]">No tasks yet</h2>
         <p className="max-w-md text-center text-[rgb(var(--muted-foreground))]">
-          Create your first task to start organizing your work with AI-powered
-          workflows.
+          Create your first task to start organizing your work with AI-powered workflows.
         </p>
       </div>
     ),

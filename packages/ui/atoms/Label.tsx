@@ -1,5 +1,5 @@
-import { forwardRef, type LabelHTMLAttributes } from 'react';
 import { cn } from '@openflow/utils';
+import { type LabelHTMLAttributes, forwardRef } from 'react';
 
 export interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
   /** Show required indicator (*) */
@@ -36,10 +36,7 @@ export const Label = forwardRef<HTMLLabelElement, LabelProps>(
       >
         {children}
         {required && (
-          <span
-            className="ml-1 text-[rgb(var(--destructive))]"
-            aria-hidden="true"
-          >
+          <span className="ml-1 text-[rgb(var(--destructive))]" aria-hidden="true">
             *
           </span>
         )}

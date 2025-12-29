@@ -1,20 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { SettingsLayout, type SettingsNavItem } from './SettingsLayout';
 import {
-  Settings,
-  User,
-  Palette,
-  Keyboard,
   Bell,
-  Shield,
   Database,
   FolderGit2,
+  Keyboard,
+  Palette,
+  Settings,
+  Shield,
   Terminal,
+  User,
 } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
-import { FormField } from '../molecules/FormField';
 import { Dropdown } from '../molecules/Dropdown';
+import { FormField } from '../molecules/FormField';
+import { SettingsLayout, type SettingsNavItem } from './SettingsLayout';
 
 const meta: Meta<typeof SettingsLayout> = {
   title: 'Templates/SettingsLayout',
@@ -54,9 +54,7 @@ function GeneralSettingsContent() {
   return (
     <div className="max-w-2xl space-y-6">
       <section className="space-y-4">
-        <h2 className="text-lg font-medium text-[rgb(var(--foreground))]">
-          General Settings
-        </h2>
+        <h2 className="text-lg font-medium text-[rgb(var(--foreground))]">General Settings</h2>
         <p className="text-sm text-[rgb(var(--muted-foreground))]">
           Configure general application preferences.
         </p>
@@ -117,9 +115,7 @@ function ExecutorProfilesContent() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-medium text-[rgb(var(--foreground))]">
-              Executor Profiles
-            </h2>
+            <h2 className="text-lg font-medium text-[rgb(var(--foreground))]">Executor Profiles</h2>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
               Configure AI coding assistants for task execution.
             </p>
@@ -179,9 +175,7 @@ function ThemeSettingsContent() {
   return (
     <div className="max-w-2xl space-y-6">
       <section className="space-y-4">
-        <h2 className="text-lg font-medium text-[rgb(var(--foreground))]">
-          Theme Settings
-        </h2>
+        <h2 className="text-lg font-medium text-[rgb(var(--foreground))]">Theme Settings</h2>
         <p className="text-sm text-[rgb(var(--muted-foreground))]">
           Customize the appearance of OpenFlow.
         </p>
@@ -209,9 +203,7 @@ function ThemeSettingsContent() {
                         : 'bg-gradient-to-r from-gray-900 to-gray-100'
                   }`}
                 />
-                <span className="text-sm font-medium text-[rgb(var(--foreground))]">
-                  {theme}
-                </span>
+                <span className="text-sm font-medium text-[rgb(var(--foreground))]">{theme}</span>
               </button>
             ))}
           </div>
@@ -224,7 +216,9 @@ function ThemeSettingsContent() {
                 key={color}
                 type="button"
                 className={`h-8 w-8 rounded-full ${
-                  color === 'blue' ? 'ring-2 ring-offset-2 ring-offset-[rgb(var(--background))] ring-[rgb(var(--ring))]' : ''
+                  color === 'blue'
+                    ? 'ring-2 ring-offset-2 ring-offset-[rgb(var(--background))] ring-[rgb(var(--ring))]'
+                    : ''
                 }`}
                 style={{
                   backgroundColor:
@@ -374,12 +368,10 @@ export const LongContent: Story = {
       <div className="max-w-2xl space-y-6">
         {Array.from({ length: 10 }).map((_, i) => (
           <section key={i} className="space-y-4 rounded-lg border border-[rgb(var(--border))] p-4">
-            <h3 className="font-medium text-[rgb(var(--foreground))]">
-              Section {i + 1}
-            </h3>
+            <h3 className="font-medium text-[rgb(var(--foreground))]">Section {i + 1}</h3>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              This is a sample settings section demonstrating scrolling behavior
-              in the content area while the navigation remains fixed.
+              This is a sample settings section demonstrating scrolling behavior in the content area
+              while the navigation remains fixed.
             </p>
             <FormField label={`Setting ${i + 1}`} htmlFor={`setting-${i + 1}`}>
               <Input placeholder="Enter value..." />

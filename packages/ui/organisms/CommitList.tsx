@@ -1,16 +1,16 @@
-import { useCallback, useMemo } from 'react';
 import type { Commit } from '@openflow/generated';
 import { cn } from '@openflow/utils';
 import {
   ChevronDown,
   ChevronRight,
-  GitCommit,
-  User,
   Clock,
   FileDiff,
-  Plus,
+  GitCommit,
   Minus,
+  Plus,
+  User,
 } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
 import { Icon } from '../atoms/Icon';
 
 export interface CommitListProps {
@@ -194,24 +194,15 @@ function CommitRow({
 
         {/* Commit icon and hash */}
         <div className="flex-shrink-0 flex items-center gap-2">
-          <Icon
-            icon={GitCommit}
-            size="sm"
-            className="text-[rgb(var(--primary))]"
-          />
-          <code className="font-mono text-xs text-[rgb(var(--primary))]">
-            {commit.shortHash}
-          </code>
+          <Icon icon={GitCommit} size="sm" className="text-[rgb(var(--primary))]" />
+          <code className="font-mono text-xs text-[rgb(var(--primary))]">{commit.shortHash}</code>
         </div>
 
         {/* Message and meta info */}
         <div className="flex-1 min-w-0">
           {/* Commit message */}
           <p
-            className={cn(
-              'text-sm text-[rgb(var(--foreground))]',
-              'truncate'
-            )}
+            className={cn('text-sm text-[rgb(var(--foreground))]', 'truncate')}
             title={commit.message}
           >
             {commit.message}
@@ -219,9 +210,7 @@ function CommitRow({
 
           {/* Meta line: author, time, stats */}
           <div className="flex items-center gap-4 mt-1 flex-wrap">
-            <span className="text-xs text-[rgb(var(--muted-foreground))]">
-              {commit.author}
-            </span>
+            <span className="text-xs text-[rgb(var(--muted-foreground))]">{commit.author}</span>
             <span
               className="text-xs text-[rgb(var(--muted-foreground))]"
               title={formatFullDate(commit.date)}
@@ -238,12 +227,7 @@ function CommitRow({
       </button>
 
       {/* Expanded details */}
-      {isExpanded && (
-        <CommitDetails
-          commit={commit}
-          {...(onViewCommit && { onViewCommit })}
-        />
-      )}
+      {isExpanded && <CommitDetails commit={commit} {...(onViewCommit && { onViewCommit })} />}
     </div>
   );
 }

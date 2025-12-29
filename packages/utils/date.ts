@@ -25,10 +25,7 @@ export interface FormatDateOptions {
  * formatDate('2024-01-15T10:30:00Z') // => 'Jan 15, 2024'
  * formatDate('2024-01-15T10:30:00Z', { includeTime: true }) // => 'Jan 15, 2024 10:30 AM'
  */
-export function formatDate(
-  date: string | Date,
-  options: FormatDateOptions = {}
-): string {
+export function formatDate(date: string | Date, options: FormatDateOptions = {}): string {
   const { includeTime = false, includeSeconds = false, use24Hour = false } = options;
 
   const d = typeof date === 'string' ? new Date(date) : date;
@@ -80,10 +77,7 @@ const TIME_UNITS = {
  * formatRelativeTime(new Date(Date.now() - 5 * 60 * 1000)) // => '5 minutes ago'
  * formatRelativeTime(new Date(Date.now() + 60 * 60 * 1000)) // => 'in 1 hour'
  */
-export function formatRelativeTime(
-  date: string | Date,
-  baseDate: Date = new Date()
-): string {
+export function formatRelativeTime(date: string | Date, baseDate: Date = new Date()): string {
   const d = typeof date === 'string' ? new Date(date) : date;
 
   if (Number.isNaN(d.getTime())) {

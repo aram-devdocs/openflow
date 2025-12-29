@@ -1,9 +1,8 @@
-import { forwardRef, type InputHTMLAttributes } from 'react';
 import { cn } from '@openflow/utils';
 import { Check } from 'lucide-react';
+import { type InputHTMLAttributes, forwardRef } from 'react';
 
-export interface CheckboxProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   /** Whether the checkbox is checked */
   checked?: boolean;
   /** Indeterminate state (partially checked) */

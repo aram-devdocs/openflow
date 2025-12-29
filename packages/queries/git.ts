@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
 import type { Commit, FileDiff } from '@openflow/generated';
+import { invoke } from '@tauri-apps/api/core';
 
 /**
  * Git query wrappers for Tauri IPC.
@@ -13,27 +13,21 @@ export const gitQueries = {
    * @param baseBranch - Base branch to create from (e.g., 'main')
    * @returns The path to the created worktree
    */
-  createWorktree: (
-    chatId: string,
-    branchName: string,
-    baseBranch: string
-  ): Promise<string> =>
+  createWorktree: (chatId: string, branchName: string, baseBranch: string): Promise<string> =>
     invoke('create_worktree', { chatId, branchName, baseBranch }),
 
   /**
    * Delete a git worktree associated with a chat.
    * @param chatId - The chat ID whose worktree should be deleted
    */
-  deleteWorktree: (chatId: string): Promise<void> =>
-    invoke('delete_worktree', { chatId }),
+  deleteWorktree: (chatId: string): Promise<void> => invoke('delete_worktree', { chatId }),
 
   /**
    * Get the diff for a chat's worktree.
    * @param chatId - The chat ID to get diff for
    * @returns Array of file diffs showing changes
    */
-  getDiff: (chatId: string): Promise<FileDiff[]> =>
-    invoke('get_diff', { chatId }),
+  getDiff: (chatId: string): Promise<FileDiff[]> => invoke('get_diff', { chatId }),
 
   /**
    * Get recent commits for a chat's worktree branch.
@@ -48,6 +42,5 @@ export const gitQueries = {
    * Push a chat's branch to the remote repository.
    * @param chatId - The chat ID whose branch should be pushed
    */
-  pushBranch: (chatId: string): Promise<void> =>
-    invoke('push_branch', { chatId }),
+  pushBranch: (chatId: string): Promise<void> => invoke('push_branch', { chatId }),
 };

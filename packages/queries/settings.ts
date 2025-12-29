@@ -8,14 +8,12 @@ export const settingsQueries = {
   /**
    * Get a setting value by key.
    */
-  get: (key: string): Promise<string | null> =>
-    invoke('get_setting', { key }),
+  get: (key: string): Promise<string | null> => invoke('get_setting', { key }),
 
   /**
    * Set a setting value.
    */
-  set: (key: string, value: string): Promise<void> =>
-    invoke('set_setting', { key, value }),
+  set: (key: string, value: string): Promise<void> => invoke('set_setting', { key, value }),
 
   /**
    * Get all settings as a key-value map.

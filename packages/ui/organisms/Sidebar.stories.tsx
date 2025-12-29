@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react';
 import type { Project, Task, TaskStatus } from '@openflow/generated';
-import { Sidebar } from './Sidebar';
+import type { Meta, StoryObj } from '@storybook/react';
+import { Sidebar, type StatusFilter } from './Sidebar';
 
 const meta: Meta<typeof Sidebar> = {
   title: 'Organisms/Sidebar',
@@ -14,9 +14,7 @@ const meta: Meta<typeof Sidebar> = {
       <div className="flex h-[600px] bg-[rgb(var(--background))]">
         <Story />
         <div className="flex-1 p-4">
-          <p className="text-[rgb(var(--muted-foreground))]">
-            Main content area
-          </p>
+          <p className="text-[rgb(var(--muted-foreground))]">Main content area</p>
         </div>
       </div>
     ),
@@ -183,7 +181,7 @@ export const FilteredInProgress: Story = {
     projects: mockProjects,
     tasks: mockTasks,
     selectedProjectId: 'proj-1',
-    statusFilter: 'inprogress',
+    statusFilter: 'inprogress' as StatusFilter,
     isCollapsed: false,
   },
 };
@@ -196,7 +194,7 @@ export const FilteredTodo: Story = {
     projects: mockProjects,
     tasks: mockTasks,
     selectedProjectId: 'proj-1',
-    statusFilter: 'todo',
+    statusFilter: 'todo' as StatusFilter,
     isCollapsed: false,
   },
 };
@@ -209,7 +207,7 @@ export const FilteredDone: Story = {
     projects: mockProjects,
     tasks: mockTasks,
     selectedProjectId: 'proj-1',
-    statusFilter: 'done',
+    statusFilter: 'done' as StatusFilter,
     isCollapsed: false,
   },
 };
@@ -401,7 +399,7 @@ export const FilteredNoResults: Story = {
       },
     ],
     selectedProjectId: 'proj-1',
-    statusFilter: 'inprogress', // No in-progress tasks
+    statusFilter: 'inprogress' as StatusFilter, // No in-progress tasks
     isCollapsed: false,
   },
 };
@@ -418,8 +416,7 @@ export const LongTaskTitles: Story = {
         projectId: 'proj-1',
         title:
           'This is a very long task title that should be truncated when displayed in the sidebar task list',
-        description:
-          'This description is also quite long and should be truncated appropriately',
+        description: 'This description is also quite long and should be truncated appropriately',
         status: 'inprogress' as TaskStatus,
         actionsRequiredCount: 0,
         autoStartNextStep: false,
@@ -429,8 +426,7 @@ export const LongTaskTitles: Story = {
       {
         id: 'task-long-2',
         projectId: 'proj-1',
-        title:
-          'Another extremely long task title that tests the UI truncation behavior',
+        title: 'Another extremely long task title that tests the UI truncation behavior',
         status: 'todo' as TaskStatus,
         actionsRequiredCount: 2,
         autoStartNextStep: false,

@@ -1,8 +1,8 @@
-import type { HTMLAttributes, ReactNode, KeyboardEvent } from 'react';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
-import { Icon } from '../atoms/Icon';
+import type { HTMLAttributes, KeyboardEvent, ReactNode } from 'react';
 import { Badge } from '../atoms/Badge';
+import { Icon } from '../atoms/Icon';
 
 export interface Tab {
   /** Unique identifier for the tab */
@@ -79,9 +79,7 @@ export function Tabs({
     const currentTab = tabs[currentIndex];
     if (!currentTab) return;
 
-    const currentEnabledIndex = enabledTabs.findIndex(
-      (tab) => tab.id === currentTab.id
-    );
+    const currentEnabledIndex = enabledTabs.findIndex((tab) => tab.id === currentTab.id);
 
     let nextTab: Tab | undefined;
 
@@ -117,9 +115,7 @@ export function Tabs({
     if (nextTab) {
       onTabChange(nextTab.id);
       // Focus the newly activated tab
-      const button = document.querySelector(
-        `[data-tab-id="${nextTab.id}"]`
-      ) as HTMLButtonElement;
+      const button = document.querySelector(`[data-tab-id="${nextTab.id}"]`) as HTMLButtonElement;
       button?.focus();
     }
   };
@@ -143,12 +139,10 @@ export function Tabs({
   };
 
   const tabActiveStyles = {
-    default:
-      'bg-[rgb(var(--background))] text-[rgb(var(--foreground))] shadow-sm',
+    default: 'bg-[rgb(var(--background))] text-[rgb(var(--foreground))] shadow-sm',
     pills:
       'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))] border-[rgb(var(--primary))]',
-    underline:
-      'border-[rgb(var(--primary))] text-[rgb(var(--foreground))]',
+    underline: 'border-[rgb(var(--primary))] text-[rgb(var(--foreground))]',
   };
 
   const tabInactiveStyles = {
@@ -223,10 +217,7 @@ export function Tabs({
               <Badge
                 variant={isActive && variant === 'pills' ? 'default' : 'info'}
                 size="sm"
-                className={cn(
-                  'ml-1',
-                  isActive && variant === 'pills' && 'bg-white/20 text-white'
-                )}
+                className={cn('ml-1', isActive && variant === 'pills' && 'bg-white/20 text-white')}
               >
                 {tab.badge}
               </Badge>
@@ -247,13 +238,7 @@ export function Tabs({
  *   <StepsContent />
  * </TabPanel>
  */
-export function TabPanel({
-  children,
-  tabId,
-  activeTab,
-  className,
-  ...props
-}: TabPanelProps) {
+export function TabPanel({ children, tabId, activeTab, className, ...props }: TabPanelProps) {
   if (tabId !== activeTab) {
     return null;
   }

@@ -1,31 +1,21 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import {
-  ListTodo,
-  FileDiff,
-  GitCommit,
-  Send,
-} from 'lucide-react';
 import type {
-  Task,
   Chat,
-  WorkflowStep,
-  Message,
-  FileDiff as FileDiffType,
   Commit,
+  FileDiff as FileDiffType,
+  Message,
+  Task,
+  WorkflowStep,
 } from '@openflow/generated';
-import {
-  TaskStatus,
-  ChatRole,
-  WorkflowStepStatus,
-  MessageRole,
-} from '@openflow/generated';
-import { TaskLayout } from './TaskLayout';
-import { StepsPanel } from '../organisms/StepsPanel';
-import { DiffViewer } from '../organisms/DiffViewer';
-import { CommitList } from '../organisms/CommitList';
-import type { Tab } from '../molecules/Tabs';
+import { ChatRole, MessageRole, TaskStatus, WorkflowStepStatus } from '@openflow/generated';
+import type { Meta, StoryObj } from '@storybook/react';
+import { FileDiff, GitCommit, ListTodo, Send } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
+import type { Tab } from '../molecules/Tabs';
+import { CommitList } from '../organisms/CommitList';
+import { DiffViewer } from '../organisms/DiffViewer';
+import { StepsPanel } from '../organisms/StepsPanel';
+import { TaskLayout } from './TaskLayout';
 
 const meta: Meta<typeof TaskLayout> = {
   title: 'Templates/TaskLayout',
@@ -161,7 +151,7 @@ const mockDiffs: FileDiffType[] = [
         newStart: 1,
         newLines: 25,
         content:
-          '+import jwt from \'jsonwebtoken\';\n+\n+export class AuthService {\n+  async login(email: string, password: string) {\n+    // Validate credentials\n+    const user = await this.findUser(email);\n+    if (!user || !await this.verifyPassword(password, user.passwordHash)) {\n+      throw new Error(\'Invalid credentials\');\n+    }\n+    \n+    // Generate tokens\n+    const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);\n+    const refreshToken = jwt.sign({ userId: user.id }, process.env.JWT_REFRESH_SECRET!);\n+    \n+    return { accessToken, refreshToken };\n+  }\n+}',
+          "+import jwt from 'jsonwebtoken';\n+\n+export class AuthService {\n+  async login(email: string, password: string) {\n+    // Validate credentials\n+    const user = await this.findUser(email);\n+    if (!user || !await this.verifyPassword(password, user.passwordHash)) {\n+      throw new Error('Invalid credentials');\n+    }\n+    \n+    // Generate tokens\n+    const accessToken = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!);\n+    const refreshToken = jwt.sign({ userId: user.id }, process.env.JWT_REFRESH_SECRET!);\n+    \n+    return { accessToken, refreshToken };\n+  }\n+}",
       },
     ],
     additions: 25,
@@ -180,7 +170,7 @@ const mockDiffs: FileDiffType[] = [
         newStart: 1,
         newLines: 15,
         content:
-          ' import { Router } from \'express\';\n+import { AuthService } from \'../services/auth.service\';\n \n const router = Router();\n+const authService = new AuthService();\n \n-// TODO: Add auth routes\n+router.post(\'/login\', async (req, res) => {\n+  const { email, password } = req.body;\n+  const tokens = await authService.login(email, password);\n+  res.json(tokens);\n+});\n+\n+router.post(\'/refresh\', async (req, res) => {\n+  // Refresh token logic\n+});\n \n export default router;',
+          " import { Router } from 'express';\n+import { AuthService } from '../services/auth.service';\n \n const router = Router();\n+const authService = new AuthService();\n \n-// TODO: Add auth routes\n+router.post('/login', async (req, res) => {\n+  const { email, password } = req.body;\n+  const tokens = await authService.login(email, password);\n+  res.json(tokens);\n+});\n+\n+router.post('/refresh', async (req, res) => {\n+  // Refresh token logic\n+});\n \n export default router;",
       },
     ],
     additions: 12,
@@ -288,9 +278,7 @@ export const Default: Story = {
         steps={mockSteps}
         activeStepIndex={2}
         onStartStep={(index) => console.log('Start step', index)}
-        onToggleStep={(index, completed) =>
-          console.log('Toggle step', index, completed)
-        }
+        onToggleStep={(index, completed) => console.log('Toggle step', index, completed)}
         onSelectStep={(index) => console.log('Select step', index)}
         onAddStep={() => console.log('Add step')}
         autoStart={false}
@@ -318,13 +306,7 @@ export const ChangesTab: Story = {
   args: {
     ...Default.args,
     activeTab: 'changes',
-    tabContent: (
-      <DiffViewer
-        diffs={mockDiffs}
-        defaultExpanded
-        showLineNumbers
-      />
-    ),
+    tabContent: <DiffViewer diffs={mockDiffs} defaultExpanded showLineNumbers />,
   },
 };
 
@@ -336,10 +318,7 @@ export const CommitsTab: Story = {
     ...Default.args,
     activeTab: 'commits',
     tabContent: (
-      <CommitList
-        commits={mockCommits}
-        onViewCommit={(hash) => console.log('View commit', hash)}
-      />
+      <CommitList commits={mockCommits} onViewCommit={(hash) => console.log('View commit', hash)} />
     ),
   },
 };
@@ -457,13 +436,7 @@ export const ReadOnly: Story = {
     chats: mockChats,
     tabs: defaultTabs,
     activeTab: 'steps',
-    stepsPanel: (
-      <StepsPanel
-        steps={mockSteps}
-        activeStepIndex={2}
-        disabled
-      />
-    ),
+    stepsPanel: <StepsPanel steps={mockSteps} activeStepIndex={2} disabled />,
     mainPanel: (
       <div className="flex h-full flex-col">
         <SimpleChatDisplay messages={mockMessages} />

@@ -1,16 +1,12 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryResult,
-  type UseMutationResult,
-} from '@tanstack/react-query';
+import type { CreateProjectRequest, Project, UpdateProjectRequest } from '@openflow/generated';
 import { projectQueries } from '@openflow/queries';
-import type {
-  Project,
-  CreateProjectRequest,
-  UpdateProjectRequest,
-} from '@openflow/generated';
+import {
+  type UseMutationResult,
+  type UseQueryResult,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 
 /**
  * Query key factory for projects.
@@ -55,11 +51,7 @@ export function useProject(id: string): UseQueryResult<Project> {
  *
  * @returns Mutation for creating a project
  */
-export function useCreateProject(): UseMutationResult<
-  Project,
-  Error,
-  CreateProjectRequest
-> {
+export function useCreateProject(): UseMutationResult<Project, Error, CreateProjectRequest> {
   const queryClient = useQueryClient();
 
   return useMutation({

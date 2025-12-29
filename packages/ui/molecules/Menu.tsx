@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { cn } from '@openflow/utils';
-import { Icon } from '../atoms/Icon';
 import type { LucideIcon } from 'lucide-react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Icon } from '../atoms/Icon';
 
 export interface MenuItem {
   /** Unique identifier for the menu item */
@@ -156,15 +156,11 @@ export function Menu({
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        setHighlightedIndex((prev) =>
-          prev < enabledItems.length - 1 ? prev + 1 : 0
-        );
+        setHighlightedIndex((prev) => (prev < enabledItems.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         event.preventDefault();
-        setHighlightedIndex((prev) =>
-          prev > 0 ? prev - 1 : enabledItems.length - 1
-        );
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : enabledItems.length - 1));
         break;
       case 'Enter':
       case ' ':
@@ -241,11 +237,7 @@ export function Menu({
         // Handle divider
         if (item.divider) {
           return (
-            <div
-              key={item.id}
-              role="separator"
-              className="my-1 h-px bg-[rgb(var(--border))]"
-            />
+            <div key={item.id} role="separator" className="my-1 h-px bg-[rgb(var(--border))]" />
           );
         }
 
@@ -284,8 +276,7 @@ export function Menu({
                 !item.disabled &&
                 'bg-[rgb(var(--destructive))] text-[rgb(var(--destructive-foreground))]',
               // Disabled state
-              item.disabled &&
-                'cursor-not-allowed text-[rgb(var(--muted-foreground))] opacity-50'
+              item.disabled && 'cursor-not-allowed text-[rgb(var(--muted-foreground))] opacity-50'
             )}
           >
             {item.icon && (
@@ -293,9 +284,7 @@ export function Menu({
                 icon={item.icon}
                 size="sm"
                 className={cn(
-                  item.destructive &&
-                    !isHighlighted &&
-                    'text-[rgb(var(--destructive))]'
+                  item.destructive && !isHighlighted && 'text-[rgb(var(--destructive))]'
                 )}
               />
             )}
@@ -304,9 +293,7 @@ export function Menu({
               <span
                 className={cn(
                   'ml-auto text-xs',
-                  isHighlighted
-                    ? 'text-inherit opacity-70'
-                    : 'text-[rgb(var(--muted-foreground))]'
+                  isHighlighted ? 'text-inherit opacity-70' : 'text-[rgb(var(--muted-foreground))]'
                 )}
               >
                 {item.shortcut}

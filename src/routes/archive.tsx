@@ -10,18 +10,18 @@
  * Keeps page logic minimal (<200 lines) by delegating to UI components.
  */
 
-import { useState, useCallback } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Archive, RotateCcw, Trash2, ArrowLeft } from 'lucide-react';
-import { AppLayout, Header, Dialog, Button } from '@openflow/ui';
+import type { Task } from '@openflow/generated';
 import {
   useArchivedTasks,
-  useRestoreTask,
   useDeleteTask,
-  useProjects,
   useKeyboardShortcuts,
+  useProjects,
+  useRestoreTask,
 } from '@openflow/hooks';
-import type { Task } from '@openflow/generated';
+import { AppLayout, Button, Dialog, Header } from '@openflow/ui';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { Archive, ArrowLeft, RotateCcw, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/archive')({
   component: ArchivePage,
@@ -177,9 +177,7 @@ function ArchivePage() {
                     onClick={() => handleSelectTask(task)}
                     className="flex flex-1 flex-col items-start gap-1 text-left"
                   >
-                    <span className="font-medium text-[rgb(var(--foreground))]">
-                      {task.title}
-                    </span>
+                    <span className="font-medium text-[rgb(var(--foreground))]">{task.title}</span>
                     <div className="flex items-center gap-2 text-xs text-[rgb(var(--muted-foreground))]">
                       <span>{getProjectName(task.projectId)}</span>
                       <span>-</span>

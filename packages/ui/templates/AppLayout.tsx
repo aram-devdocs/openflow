@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
 import { cn } from '@openflow/utils';
+import type { ReactNode } from 'react';
 
 export interface AppLayoutProps {
   /** Sidebar content (typically the Sidebar component) */
@@ -83,11 +83,7 @@ export function AppLayout({
 
         {/* Main content */}
         <main
-          className={cn(
-            'flex-1 overflow-auto',
-            'bg-[rgb(var(--background))]',
-            contentClassName
-          )}
+          className={cn('flex-1 overflow-auto', 'bg-[rgb(var(--background))]', contentClassName)}
         >
           {children}
         </main>

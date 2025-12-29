@@ -73,11 +73,7 @@ function groupTasksByStatus(tasks: Task[]): Record<TaskStatus, Task[]> {
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Icon
-        icon={Inbox}
-        size="lg"
-        className="mb-3 text-[rgb(var(--muted-foreground))]"
-      />
+      <Icon icon={Inbox} size="lg" className="mb-3 text-[rgb(var(--muted-foreground))]" />
       <p className="text-sm text-[rgb(var(--muted-foreground))]">{message}</p>
     </div>
   );
@@ -125,9 +121,7 @@ function StatusColumn({
           ))
         ) : (
           <div className="flex-1 rounded-lg border border-dashed border-[rgb(var(--border))] bg-[rgb(var(--muted))]/30 p-4">
-            <p className="text-center text-xs text-[rgb(var(--muted-foreground))]">
-              No tasks
-            </p>
+            <p className="text-center text-xs text-[rgb(var(--muted-foreground))]">No tasks</p>
           </div>
         )}
       </div>

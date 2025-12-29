@@ -15,35 +15,23 @@
  * Keeps page logic minimal (<200 lines) by delegating to UI components.
  */
 
-import { useState, useCallback, useMemo } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { ListTodo, GitCompare, GitCommitHorizontal, AlertCircle } from 'lucide-react';
+import type { Commit, FileDiff, TaskStatus, WorkflowStep } from '@openflow/generated';
+import { MessageRole, WorkflowStepStatus } from '@openflow/generated';
 import {
-  TaskLayout,
-  StepsPanel,
-  ChatPanel,
-  DiffViewer,
-  CommitList,
-  Button,
-} from '@openflow/ui';
-import type { Tab } from '@openflow/ui';
-import {
-  useTask,
-  useUpdateTask,
   useChat,
-  useMessages,
   useCreateMessage,
-  useStartWorkflowStep,
   useExecutorProfiles,
   useKeyboardShortcuts,
+  useMessages,
+  useStartWorkflowStep,
+  useTask,
+  useUpdateTask,
 } from '@openflow/hooks';
-import type {
-  TaskStatus,
-  WorkflowStep,
-  FileDiff,
-  Commit,
-} from '@openflow/generated';
-import { WorkflowStepStatus, MessageRole } from '@openflow/generated';
+import { Button, ChatPanel, CommitList, DiffViewer, StepsPanel, TaskLayout } from '@openflow/ui';
+import type { Tab } from '@openflow/ui';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { AlertCircle, GitCommitHorizontal, GitCompare, ListTodo } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 export const Route = createFileRoute('/tasks/$taskId')({
   component: TaskDetailPage,
@@ -59,12 +47,8 @@ function TaskDetailPage() {
   const [autoStart, setAutoStart] = useState(false);
   const [isTitleEditing, setIsTitleEditing] = useState(false);
   const [titleInputValue, setTitleInputValue] = useState('');
-  const [expandedDiffFiles, setExpandedDiffFiles] = useState<Set<string>>(
-    new Set()
-  );
-  const [expandedCommits, setExpandedCommits] = useState<Set<string>>(
-    new Set()
-  );
+  const [expandedDiffFiles, setExpandedDiffFiles] = useState<Set<string>>(new Set());
+  const [expandedCommits, setExpandedCommits] = useState<Set<string>>(new Set());
 
   // Data fetching
   const { data: taskData, isLoading: isLoadingTask } = useTask(taskId);
@@ -210,12 +194,9 @@ function TaskDetailPage() {
     [chats, startWorkflowStep]
   );
 
-  const handleToggleStep = useCallback(
-    (_stepIndex: number, _completed: boolean) => {
-      // TODO: Implement step completion toggle
-    },
-    []
-  );
+  const handleToggleStep = useCallback((_stepIndex: number, _completed: boolean) => {
+    // TODO: Implement step completion toggle
+  }, []);
 
   const handleSelectStep = useCallback((stepIndex: number) => {
     setActiveStepIndex(stepIndex);
@@ -281,9 +262,7 @@ function TaskDetailPage() {
   if (isLoadingTask) {
     return (
       <div className="flex h-full items-center justify-center bg-[rgb(var(--background))]">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">
-          Loading task...
-        </div>
+        <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading task...</div>
       </div>
     );
   }
@@ -293,17 +272,11 @@ function TaskDetailPage() {
     return (
       <div className="flex h-full flex-col items-center justify-center bg-[rgb(var(--background))] p-8">
         <AlertCircle className="mb-4 h-16 w-16 text-[rgb(var(--muted-foreground))]" />
-        <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">
-          Task not found
-        </h2>
+        <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">Task not found</h2>
         <p className="mt-2 text-sm text-[rgb(var(--muted-foreground))]">
           The task you're looking for doesn't exist or has been deleted.
         </p>
-        <Button
-          variant="primary"
-          className="mt-4"
-          onClick={() => navigate({ to: '/' })}
-        >
+        <Button variant="primary" className="mt-4" onClick={() => navigate({ to: '/' })}>
           Back to Dashboard
         </Button>
       </div>
@@ -341,8 +314,7 @@ function TaskDetailPage() {
   };
 
   // Compute selected executor profile ID
-  const selectedExecutorProfileId =
-    activeChat?.executorProfileId ?? executorProfiles[0]?.id ?? '';
+  const selectedExecutorProfileId = activeChat?.executorProfileId ?? executorProfiles[0]?.id ?? '';
 
   // Determine if we have a branch for PR creation
   const hasBranch = chats.some((c) => c.branch);

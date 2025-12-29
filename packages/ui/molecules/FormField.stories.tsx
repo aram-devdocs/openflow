@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { FormField } from './FormField';
+import { Checkbox } from '../atoms/Checkbox';
 import { Input } from '../atoms/Input';
 import { Textarea } from '../atoms/Textarea';
-import { Checkbox } from '../atoms/Checkbox';
+import { FormField } from './FormField';
 
 const meta: Meta<typeof FormField> = {
   title: 'Molecules/FormField',

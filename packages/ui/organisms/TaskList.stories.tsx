@@ -1,7 +1,7 @@
+import { type Task, TaskStatus } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { TaskList } from './TaskList';
-import { TaskStatus, type Task } from '@openflow/generated';
 
 const meta: Meta<typeof TaskList> = {
   title: 'Organisms/TaskList',
@@ -51,16 +51,10 @@ const mockTasks: Task[] = [
   createMockTask('task-1', 'Set up project scaffolding', TaskStatus.Done, {
     description: 'Initialize the project with Vite, React, and TypeScript.',
   }),
-  createMockTask(
-    'task-2',
-    'Implement user authentication',
-    TaskStatus.Inprogress,
-    {
-      description:
-        'Add OAuth2 authentication with Google and GitHub providers.',
-      actionsRequiredCount: 2,
-    }
-  ),
+  createMockTask('task-2', 'Implement user authentication', TaskStatus.Inprogress, {
+    description: 'Add OAuth2 authentication with Google and GitHub providers.',
+    actionsRequiredCount: 2,
+  }),
   createMockTask('task-3', 'Design database schema', TaskStatus.Inreview, {
     description: 'Create SQLite schema for tasks, projects, and chats.',
   }),
@@ -98,11 +92,7 @@ export const WithSelection: Story = {
 
     return (
       <div className="max-w-md">
-        <TaskList
-          tasks={fewTasks}
-          selectedTaskId={selectedId}
-          onSelectTask={setSelectedId}
-        />
+        <TaskList tasks={fewTasks} selectedTaskId={selectedId} onSelectTask={setSelectedId} />
       </div>
     );
   },
@@ -115,9 +105,7 @@ export const WithStatusChange: Story = {
     const [selectedId, setSelectedId] = useState('');
 
     const handleStatusChange = (id: string, status: TaskStatus) => {
-      setTasks((prev) =>
-        prev.map((task) => (task.id === id ? { ...task, status } : task))
-      );
+      setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, status } : task)));
     };
 
     // Only pass selectedTaskId when it has a value
@@ -164,9 +152,7 @@ export const InteractiveKanban: Story = {
     const [selectedId, setSelectedId] = useState('');
 
     const handleStatusChange = (id: string, status: TaskStatus) => {
-      setTasks((prev) =>
-        prev.map((task) => (task.id === id ? { ...task, status } : task))
-      );
+      setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, status } : task)));
     };
 
     // Only pass selectedTaskId when it has a value
@@ -261,12 +247,9 @@ export const SingleTask: Story = {
 export const WithActionsRequired: Story = {
   args: {
     tasks: [
-      createMockTask(
-        'task-1',
-        'Task needing attention',
-        TaskStatus.Inprogress,
-        { actionsRequiredCount: 3 }
-      ),
+      createMockTask('task-1', 'Task needing attention', TaskStatus.Inprogress, {
+        actionsRequiredCount: 3,
+      }),
       createMockTask('task-2', 'Another urgent task', TaskStatus.Inprogress, {
         actionsRequiredCount: 1,
       }),
