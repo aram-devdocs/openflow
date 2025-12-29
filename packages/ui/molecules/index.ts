@@ -27,7 +27,9 @@ export type {
   DialogFooterProps,
 } from './Dialog';
 
+export { Tabs, TabPanel } from './Tabs';
+export type { TabsProps, TabPanelProps, Tab } from './Tabs';
+
 // Components will be exported here as they are created
-// export { Tabs } from './Tabs';
 // export { Tooltip } from './Tooltip';
 // export { Menu } from './Menu';
