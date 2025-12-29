@@ -2771,7 +2771,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Tooltip Component
+### [x] Step: Create Tooltip Component
+<!-- chat-id: f7a81c5e-d56e-4d2a-b998-6027afc234f9 -->
 
 Create Tooltip molecule for hints.
 
