@@ -20,5 +20,5 @@ export {
   type CommandAction,
   type RecentItem,
 } from './CommandPalette';
-// export { Sidebar } from './Sidebar';
+export { Sidebar, type SidebarProps, type StatusFilter } from './Sidebar';
 // export { Header } from './Header';
