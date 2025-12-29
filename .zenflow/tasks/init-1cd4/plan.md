@@ -255,7 +255,8 @@ cat tsconfig.json | grep '@openflow'  # Must have path aliases
 
 ---
 
-### [ ] Step: Create biome.json
+### [x] Step: Create biome.json
+<!-- chat-id: 69a9c470-c650-4684-9188-940b60a8261d -->
 
 Create Biome configuration for linting and formatting.
 
