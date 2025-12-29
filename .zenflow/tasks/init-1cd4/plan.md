@@ -2672,7 +2672,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Dropdown Component
+### [x] Step: Create Dropdown Component
+<!-- chat-id: 75e5bf37-aa11-43fa-90bb-4002c64dc906 -->
 
 Create Dropdown molecule for selection.
 
