@@ -3283,7 +3283,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create SettingsLayout Template
+### [x] Step: Create SettingsLayout Template
+<!-- chat-id: db21f083-dbea-44dc-9751-c333b7d175fe -->
 
 Create settings page layout template.
 
