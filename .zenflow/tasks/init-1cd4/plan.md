@@ -3320,7 +3320,8 @@ pnpm typecheck
 
 **Goal:** Set up TanStack Router with file-based routes.
 
-### [ ] Step: Create Route Configuration
+### [x] Step: Create Route Configuration
+<!-- chat-id: c0aa9ced-6e5f-45ac-ba88-45c071da0056 -->
 
 Create TanStack Router configuration.
 
