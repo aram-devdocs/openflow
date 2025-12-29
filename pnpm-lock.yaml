@@ -88,6 +88,8 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9
 
+  packages/generated: {}
+
   packages/utils:
     dependencies:
       clsx:
@@ -96,6 +98,15 @@ importers:
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
+
+  packages/validation:
+    dependencies:
+      '@openflow/generated':
+        specifier: workspace:*
+        version: link:../generated
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
 
 packages:
 

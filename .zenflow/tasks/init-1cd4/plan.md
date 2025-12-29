@@ -736,7 +736,8 @@ cat packages/generated/types.ts | grep "TaskStatus"
 
 ---
 
-### [ ] Step: Create packages/validation
+### [x] Step: Create packages/validation
+<!-- chat-id: 180004e8-e758-42e7-b007-deff250b5f92 -->
 
 Create validation package with Zod schemas (Level 1 - imports generated, utils).
 
