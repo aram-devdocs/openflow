@@ -135,7 +135,9 @@ export function useProcessOutput(processId: string): ProcessOutputState {
     // Cleanup on unmount or processId change
     return () => {
       mountedRef.current = false;
-      unlistenFns.forEach((unlisten) => unlisten());
+      for (const unlisten of unlistenFns) {
+        unlisten();
+      }
     };
   }, [processId]);
 
@@ -191,7 +193,7 @@ export function useMultipleProcessOutput(processIds: string[]): Map<string, Proc
 
     // Initialize state for each process
     const initialState = new Map<string, ProcessOutputState>();
-    processIds.forEach((id) => {
+    for (const id of processIds) {
       initialState.set(id, {
         output: [],
         rawOutput: '',
@@ -209,7 +211,7 @@ export function useMultipleProcessOutput(processIds: string[]): Map<string, Proc
           });
         },
       });
-    });
+    }
     setOutputs(initialState);
 
     // Set up listeners for each process
@@ -275,9 +277,12 @@ export function useMultipleProcessOutput(processIds: string[]): Map<string, Proc
 
     return () => {
       mountedRef.current = false;
-      unlistenFns.forEach((unlisten) => unlisten());
+      for (const unlisten of unlistenFns) {
+        unlisten();
+      }
     };
-  }, [processIds.join(',')]); // Re-subscribe when processIds change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [processIds]); // Re-subscribe when processIds change
 
   return outputs;
 }
