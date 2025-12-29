@@ -6,8 +6,7 @@
  * Examples: TaskCard, TaskList, ChatPanel, Sidebar, Header
  */
 
-// Components will be exported here as they are created
-// export { TaskCard } from './TaskCard';
+export { TaskCard, type TaskCardProps } from './TaskCard';
 // export { TaskList } from './TaskList';
 // export { ProjectSelector } from './ProjectSelector';
 // export { ChatMessage } from './ChatMessage';
@@ -18,6 +17,3 @@
 // export { CommandPalette } from './CommandPalette';
 // export { Sidebar } from './Sidebar';
 // export { Header } from './Header';
-
-// Placeholder export to make this a valid module
-export {};
