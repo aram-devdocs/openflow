@@ -1,21 +1,44 @@
 /**
  * Tools Index
  *
- * Re-exports all tool modules and provides tool registration.
+ * Provides tool definitions and handles tool execution.
  */
 
-import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { registerDevelopmentTools } from './development.js';
-import { registerLifecycleTools } from './lifecycle.js';
+import type { ToolDefinition, ToolResponse } from '../types.js';
+import { developmentToolDefinitions, handleDevelopmentTool } from './development.js';
+import { handleLifecycleTool, lifecycleToolDefinitions } from './lifecycle.js';
 
 // Re-export individual tools
 export * from './lifecycle.js';
 export * from './development.js';
 
 /**
- * Register all tools with the MCP server.
+ * Get all registered tool definitions.
  */
-export function registerAllTools(server: Server): void {
-  registerLifecycleTools(server);
-  registerDevelopmentTools(server);
+export function getToolDefinitions(): ToolDefinition[] {
+  return [...lifecycleToolDefinitions, ...developmentToolDefinitions];
+}
+
+/**
+ * Handle a tool call by routing to the appropriate handler.
+ */
+export async function handleToolCall(
+  name: string,
+  args: Record<string, unknown> | undefined
+): Promise<ToolResponse> {
+  // Try lifecycle tools first
+  if (lifecycleToolDefinitions.some((t) => t.name === name)) {
+    return handleLifecycleTool(name, args);
+  }
+
+  // Try development tools
+  if (developmentToolDefinitions.some((t) => t.name === name)) {
+    return handleDevelopmentTool(name, args);
+  }
+
+  // Tool not found
+  return {
+    content: [{ type: 'text', text: `Error: Unknown tool '${name}'` }],
+    isError: true,
+  };
 }

@@ -4,6 +4,23 @@
  * Shared types for the OpenFlow MCP server implementation.
  */
 
+/** MCP tool definition interface */
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: 'object';
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+/** MCP tool response format */
+export interface ToolResponse {
+  content: Array<{ type: 'text'; text: string }>;
+  isError?: boolean;
+}
+
 /** Possible states of the application */
 export type AppState = 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
 

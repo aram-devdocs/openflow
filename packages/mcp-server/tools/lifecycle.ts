@@ -10,15 +10,166 @@
  * - openflow_logs: Get application logs
  */
 
-import type { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { getAppManager } from '../services/app-manager.js';
-import type { ToolResult } from '../types.js';
+import type { ToolDefinition, ToolResponse, ToolResult } from '../types.js';
 
 /**
- * Register lifecycle tools with the MCP server.
+ * Lifecycle tool definitions for MCP registration.
  */
-export function registerLifecycleTools(_server: Server): void {
-  // TODO: Implement tool registration in Phase 1
+export const lifecycleToolDefinitions: ToolDefinition[] = [
+  {
+    name: 'openflow_start',
+    description: 'Start the OpenFlow app in development mode. Returns PID when successful.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        timeout_seconds: {
+          type: 'number',
+          description: 'Maximum time to wait for startup in seconds',
+          default: 120,
+        },
+      },
+    },
+  },
+  {
+    name: 'openflow_stop',
+    description: 'Stop the running OpenFlow app.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'openflow_status',
+    description: 'Check if the OpenFlow app is currently running and get status info.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'openflow_restart',
+    description: 'Restart the OpenFlow app. Stops if running, then starts fresh.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        timeout_seconds: {
+          type: 'number',
+          description: 'Maximum time to wait for startup in seconds',
+          default: 120,
+        },
+      },
+    },
+  },
+  {
+    name: 'openflow_wait_ready',
+    description: 'Wait for the OpenFlow app to be fully ready and responding.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        timeout_seconds: {
+          type: 'number',
+          description: 'Maximum time to wait in seconds',
+          default: 60,
+        },
+      },
+    },
+  },
+  {
+    name: 'openflow_logs',
+    description: 'Get recent dev server logs from the running app.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        lines: {
+          type: 'number',
+          description: 'Number of log lines to return (max 500)',
+          default: 50,
+        },
+        level: {
+          type: 'string',
+          enum: ['debug', 'info', 'warn', 'error'],
+          description: 'Minimum log level to include',
+          default: 'info',
+        },
+      },
+    },
+  },
+];
+
+/**
+ * Handle a lifecycle tool call.
+ */
+export async function handleLifecycleTool(
+  name: string,
+  args: Record<string, unknown> | undefined
+): Promise<ToolResponse> {
+  try {
+    switch (name) {
+      case 'openflow_start': {
+        const result = await startApp({
+          timeout: ((args?.timeout_seconds as number) ?? 120) * 1000,
+          waitForReady: true,
+        });
+        return formatToolResponse(result);
+      }
+      case 'openflow_stop': {
+        const result = await stopApp();
+        return formatToolResponse(result);
+      }
+      case 'openflow_status': {
+        const result = await getStatus();
+        return formatToolResponse(result);
+      }
+      case 'openflow_restart': {
+        const result = await restartApp({
+          timeout: ((args?.timeout_seconds as number) ?? 120) * 1000,
+          waitForReady: true,
+        });
+        return formatToolResponse(result);
+      }
+      case 'openflow_wait_ready': {
+        const result = await waitForReady(((args?.timeout_seconds as number) ?? 60) * 1000);
+        return formatToolResponse(result);
+      }
+      case 'openflow_logs': {
+        const result = await getLogs({
+          limit: Math.min((args?.lines as number) ?? 50, 500),
+          level: args?.level as 'debug' | 'info' | 'warn' | 'error' | undefined,
+        });
+        return formatToolResponse(result);
+      }
+      default:
+        return {
+          content: [{ type: 'text', text: `Unknown lifecycle tool: ${name}` }],
+          isError: true,
+        };
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      content: [{ type: 'text', text: `Error: ${message}` }],
+      isError: true,
+    };
+  }
+}
+
+/**
+ * Format a ToolResult as an MCP response.
+ */
+function formatToolResponse(result: ToolResult): ToolResponse {
+  if (result.success) {
+    const text = result.data
+      ? JSON.stringify(result.data, null, 2)
+      : 'Operation completed successfully';
+    return {
+      content: [{ type: 'text', text }],
+    };
+  }
+  return {
+    content: [{ type: 'text', text: `Error: ${result.error ?? 'Unknown error'}` }],
+    isError: true,
+  };
 }
 
 /**
@@ -28,10 +179,10 @@ export async function startApp(_options: {
   waitForReady?: boolean;
   timeout?: number;
 }): Promise<ToolResult> {
-  // TODO: Implement in Phase 1
+  // TODO: Implement in Phase 1 - Implement App Manager Service step
   return {
     success: false,
-    error: 'Not implemented',
+    error: 'Not implemented - will be completed in Implement App Manager Service step',
   };
 }
 
@@ -39,10 +190,10 @@ export async function startApp(_options: {
  * Stop the application.
  */
 export async function stopApp(): Promise<ToolResult> {
-  // TODO: Implement in Phase 1
+  // TODO: Implement in Phase 1 - Implement App Manager Service step
   return {
     success: false,
-    error: 'Not implemented',
+    error: 'Not implemented - will be completed in Implement App Manager Service step',
   };
 }
 
@@ -68,7 +219,7 @@ export async function restartApp(_options: {
   // TODO: Implement in Phase 3
   return {
     success: false,
-    error: 'Not implemented',
+    error: 'Not implemented - will be completed in Phase 3',
   };
 }
 
@@ -79,7 +230,7 @@ export async function waitForReady(_timeout?: number): Promise<ToolResult> {
   // TODO: Implement in Phase 3
   return {
     success: false,
-    error: 'Not implemented',
+    error: 'Not implemented - will be completed in Phase 3',
   };
 }
 

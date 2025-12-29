@@ -6,7 +6,12 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { registerAllTools } from './tools/index.js';
+import {
+  CallToolRequestSchema,
+  type CallToolResult,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import { getToolDefinitions, handleToolCall } from './tools/index.js';
 
 /**
  * Create and configure the MCP server.
@@ -24,8 +29,24 @@ export function createServer(): Server {
     }
   );
 
-  // Register all tools
-  registerAllTools(server);
+  // Register tool listing handler
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    return {
+      tools: getToolDefinitions(),
+    };
+  });
+
+  // Register tool call handler
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
+    const result = await handleToolCall(name, args);
+
+    // Return as CallToolResult format
+    return {
+      content: result.content,
+      isError: result.isError,
+    } satisfies CallToolResult;
+  });
 
   return server;
 }
