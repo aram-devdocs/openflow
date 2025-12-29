@@ -14,6 +14,11 @@ export { ChatPanel, type ChatPanelProps } from './ChatPanel';
 export { StepsPanel, type StepsPanelProps } from './StepsPanel';
 export { DiffViewer, type DiffViewerProps } from './DiffViewer';
 export { CommitList, type CommitListProps } from './CommitList';
-// export { CommandPalette } from './CommandPalette';
+export {
+  CommandPalette,
+  type CommandPaletteProps,
+  type CommandAction,
+  type RecentItem,
+} from './CommandPalette';
 // export { Sidebar } from './Sidebar';
 // export { Header } from './Header';
