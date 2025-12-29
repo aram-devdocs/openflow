@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Pre-commit hook
+# Runs lint-staged on staged files
+
+pnpm lint-staged

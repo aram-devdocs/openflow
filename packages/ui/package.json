@@ -1,0 +1,37 @@
+{
+  "name": "@openflow/ui",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "types": "./index.ts"
+    },
+    "./atoms": {
+      "import": "./atoms/index.ts",
+      "types": "./atoms/index.ts"
+    },
+    "./molecules": {
+      "import": "./molecules/index.ts",
+      "types": "./molecules/index.ts"
+    },
+    "./organisms": {
+      "import": "./organisms/index.ts",
+      "types": "./organisms/index.ts"
+    },
+    "./templates": {
+      "import": "./templates/index.ts",
+      "types": "./templates/index.ts"
+    }
+  },
+  "dependencies": {
+    "@openflow/generated": "workspace:*",
+    "@openflow/utils": "workspace:*",
+    "lucide-react": "^0.468.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
+  }
+}
