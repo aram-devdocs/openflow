@@ -2705,7 +2705,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Dialog Component
+### [x] Step: Create Dialog Component
+<!-- chat-id: 22187723-5dd8-4fa4-8ce3-e841dc54d038 -->
 
 Create Dialog molecule for modals.
 
