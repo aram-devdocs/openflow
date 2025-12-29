@@ -61,7 +61,7 @@ For full UI testing capabilities, also configure the Playwright MCP server:
     },
     "playwright": {
       "command": "npx",
-      "args": ["@anthropic/playwright-mcp@latest"]
+      "args": ["@playwright/mcp@latest"]
     }
   }
 }
