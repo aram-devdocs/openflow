@@ -242,6 +242,28 @@ impl TaskService {
         Ok(task_with_chats.task)
     }
 
+    /// Unarchive a task by clearing its archived_at timestamp.
+    pub async fn unarchive(pool: &SqlitePool, id: &str) -> ServiceResult<Task> {
+        // Verify the task exists first
+        Self::get(pool, id).await?;
+
+        sqlx::query(
+            r#"
+            UPDATE tasks
+            SET
+                archived_at = NULL,
+                updated_at = datetime('now', 'subsec')
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+        let task_with_chats = Self::get(pool, id).await?;
+        Ok(task_with_chats.task)
+    }
+
     /// Delete a task by ID.
     /// Note: Due to CASCADE, this also deletes associated chats and messages.
     pub async fn delete(pool: &SqlitePool, id: &str) -> ServiceResult<()> {

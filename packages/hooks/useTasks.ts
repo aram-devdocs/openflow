@@ -133,3 +133,37 @@ export function useDeleteTask(): UseMutationResult<void, Error, string> {
     },
   });
 }
+
+/**
+ * Fetch archived tasks across all projects or for a specific project.
+ *
+ * @param projectId - Optional project ID to filter archived tasks
+ * @returns Query result with array of archived tasks
+ */
+export function useArchivedTasks(projectId?: string): UseQueryResult<Task[]> {
+  return useQuery({
+    queryKey: [...taskKeys.lists(), { archived: true, projectId }] as const,
+    queryFn: () => taskQueries.list(projectId ?? '', undefined, true),
+  });
+}
+
+/**
+ * Restore an archived task.
+ *
+ * @returns Mutation for restoring an archived task
+ */
+export function useRestoreTask(): UseMutationResult<
+  Task,
+  Error,
+  { id: string }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id }) => taskQueries.unarchive(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.id) });
+    },
+  });
+}

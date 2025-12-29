@@ -3494,7 +3494,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Archive Route
+### [x] Step: Create Archive Route
+<!-- chat-id: 9acaa77e-4e47-402c-88c2-dea8c86c88cc -->
 
 Create archive page route.
 

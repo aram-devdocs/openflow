@@ -64,6 +64,7 @@ pub fn run() {
             commands::create_task,
             commands::update_task,
             commands::archive_task,
+            commands::unarchive_task,
             commands::delete_task,
             // Chat commands
             commands::list_chats,

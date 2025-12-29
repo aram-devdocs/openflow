@@ -48,6 +48,11 @@ export const taskQueries = {
   archive: (id: string): Promise<Task> => invoke('archive_task', { id }),
 
   /**
+   * Unarchive a task (restore from archive).
+   */
+  unarchive: (id: string): Promise<Task> => invoke('unarchive_task', { id }),
+
+  /**
    * Permanently delete a task.
    */
   delete: (id: string): Promise<void> => invoke('delete_task', { id }),

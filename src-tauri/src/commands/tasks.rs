@@ -79,6 +79,17 @@ pub async fn archive_task(state: State<'_, AppState>, id: String) -> Result<Task
         .map_err(|e| e.to_string())
 }
 
+/// Unarchive a task by ID.
+///
+/// Clears the archived_at timestamp, restoring the task to active listings.
+#[tauri::command]
+pub async fn unarchive_task(state: State<'_, AppState>, id: String) -> Result<Task, String> {
+    let pool = state.db.lock().await;
+    TaskService::unarchive(&pool, &id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Delete a task by ID.
 ///
 /// This will cascade delete all associated chats and messages.
