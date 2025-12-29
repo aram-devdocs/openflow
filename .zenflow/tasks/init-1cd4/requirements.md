@@ -55,7 +55,7 @@ OpenFlow is a standalone desktop application that:
   - Icon selection
   - Rule folders (for AI context files like `CLAUDE.md`)
   - Always-included rules
-  - Workflows folder path (default: `.openflow/workflows/`)
+  - Workflows folder path (default: `.zenflow/workflows/`)
 
 #### 3.1.2 Tasks
 - **Kanban-style task board** with columns:
@@ -81,7 +81,7 @@ OpenFlow is a standalone desktop application that:
 ### 3.2 Workflow System
 
 #### 3.2.1 Workflow Definition
-Workflows are defined as markdown files in `.openflow/workflows/`:
+Workflows are defined as markdown files in `.zenflow/workflows/`:
 
 ```markdown
 # Feature Workflow
@@ -113,7 +113,7 @@ Execute tasks in plan.md
 - **Refactor:** Analysis → Planning → Implementation → Verification
 
 #### 3.2.3 Workflow Variables
-- `{@artifacts_path}` - Task-specific artifact folder (`.openflow/tasks/{task_id}/`)
+- `{@artifacts_path}` - Task-specific artifact folder (`.zenflow/tasks/{task_id}/`)
 - `{@project_root}` - Project git repository root
 - `{@worktree_path}` - Current worktree path
 
@@ -169,7 +169,7 @@ Profile settings:
 
 #### 3.4.2 Worktree Features
 - Each chat/task gets dedicated worktree
-- Branch naming: `openflow/{task_id}/{chat_role}`
+- Branch naming: `zenflow/{task_id}/{chat_role}`
 - Base branch configurable (default: `main`)
 - Track worktree_deleted state for cleanup
 
@@ -208,7 +208,7 @@ Projects specify their verification commands:
 
 #### 3.6.2 Agent Communication
 Agents coordinate through:
-- **Shared docs:** Artifacts in `.openflow/tasks/{task_id}/`
+- **Shared docs:** Artifacts in `.zenflow/tasks/{task_id}/`
 - **Git commits:** Reviewing each other's changes
 - **Chat context:** Reading other agents' conversations
 
@@ -245,7 +245,7 @@ Agents coordinate through:
   - User profile
 
 - **Header:**
-  - Search (Cmd+Q)
+  - Search (Cmd+K)
   - + New chat button
   - + New terminal button
 
@@ -306,8 +306,70 @@ Support for:
 
 ### 4.3 Data Persistence
 - **SQLite** database via SQLx
-- Tables: projects, tasks, chats, execution_processes
-- File-based artifacts in `.openflow/tasks/{task_id}/`
+- File-based artifacts in `.zenflow/tasks/{task_id}/`
+
+#### 4.3.1 Database Tables
+
+**Core Tables (from existing schema in plan.md):**
+- `projects` - Project configuration and git repo paths
+- `tasks` - Task metadata, status, and workflow state
+- `chats` - Chat sessions linked to tasks with executor config
+- `execution_processes` - Process tracking for CLI executions
+
+**Additional Tables Required:**
+
+```sql
+-- Messages table for chat content storage
+CREATE TABLE messages (
+    id              TEXT PRIMARY KEY,
+    chat_id         TEXT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+    role            TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+    content         TEXT NOT NULL,
+    tool_calls      TEXT,  -- JSON array of tool call objects
+    tool_results    TEXT,  -- JSON array of tool result objects
+    tokens_used     INTEGER,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec'))
+);
+CREATE INDEX idx_messages_chat_id ON messages(chat_id);
+
+-- Executor profiles table for CLI tool configuration
+CREATE TABLE executor_profiles (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    command         TEXT NOT NULL,  -- CLI command (claude, gemini, etc.)
+    args            TEXT,           -- JSON array of default arguments
+    env             TEXT,           -- JSON object of environment variables
+    model           TEXT,           -- Model identifier if applicable
+    is_default      BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec'))
+);
+
+-- Workflow templates table (optional, can also use file-based)
+CREATE TABLE workflow_templates (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    description     TEXT,
+    content         TEXT NOT NULL,  -- Markdown workflow definition
+    is_builtin      BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now', 'subsec'))
+);
+```
+
+#### 4.3.2 Schema Cross-Reference with plan.md
+
+The existing schema in `plan.md` defines fields that map to PRD features:
+
+| Schema Field | PRD Feature |
+|--------------|-------------|
+| `tasks.parent_chat_id` | Subtasks/parent task relationship |
+| `tasks.auto_start_next_step` | Auto-start steps toggle (3.1.2) |
+| `tasks.default_executor_profile_id` | Default executor per task (3.3.2) |
+| `chats.is_plan_container` | Workflow step container tracking |
+| `chats.chat_role` | Agent types: main, review, test (3.6.1) |
+| `chats.worktree_deleted` | Worktree lifecycle tracking (3.4.1) |
+| `execution_processes.run_reason` | Process categorization (3.3.3) |
 
 ### 4.4 Git Integration
 - Git worktree commands via CLI
