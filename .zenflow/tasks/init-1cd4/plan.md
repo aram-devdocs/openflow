@@ -2192,7 +2192,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Create Task Commands
+### [x] Step: Create Task Commands
+<!-- chat-id: 1f78b352-f302-4942-911f-d0adbdeea37f -->
 
 Create Tauri commands for tasks.
 
