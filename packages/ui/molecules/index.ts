@@ -8,8 +8,15 @@
 export { FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
 
+export { Card, CardHeader, CardContent, CardFooter } from './Card';
+export type {
+  CardProps,
+  CardHeaderProps,
+  CardContentProps,
+  CardFooterProps,
+} from './Card';
+
 // Components will be exported here as they are created
-// export { Card, CardHeader, CardContent, CardFooter } from './Card';
 // export { Dropdown } from './Dropdown';
 // export { Dialog } from './Dialog';
 // export { Tabs } from './Tabs';
