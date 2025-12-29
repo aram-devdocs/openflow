@@ -910,7 +910,8 @@ cat packages/queries/messages.ts | grep "messageQueries"
 
 ---
 
-### [ ] Step: Create packages/queries - Processes, Executor, Settings
+### [x] Step: Create packages/queries - Processes, Executor, Settings
+<!-- chat-id: 83ea7e6e-7916-44c2-bc4a-392e16dd4468 -->
 
 Add remaining query modules.
 
