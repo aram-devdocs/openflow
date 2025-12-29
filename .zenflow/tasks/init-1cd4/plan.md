@@ -1528,7 +1528,8 @@ cat src-tauri/src/types/message.rs | grep "Message"
 
 ---
 
-### [ ] Step: Create Rust Process Types
+### [x] Step: Create Rust Process Types
+<!-- chat-id: a894b7b9-aa2e-4fb7-8596-38be7278f083 -->
 
 Create process.rs with ExecutionProcess types.
 
