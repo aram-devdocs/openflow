@@ -7,6 +7,7 @@ use tauri::Manager;
 
 pub mod commands;
 pub mod db;
+pub mod process;
 pub mod services;
 pub mod types;
 
