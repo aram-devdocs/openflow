@@ -3043,7 +3043,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create DiffViewer Component
+### [x] Step: Create DiffViewer Component
+<!-- chat-id: 37a3873e-8884-4e47-831f-d1a87140426b -->
 
 Create DiffViewer organism for git diffs.
 
