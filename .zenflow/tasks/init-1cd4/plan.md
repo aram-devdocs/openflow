@@ -2607,7 +2607,8 @@ pnpm typecheck
 
 **Goal:** Create composite UI components from atoms.
 
-### [ ] Step: Create FormField Component
+### [x] Step: Create FormField Component
+<!-- chat-id: ebf56c39-432b-4919-8d89-e4c0f06a98d3 -->
 
 Create FormField molecule combining Label + Input + error.
 

@@ -5,14 +5,13 @@
  * Examples: FormField, Card, Dropdown, Dialog, Tabs, Tooltip, Menu
  */
 
+export { FormField } from './FormField';
+export type { FormFieldProps } from './FormField';
+
 // Components will be exported here as they are created
-// export { FormField } from './FormField';
 // export { Card, CardHeader, CardContent, CardFooter } from './Card';
 // export { Dropdown } from './Dropdown';
 // export { Dialog } from './Dialog';
 // export { Tabs } from './Tabs';
 // export { Tooltip } from './Tooltip';
 // export { Menu } from './Menu';
-
-// Placeholder export to make this a valid module
-export {};
