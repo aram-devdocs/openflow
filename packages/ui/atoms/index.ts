@@ -11,8 +11,10 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 
+export { Input } from './Input';
+export type { InputProps } from './Input';
+
 // Components will be exported here as they are created
-// export { Input } from './Input';
 // export { Label } from './Label';
 // export { Badge } from './Badge';
 // export { Icon } from './Icon';
