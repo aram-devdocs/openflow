@@ -530,7 +530,8 @@ cat src-tauri/build.rs | grep "tauri_build"
 
 ---
 
-### [ ] Step: Create Rust main.rs and lib.rs
+### [x] Step: Create Rust main.rs and lib.rs
+<!-- chat-id: f2e35bdf-c13b-48ce-a261-4286c0849dc0 -->
 
 Create Tauri application entry points.
 
