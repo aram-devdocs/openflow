@@ -2344,7 +2344,8 @@ cd src-tauri && cargo check
 
 ---
 
-### [ ] Step: Register Commands in lib.rs
+### [x] Step: Register Commands in lib.rs
+<!-- chat-id: fcf16fb0-a14a-498d-b97c-3f5f04f5accf -->
 
 Update lib.rs to register all commands and initialize state.
 
