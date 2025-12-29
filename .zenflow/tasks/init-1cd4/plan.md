@@ -425,7 +425,8 @@ cat src/styles/globals.css | grep "@tailwind"
 
 **Goal:** Set up Rust backend with Tauri 2.x.
 
-### [ ] Step: Create Cargo.toml
+### [x] Step: Create Cargo.toml
+<!-- chat-id: 286efa67-b4fb-4f56-8159-a30f1daa1a83 -->
 
 Create Rust project configuration for Tauri backend.
 
