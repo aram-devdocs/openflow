@@ -89,3 +89,18 @@ pub struct CreateChatRequest {
     pub main_chat_id: Option<String>,
     pub workflow_step_index: Option<i32>,
 }
+
+/// Request to update an existing chat.
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateChatRequest {
+    pub title: Option<String>,
+    pub executor_profile_id: Option<String>,
+    pub branch: Option<String>,
+    pub worktree_path: Option<String>,
+    pub worktree_deleted: Option<bool>,
+    pub setup_completed_at: Option<String>,
+    pub initial_prompt: Option<String>,
+    pub hidden_prompt: Option<String>,
+}

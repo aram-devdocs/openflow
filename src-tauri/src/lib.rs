@@ -1,6 +1,7 @@
 use tauri::Manager;
 
 pub mod db;
+pub mod services;
 pub mod types;
 
 /// Initialize and run the Tauri application.
