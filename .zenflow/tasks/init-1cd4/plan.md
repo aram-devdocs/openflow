@@ -2941,7 +2941,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create ChatMessage Component
+### [x] Step: Create ChatMessage Component
+<!-- chat-id: a2a66abd-7dc3-42b4-9cf0-eb9f4c3f2588 -->
 
 Create ChatMessage organism for message display.
 

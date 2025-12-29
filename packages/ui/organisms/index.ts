@@ -9,7 +9,7 @@
 export { TaskCard, type TaskCardProps } from './TaskCard';
 export { TaskList, type TaskListProps } from './TaskList';
 export { ProjectSelector, type ProjectSelectorProps } from './ProjectSelector';
-// export { ChatMessage } from './ChatMessage';
+export { ChatMessage, type ChatMessageProps } from './ChatMessage';
 // export { ChatPanel } from './ChatPanel';
 // export { StepsPanel } from './StepsPanel';
 // export { DiffViewer } from './DiffViewer';
