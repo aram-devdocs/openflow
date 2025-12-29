@@ -1090,7 +1090,8 @@ cat packages/hooks/index.ts | grep "useTasks"
 
 ---
 
-### [ ] Step: Create packages/hooks - Chats, Messages
+### [x] Step: Create packages/hooks - Chats, Messages
+<!-- chat-id: 196088d5-de26-4caa-ac9a-44948245ca67 -->
 
 Add chat and message hooks modules.
 
