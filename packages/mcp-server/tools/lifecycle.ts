@@ -19,7 +19,8 @@ import type { ToolDefinition, ToolResponse, ToolResult } from '../types.js';
 export const lifecycleToolDefinitions: ToolDefinition[] = [
   {
     name: 'openflow_start',
-    description: 'Start the OpenFlow app in development mode. Returns PID when successful.',
+    description:
+      'Start the OpenFlow app in development mode with MCP GUI plugin enabled for UI automation. Returns PID and socket path when successful.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -27,6 +28,11 @@ export const lifecycleToolDefinitions: ToolDefinition[] = [
           type: 'number',
           description: 'Maximum time to wait for startup in seconds',
           default: 120,
+        },
+        enable_mcp_gui: {
+          type: 'boolean',
+          description: 'Enable MCP GUI plugin for UI automation via socket',
+          default: true,
         },
       },
     },
@@ -107,9 +113,11 @@ export async function handleLifecycleTool(
   try {
     switch (name) {
       case 'openflow_start': {
+        const enableMcpGui = (args?.enable_mcp_gui as boolean) ?? true;
         const result = await startApp({
           timeout: ((args?.timeout_seconds as number) ?? 120) * 1000,
           waitForReady: true,
+          enableMcpGui,
         });
         return formatToolResponse(result);
       }
@@ -172,17 +180,23 @@ function formatToolResponse(result: ToolResult): ToolResponse {
   };
 }
 
+/** MCP GUI socket path when enabled */
+const MCP_GUI_SOCKET_PATH = '/tmp/openflow-mcp.sock';
+
 /**
  * Start the application.
  */
 export async function startApp(options: {
   waitForReady?: boolean;
   timeout?: number;
+  enableMcpGui?: boolean;
 }): Promise<ToolResult> {
+  const enableMcpGui = options.enableMcpGui ?? true;
   const manager = getAppManager();
   const result = await manager.start({
     waitForReady: options.waitForReady ?? true,
     timeout: options.timeout,
+    enableMcpGui,
   });
 
   if (result.success) {
@@ -191,7 +205,8 @@ export async function startApp(options: {
       data: {
         pid: result.pid,
         devServerUrl: result.devServerUrl,
-        message: `App started successfully with PID ${result.pid}`,
+        mcpSocketPath: enableMcpGui ? MCP_GUI_SOCKET_PATH : null,
+        message: `App started successfully with PID ${result.pid}${enableMcpGui ? ` (MCP GUI at ${MCP_GUI_SOCKET_PATH})` : ''}`,
       },
     };
   }
@@ -255,7 +270,9 @@ export async function getStatus(): Promise<ToolResult> {
 export async function restartApp(options: {
   waitForReady?: boolean;
   timeout?: number;
+  enableMcpGui?: boolean;
 }): Promise<ToolResult> {
+  const enableMcpGui = options.enableMcpGui ?? true;
   const manager = getAppManager();
   const currentStatus = manager.getStatus();
 
@@ -274,6 +291,7 @@ export async function restartApp(options: {
   const startResult = await manager.start({
     waitForReady: options.waitForReady ?? true,
     timeout: options.timeout,
+    enableMcpGui,
   });
 
   if (startResult.success) {
@@ -282,7 +300,8 @@ export async function restartApp(options: {
       data: {
         pid: startResult.pid,
         devServerUrl: startResult.devServerUrl,
-        message: 'App restarted successfully',
+        mcpSocketPath: enableMcpGui ? MCP_GUI_SOCKET_PATH : null,
+        message: `App restarted successfully${enableMcpGui ? ` (MCP GUI at ${MCP_GUI_SOCKET_PATH})` : ''}`,
       },
     };
   }

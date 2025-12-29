@@ -52,7 +52,10 @@ export class AppManager {
    * Start the application dev server.
    */
   async start(options: StartOptions = {}): Promise<StartResult> {
-    const { waitForReady = true, timeout = DEFAULT_READY_TIMEOUT } = options;
+    const { waitForReady = true, timeout = DEFAULT_READY_TIMEOUT, enableMcpGui = true } = options;
+
+    // Use dev:mcp script to enable MCP GUI plugin for UI automation
+    const devScript = enableMcpGui ? 'dev:mcp' : 'dev';
 
     // Check if already running
     if (this.state === 'running' || this.state === 'starting') {
@@ -70,8 +73,15 @@ export class AppManager {
     this.logBuffer.clear();
 
     try {
-      // Spawn pnpm dev process
-      this.process = spawn('pnpm', ['dev'], {
+      if (enableMcpGui) {
+        this.addLogEntry(
+          'Starting with MCP GUI plugin enabled (socket: /tmp/openflow-mcp.sock)',
+          'info'
+        );
+      }
+
+      // Spawn pnpm dev process (with MCP GUI plugin enabled by default)
+      this.process = spawn('pnpm', [devScript], {
         cwd: this.projectRoot,
         stdio: ['ignore', 'pipe', 'pipe'],
         shell: true,

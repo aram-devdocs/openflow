@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tauri dev",
+    "dev:mcp": "tauri dev --features mcp-gui",
     "dev:frontend": "vite",
     "build": "tauri build",
     "build:frontend": "vite build",

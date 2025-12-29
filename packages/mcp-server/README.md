@@ -12,12 +12,20 @@ The MCP server exposes tools that allow AI agents (like Claude Code) to:
 - Generate TypeScript types from Rust definitions
 - Run Rust cargo checks
 
-When combined with Playwright MCP for UI interaction, AI agents can:
+When combined with the MCP GUI plugin (for direct Tauri integration) or Playwright MCP (for browser-based interaction), AI agents can:
 
 - Take screenshots of the running application
 - Interact with UI elements
 - Verify visual changes
 - Test user journeys
+
+### MCP GUI Plugin (Tauri Integration)
+
+The OpenFlow Tauri app includes optional support for `tauri-plugin-mcp-gui`, which enables direct UI automation via socket communication. When enabled:
+
+- **Socket path**: `/tmp/openflow-mcp.sock` (Unix IPC socket)
+- **Features**: Screenshots, DOM access, input simulation, JavaScript execution
+- **Enabled by**: Using `pnpm dev:mcp` or when started via MCP server tools
 
 ## Installation
 
@@ -72,14 +80,16 @@ For full UI testing capabilities, also configure the Playwright MCP server:
 ### Lifecycle Tools
 
 #### `openflow_start`
-Start the OpenFlow app in development mode.
+Start the OpenFlow app in development mode. By default, starts with the MCP GUI plugin enabled for UI automation.
 
 **Input:**
 - `timeout_seconds` (optional, default: 120): Maximum time to wait for startup
+- `enable_mcp_gui` (optional, default: true): Enable MCP GUI plugin for UI automation
 
 **Output:**
 - `pid`: Process ID of the running app
 - `devServerUrl`: URL of the Vite dev server
+- `mcpSocketPath`: Path to MCP GUI socket (if enabled)
 - `message`: Success message
 
 #### `openflow_stop`

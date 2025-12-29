@@ -54,6 +54,8 @@ export interface StartOptions {
   waitForReady?: boolean;
   /** Timeout in milliseconds for waiting */
   timeout?: number;
+  /** Enable MCP GUI plugin for UI automation (default: true when run from MCP server) */
+  enableMcpGui?: boolean;
 }
 
 /** Options for running commands */
