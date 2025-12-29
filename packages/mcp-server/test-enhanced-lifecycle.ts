@@ -15,11 +15,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 const SERVER_PATH = resolve(import.meta.dirname, 'index.ts');
 
-async function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function runTests() {
+async function runTests(): Promise<void> {
   console.log('=== Enhanced Lifecycle Tools Test (Phase 3) ===\n');
 
   // Start MCP server
