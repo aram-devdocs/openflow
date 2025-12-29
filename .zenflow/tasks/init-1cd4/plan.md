@@ -1425,7 +1425,8 @@ cat src-tauri/src/types/project.rs | grep "pub struct Project"
 
 ---
 
-### [ ] Step: Create Rust Task Types
+### [x] Step: Create Rust Task Types
+<!-- chat-id: 2bfd62f0-a241-446f-b2cf-fe9d27bff09c -->
 
 Create task.rs with Task types and TaskStatus enum.
 
