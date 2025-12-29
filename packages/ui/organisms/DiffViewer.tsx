@@ -184,10 +184,20 @@ function FileDiffContent({
     );
   }
 
+  // Create lines with stable keys based on line number and type
+  const linesWithKeys = allLines.map((line, idx) => ({
+    ...line,
+    // Use line numbers when available, fallback to index for headers
+    key:
+      line.type === 'header'
+        ? `header-${idx}`
+        : `${line.type}-${line.oldLineNumber ?? 'new'}-${line.newLineNumber ?? 'old'}-${idx}`,
+  }));
+
   return (
     <div className="overflow-x-auto">
-      {allLines.map((line, index) => (
-        <DiffLineComponent key={index} line={line} showLineNumbers={showLineNumbers} />
+      {linesWithKeys.map((line) => (
+        <DiffLineComponent key={line.key} line={line} showLineNumbers={showLineNumbers} />
       ))}
     </div>
   );

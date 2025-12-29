@@ -21,6 +21,7 @@ export interface LabelProps extends LabelHTMLAttributes<HTMLLabelElement> {
 export const Label = forwardRef<HTMLLabelElement, LabelProps>(
   ({ className, children, required, disabled, ...props }, ref) => {
     return (
+      // biome-ignore lint/a11y/noLabelWithoutControl: This is a reusable component - htmlFor is passed via props
       <label
         ref={ref}
         className={cn(

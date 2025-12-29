@@ -89,6 +89,7 @@ export function TaskCard({
           </h3>
 
           {/* Status dropdown or badge */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: Click handler only prevents event propagation, keyboard handling is done by Dropdown child */}
           <div onClick={handleStatusClick} className="shrink-0">
             {onStatusChange ? (
               <Dropdown

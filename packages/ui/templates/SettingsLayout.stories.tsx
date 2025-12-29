@@ -366,15 +366,18 @@ export const LongContent: Story = {
     description: 'Manage your application preferences and configuration.',
     children: (
       <div className="max-w-2xl space-y-6">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <section key={i} className="space-y-4 rounded-lg border border-[rgb(var(--border))] p-4">
-            <h3 className="font-medium text-[rgb(var(--foreground))]">Section {i + 1}</h3>
+        {Array.from({ length: 10 }).map((_, idx) => (
+          <section
+            key={`settings-section-${idx}`}
+            className="space-y-4 rounded-lg border border-[rgb(var(--border))] p-4"
+          >
+            <h3 className="font-medium text-[rgb(var(--foreground))]">Section {idx + 1}</h3>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
               This is a sample settings section demonstrating scrolling behavior in the content area
               while the navigation remains fixed.
             </p>
-            <FormField label={`Setting ${i + 1}`} htmlFor={`setting-${i + 1}`}>
-              <Input placeholder="Enter value..." />
+            <FormField label={`Setting ${idx + 1}`} htmlFor={`setting-${idx + 1}`}>
+              <Input id={`setting-${idx + 1}`} placeholder="Enter value..." />
             </FormField>
           </section>
         ))}

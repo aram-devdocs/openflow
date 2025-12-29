@@ -130,7 +130,7 @@ export function CommandPalette({
   // Reset selection when results change
   useEffect(() => {
     setSelectedIndex(0);
-  }, [searchResults, query]);
+  }, []);
 
   // Focus input when opened
   useEffect(() => {
@@ -196,11 +196,9 @@ export function CommandPalette({
 
   // Scroll selected item into view
   useEffect(() => {
-    if (listRef.current) {
-      const selectedElement = listRef.current.querySelector('[data-selected="true"]');
-      selectedElement?.scrollIntoView({ block: 'nearest' });
-    }
-  }, [selectedIndex]);
+    const selectedElement = listRef.current?.querySelector('[data-selected="true"]');
+    selectedElement?.scrollIntoView({ block: 'nearest' });
+  });
 
   // Handle backdrop click
   const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -216,6 +214,7 @@ export function CommandPalette({
   };
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handling is done on the inner dialog
     <div
       role="presentation"
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"

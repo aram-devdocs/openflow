@@ -14,7 +14,7 @@
  * Run: pnpm validate:arch
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 import { globSync } from 'glob';
 
 interface Rule {

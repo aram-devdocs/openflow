@@ -325,8 +325,8 @@ export const ScrollableContent: Story = {
         <Dialog isOpen={isOpen} onClose={() => setIsOpen(false)} title="Terms of Service" size="md">
           <DialogContent className="max-h-[300px]">
             <div className="space-y-4 text-sm text-[rgb(var(--muted-foreground))]">
-              {Array.from({ length: 10 }, (_, i) => (
-                <p key={i}>
+              {Array.from({ length: 10 }, (_, paragraphIndex) => (
+                <p key={`terms-paragraph-${paragraphIndex}`}>
                   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
                   incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
                   exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.

@@ -328,6 +328,7 @@ export const UserMenu: Story = {
     return (
       <div>
         <button
+          type="button"
           onClick={handleOpen}
           className="flex items-center gap-2 rounded-full bg-[rgb(var(--muted))] p-2 hover:bg-[rgb(var(--accent))]"
         >
@@ -508,6 +509,7 @@ export const KeyboardNavigation: Story = {
             <li>Escape/Tab: Close menu</li>
           </ul>
           <button
+            type="button"
             onClick={() => setIsOpen(true)}
             className="mt-2 text-[rgb(var(--primary))] underline"
           >

@@ -71,7 +71,7 @@ export const ManyRows: Story = {
 };
 
 /** Textarea with error state */
-export const Error: Story = {
+export const ErrorState: Story = {
   args: {
     placeholder: 'Invalid input',
     error: true,
@@ -165,22 +165,40 @@ export const AllResizeOptions: Story = {
   render: () => (
     <div className="flex flex-col gap-4 w-64">
       <div>
-        <label className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block">None</label>
-        <Textarea placeholder="resize: none" resize="none" />
+        <label
+          htmlFor="resize-none"
+          className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block"
+        >
+          None
+        </label>
+        <Textarea id="resize-none" placeholder="resize: none" resize="none" />
       </div>
       <div>
-        <label className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block">
+        <label
+          htmlFor="resize-vertical"
+          className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block"
+        >
           Vertical (default)
         </label>
-        <Textarea placeholder="resize: vertical" resize="vertical" />
+        <Textarea id="resize-vertical" placeholder="resize: vertical" resize="vertical" />
       </div>
       <div>
-        <label className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block">Horizontal</label>
-        <Textarea placeholder="resize: horizontal" resize="horizontal" />
+        <label
+          htmlFor="resize-horizontal"
+          className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block"
+        >
+          Horizontal
+        </label>
+        <Textarea id="resize-horizontal" placeholder="resize: horizontal" resize="horizontal" />
       </div>
       <div>
-        <label className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block">Both</label>
-        <Textarea placeholder="resize: both" resize="both" />
+        <label
+          htmlFor="resize-both"
+          className="text-xs text-[rgb(var(--muted-foreground))] mb-1 block"
+        >
+          Both
+        </label>
+        <Textarea id="resize-both" placeholder="resize: both" resize="both" />
       </div>
     </div>
   ),

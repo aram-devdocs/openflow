@@ -302,6 +302,10 @@ export function ProjectSelector({
               const ProjectIcon = getProjectIcon(project.icon);
 
               return (
+                // biome-ignore lint/a11y/useSemanticElements: Standard accessible option pattern
+                // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Required for accessible listbox
+                // biome-ignore lint/a11y/useFocusableInteractive: Focus managed by parent listbox
+                // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handled by parent listbox
                 <li
                   key={project.id}
                   role="option"
@@ -339,10 +343,16 @@ export function ProjectSelector({
 
           {/* Divider */}
           {projects.length > 0 && (
+            // biome-ignore lint/a11y/useFocusableInteractive: Separator is not interactive
+            // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Separator pattern
             <li role="separator" className="my-1 h-px bg-[rgb(var(--border))]" />
           )}
 
           {/* New Project button */}
+          {/* biome-ignore lint/a11y/useSemanticElements: Standard accessible option pattern */}
+          {/* biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Required for accessible listbox */}
+          {/* biome-ignore lint/a11y/useFocusableInteractive: Focus managed by parent listbox */}
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handled by parent listbox */}
           <li
             role="option"
             aria-selected={false}

@@ -70,7 +70,7 @@ export const Warning: Story = {
 };
 
 /** Error variant for negative states */
-export const Error: Story = {
+export const ErrorState: Story = {
   args: {
     children: 'Error',
     variant: 'error',

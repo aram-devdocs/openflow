@@ -121,7 +121,7 @@ export const Disabled: Story = {
 };
 
 /** Dropdown with error state */
-export const Error: Story = {
+export const ErrorState: Story = {
   args: {
     options: basicOptions,
     error: true,
@@ -190,9 +190,9 @@ export const NotificationPreferences: Story = {
     const [value, setValue] = useState<string>('all');
     return (
       <div className="space-y-2">
-        <label className="text-sm font-medium text-[rgb(var(--foreground))]">
+        <span className="text-sm font-medium text-[rgb(var(--foreground))]">
           Notification Preferences
-        </label>
+        </span>
         <Dropdown
           options={[
             { value: 'all', label: 'All Notifications', icon: Bell },

@@ -150,15 +150,17 @@ function SampleContent() {
         currently active.
       </p>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
+        {[1, 2, 3, 4, 5, 6].map((cardNum) => (
           <div
-            key={i}
+            key={`sample-card-${cardNum}`}
             className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4"
           >
-            <h3 className="mb-2 font-semibold text-[rgb(var(--card-foreground))]">Card {i}</h3>
+            <h3 className="mb-2 font-semibold text-[rgb(var(--card-foreground))]">
+              Card {cardNum}
+            </h3>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              This is sample content for card {i}. It demonstrates how content flows in the main
-              area.
+              This is sample content for card {cardNum}. It demonstrates how content flows in the
+              main area.
             </p>
           </div>
         ))}
@@ -217,16 +219,16 @@ export const ScrollingContent: Story = {
     children: (
       <div className="p-6">
         <h1 className="mb-4 text-2xl font-bold text-[rgb(var(--foreground))]">Long Content Page</h1>
-        {Array.from({ length: 20 }).map((_, i) => (
+        {Array.from({ length: 20 }).map((_, idx) => (
           <div
-            key={i}
+            key={`scroll-section-${idx}`}
             className="mb-4 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4"
           >
             <h3 className="mb-2 font-semibold text-[rgb(var(--card-foreground))]">
-              Section {i + 1}
+              Section {idx + 1}
             </h3>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              This is content section {i + 1}. It demonstrates how the layout handles scrolling
+              This is content section {idx + 1}. It demonstrates how the layout handles scrolling
               content in the main area while keeping the sidebar and header fixed.
             </p>
           </div>
@@ -295,6 +297,7 @@ export const EmptyState: Story = {
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"

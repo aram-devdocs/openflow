@@ -272,6 +272,10 @@ export function Dropdown({
               const isHighlighted = enabledIndex === highlightedIndex;
 
               return (
+                // biome-ignore lint/a11y/useSemanticElements: Standard accessible option pattern
+                // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Required for accessible listbox
+                // biome-ignore lint/a11y/useFocusableInteractive: Focus managed by parent listbox
+                // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handled by parent listbox
                 <li
                   key={option.value}
                   role="option"

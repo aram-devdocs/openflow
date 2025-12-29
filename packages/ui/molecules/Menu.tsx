@@ -237,6 +237,7 @@ export function Menu({
         // Handle divider
         if (item.divider) {
           return (
+            // biome-ignore lint/a11y/useFocusableInteractive: Separator is not interactive
             <div key={item.id} role="separator" className="my-1 h-px bg-[rgb(var(--border))]" />
           );
         }
@@ -247,6 +248,7 @@ export function Menu({
         return (
           <button
             key={item.id}
+            type="button"
             role="menuitem"
             tabIndex={-1}
             disabled={item.disabled}

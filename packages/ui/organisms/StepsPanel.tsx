@@ -43,6 +43,7 @@ function getStepIcon(status: WorkflowStepStatus) {
     case WorkflowStepStatus.Skipped:
       return SkipForward;
     case WorkflowStepStatus.Pending:
+      return Circle;
     default:
       return Circle;
   }
@@ -60,6 +61,7 @@ function getStatusLabel(status: WorkflowStepStatus): string {
     case WorkflowStepStatus.Skipped:
       return 'Skipped';
     case WorkflowStepStatus.Pending:
+      return 'Pending';
     default:
       return 'Pending';
   }
@@ -296,6 +298,7 @@ export function StepsPanel({
       <div className="border-t border-[rgb(var(--border))] px-4 py-3">
         {/* Auto-start toggle */}
         {onAutoStartChange && (
+          // biome-ignore lint/a11y/noLabelWithoutControl: Checkbox is a custom component that wraps an input
           <label className="mb-3 flex items-center gap-2 cursor-pointer">
             <Checkbox
               checked={autoStart}

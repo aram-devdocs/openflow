@@ -114,7 +114,7 @@ export function ChatPanel({
     if (autoScroll && isAtBottom) {
       scrollToBottom(false);
     }
-  }, [messages, autoScroll, isAtBottom, scrollToBottom]);
+  }, [autoScroll, isAtBottom, scrollToBottom]);
 
   // Handle send message
   const handleSend = useCallback(() => {

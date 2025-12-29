@@ -121,10 +121,9 @@ export function Dialog({
       }, 0);
 
       return () => clearTimeout(timer);
-    } else {
-      // Restore focus when closing
-      previousActiveElement.current?.focus();
     }
+    // Restore focus when closing
+    previousActiveElement.current?.focus();
   }, [isOpen]);
 
   // Prevent body scroll when dialog is open
@@ -148,14 +147,15 @@ export function Dialog({
 
   return (
     <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+      {/* Backdrop - click is supplementary to keyboard Escape handling */}
       <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         aria-hidden="true"
         onClick={handleBackdropClick}
+        onKeyDown={(e) => e.key === 'Escape' && onClose?.()}
       />
 
-      {/* Dialog panel */}
+      {/* Dialog panel - using custom dialog implementation with focus trap */}
       <div
         ref={dialogRef}
         role="dialog"

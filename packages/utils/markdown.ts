@@ -119,7 +119,7 @@ export function parseWorkflowSteps(content: string): ParsedWorkflow {
     } else if (currentStep) {
       // Check for chat ID in current step
       const chatIdMatch = line.match(CHAT_ID_PATTERN);
-      if (chatIdMatch && chatIdMatch[1]) {
+      if (chatIdMatch?.[1]) {
         currentStep.chatId = chatIdMatch[1];
       } else {
         stepContent.push(line);

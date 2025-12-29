@@ -71,10 +71,12 @@ function SettingsPage() {
           navigate({ to: '/settings/projects' });
           break;
         case 'general':
-        default:
           navigate({ to: '/settings' });
           break;
-        // Other sections are placeholders for now
+        default:
+          // Other sections are placeholders for now
+          navigate({ to: '/settings' });
+          break;
       }
     },
     [navigate]
@@ -124,6 +126,7 @@ function getSettingsTitle(navId: string): string {
     case 'shortcuts':
       return 'Keyboard Shortcuts';
     case 'general':
+      return 'General Settings';
     default:
       return 'General Settings';
   }
@@ -142,6 +145,7 @@ function getSettingsDescription(navId: string): string {
     case 'shortcuts':
       return 'View and customize keyboard shortcuts.';
     case 'general':
+      return 'Configure general application settings.';
     default:
       return 'Configure general application settings.';
   }
