@@ -7,16 +7,18 @@
 import type { ToolDefinition, ToolResponse } from '../types.js';
 import { developmentToolDefinitions, handleDevelopmentTool } from './development.js';
 import { handleLifecycleTool, lifecycleToolDefinitions } from './lifecycle.js';
+import { handleUiTool, uiToolDefinitions } from './ui.js';
 
 // Re-export individual tools
 export * from './lifecycle.js';
 export * from './development.js';
+export * from './ui.js';
 
 /**
  * Get all registered tool definitions.
  */
 export function getToolDefinitions(): ToolDefinition[] {
-  return [...lifecycleToolDefinitions, ...developmentToolDefinitions];
+  return [...lifecycleToolDefinitions, ...developmentToolDefinitions, ...uiToolDefinitions];
 }
 
 /**
@@ -34,6 +36,11 @@ export async function handleToolCall(
   // Try development tools
   if (developmentToolDefinitions.some((t) => t.name === name)) {
     return handleDevelopmentTool(name, args);
+  }
+
+  // Try UI tools
+  if (uiToolDefinitions.some((t) => t.name === name)) {
+    return handleUiTool(name, args);
   }
 
   // Tool not found
