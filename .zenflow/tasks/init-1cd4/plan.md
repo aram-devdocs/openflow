@@ -3412,7 +3412,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Tasks Routes
+### [x] Step: Create Tasks Routes
+<!-- chat-id: 8198a5d0-f6ae-4af9-a123-54a708826bfd -->
 
 Create task-related routes.
 
