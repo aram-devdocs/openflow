@@ -135,19 +135,30 @@ export async function handleDevelopmentTool(
 
 /**
  * Format a ToolResult as an MCP response.
+ *
+ * Note: For development tools, we always include structured data even on failure.
+ * This allows AI agents to parse error details, counts, and affected files.
  */
 function formatToolResponse(result: ToolResult): ToolResponse {
-  if (result.success) {
-    const text = result.data
-      ? JSON.stringify(result.data, null, 2)
-      : 'Operation completed successfully';
-    return {
-      content: [{ type: 'text', text }],
-    };
+  // Always include the structured data if available
+  // This helps AI agents understand what went wrong
+  const responseData: Record<string, unknown> = {
+    success: result.success,
+    error: result.error,
+  };
+
+  // Spread the data fields if available
+  if (result.data && typeof result.data === 'object') {
+    Object.assign(responseData, result.data);
   }
+
+  const text = JSON.stringify(responseData, null, 2);
+
   return {
-    content: [{ type: 'text', text: `Error: ${result.error ?? 'Unknown error'}` }],
-    isError: true,
+    content: [{ type: 'text', text }],
+    // Only mark as error for tool-level failures, not command failures
+    // This way agents can parse the output even when commands fail
+    isError: false,
   };
 }
 
