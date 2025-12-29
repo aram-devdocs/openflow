@@ -4079,7 +4079,8 @@ Run initial verification suite - identify issues.
 
 ---
 
-### [ ] Step: Fix Storybook Preview JSX
+### [x] Step: Fix Storybook Preview JSX
+<!-- chat-id: e9b3f332-24c7-4bb0-be99-cf71737ccb1a -->
 
 Fix the Storybook preview file to use proper JSX extension.
 
@@ -4183,6 +4184,8 @@ pnpm install && pnpm generate:types && pnpm typecheck && pnpm lint && pnpm test 
 cd src-tauri && cargo check && cargo test && cargo clippy -- -D warnings
 pnpm tauri dev
 ```
+
+If there are more issues, create new tasks and verify full application part 3, rinse and repeat into tasks until everything works. STRICT linting, strit bbiome settings, errors over warning, keep clean. 
 
 **After completion:**
 - Edit this plan.md: Change `[ ]` to `[x]` for this step
