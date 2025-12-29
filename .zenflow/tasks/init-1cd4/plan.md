@@ -2064,7 +2064,8 @@ cd src-tauri && cargo test workflow
 
 ---
 
-### [ ] Step: Create SearchService
+### [x] Step: Create SearchService
+<!-- chat-id: 9215bb9e-419a-40bc-931b-1d1ff69c9a3c -->
 
 Create full-text search service.
 

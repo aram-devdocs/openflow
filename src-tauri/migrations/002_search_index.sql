@@ -10,13 +10,13 @@
 
 -- Full-text search virtual table for tasks and projects
 -- Uses Porter stemming and Unicode61 tokenizer for natural language search
+-- Note: This stores content directly (no external content table) for simpler querying
 CREATE VIRTUAL TABLE search_index USING fts5(
     id,           -- Entity ID (task or project)
     type,         -- Entity type: 'task' or 'project'
     title,        -- Title for search
     description,  -- Description/content for search
     project_id,   -- Project ID for filtering (NULL for projects themselves)
-    content='',   -- External content table (we manage content ourselves)
     tokenize='porter unicode61'
 );
 
