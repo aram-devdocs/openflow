@@ -3381,7 +3381,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create Projects Routes
+### [x] Step: Create Projects Routes
+<!-- chat-id: 35b959d2-837b-4c2d-ba02-71090134b544 -->
 
 Create project-related routes.
 
