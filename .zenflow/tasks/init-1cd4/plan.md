@@ -320,7 +320,8 @@ cat vite.config.ts | grep "@openflow"
 
 ---
 
-### [ ] Step: Create index.html
+### [x] Step: Create index.html
+<!-- chat-id: 3cd86153-043e-4180-b7da-75bb711358ea -->
 
 Create HTML entry point for Vite/React.
 
