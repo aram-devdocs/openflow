@@ -3077,7 +3077,8 @@ pnpm typecheck
 
 ---
 
-### [ ] Step: Create CommitList Component
+### [x] Step: Create CommitList Component
+<!-- chat-id: a7ee048f-b8f7-4a76-9a69-6967101f5338 -->
 
 Create CommitList organism for git history.
 

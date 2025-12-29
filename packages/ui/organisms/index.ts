@@ -13,7 +13,7 @@ export { ChatMessage, type ChatMessageProps } from './ChatMessage';
 export { ChatPanel, type ChatPanelProps } from './ChatPanel';
 export { StepsPanel, type StepsPanelProps } from './StepsPanel';
 export { DiffViewer, type DiffViewerProps } from './DiffViewer';
-// export { CommitList } from './CommitList';
+export { CommitList, type CommitListProps } from './CommitList';
 // export { CommandPalette } from './CommandPalette';
 // export { Sidebar } from './Sidebar';
 // export { Header } from './Header';
