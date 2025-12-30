@@ -18,7 +18,16 @@ import {
   useKeyboardShortcuts,
   useProjects,
 } from '@openflow/hooks';
-import { AppLayout, Button, Dialog, FormField, Header, Input, useToast } from '@openflow/ui';
+import {
+  AppLayout,
+  Button,
+  Dialog,
+  EmptyState,
+  FormField,
+  Header,
+  Input,
+  useToast,
+} from '@openflow/ui';
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ChevronRight, FolderGit2, FolderOpen, Plus, Settings } from 'lucide-react';
@@ -181,19 +190,17 @@ function ProjectsPage() {
 
         {/* Empty state */}
         {!isLoading && projects.length === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-8">
-            <FolderGit2 className="mb-4 h-16 w-16 text-[rgb(var(--muted-foreground))]" />
-            <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">No projects yet</h2>
-            <p className="mt-2 text-center text-sm text-[rgb(var(--muted-foreground))]">
-              Get started by creating your first project.
-              <br />
-              Projects link to your local git repositories.
-            </p>
-            <Button variant="primary" className="mt-4" onClick={handleOpenCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Project
-            </Button>
-          </div>
+          <EmptyState
+            icon={FolderGit2}
+            title="No projects yet"
+            description="Get started by creating your first project. Projects link to your local git repositories."
+            action={{
+              label: 'Create Project',
+              onClick: handleOpenCreateDialog,
+            }}
+            size="lg"
+            className="flex-1"
+          />
         )}
 
         {/* Projects grid */}

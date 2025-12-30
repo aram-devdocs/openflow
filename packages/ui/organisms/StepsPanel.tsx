@@ -1,11 +1,12 @@
 import type { WorkflowStep } from '@openflow/generated';
 import { WorkflowStepStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
-import { Check, Circle, Loader2, Play, Plus, SkipForward } from 'lucide-react';
+import { Check, Circle, ListTodo, Loader2, Play, Plus, SkipForward } from 'lucide-react';
 import { useCallback } from 'react';
 import { Button } from '../atoms/Button';
 import { Checkbox } from '../atoms/Checkbox';
 import { Icon } from '../atoms/Icon';
+import { EmptyState } from '../molecules/EmptyState';
 import { Tooltip } from '../molecules/Tooltip';
 
 export interface StepsPanelProps {
@@ -282,13 +283,13 @@ export function StepsPanel({
 
           {/* Empty state */}
           {steps.length === 0 && (
-            <li className="px-4 py-8 text-center">
-              <p className="text-sm text-[rgb(var(--muted-foreground))]">
-                No workflow steps defined.
-              </p>
-              <p className="mt-1 text-xs text-[rgb(var(--muted-foreground))]">
-                Add a step to get started.
-              </p>
+            <li>
+              <EmptyState
+                icon={ListTodo}
+                title="No steps defined"
+                description="Add a step to get started."
+                size="sm"
+              />
             </li>
           )}
         </ul>

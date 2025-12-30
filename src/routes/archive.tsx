@@ -18,7 +18,7 @@ import {
   useProjects,
   useRestoreTask,
 } from '@openflow/hooks';
-import { AppLayout, Button, Dialog, Header } from '@openflow/ui';
+import { AppLayout, Button, Dialog, EmptyState, Header } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Archive, ArrowLeft, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -152,15 +152,13 @@ function ArchivePage() {
               </div>
             </div>
           ) : archivedTasks.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center">
-              <Archive className="mb-4 h-16 w-16 text-[rgb(var(--muted-foreground))]" />
-              <h3 className="text-lg font-medium text-[rgb(var(--foreground))]">
-                No archived tasks
-              </h3>
-              <p className="mt-2 text-sm text-[rgb(var(--muted-foreground))]">
-                Tasks you archive will appear here.
-              </p>
-            </div>
+            <EmptyState
+              icon={Archive}
+              title="Archive is empty"
+              description="Tasks you archive will appear here."
+              size="lg"
+              className="h-full"
+            />
           ) : (
             <div className="space-y-2">
               {archivedTasks.map((task) => (

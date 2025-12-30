@@ -13,7 +13,7 @@
 
 import { TaskStatus } from '@openflow/generated';
 import { useKeyboardShortcuts, useProjects, useTasks, useUpdateTask } from '@openflow/hooks';
-import { AppLayout, Header, SkeletonTaskCard, TaskList } from '@openflow/ui';
+import { AppLayout, EmptyState, Header, SkeletonTaskCard, TaskList } from '@openflow/ui';
 import type { StatusFilter } from '@openflow/ui';
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { ListTodo } from 'lucide-react';
@@ -116,15 +116,17 @@ function TasksPage() {
               ))}
             </div>
           ) : filteredTasks.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center">
-              <ListTodo className="mb-4 h-16 w-16 text-[rgb(var(--muted-foreground))]" />
-              <h3 className="text-lg font-medium text-[rgb(var(--foreground))]">No tasks found</h3>
-              <p className="mt-2 text-sm text-[rgb(var(--muted-foreground))]">
-                {statusFilter === 'all'
+            <EmptyState
+              icon={ListTodo}
+              title="No tasks found"
+              description={
+                statusFilter === 'all'
                   ? 'Create a task from a project to get started.'
-                  : `No tasks with status "${statusFilter}".`}
-              </p>
-            </div>
+                  : `No tasks with status "${statusFilter}".`
+              }
+              size="lg"
+              className="h-full"
+            />
           ) : (
             <TaskList
               tasks={filteredTasks}

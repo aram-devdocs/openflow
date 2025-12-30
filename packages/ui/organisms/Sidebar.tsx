@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
   ListFilter,
   MessageSquare,
   Plus,
@@ -13,6 +14,7 @@ import {
 import { useState } from 'react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
+import { EmptyState } from '../molecules/EmptyState';
 import { ProjectSelector } from './ProjectSelector';
 import { TaskCard } from './TaskCard';
 
@@ -384,18 +386,16 @@ export function Sidebar({
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-sm text-[rgb(var(--muted-foreground))]">
-                {tasks.length === 0
+            <EmptyState
+              icon={ClipboardList}
+              title={
+                tasks.length === 0
                   ? 'No tasks yet'
-                  : `No ${statusFilter === 'all' ? '' : statusFilter} tasks`}
-              </p>
-              {tasks.length === 0 && (
-                <p className="mt-1 text-xs text-[rgb(var(--muted-foreground))]">
-                  Create a new task to get started
-                </p>
-              )}
-            </div>
+                  : `No ${statusFilter === 'all' ? '' : statusFilter} tasks`
+              }
+              description={tasks.length === 0 ? 'Create a new task to get started' : undefined}
+              size="sm"
+            />
           )}
         </div>
 
@@ -445,9 +445,7 @@ export function Sidebar({
                   </button>
                 ))
               ) : (
-                <p className="py-2 text-center text-xs text-[rgb(var(--muted-foreground))]">
-                  No chats yet
-                </p>
+                <EmptyState icon={MessageSquare} title="No chats yet" size="sm" />
               )}
               {/* New chat button */}
               <button

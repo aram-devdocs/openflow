@@ -47,3 +47,6 @@ export type { SkeletonTaskCardProps } from './SkeletonTaskCard';
 
 export { SkeletonChat } from './SkeletonChat';
 export type { SkeletonChatProps } from './SkeletonChat';
+
+export { EmptyState } from './EmptyState';
+export type { EmptyStateProps } from './EmptyState';
