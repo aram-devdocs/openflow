@@ -25,6 +25,8 @@ export interface BadgeProps {
   children: ReactNode;
   /** Additional CSS classes */
   className?: string;
+  /** Whether this badge represents a status (adds sr-only "Status:" prefix) */
+  isStatus?: boolean;
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
@@ -83,15 +85,21 @@ export function taskStatusToLabel(status: TaskStatus): string {
  * <Badge variant="success">Completed</Badge>
  *
  * @example
- * <Badge variant="inprogress">In Progress</Badge>
+ * <Badge variant="inprogress" isStatus>In Progress</Badge>
  *
  * @example
  * // With task status
- * <Badge variant={taskStatusToVariant(task.status)}>
+ * <Badge variant={taskStatusToVariant(task.status)} isStatus>
  *   {taskStatusToLabel(task.status)}
  * </Badge>
  */
-export function Badge({ variant = 'default', size = 'md', className, children }: BadgeProps) {
+export function Badge({
+  variant = 'default',
+  size = 'md',
+  className,
+  children,
+  isStatus = false,
+}: BadgeProps) {
   return (
     <span
       className={cn(
@@ -104,6 +112,7 @@ export function Badge({ variant = 'default', size = 'md', className, children }:
         className
       )}
     >
+      {isStatus && <span className="sr-only">Status: </span>}
       {children}
     </span>
   );

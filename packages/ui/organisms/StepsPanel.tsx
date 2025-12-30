@@ -149,14 +149,18 @@ export function StepsPanel({
   // Check if any step is in progress
   const hasInProgressStep = steps.some((step) => step.status === WorkflowStepStatus.InProgress);
 
+  const completedCount = steps.filter((s) => s.status === WorkflowStepStatus.Completed).length;
+
   return (
-    <div className={cn('flex h-full flex-col', 'bg-[rgb(var(--background))]', className)}>
+    <aside
+      aria-label="Workflow steps"
+      className={cn('flex h-full flex-col', 'bg-[rgb(var(--background))]', className)}
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-3">
         <h3 className="text-sm font-semibold text-[rgb(var(--foreground))]">Workflow Steps</h3>
         <span className="text-xs text-[rgb(var(--muted-foreground))]">
-          {steps.filter((s) => s.status === WorkflowStepStatus.Completed).length}/{steps.length}{' '}
-          completed
+          {completedCount}/{steps.length} completed
         </span>
       </div>
 
@@ -328,7 +332,7 @@ export function StepsPanel({
           </Button>
         )}
       </div>
-    </div>
+    </aside>
   );
 }
 

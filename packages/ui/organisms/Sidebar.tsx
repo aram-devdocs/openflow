@@ -149,6 +149,7 @@ function CollapsedSidebar({
 }) {
   return (
     <aside
+      aria-label="Main navigation"
       className={cn(
         'flex w-14 flex-col border-r border-[rgb(var(--border))] bg-[rgb(var(--background))]',
         className
@@ -315,6 +316,7 @@ export function Sidebar({
 
   return (
     <aside
+      aria-label="Main navigation"
       className={cn(
         'flex w-72 flex-col border-r border-[rgb(var(--border))] bg-[rgb(var(--background))]',
         className
@@ -406,6 +408,8 @@ export function Sidebar({
           <button
             type="button"
             onClick={() => setIsChatsExpanded(!isChatsExpanded)}
+            aria-expanded={isChatsExpanded}
+            aria-label={`Chats section, ${chats.length} chats`}
             className={cn(
               'mb-2 flex w-full items-center gap-2 rounded-md text-xs font-medium',
               'text-[rgb(var(--muted-foreground))]',

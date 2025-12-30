@@ -1,7 +1,7 @@
 import { cn } from '@openflow/utils';
 import { X } from 'lucide-react';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 
@@ -93,6 +93,8 @@ export function Dialog({
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const id = useId();
+  const titleId = `${id}-title`;
 
   // Handle Escape key
   useEffect(() => {
@@ -166,7 +168,7 @@ export function Dialog({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={title ? 'dialog-title' : undefined}
+        aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
         className={cn(
           // Base styles
@@ -187,7 +189,7 @@ export function Dialog({
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-3">
             {title && (
-              <h2 id="dialog-title" className="text-lg font-semibold text-[rgb(var(--foreground))]">
+              <h2 id={titleId} className="text-lg font-semibold text-[rgb(var(--foreground))]">
                 {title}
               </h2>
             )}

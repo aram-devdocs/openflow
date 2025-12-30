@@ -37,9 +37,12 @@ export const Label = forwardRef<HTMLLabelElement, LabelProps>(
       >
         {children}
         {required && (
-          <span className="ml-1 text-[rgb(var(--destructive))]" aria-hidden="true">
-            *
-          </span>
+          <>
+            <span className="ml-1 text-[rgb(var(--destructive))]" aria-hidden="true">
+              *
+            </span>
+            <span className="sr-only"> (required)</span>
+          </>
         )}
       </label>
     );
