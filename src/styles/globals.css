@@ -125,6 +125,24 @@
 }
 
 @layer utilities {
+  /* Responsive typography - scales with viewport */
+  .text-page-title {
+    @apply text-xl font-bold md:text-2xl;
+  }
+
+  .text-section-title {
+    @apply text-lg font-semibold md:text-xl;
+  }
+
+  .text-card-title {
+    @apply text-base font-medium md:text-lg;
+  }
+
+  /* Responsive container padding - tighter on mobile */
+  .container-responsive {
+    @apply px-4 md:px-6;
+  }
+
   /* Reduced motion support - respects user preferences */
   @media (prefers-reduced-motion: reduce) {
     *,

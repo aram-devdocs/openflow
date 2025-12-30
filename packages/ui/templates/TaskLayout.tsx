@@ -1,7 +1,15 @@
 import type { Chat, Task, TaskStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
-import { ExternalLink, GitBranch, MoreHorizontal, Pencil } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  GitBranch,
+  MoreHorizontal,
+  Pencil,
+} from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { Badge, taskStatusToLabel, taskStatusToVariant } from '../atoms/Badge';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
@@ -136,6 +144,9 @@ export function TaskLayout({
   const currentBranch = getCurrentBranch(chats);
   const hasChanges = task.actionsRequiredCount > 0;
 
+  // Mobile steps panel collapse state
+  const [isStepsPanelCollapsed, setIsStepsPanelCollapsed] = useState(true);
+
   // Handle title edit key events
   const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -149,11 +160,12 @@ export function TaskLayout({
 
   return (
     <div className={cn('flex h-full flex-col', 'bg-[rgb(var(--background))]', className)}>
-      {/* Task Header */}
-      <header className="shrink-0 border-b border-[rgb(var(--border))] px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
+      {/* Task Header - responsive layout */}
+      <header className="shrink-0 border-b border-[rgb(var(--border))] px-3 py-2 md:px-4 md:py-3">
+        {/* Mobile: Stack title and controls */}
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
           {/* Left side: Title and status */}
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
             {/* Title - editable */}
             {isTitleEditing ? (
               <input
@@ -164,7 +176,7 @@ export function TaskLayout({
                 onBlur={() => onTitleEditCancel?.()}
                 autoFocus
                 className={cn(
-                  'flex-1 min-w-0 px-2 py-1 text-lg font-semibold',
+                  'flex-1 min-w-0 px-2 py-1 text-base font-semibold md:text-lg',
                   'bg-[rgb(var(--background))] text-[rgb(var(--foreground))]',
                   'border border-[rgb(var(--ring))] rounded-md',
                   'focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]'
@@ -174,7 +186,7 @@ export function TaskLayout({
             ) : (
               <div className="flex min-w-0 items-center gap-2 group">
                 <h1
-                  className="truncate text-lg font-semibold text-[rgb(var(--foreground))]"
+                  className="truncate text-base font-semibold text-[rgb(var(--foreground))] md:text-lg"
                   title={task.title}
                 >
                   {task.title}
@@ -197,14 +209,14 @@ export function TaskLayout({
               </div>
             )}
 
-            {/* Status dropdown */}
+            {/* Status dropdown - shrink on mobile */}
             {onStatusChange ? (
               <Dropdown
                 options={STATUS_OPTIONS}
                 value={task.status}
                 onChange={(value) => onStatusChange(value as TaskStatus)}
                 aria-label="Task status"
-                className="w-36"
+                className="w-28 md:w-36"
               />
             ) : (
               <Badge variant={taskStatusToVariant(task.status)}>
@@ -222,30 +234,30 @@ export function TaskLayout({
             )}
           </div>
 
-          {/* Right side: Branch and actions */}
-          <div className="flex items-center gap-2">
-            {/* Branch indicator */}
+          {/* Right side: Branch and actions - wrap on mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto">
+            {/* Branch indicator - hidden on mobile, shown on tablet+ */}
             {currentBranch && (
               <Tooltip content={`Branch: ${currentBranch}`}>
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[rgb(var(--muted))] text-sm">
+                <div className="hidden items-center gap-1.5 px-2 py-1 rounded-md bg-[rgb(var(--muted))] text-sm sm:flex">
                   <Icon
                     icon={GitBranch}
                     size="sm"
                     className="text-[rgb(var(--muted-foreground))]"
                   />
-                  <span className="max-w-[150px] truncate text-[rgb(var(--foreground))]">
+                  <span className="max-w-[100px] truncate text-[rgb(var(--foreground))] md:max-w-[150px]">
                     {currentBranch}
                   </span>
                 </div>
               </Tooltip>
             )}
 
-            {/* Create PR button */}
+            {/* Create PR button - icon only on mobile */}
             {onCreatePR && currentBranch && (
               <Tooltip content="Create Pull Request">
                 <Button variant="secondary" size="sm" onClick={onCreatePR}>
                   <Icon icon={ExternalLink} size="sm" />
-                  <span>Create PR</span>
+                  <span className="hidden sm:inline">Create PR</span>
                 </Button>
               </Tooltip>
             )}
@@ -268,8 +280,8 @@ export function TaskLayout({
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="shrink-0 border-b border-[rgb(var(--border))] px-4">
+      {/* Tabs - horizontal scroll on mobile */}
+      <div className="shrink-0 overflow-x-auto border-b border-[rgb(var(--border))] px-3 md:px-4">
         <Tabs
           tabs={tabs}
           activeTab={activeTab}
@@ -279,20 +291,53 @@ export function TaskLayout({
         />
       </div>
 
-      {/* Main content area */}
-      <div className="flex min-h-0 flex-1">
-        {/* Steps panel (left side) - shown on 'steps' tab */}
+      {/* Main content area - responsive layout */}
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        {/* Steps panel - collapsible on mobile, sidebar on desktop */}
         {activeTab === 'steps' && (
           <>
+            {/* Mobile: Collapsible steps header */}
+            <div className="lg:hidden">
+              <button
+                type="button"
+                onClick={() => setIsStepsPanelCollapsed(!isStepsPanelCollapsed)}
+                className={cn(
+                  'flex w-full items-center justify-between px-4 py-3',
+                  'border-b border-[rgb(var(--border))] bg-[rgb(var(--surface-1))]',
+                  'text-sm font-medium text-[rgb(var(--foreground))]'
+                )}
+                aria-expanded={!isStepsPanelCollapsed}
+                aria-controls="mobile-steps-panel"
+              >
+                <span>Workflow Steps</span>
+                <Icon
+                  icon={isStepsPanelCollapsed ? ChevronDown : ChevronUp}
+                  size="sm"
+                  className="text-[rgb(var(--muted-foreground))]"
+                />
+              </button>
+
+              {/* Mobile steps panel - collapsible */}
+              {!isStepsPanelCollapsed && (
+                <div
+                  id="mobile-steps-panel"
+                  className="max-h-64 overflow-y-auto border-b border-[rgb(var(--border))]"
+                >
+                  {stepsPanel}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop: Fixed sidebar */}
             <div
-              className="shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto"
+              className="hidden shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto lg:block"
               style={{ width: stepsPanelWidth }}
             >
               {stepsPanel}
             </div>
 
-            {/* Main panel (right side) - chat interface */}
-            <div className="flex min-w-0 flex-1 flex-col overflow-hidden">{mainPanel}</div>
+            {/* Main panel (right side on desktop, below steps on mobile) - chat interface */}
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">{mainPanel}</div>
           </>
         )}
 

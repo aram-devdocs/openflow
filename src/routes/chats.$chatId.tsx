@@ -291,43 +291,41 @@ function StandaloneChatPage() {
         />
       )}
 
-      {/* Header */}
-      <header className="flex items-center gap-3 border-b border-[rgb(var(--border))] bg-[rgb(var(--card))] px-4 py-3">
-        <Button variant="ghost" size="sm" onClick={handleBack} className="h-8 w-8 p-0">
+      {/* Header - responsive layout */}
+      <header className="flex items-center gap-2 border-b border-[rgb(var(--border))] bg-[rgb(var(--card))] px-3 py-2 md:gap-3 md:px-4 md:py-3">
+        <Button variant="ghost" size="sm" onClick={handleBack} className="h-8 w-8 shrink-0 p-0">
           <Icon icon={ArrowLeft} size="sm" />
         </Button>
 
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[rgb(var(--primary))]/10">
+        <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-2.5">
+          <div className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[rgb(var(--primary))]/10 sm:flex">
             <Icon icon={MessageSquare} size="sm" className="text-[rgb(var(--primary))]" />
           </div>
-          <div>
-            <h1 className="text-sm font-semibold text-[rgb(var(--foreground))]">
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-sm font-semibold text-[rgb(var(--foreground))]">
               {chat.title ?? 'Untitled Chat'}
             </h1>
             {project && (
-              <p className="text-xs text-[rgb(var(--muted-foreground))]">{project.name}</p>
+              <p className="truncate text-xs text-[rgb(var(--muted-foreground))]">{project.name}</p>
             )}
           </div>
         </div>
 
-        <div className="flex-1" />
-
-        {/* View toggle */}
+        {/* View toggle - icon only on mobile */}
         <Button
           variant={showRawOutput ? 'secondary' : 'ghost'}
           size="sm"
           onClick={() => setShowRawOutput(!showRawOutput)}
-          className="h-8 gap-1.5 px-3 text-xs"
+          className="h-8 shrink-0 gap-1.5 px-2 text-xs sm:px-3"
         >
           <Terminal className="h-3.5 w-3.5" />
-          {showRawOutput ? 'Formatted' : 'Raw'}
+          <span className="hidden sm:inline">{showRawOutput ? 'Formatted' : 'Raw'}</span>
         </Button>
       </header>
 
-      {/* Main chat area */}
+      {/* Main chat area - responsive padding */}
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-4xl px-4 py-6">
+        <div className="mx-auto max-w-4xl px-3 py-4 md:px-4 md:py-6">
           {/* Empty state */}
           {!hasContent && !isProcessing && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -381,31 +379,31 @@ function StandaloneChatPage() {
         </div>
       </div>
 
-      {/* Input area */}
+      {/* Input area - responsive padding */}
       <div className="border-t border-[rgb(var(--border))] bg-[rgb(var(--card))]">
-        <div className="mx-auto max-w-4xl px-4 py-4">
-          <div className="flex gap-3">
+        <div className="mx-auto max-w-4xl px-3 py-3 md:px-4 md:py-4">
+          <div className="flex gap-2 md:gap-3">
             <div className="relative flex-1">
               <textarea
                 ref={textareaRef}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message or instruction..."
+                placeholder="Type a message..."
                 disabled={isProcessing}
                 rows={1}
                 className={cn(
                   'w-full resize-none rounded-xl border border-[rgb(var(--border))]',
-                  'bg-[rgb(var(--background))] px-4 py-3 pr-12',
+                  'bg-[rgb(var(--background))] px-3 py-3 md:px-4',
                   'text-sm text-[rgb(var(--foreground))]',
                   'placeholder:text-[rgb(var(--muted-foreground))]',
                   'focus:border-[rgb(var(--primary))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/20',
                   'disabled:cursor-not-allowed disabled:opacity-50',
-                  'min-h-[48px] max-h-[200px]'
+                  'min-h-[44px] max-h-[200px]'
                 )}
                 style={{
                   height: 'auto',
-                  minHeight: '48px',
+                  minHeight: '44px',
                 }}
                 onInput={(e) => {
                   const target = e.target as HTMLTextAreaElement;
@@ -415,13 +413,13 @@ function StandaloneChatPage() {
               />
             </div>
 
-            {/* Action button */}
+            {/* Action button - meets 44px touch target */}
             {isProcessing ? (
               <Button
                 variant="destructive"
                 size="md"
                 onClick={handleStopProcess}
-                className="h-12 w-12 shrink-0 rounded-xl p-0"
+                className="h-11 w-11 shrink-0 rounded-xl p-0"
                 aria-label="Stop process"
               >
                 <StopCircle className="h-5 w-5" />
@@ -432,7 +430,7 @@ function StandaloneChatPage() {
                 size="md"
                 onClick={handleSend}
                 disabled={!inputValue.trim()}
-                className="h-12 w-12 shrink-0 rounded-xl p-0"
+                className="h-11 w-11 shrink-0 rounded-xl p-0"
                 aria-label="Send message"
               >
                 <Send className="h-5 w-5" />
@@ -440,8 +438,8 @@ function StandaloneChatPage() {
             )}
           </div>
 
-          {/* Helper text */}
-          <p className="mt-2 text-center text-xs text-[rgb(var(--muted-foreground))]">
+          {/* Helper text - hidden on mobile for space */}
+          <p className="mt-2 hidden text-center text-xs text-[rgb(var(--muted-foreground))] sm:block">
             Press{' '}
             <kbd className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]">
               Enter
@@ -470,13 +468,14 @@ interface UserMessageBubbleProps {
 function UserMessageBubble({ content, timestamp }: UserMessageBubbleProps) {
   return (
     <div className="flex justify-end">
-      <div className="flex max-w-[80%] gap-3">
-        <div className="order-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--primary))]">
-          <User className="h-4 w-4 text-[rgb(var(--primary-foreground))]" />
+      {/* Wider on mobile (90%) to maximize space, narrower on desktop (80%) */}
+      <div className="flex max-w-[90%] gap-2 md:max-w-[80%] md:gap-3">
+        <div className="order-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--primary))] md:h-8 md:w-8">
+          <User className="h-3.5 w-3.5 text-[rgb(var(--primary-foreground))] md:h-4 md:w-4" />
         </div>
-        <div className="order-1">
-          <div className="rounded-2xl rounded-tr-sm bg-[rgb(var(--primary))] px-4 py-3 text-[rgb(var(--primary-foreground))]">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed">{content}</p>
+        <div className="order-1 min-w-0">
+          <div className="rounded-2xl rounded-tr-sm bg-[rgb(var(--primary))] px-3 py-2 text-[rgb(var(--primary-foreground))] md:px-4 md:py-3">
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{content}</p>
           </div>
           {timestamp && (
             <p className="mt-1 text-right text-[10px] text-[rgb(var(--muted-foreground))]">

@@ -42,10 +42,10 @@ export interface DialogFooterProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const sizeClasses: Record<NonNullable<DialogProps['size']>, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
+  sm: 'max-w-[calc(100%-2rem)] sm:max-w-sm',
+  md: 'max-w-[calc(100%-2rem)] sm:max-w-md',
+  lg: 'max-w-[calc(100%-2rem)] sm:max-w-lg',
+  xl: 'max-w-[calc(100%-2rem)] sm:max-w-xl',
   full: 'max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)]',
 };
 
@@ -176,6 +176,8 @@ export function Dialog({
           'rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]',
           'shadow-lg',
           'mx-4',
+          // Max height to prevent overflow on mobile - smaller on mobile
+          'max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-6rem)]',
           // Animation - respects reduced motion
           'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95',
           // Size
