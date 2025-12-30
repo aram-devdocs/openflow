@@ -34,3 +34,6 @@ export type { ToastProps, ToastVariant } from './Toast';
 
 export { ToastProvider, useToast } from './ToastProvider';
 export type { ToastProviderProps } from './ToastProvider';
+
+export { ThemeProvider } from './ThemeProvider';
+export type { ThemeProviderProps } from './ThemeProvider';
