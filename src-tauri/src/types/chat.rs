@@ -48,14 +48,16 @@ impl TryFrom<String> for ChatRole {
     }
 }
 
-/// A chat session within a task.
-/// Each chat corresponds to a workflow step and has its own git worktree.
+/// A chat session within a task or standalone.
+/// Each chat may correspond to a workflow step and can have its own git worktree.
+/// Standalone chats have no task_id but must have a project_id.
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Chat {
     pub id: String,
-    pub task_id: String,
+    pub task_id: Option<String>,
+    pub project_id: String,
     pub title: Option<String>,
     #[sqlx(try_from = "String")]
     pub chat_role: ChatRole,
@@ -70,6 +72,10 @@ pub struct Chat {
     pub is_plan_container: bool,
     pub main_chat_id: Option<String>,
     pub workflow_step_index: Option<i32>,
+    /// Claude Code session ID for resuming conversations
+    pub claude_session_id: Option<String>,
+    /// Timestamp when this chat was archived (null if not archived)
+    pub archived_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -84,11 +90,14 @@ pub struct ChatWithMessages {
 }
 
 /// Request to create a new chat.
+/// Either task_id or project_id must be provided.
+/// If task_id is provided, project_id can be omitted (derived from task).
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateChatRequest {
-    pub task_id: String,
+    pub task_id: Option<String>,
+    pub project_id: String,
     pub title: Option<String>,
     pub chat_role: Option<ChatRole>,
     pub executor_profile_id: Option<String>,
@@ -113,4 +122,6 @@ pub struct UpdateChatRequest {
     pub setup_completed_at: Option<String>,
     pub initial_prompt: Option<String>,
     pub hidden_prompt: Option<String>,
+    /// Claude Code session ID for resuming conversations
+    pub claude_session_id: Option<String>,
 }

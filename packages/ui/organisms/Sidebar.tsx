@@ -1,6 +1,16 @@
-import type { Project, Task, TaskStatus } from '@openflow/generated';
+import type { Chat, Project, Task, TaskStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
-import { Archive, ChevronLeft, ChevronRight, ListFilter, Plus, Settings } from 'lucide-react';
+import {
+  Archive,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ListFilter,
+  MessageSquare,
+  Plus,
+  Settings,
+} from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 import { ProjectSelector } from './ProjectSelector';
@@ -14,18 +24,26 @@ export interface SidebarProps {
   projects: Project[];
   /** Array of tasks to display in the sidebar */
   tasks: Task[];
+  /** Array of standalone chats to display in the sidebar */
+  chats?: Chat[];
   /** Currently selected project ID */
   selectedProjectId?: string;
   /** Currently selected task ID */
   selectedTaskId?: string;
+  /** Currently selected chat ID */
+  selectedChatId?: string;
   /** Current status filter */
   statusFilter?: StatusFilter;
   /** Callback when a project is selected */
   onSelectProject?: (projectId: string) => void;
   /** Callback when a task is selected */
   onSelectTask?: (taskId: string) => void;
+  /** Callback when a chat is selected */
+  onSelectChat?: (chatId: string) => void;
   /** Callback when the "New Task" button is clicked */
   onNewTask?: () => void;
+  /** Callback when the "New Chat" button is clicked */
+  onNewChat?: () => void;
   /** Callback when the "New Project" button is clicked */
   onNewProject?: () => void;
   /** Callback when the status filter is changed */
@@ -114,12 +132,14 @@ function StatusFilterButton({
 function CollapsedSidebar({
   onToggleCollapse,
   onNewTask,
+  onNewChat,
   onSettingsClick,
   onArchiveClick,
   className,
 }: {
   onToggleCollapse?: (() => void) | undefined;
   onNewTask?: (() => void) | undefined;
+  onNewChat?: (() => void) | undefined;
   onSettingsClick?: (() => void) | undefined;
   onArchiveClick?: (() => void) | undefined;
   className?: string | undefined;
@@ -161,6 +181,19 @@ function CollapsedSidebar({
           aria-label="Create new task"
         >
           <Icon icon={Plus} size="sm" />
+        </button>
+        {/* New chat button */}
+        <button
+          type="button"
+          onClick={onNewChat}
+          className={cn(
+            'rounded-md p-2 text-[rgb(var(--muted-foreground))]',
+            'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
+          )}
+          aria-label="Create new chat"
+        >
+          <Icon icon={MessageSquare} size="sm" />
         </button>
       </div>
 
@@ -228,12 +261,16 @@ function CollapsedSidebar({
 export function Sidebar({
   projects,
   tasks,
+  chats = [],
   selectedProjectId,
   selectedTaskId,
+  selectedChatId,
   statusFilter = 'all',
   onSelectProject,
   onSelectTask,
+  onSelectChat,
   onNewTask,
+  onNewChat,
   onNewProject,
   onStatusFilter,
   onTaskStatusChange,
@@ -243,12 +280,16 @@ export function Sidebar({
   onToggleCollapse,
   className,
 }: SidebarProps) {
+  // Local state for collapsible sections
+  const [isChatsExpanded, setIsChatsExpanded] = useState(true);
+
   // Render collapsed sidebar if collapsed
   if (isCollapsed) {
     return (
       <CollapsedSidebar
         onToggleCollapse={onToggleCollapse}
         onNewTask={onNewTask}
+        onNewChat={onNewChat}
         onSettingsClick={onSettingsClick}
         onArchiveClick={onArchiveClick}
         className={className}
@@ -326,34 +367,104 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Task list */}
-      <div className="flex-1 overflow-y-auto p-3">
-        {filteredTasks.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            {filteredTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                isSelected={selectedTaskId === task.id}
-                {...(onSelectTask && { onSelect: onSelectTask })}
-                {...(onTaskStatusChange && { onStatusChange: onTaskStatusChange })}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <p className="text-sm text-[rgb(var(--muted-foreground))]">
-              {tasks.length === 0
-                ? 'No tasks yet'
-                : `No ${statusFilter === 'all' ? '' : statusFilter} tasks`}
-            </p>
-            {tasks.length === 0 && (
-              <p className="mt-1 text-xs text-[rgb(var(--muted-foreground))]">
-                Create a new task to get started
+      {/* Scrollable content: Tasks and Chats */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Task list */}
+        <div className="p-3">
+          {filteredTasks.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {filteredTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  isSelected={selectedTaskId === task.id}
+                  {...(onSelectTask && { onSelect: onSelectTask })}
+                  {...(onTaskStatusChange && { onStatusChange: onTaskStatusChange })}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <p className="text-sm text-[rgb(var(--muted-foreground))]">
+                {tasks.length === 0
+                  ? 'No tasks yet'
+                  : `No ${statusFilter === 'all' ? '' : statusFilter} tasks`}
               </p>
+              {tasks.length === 0 && (
+                <p className="mt-1 text-xs text-[rgb(var(--muted-foreground))]">
+                  Create a new task to get started
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Chats section */}
+        <div className="border-t border-[rgb(var(--border))] p-3">
+          {/* Collapsible header */}
+          <button
+            type="button"
+            onClick={() => setIsChatsExpanded(!isChatsExpanded)}
+            className={cn(
+              'mb-2 flex w-full items-center gap-2 text-xs font-medium',
+              'text-[rgb(var(--muted-foreground))]',
+              'hover:text-[rgb(var(--foreground))]'
             )}
-          </div>
-        )}
+          >
+            <Icon
+              icon={ChevronDown}
+              size="xs"
+              className={cn('transition-transform', !isChatsExpanded && '-rotate-90')}
+            />
+            <Icon icon={MessageSquare} size="xs" />
+            <span>Chats</span>
+            <span className="ml-auto rounded-full bg-[rgb(var(--muted))] px-1.5 py-0.5 text-xs">
+              {chats.length}
+            </span>
+          </button>
+
+          {/* Chat list */}
+          {isChatsExpanded && (
+            <div className="flex flex-col gap-1">
+              {chats.length > 0 ? (
+                chats.map((chat) => (
+                  <button
+                    key={chat.id}
+                    type="button"
+                    onClick={() => onSelectChat?.(chat.id)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
+                      'transition-colors duration-150',
+                      selectedChatId === chat.id
+                        ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
+                        : 'text-[rgb(var(--muted-foreground))] hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]'
+                    )}
+                  >
+                    <Icon icon={MessageSquare} size="xs" className="shrink-0" />
+                    <span className="truncate">{chat.title ?? 'Untitled Chat'}</span>
+                  </button>
+                ))
+              ) : (
+                <p className="py-2 text-center text-xs text-[rgb(var(--muted-foreground))]">
+                  No chats yet
+                </p>
+              )}
+              {/* New chat button */}
+              <button
+                type="button"
+                onClick={onNewChat}
+                className={cn(
+                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm',
+                  'text-[rgb(var(--primary))]',
+                  'hover:bg-[rgb(var(--muted))]'
+                )}
+              >
+                <Icon icon={Plus} size="xs" />
+                <span>New Chat</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Footer: Settings and Archive links */}

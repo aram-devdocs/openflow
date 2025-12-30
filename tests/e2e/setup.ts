@@ -303,14 +303,19 @@ const mockCommands: Record<string, (args: InvokeArgs) => unknown> = {
 
   create_chat: (args) => {
     const request = args.request as CreateChatRequest;
-    // Verify task exists
-    if (!testDb.tasks.has(request.taskId)) {
+    // Verify task exists if taskId is provided
+    if (request.taskId && !testDb.tasks.has(request.taskId)) {
       throw new Error(`Task not found: ${request.taskId}`);
+    }
+    // Verify project exists
+    if (!testDb.projects.has(request.projectId)) {
+      throw new Error(`Project not found: ${request.projectId}`);
     }
     const chat = buildObject<Chat>(
       {
         id: generateId(),
         taskId: request.taskId,
+        projectId: request.projectId,
         chatRole: request.chatRole ?? ('main' as ChatRole),
         baseBranch: request.baseBranch ?? 'main',
         worktreeDeleted: false,
@@ -494,10 +499,12 @@ export function createTestTask(
  */
 export function createTestChat(
   taskId: string,
+  projectId: string,
   overrides: Partial<CreateChatRequest> = {}
 ): CreateChatRequest {
   return {
     taskId,
+    projectId,
     ...overrides,
   };
 }
@@ -528,7 +535,7 @@ export async function seedTestData(): Promise<{
 
   // Create chats
   const chat1 = (await invoke('create_chat', {
-    request: createTestChat(task1.id),
+    request: createTestChat(task1.id, project.id),
   })) as Chat;
 
   return {

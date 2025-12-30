@@ -21,22 +21,78 @@ impl ChatService {
     /// * `pool` - Database connection pool
     /// * `task_id` - Task to list chats for
     ///
-    /// Returns chats ordered by workflow_step_index ASC, then created_at ASC.
+    /// Returns non-archived chats ordered by workflow_step_index ASC, then created_at ASC.
     pub async fn list(pool: &SqlitePool, task_id: &str) -> ServiceResult<Vec<Chat>> {
         let chats = sqlx::query_as::<_, Chat>(
             r#"
             SELECT
-                id, task_id, title, chat_role, executor_profile_id,
+                id, task_id, project_id, title, chat_role, executor_profile_id,
                 base_branch, branch, worktree_path, worktree_deleted,
                 setup_completed_at, initial_prompt, hidden_prompt,
                 is_plan_container, main_chat_id, workflow_step_index,
-                created_at, updated_at
+                claude_session_id, archived_at, created_at, updated_at
             FROM chats
-            WHERE task_id = ?
+            WHERE task_id = ? AND archived_at IS NULL
             ORDER BY workflow_step_index ASC, created_at ASC
             "#,
         )
         .bind(task_id)
+        .fetch_all(pool)
+        .await?;
+
+        Ok(chats)
+    }
+
+    /// List standalone chats for a project (chats without a task).
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `project_id` - Project to list standalone chats for
+    ///
+    /// Returns non-archived chats ordered by created_at DESC (most recent first).
+    pub async fn list_standalone(pool: &SqlitePool, project_id: &str) -> ServiceResult<Vec<Chat>> {
+        let chats = sqlx::query_as::<_, Chat>(
+            r#"
+            SELECT
+                id, task_id, project_id, title, chat_role, executor_profile_id,
+                base_branch, branch, worktree_path, worktree_deleted,
+                setup_completed_at, initial_prompt, hidden_prompt,
+                is_plan_container, main_chat_id, workflow_step_index,
+                claude_session_id, archived_at, created_at, updated_at
+            FROM chats
+            WHERE project_id = ? AND task_id IS NULL AND archived_at IS NULL
+            ORDER BY created_at DESC
+            "#,
+        )
+        .bind(project_id)
+        .fetch_all(pool)
+        .await?;
+
+        Ok(chats)
+    }
+
+    /// List all chats for a project (both task-linked and standalone).
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `project_id` - Project to list all chats for
+    ///
+    /// Returns non-archived chats ordered by created_at DESC.
+    pub async fn list_by_project(pool: &SqlitePool, project_id: &str) -> ServiceResult<Vec<Chat>> {
+        let chats = sqlx::query_as::<_, Chat>(
+            r#"
+            SELECT
+                id, task_id, project_id, title, chat_role, executor_profile_id,
+                base_branch, branch, worktree_path, worktree_deleted,
+                setup_completed_at, initial_prompt, hidden_prompt,
+                is_plan_container, main_chat_id, workflow_step_index,
+                claude_session_id, archived_at, created_at, updated_at
+            FROM chats
+            WHERE project_id = ? AND archived_at IS NULL
+            ORDER BY created_at DESC
+            "#,
+        )
+        .bind(project_id)
         .fetch_all(pool)
         .await?;
 
@@ -48,11 +104,11 @@ impl ChatService {
         let chat = sqlx::query_as::<_, Chat>(
             r#"
             SELECT
-                id, task_id, title, chat_role, executor_profile_id,
+                id, task_id, project_id, title, chat_role, executor_profile_id,
                 base_branch, branch, worktree_path, worktree_deleted,
                 setup_completed_at, initial_prompt, hidden_prompt,
                 is_plan_container, main_chat_id, workflow_step_index,
-                created_at, updated_at
+                claude_session_id, archived_at, created_at, updated_at
             FROM chats
             WHERE id = ?
             "#,
@@ -83,6 +139,9 @@ impl ChatService {
     }
 
     /// Create a new chat.
+    ///
+    /// For standalone chats, task_id should be None and project_id is required.
+    /// For task-linked chats, both task_id and project_id are required.
     pub async fn create(pool: &SqlitePool, request: CreateChatRequest) -> ServiceResult<Chat> {
         let id = Uuid::new_v4().to_string();
         let chat_role = request.chat_role.unwrap_or(ChatRole::Main);
@@ -92,15 +151,16 @@ impl ChatService {
         sqlx::query(
             r#"
             INSERT INTO chats (
-                id, task_id, title, chat_role, executor_profile_id,
+                id, task_id, project_id, title, chat_role, executor_profile_id,
                 base_branch, initial_prompt, hidden_prompt,
                 is_plan_container, main_chat_id, workflow_step_index
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#,
         )
         .bind(&id)
         .bind(&request.task_id)
+        .bind(&request.project_id)
         .bind(&request.title)
         .bind(chat_role.to_string())
         .bind(&request.executor_profile_id)
@@ -138,6 +198,7 @@ impl ChatService {
         let setup_completed_at = request.setup_completed_at.or(existing.setup_completed_at);
         let initial_prompt = request.initial_prompt.or(existing.initial_prompt);
         let hidden_prompt = request.hidden_prompt.or(existing.hidden_prompt);
+        let claude_session_id = request.claude_session_id.or(existing.claude_session_id);
 
         sqlx::query(
             r#"
@@ -151,6 +212,7 @@ impl ChatService {
                 setup_completed_at = ?,
                 initial_prompt = ?,
                 hidden_prompt = ?,
+                claude_session_id = ?,
                 updated_at = datetime('now', 'subsec')
             WHERE id = ?
             "#,
@@ -163,6 +225,54 @@ impl ChatService {
         .bind(&setup_completed_at)
         .bind(&initial_prompt)
         .bind(&hidden_prompt)
+        .bind(&claude_session_id)
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+        let chat_with_messages = Self::get(pool, id).await?;
+        Ok(chat_with_messages.chat)
+    }
+
+    /// Archive a chat by ID.
+    ///
+    /// Sets the archived_at timestamp to the current time.
+    /// Archived chats are excluded from list queries but can still be accessed by ID.
+    pub async fn archive(pool: &SqlitePool, id: &str) -> ServiceResult<Chat> {
+        // Verify the chat exists first
+        Self::get(pool, id).await?;
+
+        sqlx::query(
+            r#"
+            UPDATE chats
+            SET archived_at = datetime('now', 'subsec'),
+                updated_at = datetime('now', 'subsec')
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+        let chat_with_messages = Self::get(pool, id).await?;
+        Ok(chat_with_messages.chat)
+    }
+
+    /// Unarchive a chat by ID.
+    ///
+    /// Clears the archived_at timestamp, making the chat visible in list queries again.
+    pub async fn unarchive(pool: &SqlitePool, id: &str) -> ServiceResult<Chat> {
+        // Verify the chat exists first
+        Self::get(pool, id).await?;
+
+        sqlx::query(
+            r#"
+            UPDATE chats
+            SET archived_at = NULL,
+                updated_at = datetime('now', 'subsec')
+            WHERE id = ?
+            "#,
+        )
         .bind(id)
         .execute(pool)
         .await?;
@@ -249,10 +359,28 @@ mod tests {
             .id
     }
 
-    /// Helper to create a test chat request.
-    fn test_create_request(task_id: &str) -> CreateChatRequest {
+    /// Helper to create a test chat request for task-linked chats.
+    fn test_create_request(task_id: &str, project_id: &str) -> CreateChatRequest {
         CreateChatRequest {
-            task_id: task_id.to_string(),
+            task_id: Some(task_id.to_string()),
+            project_id: project_id.to_string(),
+            title: None,
+            chat_role: None,
+            executor_profile_id: None,
+            base_branch: None,
+            initial_prompt: None,
+            hidden_prompt: None,
+            is_plan_container: None,
+            main_chat_id: None,
+            workflow_step_index: None,
+        }
+    }
+
+    /// Helper to create a test standalone chat request (no task).
+    fn test_standalone_request(project_id: &str) -> CreateChatRequest {
+        CreateChatRequest {
+            task_id: None,
+            project_id: project_id.to_string(),
             title: None,
             chat_role: None,
             executor_profile_id: None,
@@ -271,12 +399,13 @@ mod tests {
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
 
-        let request = test_create_request(&task_id);
+        let request = test_create_request(&task_id, &project_id);
         let chat = ChatService::create(&test_db.pool, request)
             .await
             .expect("Failed to create chat");
 
-        assert_eq!(chat.task_id, task_id);
+        assert_eq!(chat.task_id, Some(task_id));
+        assert_eq!(chat.project_id, project_id);
         assert_eq!(chat.chat_role, ChatRole::Main); // Default
         assert_eq!(chat.base_branch, "main"); // Default
         assert!(!chat.worktree_deleted);
@@ -288,13 +417,77 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_create_standalone_chat() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+
+        let request = test_standalone_request(&project_id);
+        let chat = ChatService::create(&test_db.pool, request)
+            .await
+            .expect("Failed to create standalone chat");
+
+        assert!(chat.task_id.is_none());
+        assert_eq!(chat.project_id, project_id);
+        assert_eq!(chat.chat_role, ChatRole::Main);
+        assert!(!chat.id.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_list_standalone_chats() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+        let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
+
+        // Create a task-linked chat
+        let task_chat_request = test_create_request(&task_id, &project_id);
+        ChatService::create(&test_db.pool, task_chat_request)
+            .await
+            .expect("Failed to create task chat");
+
+        // Create standalone chats
+        let standalone1 = CreateChatRequest {
+            task_id: None,
+            project_id: project_id.clone(),
+            title: Some("Standalone 1".to_string()),
+            ..test_standalone_request(&project_id)
+        };
+        let standalone2 = CreateChatRequest {
+            task_id: None,
+            project_id: project_id.clone(),
+            title: Some("Standalone 2".to_string()),
+            ..test_standalone_request(&project_id)
+        };
+
+        ChatService::create(&test_db.pool, standalone1).await.unwrap();
+        ChatService::create(&test_db.pool, standalone2).await.unwrap();
+
+        // List standalone should only return standalone chats
+        let standalone_chats = ChatService::list_standalone(&test_db.pool, &project_id)
+            .await
+            .expect("Failed to list standalone chats");
+
+        assert_eq!(standalone_chats.len(), 2);
+        for chat in &standalone_chats {
+            assert!(chat.task_id.is_none());
+        }
+
+        // List by project should return all chats
+        let all_chats = ChatService::list_by_project(&test_db.pool, &project_id)
+            .await
+            .expect("Failed to list all chats");
+
+        assert_eq!(all_chats.len(), 3);
+    }
+
+    #[tokio::test]
     async fn test_create_chat_with_all_fields() {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
 
         let request = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Implementation Step".to_string()),
             chat_role: Some(ChatRole::Review),
             executor_profile_id: None,
@@ -330,7 +523,8 @@ mod tests {
 
         // Create a chat first
         let request = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Get Test Chat".to_string()),
             chat_role: Some(ChatRole::Main),
             executor_profile_id: None,
@@ -385,7 +579,8 @@ mod tests {
 
         // Create multiple chats with different step indices
         let request1 = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Step 3".to_string()),
             chat_role: None,
             executor_profile_id: None,
@@ -397,7 +592,8 @@ mod tests {
             workflow_step_index: Some(3),
         };
         let request2 = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Step 1".to_string()),
             chat_role: None,
             executor_profile_id: None,
@@ -409,7 +605,8 @@ mod tests {
             workflow_step_index: Some(1),
         };
         let request3 = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Step 2".to_string()),
             chat_role: None,
             executor_profile_id: None,
@@ -445,7 +642,8 @@ mod tests {
 
         // Create chats in both tasks
         let request1 = CreateChatRequest {
-            task_id: task1_id.clone(),
+            task_id: Some(task1_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Task 1 Chat".to_string()),
             chat_role: None,
             executor_profile_id: None,
@@ -457,7 +655,8 @@ mod tests {
             workflow_step_index: None,
         };
         let request2 = CreateChatRequest {
-            task_id: task2_id.clone(),
+            task_id: Some(task2_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Task 2 Chat".to_string()),
             chat_role: None,
             executor_profile_id: None,
@@ -494,7 +693,7 @@ mod tests {
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
 
         // Create a chat
-        let request = test_create_request(&task_id);
+        let request = test_create_request(&task_id, &project_id);
         let created = ChatService::create(&test_db.pool, request)
             .await
             .expect("Failed to create chat");
@@ -509,6 +708,7 @@ mod tests {
             setup_completed_at: Some("2024-01-15T10:00:00Z".to_string()),
             initial_prompt: None,
             hidden_prompt: None,
+            claude_session_id: None,
         };
 
         let updated = ChatService::update(&test_db.pool, &created.id, update_request)
@@ -538,7 +738,8 @@ mod tests {
 
         // Create a chat with some values
         let request = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Original Title".to_string()),
             chat_role: Some(ChatRole::Test),
             executor_profile_id: None,
@@ -563,6 +764,7 @@ mod tests {
             setup_completed_at: None,
             initial_prompt: None,
             hidden_prompt: None,
+            claude_session_id: None,
         };
 
         let updated = ChatService::update(&test_db.pool, &created.id, update_request)
@@ -583,7 +785,7 @@ mod tests {
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
 
-        let request = test_create_request(&task_id);
+        let request = test_create_request(&task_id, &project_id);
         let created = ChatService::create(&test_db.pool, request)
             .await
             .expect("Failed to create chat");
@@ -600,6 +802,7 @@ mod tests {
             setup_completed_at: None,
             initial_prompt: None,
             hidden_prompt: None,
+            claude_session_id: None,
         };
 
         let updated = ChatService::update(&test_db.pool, &created.id, update_request)
@@ -622,6 +825,7 @@ mod tests {
             setup_completed_at: None,
             initial_prompt: None,
             hidden_prompt: None,
+            claude_session_id: None,
         };
 
         let result = ChatService::update(&test_db.pool, "non-existent-id", update_request).await;
@@ -642,7 +846,7 @@ mod tests {
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
 
         // Create a chat
-        let request = test_create_request(&task_id);
+        let request = test_create_request(&task_id, &project_id);
         let created = ChatService::create(&test_db.pool, request)
             .await
             .expect("Failed to create chat");
@@ -689,7 +893,7 @@ mod tests {
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
 
         // Create chat
-        let request = test_create_request(&task_id);
+        let request = test_create_request(&task_id, &project_id);
         let chat = ChatService::create(&test_db.pool, request)
             .await
             .expect("Failed to create chat");
@@ -712,7 +916,8 @@ mod tests {
 
         // Create main chat
         let main_request = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Main Chat".to_string()),
             chat_role: Some(ChatRole::Main),
             executor_profile_id: None,
@@ -729,7 +934,8 @@ mod tests {
 
         // Create terminal chat referencing main
         let terminal_request = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Terminal".to_string()),
             chat_role: Some(ChatRole::Terminal),
             executor_profile_id: None,
@@ -763,7 +969,8 @@ mod tests {
 
         for role in roles {
             let request = CreateChatRequest {
-                task_id: task_id.clone(),
+                task_id: Some(task_id.clone()),
+                project_id: project_id.clone(),
                 title: Some(format!("{:?} Chat", role)),
                 chat_role: Some(role.clone()),
                 executor_profile_id: None,
@@ -790,7 +997,8 @@ mod tests {
 
         // Create chat without step index (NULL)
         let request1 = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("No Index".to_string()),
             chat_role: None,
             executor_profile_id: None,
@@ -804,7 +1012,8 @@ mod tests {
 
         // Create chat with step index
         let request2 = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Index 1".to_string()),
             chat_role: None,
             executor_profile_id: None,

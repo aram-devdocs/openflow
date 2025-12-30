@@ -313,6 +313,7 @@ function TaskDetailPage() {
       createChat.mutate(
         {
           taskId: task.id,
+          projectId: task.projectId,
           title: newStepTitle.trim(),
           chatRole: ChatRole.Main,
           executorProfileId: defaultExecutorProfile?.id,

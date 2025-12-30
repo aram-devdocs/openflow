@@ -186,8 +186,8 @@ describe('Task CRUD Operations', () => {
       // Import chat queries to create associated chats
       const { chatQueries } = await import('@openflow/queries');
 
-      await chatQueries.create({ taskId: existingTask.id });
-      await chatQueries.create({ taskId: existingTask.id });
+      await chatQueries.create({ taskId: existingTask.id, projectId: project.id });
+      await chatQueries.create({ taskId: existingTask.id, projectId: project.id });
 
       const result = await taskQueries.get(existingTask.id);
 
@@ -344,7 +344,7 @@ describe('Task CRUD Operations', () => {
     it('should cascade delete associated chats', async () => {
       const { chatQueries } = await import('@openflow/queries');
 
-      const chat = await chatQueries.create({ taskId: existingTask.id });
+      const chat = await chatQueries.create({ taskId: existingTask.id, projectId: project.id });
 
       const db = getTestDatabase();
       expect(db.chats.has(chat.id)).toBe(true);

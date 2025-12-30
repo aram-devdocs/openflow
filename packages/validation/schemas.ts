@@ -92,7 +92,9 @@ export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 // =============================================================================
 
 export const createChatSchema = z.object({
-  taskId: z.string().uuid('Invalid task ID'),
+  taskId: z.string().uuid('Invalid task ID').optional(),
+  projectId: z.string().uuid('Invalid project ID'),
+  title: z.string().max(500).optional(),
   executor: z.string().nullish(),
   baseBranch: z.string().optional().default('main'),
   initialPrompt: z.string().nullish(),
@@ -103,6 +105,12 @@ export const createChatSchema = z.object({
   chatRole: chatRoleSchema.optional().default('main'),
 });
 export type CreateChatInput = z.infer<typeof createChatSchema>;
+
+/**
+ * Schema specifically for creating standalone chats (no task association).
+ */
+export const createStandaloneChatSchema = createChatSchema.omit({ taskId: true });
+export type CreateStandaloneChatInput = z.infer<typeof createStandaloneChatSchema>;
 
 // =============================================================================
 // Message Schemas

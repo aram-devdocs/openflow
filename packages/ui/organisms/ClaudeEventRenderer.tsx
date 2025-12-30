@@ -20,19 +20,34 @@ export interface ClaudeSystemEvent {
   data?: Record<string, unknown>;
 }
 
+/** Content block in an assistant message */
+interface AssistantContentBlock {
+  type: 'text' | 'tool_use';
+  text?: string;
+  id?: string;
+  name?: string;
+  input?: Record<string, unknown>;
+}
+
+/** Content block in a user message (tool results) */
+interface UserContentBlock {
+  type: 'tool_result';
+  tool_use_id: string;
+  content: string;
+  is_error?: boolean;
+}
+
 export interface ClaudeAssistantEvent {
   type: 'assistant';
   message: {
-    content?: string;
-    tool_use?: unknown;
+    content?: AssistantContentBlock[];
   };
 }
 
 export interface ClaudeUserEvent {
   type: 'user';
   message: {
-    content?: string;
-    tool_result?: unknown;
+    content?: UserContentBlock[];
   };
 }
 
@@ -75,74 +90,68 @@ export interface ClaudeEventRendererProps {
 
 /**
  * Group events into renderable chunks.
- * Groups consecutive tool_use + user (tool_result) events together.
+ * Shows events inline in conversation order - each tool call appears where it happens.
  */
 function groupEvents(events: ClaudeEvent[]): GroupedEvent[] {
   const groups: GroupedEvent[] = [];
-  let currentToolGroup: ToolInfo[] = [];
-  let pendingTool: Partial<ToolInfo> | null = null;
-
-  const flushToolGroup = () => {
-    if (currentToolGroup.length > 0) {
-      groups.push({ type: 'tool_group', tools: [...currentToolGroup] });
-      currentToolGroup = [];
-    }
-  };
+  // Map of pending tools by their ID, waiting for results
+  const pendingTools = new Map<string, Partial<ToolInfo>>();
 
   for (const event of events) {
     if (event.type === 'assistant') {
       const { message } = event;
 
-      if (message.content) {
-        flushToolGroup();
-        groups.push({ type: 'text', content: message.content });
-      }
-
-      if (message.tool_use) {
-        // Start a new tool
-        const toolUse = message.tool_use as {
-          id?: string;
-          name?: string;
-          input?: Record<string, unknown>;
-        };
-        pendingTool = {
-          id: toolUse.id,
-          name: toolUse.name ?? 'unknown_tool',
-          input: toolUse.input,
-        };
+      if (message.content && Array.isArray(message.content)) {
+        for (const block of message.content) {
+          if (block.type === 'text' && block.text) {
+            groups.push({ type: 'text', content: block.text });
+          } else if (block.type === 'tool_use' && block.name && block.id) {
+            // Store pending tool by its ID
+            pendingTools.set(block.id, {
+              id: block.id,
+              name: block.name,
+              input: block.input,
+            });
+          }
+        }
       }
     } else if (event.type === 'user') {
       const { message } = event;
 
-      if (message.tool_result && pendingTool) {
-        // Complete the pending tool with its result
-        const toolResult = message.tool_result as { output?: string; is_error?: boolean };
-        currentToolGroup.push({
-          ...pendingTool,
-          name: pendingTool.name ?? 'unknown_tool',
-          output: toolResult.output,
-          isError: toolResult.is_error,
-        });
-        pendingTool = null;
+      // User message content is an array of tool_result blocks
+      if (message.content && Array.isArray(message.content)) {
+        for (const block of message.content) {
+          if (block.type === 'tool_result' && block.tool_use_id) {
+            const pendingTool = pendingTools.get(block.tool_use_id);
+            if (pendingTool) {
+              // Complete the tool with its result and add as single-tool group (inline)
+              const completedTool: ToolInfo = {
+                ...pendingTool,
+                name: pendingTool.name ?? 'unknown_tool',
+                output: block.content,
+                isError: block.is_error,
+              };
+              groups.push({ type: 'tool_group', tools: [completedTool] });
+              pendingTools.delete(block.tool_use_id);
+            }
+          }
+        }
       }
     } else if (event.type === 'system') {
-      flushToolGroup();
       groups.push({ type: 'system', subtype: event.subtype, data: event.data ?? {} });
     } else if (event.type === 'result') {
-      flushToolGroup();
       groups.push({ type: 'result', subtype: event.subtype, data: event.data ?? {} });
     }
   }
 
-  // Flush any remaining pending tool
-  if (pendingTool) {
-    currentToolGroup.push({
+  // Add any remaining pending tools (tools without results yet - still in progress)
+  for (const pendingTool of pendingTools.values()) {
+    const inProgressTool: ToolInfo = {
       ...pendingTool,
       name: pendingTool.name ?? 'unknown_tool',
-    });
+    };
+    groups.push({ type: 'tool_group', tools: [inProgressTool] });
   }
-
-  flushToolGroup();
 
   return groups;
 }
@@ -227,23 +236,27 @@ export function ClaudeEventRenderer({
 
 ClaudeEventRenderer.displayName = 'ClaudeEventRenderer';
 
-/** Text content block */
+/** Assistant message block - renders as a chat bubble */
 interface TextBlockProps {
   content: string;
 }
 
 function TextBlock({ content }: TextBlockProps) {
   return (
-    <div
-      className={cn(
-        'prose prose-sm max-w-none dark:prose-invert',
-        'prose-p:my-2 prose-p:leading-relaxed',
-        'prose-pre:bg-[rgb(var(--muted))] prose-pre:border prose-pre:border-[rgb(var(--border))]',
-        'prose-code:text-[rgb(var(--primary))] prose-code:before:content-none prose-code:after:content-none',
-        'text-[rgb(var(--foreground))]'
-      )}
-    >
-      <div className="whitespace-pre-wrap">{content}</div>
+    <div className="flex justify-start">
+      <div className="flex max-w-[85%] gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--primary))]">
+          <Icon icon={Bot} size="sm" className="text-[rgb(var(--primary-foreground))]" />
+        </div>
+        <div
+          className={cn(
+            'rounded-2xl rounded-tl-sm px-4 py-3',
+            'bg-[rgb(var(--muted))] text-[rgb(var(--foreground))]'
+          )}
+        >
+          <div className="whitespace-pre-wrap text-sm leading-relaxed">{content}</div>
+        </div>
+      </div>
     </div>
   );
 }

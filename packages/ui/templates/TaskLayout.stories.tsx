@@ -53,6 +53,7 @@ const mockChats: Chat[] = [
   {
     id: 'chat-1',
     taskId: 'task-1',
+    projectId: 'project-1',
     title: 'Implementation',
     chatRole: ChatRole.Main,
     baseBranch: 'main',
@@ -66,6 +67,7 @@ const mockChats: Chat[] = [
   {
     id: 'chat-2',
     taskId: 'task-1',
+    projectId: 'project-1',
     title: 'Review',
     chatRole: ChatRole.Review,
     baseBranch: 'main',

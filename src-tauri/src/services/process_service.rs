@@ -628,7 +628,8 @@ mod tests {
             .expect("Failed to create task");
 
         let chat_request = CreateChatRequest {
-            task_id: task.id.clone(),
+            task_id: Some(task.id.clone()),
+            project_id: project.id.clone(),
             title: Some("Test Chat".to_string()),
             chat_role: None,
             executor_profile_id: None,

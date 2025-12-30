@@ -31,3 +31,9 @@ export {
 } from './CommandPalette';
 export { Sidebar, type SidebarProps, type StatusFilter } from './Sidebar';
 export { Header, type HeaderProps } from './Header';
+export { NewChatDialog, type NewChatDialogProps } from './NewChatDialog';
+export {
+  PermissionDialog,
+  type PermissionDialogProps,
+  type PermissionRequest,
+} from './PermissionDialog';

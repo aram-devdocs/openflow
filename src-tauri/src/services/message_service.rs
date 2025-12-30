@@ -246,9 +246,10 @@ mod tests {
     }
 
     /// Helper to create a test chat.
-    async fn create_test_chat(pool: &SqlitePool, task_id: &str) -> String {
+    async fn create_test_chat(pool: &SqlitePool, project_id: &str, task_id: &str) -> String {
         let request = CreateChatRequest {
-            task_id: task_id.to_string(),
+            task_id: Some(task_id.to_string()),
+            project_id: project_id.to_string(),
             title: Some("Test Chat".to_string()),
             chat_role: None,
             executor_profile_id: None,
@@ -282,7 +283,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let request = test_create_request(&chat_id);
         let message = MessageService::create(&test_db.pool, request)
@@ -305,7 +306,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let request = CreateMessageRequest {
             chat_id: chat_id.clone(),
@@ -338,7 +339,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let request = CreateMessageRequest {
             chat_id: chat_id.clone(),
@@ -362,7 +363,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let request = test_create_request(&chat_id);
         let created = MessageService::create(&test_db.pool, request)
@@ -398,7 +399,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         // Start with empty list
         let messages = MessageService::list(&test_db.pool, &chat_id)
@@ -460,9 +461,10 @@ mod tests {
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
 
         // Create two chats
-        let chat1_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat1_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
         let chat2_req = CreateChatRequest {
-            task_id: task_id.clone(),
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
             title: Some("Second Chat".to_string()),
             chat_role: None,
             executor_profile_id: None,
@@ -523,7 +525,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let request = test_create_request(&chat_id);
         let created = MessageService::create(&test_db.pool, request)
@@ -552,7 +554,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let request = test_create_request(&chat_id);
         let created = MessageService::create(&test_db.pool, request)
@@ -573,7 +575,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let request = CreateMessageRequest {
             chat_id: chat_id.clone(),
@@ -609,7 +611,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let request = test_create_request(&chat_id);
         let created = MessageService::create(&test_db.pool, request)
@@ -656,7 +658,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         // Create message
         let request = test_create_request(&chat_id);
@@ -679,7 +681,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         let roles = vec![
             MessageRole::User,
@@ -709,7 +711,7 @@ mod tests {
         let test_db = setup_test_db().await;
         let project_id = create_test_project(&test_db.pool, "Test Project").await;
         let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
-        let chat_id = create_test_chat(&test_db.pool, &task_id).await;
+        let chat_id = create_test_chat(&test_db.pool, &project_id, &task_id).await;
 
         // Create message with empty content (useful for streaming start)
         let request = CreateMessageRequest {

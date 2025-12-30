@@ -102,10 +102,14 @@ pub fn run() {
             commands::delete_task,
             // Chat commands
             commands::list_chats,
+            commands::list_standalone_chats,
+            commands::list_chats_by_project,
             commands::get_chat,
             commands::create_chat,
             commands::update_chat,
             commands::delete_chat,
+            commands::archive_chat,
+            commands::unarchive_chat,
             commands::start_workflow_step,
             // Message commands
             commands::list_messages,

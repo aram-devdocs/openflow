@@ -20,6 +20,7 @@ import {
   useExecutorProfiles,
   useKeyboardShortcuts,
   useProjects,
+  useStandaloneChats,
   useTasks,
   useUpdateTask,
 } from '@openflow/hooks';
@@ -31,6 +32,7 @@ import {
   FormField,
   Header,
   Input,
+  NewChatDialog,
   Sidebar,
   useToast,
 } from '@openflow/ui';
@@ -57,6 +59,7 @@ function DashboardPage() {
   // Dialog state
   const [isCreateProjectDialogOpen, setIsCreateProjectDialogOpen] = useState(false);
   const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+  const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectPath, setNewProjectPath] = useState('');
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -66,6 +69,7 @@ function DashboardPage() {
   // Data fetching
   const { data: projects = [], isLoading: isLoadingProjects } = useProjects();
   const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(selectedProjectId ?? '');
+  const { data: standaloneChats = [] } = useStandaloneChats(selectedProjectId ?? '');
   const { data: executorProfiles = [] } = useExecutorProfiles();
   const updateTask = useUpdateTask();
   const createProject = useCreateProject();
@@ -97,6 +101,13 @@ function DashboardPage() {
   const handleSelectTask = useCallback(
     (taskId: string) => {
       navigate({ to: '/tasks/$taskId', params: { taskId } });
+    },
+    [navigate]
+  );
+
+  const handleSelectChat = useCallback(
+    (chatId: string) => {
+      navigate({ to: '/chats/$chatId', params: { chatId } });
     },
     [navigate]
   );
@@ -209,6 +220,7 @@ function DashboardPage() {
         createChat.mutate(
           {
             taskId: task.id,
+            projectId: task.projectId,
             title: 'Step 1',
             chatRole: ChatRole.Main,
             executorProfileId: defaultExecutorProfile?.id,
@@ -271,10 +283,40 @@ function DashboardPage() {
   }, []);
 
   const handleNewChat = useCallback(() => {
-    // New Chat creates a new task with an initial chat step
-    // (same as New Task, since chats are associated with tasks)
-    handleNewTask();
-  }, [handleNewTask]);
+    setIsNewChatDialogOpen(true);
+  }, []);
+
+  const handleCloseNewChatDialog = useCallback(() => {
+    setIsNewChatDialogOpen(false);
+  }, []);
+
+  const handleCreateChatFromDialog = useCallback(
+    (data: { projectId: string; executorProfileId?: string; title?: string }) => {
+      createChat.mutate(
+        {
+          projectId: data.projectId,
+          title: data.title,
+          chatRole: ChatRole.Main,
+          executorProfileId: data.executorProfileId,
+        },
+        {
+          onSuccess: (chat) => {
+            setIsNewChatDialogOpen(false);
+            toast.success('Chat created', 'New chat session started.');
+            navigate({ to: '/chats/$chatId', params: { chatId: chat.id } });
+
+            if (import.meta.env.DEV) {
+              console.log('[Dashboard] Created standalone chat:', chat.id);
+            }
+          },
+          onError: (error) => {
+            toast.error('Failed to create chat', error.message);
+          },
+        }
+      );
+    },
+    [createChat, navigate, toast]
+  );
 
   const handleNewTerminal = useCallback(() => {
     // TODO: Open new terminal
@@ -346,11 +388,14 @@ function DashboardPage() {
         <Sidebar
           projects={projects}
           tasks={tasks}
+          chats={standaloneChats}
           {...(activeProjectId ? { selectedProjectId: activeProjectId } : {})}
           statusFilter={statusFilter}
           onSelectProject={handleSelectProject}
           onSelectTask={handleSelectTask}
+          onSelectChat={handleSelectChat}
           onNewTask={handleNewTask}
+          onNewChat={handleNewChat}
           onNewProject={handleNewProject}
           onStatusFilter={handleStatusFilter}
           onTaskStatusChange={handleTaskStatusChange}
@@ -562,6 +607,18 @@ function DashboardPage() {
           </div>
         </div>
       </Dialog>
+
+      {/* New Chat dialog */}
+      <NewChatDialog
+        isOpen={isNewChatDialogOpen}
+        onClose={handleCloseNewChatDialog}
+        projects={projects}
+        executorProfiles={executorProfiles}
+        selectedProjectId={activeProjectId}
+        isSubmitting={createChat.isPending}
+        onCreate={handleCreateChatFromDialog}
+        onNewProject={handleNewProject}
+      />
     </AppLayout>
   );
 }

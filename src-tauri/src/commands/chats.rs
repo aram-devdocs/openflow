@@ -76,6 +76,64 @@ pub async fn delete_chat(state: State<'_, AppState>, id: String) -> Result<(), S
         .map_err(|e| e.to_string())
 }
 
+/// Archive a chat by ID.
+///
+/// Sets the archived_at timestamp. Archived chats are hidden from list queries.
+#[tauri::command]
+pub async fn archive_chat(state: State<'_, AppState>, id: String) -> Result<Chat, String> {
+    let pool = state.db.lock().await;
+    ChatService::archive(&pool, &id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Unarchive a chat by ID.
+///
+/// Clears the archived_at timestamp, making the chat visible again.
+#[tauri::command]
+pub async fn unarchive_chat(state: State<'_, AppState>, id: String) -> Result<Chat, String> {
+    let pool = state.db.lock().await;
+    ChatService::unarchive(&pool, &id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// List standalone chats for a project.
+///
+/// Returns chats that are not associated with any task (task_id IS NULL).
+/// Ordered by created_at DESC (most recent first).
+///
+/// # Arguments
+/// * `project_id` - The project to list standalone chats for
+#[tauri::command]
+pub async fn list_standalone_chats(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> Result<Vec<Chat>, String> {
+    let pool = state.db.lock().await;
+    ChatService::list_standalone(&pool, &project_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// List all chats for a project.
+///
+/// Includes both task-linked chats and standalone chats.
+/// Ordered by created_at DESC.
+///
+/// # Arguments
+/// * `project_id` - The project to list all chats for
+#[tauri::command]
+pub async fn list_chats_by_project(
+    state: State<'_, AppState>,
+    project_id: String,
+) -> Result<Vec<Chat>, String> {
+    let pool = state.db.lock().await;
+    ChatService::list_by_project(&pool, &project_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Start a workflow step execution for a chat.
 ///
 /// This triggers the executor to run on the chat's initial prompt.

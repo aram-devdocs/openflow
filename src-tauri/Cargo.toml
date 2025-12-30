@@ -27,6 +27,7 @@ chrono = { version = "0.4", features = ["serde"] }
 thiserror = "2"
 portable-pty = "0.8"
 shellexpand = "3"
+regex = "1"
 
 [features]
 default = ["custom-protocol"]
