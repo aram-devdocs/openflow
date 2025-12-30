@@ -1,5 +1,8 @@
 import { cn } from '@openflow/utils';
 import type { ReactNode } from 'react';
+import { HamburgerButton } from '../atoms/HamburgerButton';
+import { SkipLink } from '../atoms/SkipLink';
+import { Drawer } from '../organisms/Drawer';
 
 export interface AppLayoutProps {
   /** Sidebar content (typically the Sidebar component) */
@@ -8,8 +11,12 @@ export interface AppLayoutProps {
   header: ReactNode;
   /** Main content area */
   children: ReactNode;
-  /** Whether the sidebar is collapsed */
+  /** Whether the sidebar is collapsed (desktop only) */
   sidebarCollapsed?: boolean;
+  /** Whether the mobile drawer is open */
+  isMobileDrawerOpen?: boolean;
+  /** Callback to open/close the mobile drawer */
+  onMobileDrawerToggle?: (open: boolean) => void;
   /** Additional CSS classes for the main container */
   className?: string;
   /** Additional CSS classes for the content area */
@@ -55,9 +62,19 @@ export function AppLayout({
   header,
   children,
   sidebarCollapsed = false,
+  isMobileDrawerOpen = false,
+  onMobileDrawerToggle,
   className,
   contentClassName,
 }: AppLayoutProps) {
+  const handleOpenDrawer = () => {
+    onMobileDrawerToggle?.(true);
+  };
+
+  const handleCloseDrawer = () => {
+    onMobileDrawerToggle?.(false);
+  };
+
   return (
     <div
       className={cn(
@@ -66,24 +83,52 @@ export function AppLayout({
         className
       )}
     >
-      {/* Sidebar */}
+      {/* Skip link - first focusable element for keyboard navigation */}
+      <SkipLink />
+
+      {/* Desktop Sidebar - hidden on mobile */}
       <div
         className={cn(
-          'shrink-0 transition-[width] duration-200 ease-in-out',
-          sidebarCollapsed ? 'w-14' : 'w-72'
+          'hidden md:block shrink-0',
+          'motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-in-out',
+          sidebarCollapsed ? 'md:w-14' : 'md:w-72'
         )}
       >
         {sidebar}
       </div>
 
+      {/* Mobile Drawer */}
+      <Drawer
+        isOpen={isMobileDrawerOpen}
+        onClose={handleCloseDrawer}
+        position="left"
+        ariaLabel="Navigation menu"
+      >
+        {sidebar}
+      </Drawer>
+
       {/* Main area: Header + Content */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Header */}
-        <div className="shrink-0">{header}</div>
+        {/* Header with hamburger button on mobile */}
+        <div className="flex h-14 shrink-0 items-center border-b border-[rgb(var(--border))] bg-[rgb(var(--background))]">
+          {/* Hamburger button - only visible on mobile */}
+          <div className="pl-2 md:hidden">
+            <HamburgerButton onClick={handleOpenDrawer} isOpen={isMobileDrawerOpen} />
+          </div>
+
+          {/* Header content */}
+          <div className="flex-1">{header}</div>
+        </div>
 
         {/* Main content */}
         <main
-          className={cn('flex-1 overflow-auto', 'bg-[rgb(var(--background))]', contentClassName)}
+          id="main-content"
+          tabIndex={-1}
+          className={cn(
+            'flex-1 overflow-auto scrollbar-thin focus:outline-none',
+            'bg-[rgb(var(--background))]',
+            contentClassName
+          )}
         >
           {children}
         </main>

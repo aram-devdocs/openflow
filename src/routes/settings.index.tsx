@@ -7,41 +7,32 @@
  * Follows the orchestration pattern: connects hooks to UI components.
  */
 
-import { useAllSettings, useKeyboardShortcuts, useSetSetting } from '@openflow/hooks';
-import { Badge, Button, Card, FormField } from '@openflow/ui';
+import { useAllSettings, useKeyboardShortcuts, useSetSetting, useTheme } from '@openflow/hooks';
+import { Badge, Button, Card, FormField, SkeletonSettings, ThemeToggle } from '@openflow/ui';
+import type { Theme } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
-import { HardDrive, Monitor, Moon, Save, Sun } from 'lucide-react';
+import { HardDrive, Moon, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/settings/')({
   component: GeneralSettingsPage,
 });
 
-// Theme options
-type Theme = 'system' | 'dark' | 'light';
-
-const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
-  { value: 'system', label: 'System', icon: <Monitor className="h-4 w-4" /> },
-  { value: 'dark', label: 'Dark', icon: <Moon className="h-4 w-4" /> },
-  { value: 'light', label: 'Light', icon: <Sun className="h-4 w-4" /> },
-];
-
 function GeneralSettingsPage() {
-  // UI state
-  const [theme, setTheme] = useState<Theme>('system');
+  // Theme from context (applies immediately)
+  const { theme, setTheme: setThemeContext } = useTheme();
+
+  // UI state for other settings
   const [autoSave, setAutoSave] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Data fetching
+  // Data fetching for non-theme settings
   const { data: settings = {}, isLoading } = useAllSettings();
   const setSetting = useSetSetting();
 
-  // Load settings into state
+  // Load non-theme settings into state
   useEffect(() => {
-    if (settings.theme) {
-      setTheme(settings.theme as Theme);
-    }
     if (settings.autoSave !== undefined) {
       setAutoSave(settings.autoSave === 'true');
     }
@@ -59,11 +50,13 @@ function GeneralSettingsPage() {
   ]);
 
   // Handlers
-  const handleThemeChange = useCallback((newTheme: Theme) => {
-    setTheme(newTheme);
-    setHasChanges(true);
-    setSaveSuccess(false);
-  }, []);
+  const handleThemeChange = useCallback(
+    (newTheme: Theme) => {
+      setThemeContext(newTheme);
+      // Theme is applied immediately via context, no need to save
+    },
+    [setThemeContext]
+  );
 
   const handleAutoSaveChange = useCallback((checked: boolean) => {
     setAutoSave(checked);
@@ -73,25 +66,18 @@ function GeneralSettingsPage() {
 
   const handleSave = useCallback(async () => {
     try {
-      await Promise.all([
-        setSetting.mutateAsync({ key: 'theme', value: theme }),
-        setSetting.mutateAsync({ key: 'autoSave', value: String(autoSave) }),
-      ]);
+      await setSetting.mutateAsync({ key: 'autoSave', value: String(autoSave) });
       setHasChanges(false);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch {
       // Error handling done by mutation
     }
-  }, [theme, autoSave, setSetting]);
+  }, [autoSave, setSetting]);
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading settings...</div>
-      </div>
-    );
+    return <SkeletonSettings sectionCount={3} fieldsPerSection={2} />;
   }
 
   return (
@@ -117,24 +103,11 @@ function GeneralSettingsPage() {
         </div>
         <div className="p-4">
           <FormField label="Theme">
-            <div className="flex gap-2">
-              {themeOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleThemeChange(option.value)}
-                  className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                    theme === option.value
-                      ? 'border-[rgb(var(--primary))] bg-[rgb(var(--primary))]/10 text-[rgb(var(--primary))]'
-                      : 'border-[rgb(var(--border))] text-[rgb(var(--muted-foreground))] hover:border-[rgb(var(--primary))]/50 hover:text-[rgb(var(--foreground))]'
-                  }`}
-                >
-                  {option.icon}
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <ThemeToggle theme={theme} onThemeChange={handleThemeChange} />
           </FormField>
+          <p className="mt-2 text-xs text-[rgb(var(--muted-foreground))]">
+            Theme changes are applied immediately and persisted automatically.
+          </p>
         </div>
       </Card>
 

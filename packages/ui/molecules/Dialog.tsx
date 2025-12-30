@@ -1,7 +1,7 @@
 import { cn } from '@openflow/utils';
 import { X } from 'lucide-react';
 import type { HTMLAttributes, ReactNode } from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 
@@ -42,10 +42,10 @@ export interface DialogFooterProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const sizeClasses: Record<NonNullable<DialogProps['size']>, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
+  sm: 'max-w-[calc(100%-2rem)] sm:max-w-sm',
+  md: 'max-w-[calc(100%-2rem)] sm:max-w-md',
+  lg: 'max-w-[calc(100%-2rem)] sm:max-w-lg',
+  xl: 'max-w-[calc(100%-2rem)] sm:max-w-xl',
   full: 'max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)]',
 };
 
@@ -93,6 +93,8 @@ export function Dialog({
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const id = useId();
+  const titleId = `${id}-title`;
 
   // Handle Escape key
   useEffect(() => {
@@ -149,7 +151,13 @@ export function Dialog({
     <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop - click is supplementary to keyboard Escape handling */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className={cn(
+          'fixed inset-0 motion-safe:transition-opacity',
+          // Solid backdrop for better accessibility
+          'bg-black/60',
+          // Enhanced opacity for users who prefer reduced transparency
+          '[@media(prefers-reduced-transparency:reduce)]:bg-black/80'
+        )}
         aria-hidden="true"
         onClick={handleBackdropClick}
         onKeyDown={(e) => e.key === 'Escape' && onClose?.()}
@@ -160,7 +168,7 @@ export function Dialog({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={title ? 'dialog-title' : undefined}
+        aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
         className={cn(
           // Base styles
@@ -168,8 +176,10 @@ export function Dialog({
           'rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]',
           'shadow-lg',
           'mx-4',
-          // Animation
-          'animate-in fade-in-0 zoom-in-95',
+          // Max height to prevent overflow on mobile - smaller on mobile
+          'max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-6rem)]',
+          // Animation - respects reduced motion
+          'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95',
           // Size
           sizeClasses[size],
           // Focus styles
@@ -179,9 +189,9 @@ export function Dialog({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-3 md:px-6">
             {title && (
-              <h2 id="dialog-title" className="text-lg font-semibold text-[rgb(var(--foreground))]">
+              <h2 id={titleId} className="text-lg font-semibold text-[rgb(var(--foreground))]">
                 {title}
               </h2>
             )}
@@ -191,7 +201,7 @@ export function Dialog({
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="h-8 w-8 p-0"
+                className="h-11 w-11 min-h-[44px] min-w-[44px] p-0"
                 aria-label="Close dialog"
               >
                 <Icon icon={X} size="sm" />
@@ -215,7 +225,7 @@ export function DialogHeader({ children, className, ...props }: DialogHeaderProp
   return (
     <div
       className={cn(
-        'flex flex-col space-y-1.5 border-b border-[rgb(var(--border))] px-4 py-3',
+        'flex flex-col space-y-1.5 border-b border-[rgb(var(--border))] px-4 py-3 md:px-6',
         className
       )}
       {...props}
@@ -231,7 +241,7 @@ export function DialogHeader({ children, className, ...props }: DialogHeaderProp
  */
 export function DialogContent({ children, className, ...props }: DialogContentProps) {
   return (
-    <div className={cn('flex-1 overflow-auto p-4', className)} {...props}>
+    <div className={cn('flex-1 overflow-auto scrollbar-thin p-4 md:p-6', className)} {...props}>
       {children}
     </div>
   );
@@ -245,7 +255,7 @@ export function DialogFooter({ children, className, ...props }: DialogFooterProp
   return (
     <div
       className={cn(
-        'flex items-center justify-end gap-2 border-t border-[rgb(var(--border))] px-4 py-3',
+        'flex items-center justify-end gap-2 border-t border-[rgb(var(--border))] px-4 py-3 md:px-6',
         className
       )}
       {...props}

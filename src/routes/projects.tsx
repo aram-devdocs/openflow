@@ -18,7 +18,17 @@ import {
   useKeyboardShortcuts,
   useProjects,
 } from '@openflow/hooks';
-import { AppLayout, Button, Dialog, FormField, Header, Input, useToast } from '@openflow/ui';
+import {
+  AppLayout,
+  Button,
+  Dialog,
+  EmptyState,
+  FormField,
+  Header,
+  Input,
+  SkeletonProjectCard,
+  useToast,
+} from '@openflow/ui';
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { open } from '@tauri-apps/plugin-dialog';
 import { ChevronRight, FolderGit2, FolderOpen, Plus, Settings } from 'lucide-react';
@@ -162,10 +172,12 @@ function ProjectsPage() {
         />
       }
     >
-      <div className="flex h-full flex-col p-6">
+      <div className="flex h-full flex-col p-4 md:p-6">
         {/* Header with create button */}
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-[rgb(var(--foreground))]">All Projects</h1>
+          <h1 className="text-xl font-semibold text-[rgb(var(--foreground))] md:text-2xl">
+            All Projects
+          </h1>
           <Button variant="primary" onClick={handleOpenCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
             New Project
@@ -174,26 +186,26 @@ function ProjectsPage() {
 
         {/* Loading state */}
         {isLoading && (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading projects...</div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonProjectCard key={`skeleton-project-card-${i}`} />
+            ))}
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && projects.length === 0 && (
-          <div className="flex flex-1 flex-col items-center justify-center p-8">
-            <FolderGit2 className="mb-4 h-16 w-16 text-[rgb(var(--muted-foreground))]" />
-            <h2 className="text-lg font-semibold text-[rgb(var(--foreground))]">No projects yet</h2>
-            <p className="mt-2 text-center text-sm text-[rgb(var(--muted-foreground))]">
-              Get started by creating your first project.
-              <br />
-              Projects link to your local git repositories.
-            </p>
-            <Button variant="primary" className="mt-4" onClick={handleOpenCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Project
-            </Button>
-          </div>
+          <EmptyState
+            icon={FolderGit2}
+            title="No projects yet"
+            description="Get started by creating your first project. Projects link to your local git repositories."
+            action={{
+              label: 'Create Project',
+              onClick: handleOpenCreateDialog,
+            }}
+            size="lg"
+            className="flex-1"
+          />
         )}
 
         {/* Projects grid */}
@@ -257,16 +269,21 @@ function ProjectsPage() {
             </div>
           </FormField>
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
+          {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseCreateDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseCreateDialog}
+              disabled={createProject.isPending}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               onClick={handleCreateProject}
               loading={createProject.isPending}
+              loadingText="Creating..."
             >
               Create Project
             </Button>

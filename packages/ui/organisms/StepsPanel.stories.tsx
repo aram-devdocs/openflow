@@ -13,8 +13,11 @@ const meta = {
   tags: ['autodocs'],
   args: {
     onStartStep: fn(),
+    onCompleteStep: fn(),
+    onSkipStep: fn(),
     onToggleStep: fn(),
     onSelectStep: fn(),
+    onViewChat: fn(),
     onAddStep: fn(),
     onAutoStartChange: fn(),
   },
@@ -153,6 +156,16 @@ export const Default: Story = {
   args: {
     steps: sampleSteps,
     activeStepIndex: 2,
+  },
+};
+
+/**
+ * Steps panel in loading state
+ */
+export const Loading: Story = {
+  args: {
+    steps: [],
+    loading: true,
   },
 };
 
@@ -320,5 +333,35 @@ export const FullFeatured: Story = {
     steps: sampleSteps,
     activeStepIndex: 2,
     autoStart: true,
+  },
+};
+
+/**
+ * Steps panel without complete and skip handlers (view only mode)
+ */
+export const ViewOnly: Story = {
+  args: {
+    steps: sampleSteps,
+    activeStepIndex: 2,
+    onStartStep: undefined,
+    onCompleteStep: undefined,
+    onSkipStep: undefined,
+    onToggleStep: undefined,
+    onAddStep: undefined,
+    onAutoStartChange: undefined,
+  },
+};
+
+/**
+ * Steps panel with view chat functionality
+ */
+export const WithViewChat: Story = {
+  args: {
+    steps: sampleSteps.map((step) => ({
+      ...step,
+      status: step.index < 3 ? WorkflowStepStatus.Completed : WorkflowStepStatus.Pending,
+      chatId: step.index < 3 ? `chat-${step.index + 1}` : undefined,
+    })),
+    activeStepIndex: 3,
   },
 };

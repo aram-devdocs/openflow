@@ -1,7 +1,7 @@
 import type { Task, TaskStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
-import { Inbox } from 'lucide-react';
-import { Icon } from '../atoms/Icon';
+import { ClipboardList } from 'lucide-react';
+import { EmptyState } from '../molecules/EmptyState';
 import { TaskCard } from './TaskCard';
 
 export interface TaskListProps {
@@ -39,11 +39,11 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 
 /** Colors for status column headers */
 const STATUS_COLORS: Record<TaskStatus, string> = {
-  todo: 'text-[rgb(var(--muted-foreground))]',
-  inprogress: 'text-blue-500',
-  inreview: 'text-purple-500',
-  done: 'text-green-500',
-  cancelled: 'text-[rgb(var(--muted-foreground))]',
+  todo: 'text-status-todo',
+  inprogress: 'text-status-inprogress',
+  inreview: 'text-status-inreview',
+  done: 'text-status-done',
+  cancelled: 'text-status-cancelled',
 };
 
 /**
@@ -65,18 +65,6 @@ function groupTasksByStatus(tasks: Task[]): Record<TaskStatus, Task[]> {
   }
 
   return groups;
-}
-
-/**
- * Empty state component for when there are no tasks.
- */
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
-      <Icon icon={Inbox} size="lg" className="mb-3 text-[rgb(var(--muted-foreground))]" />
-      <p className="text-sm text-[rgb(var(--muted-foreground))]">{message}</p>
-    </div>
-  );
 }
 
 /**
@@ -168,7 +156,12 @@ export function TaskList({
   if (tasks.length === 0) {
     return (
       <div className={className}>
-        <EmptyState message="No tasks yet. Create a new task to get started." />
+        <EmptyState
+          icon={ClipboardList}
+          title="No tasks yet"
+          description="Create a new task to get started."
+          size="md"
+        />
       </div>
     );
   }

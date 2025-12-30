@@ -19,6 +19,7 @@ import {
   useCreateTask,
   useExecutorProfiles,
   useKeyboardShortcuts,
+  useKeyboardShortcutsDialog,
   useProjects,
   useStandaloneChats,
   useTasks,
@@ -34,12 +35,14 @@ import {
   Input,
   NewChatDialog,
   Sidebar,
+  SkeletonStats,
+  SkeletonTaskCard,
   useToast,
 } from '@openflow/ui';
 import type { CommandAction, RecentItem, StatusFilter } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Archive, FolderOpen, FolderPlus, Plus, Settings } from 'lucide-react';
+import { Archive, FolderOpen, FolderPlus, Keyboard, Plus, Settings } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/')({
@@ -49,9 +52,11 @@ export const Route = createFileRoute('/')({
 function DashboardPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const keyboardShortcutsDialog = useKeyboardShortcutsDialog();
 
   // UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -101,13 +106,6 @@ function DashboardPage() {
   const handleSelectTask = useCallback(
     (taskId: string) => {
       navigate({ to: '/tasks/$taskId', params: { taskId } });
-    },
-    [navigate]
-  );
-
-  const handleSelectChat = useCallback(
-    (chatId: string) => {
-      navigate({ to: '/chats/$chatId', params: { chatId } });
     },
     [navigate]
   );
@@ -338,6 +336,7 @@ function DashboardPage() {
       id: 'new-task',
       label: 'New Task',
       icon: Plus,
+      shortcut: '⌘N',
       onSelect: handleNewTask,
     },
     {
@@ -350,7 +349,18 @@ function DashboardPage() {
       id: 'settings',
       label: 'Open Settings',
       icon: Settings,
+      shortcut: '⌘,',
       onSelect: handleSettingsClick,
+    },
+    {
+      id: 'keyboard-shortcuts',
+      label: 'Keyboard Shortcuts',
+      icon: Keyboard,
+      shortcut: '⌘/',
+      onSelect: () => {
+        handleCloseCommandPalette();
+        keyboardShortcutsDialog.open();
+      },
     },
     {
       id: 'archive',
@@ -375,15 +385,39 @@ function DashboardPage() {
 
   // Build header subtitle
   const getHeaderSubtitle = () => {
-    if (isLoadingTasks) return 'Loading tasks...';
+    if (isLoadingTasks) return undefined; // Let skeleton handle loading
     const inProgressCount = tasks.filter((t) => t.status === 'inprogress').length;
     if (inProgressCount === 0) return `${tasks.length} tasks`;
     return `${inProgressCount} task${inProgressCount === 1 ? '' : 's'} in progress`;
   };
 
+  // Close mobile drawer when navigating
+  const handleMobileDrawerToggle = useCallback((open: boolean) => {
+    setMobileDrawerOpen(open);
+  }, []);
+
+  // Close mobile drawer on navigation
+  const handleSelectTaskWithDrawerClose = useCallback(
+    (taskId: string) => {
+      setMobileDrawerOpen(false);
+      navigate({ to: '/tasks/$taskId', params: { taskId } });
+    },
+    [navigate]
+  );
+
+  const handleSelectChatWithDrawerClose = useCallback(
+    (chatId: string) => {
+      setMobileDrawerOpen(false);
+      navigate({ to: '/chats/$chatId', params: { chatId } });
+    },
+    [navigate]
+  );
+
   return (
     <AppLayout
       sidebarCollapsed={sidebarCollapsed}
+      isMobileDrawerOpen={isMobileDrawerOpen}
+      onMobileDrawerToggle={handleMobileDrawerToggle}
       sidebar={
         <Sidebar
           projects={projects}
@@ -392,8 +426,8 @@ function DashboardPage() {
           {...(activeProjectId ? { selectedProjectId: activeProjectId } : {})}
           statusFilter={statusFilter}
           onSelectProject={handleSelectProject}
-          onSelectTask={handleSelectTask}
-          onSelectChat={handleSelectChat}
+          onSelectTask={handleSelectTaskWithDrawerClose}
+          onSelectChat={handleSelectChatWithDrawerClose}
           onNewTask={handleNewTask}
           onNewChat={handleNewChat}
           onNewProject={handleNewProject}
@@ -440,14 +474,27 @@ function DashboardPage() {
 
         {/* Loading state */}
         {(isLoadingProjects || isLoadingTasks) && activeProjectId && (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading...</div>
+          <div className="flex-1 overflow-auto p-4 md:p-6">
+            {/* Stats skeleton */}
+            <SkeletonStats className="mb-6" />
+
+            {/* Recent tasks skeleton */}
+            <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+              <div className="border-b border-[rgb(var(--border))] px-4 py-3">
+                <div className="h-5 w-24 rounded bg-[rgb(var(--muted))] motion-safe:animate-pulse" />
+              </div>
+              <div className="p-4 space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonTaskCard key={`dashboard-skeleton-${i}`} />
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
         {/* Project overview when project is selected */}
         {activeProjectId && !isLoadingTasks && (
-          <div className="flex-1 overflow-auto p-6">
+          <div className="flex-1 overflow-auto p-4 md:p-6">
             {/* Quick stats */}
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard label="Total Tasks" value={tasks.length} variant="default" />
@@ -550,16 +597,21 @@ function DashboardPage() {
             </div>
           </FormField>
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
+          {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseCreateProjectDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseCreateProjectDialog}
+              disabled={createProject.isPending}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               onClick={handleCreateProject}
               loading={createProject.isPending}
+              loadingText="Creating..."
             >
               Create Project
             </Button>
@@ -595,13 +647,22 @@ function DashboardPage() {
             />
           </FormField>
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
+          {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseCreateTaskDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseCreateTaskDialog}
+              disabled={createTask.isPending}
+            >
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleCreateTask} loading={createTask.isPending}>
+            <Button
+              variant="primary"
+              onClick={handleCreateTask}
+              loading={createTask.isPending}
+              loadingText="Creating..."
+            >
               Create Task
             </Button>
           </div>
@@ -633,17 +694,17 @@ interface StatCardProps {
 
 function StatCard({ label, value, variant = 'default' }: StatCardProps) {
   const variantStyles = {
-    default: 'border-[rgb(var(--border))]',
-    info: 'border-blue-500/30 bg-blue-500/5',
-    warning: 'border-yellow-500/30 bg-yellow-500/5',
-    success: 'border-green-500/30 bg-green-500/5',
+    default: 'border-border',
+    info: 'border-info/30 bg-info/5',
+    warning: 'border-warning/30 bg-warning/5',
+    success: 'border-success/30 bg-success/5',
   };
 
   const valueStyles = {
-    default: 'text-[rgb(var(--foreground))]',
-    info: 'text-blue-400',
-    warning: 'text-yellow-400',
-    success: 'text-green-400',
+    default: 'text-foreground',
+    info: 'text-info',
+    warning: 'text-warning',
+    success: 'text-success',
   };
 
   return (
@@ -660,11 +721,11 @@ interface StatusBadgeProps {
 
 function StatusBadge({ status }: StatusBadgeProps) {
   const statusStyles: Record<TaskStatus, string> = {
-    todo: 'bg-zinc-500/20 text-zinc-400',
-    inprogress: 'bg-blue-500/20 text-blue-400',
-    inreview: 'bg-yellow-500/20 text-yellow-400',
-    done: 'bg-green-500/20 text-green-400',
-    cancelled: 'bg-red-500/20 text-red-400',
+    todo: 'bg-status-todo/20 text-status-todo',
+    inprogress: 'bg-status-inprogress/20 text-status-inprogress',
+    inreview: 'bg-status-inreview/20 text-status-inreview',
+    done: 'bg-status-done/20 text-status-done',
+    cancelled: 'bg-status-cancelled/20 text-status-cancelled',
   };
 
   const statusLabels: Record<TaskStatus, string> = {

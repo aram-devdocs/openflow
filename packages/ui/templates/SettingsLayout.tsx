@@ -74,11 +74,56 @@ export function SettingsLayout({
   className,
   contentClassName,
 }: SettingsLayoutProps) {
+  // Filter out section headers for mobile view
+  const navItems = navigation.filter((item) => !item.isSection);
+
   return (
-    <div className={cn('flex h-full', 'bg-[rgb(var(--background))]', className)}>
-      {/* Settings Navigation Sidebar */}
+    <div
+      className={cn('flex h-full flex-col md:flex-row', 'bg-[rgb(var(--background))]', className)}
+    >
+      {/* Mobile: Horizontal scrollable navigation */}
       <nav
-        className="shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto"
+        className="shrink-0 border-b border-[rgb(var(--border))] overflow-x-auto scrollbar-hidden md:hidden"
+        aria-label="Settings navigation"
+      >
+        <div className="flex gap-1 p-2">
+          {navItems.map((item) => {
+            const isActive = item.id === activeNavId;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavChange?.(item.id)}
+                className={cn(
+                  'flex shrink-0 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium',
+                  'transition-colors duration-150 whitespace-nowrap',
+                  isActive
+                    ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
+                    : 'text-[rgb(var(--muted-foreground))] hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]'
+                )}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {item.icon && (
+                  <Icon
+                    icon={item.icon}
+                    size="sm"
+                    className={cn(
+                      isActive
+                        ? 'text-[rgb(var(--accent-foreground))]'
+                        : 'text-[rgb(var(--muted-foreground))]'
+                    )}
+                  />
+                )}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Desktop: Vertical sidebar navigation */}
+      <nav
+        className="hidden shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto scrollbar-thin md:block"
         style={{ width: navWidth }}
         aria-label="Settings navigation"
       >
@@ -133,12 +178,14 @@ export function SettingsLayout({
       </nav>
 
       {/* Settings Content Area */}
-      <div className={cn('flex-1 overflow-y-auto', contentClassName)}>
-        {/* Header with title and description */}
+      <div className={cn('flex-1 overflow-y-auto scrollbar-thin', contentClassName)}>
+        {/* Header with title and description - responsive padding */}
         {(title || description) && (
-          <header className="border-b border-[rgb(var(--border))] px-8 py-6">
+          <header className="border-b border-[rgb(var(--border))] px-4 py-4 md:px-6 md:py-6">
             {title && (
-              <h1 className="text-2xl font-semibold text-[rgb(var(--foreground))]">{title}</h1>
+              <h1 className="text-xl font-semibold text-[rgb(var(--foreground))] md:text-2xl">
+                {title}
+              </h1>
             )}
             {description && (
               <p className="mt-1 text-sm text-[rgb(var(--muted-foreground))]">{description}</p>
@@ -146,8 +193,8 @@ export function SettingsLayout({
           </header>
         )}
 
-        {/* Main content */}
-        <main className="p-8">{children}</main>
+        {/* Main content - responsive padding */}
+        <div className="p-4 md:p-6">{children}</div>
       </div>
     </div>
   );

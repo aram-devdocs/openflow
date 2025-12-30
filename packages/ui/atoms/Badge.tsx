@@ -25,20 +25,22 @@ export interface BadgeProps {
   children: ReactNode;
   /** Additional CSS classes */
   className?: string;
+  /** Whether this badge represents a status (adds sr-only "Status:" prefix) */
+  isStatus?: boolean;
 }
 
 const variantClasses: Record<BadgeVariant, string> = {
-  default: 'bg-[rgb(var(--muted))] text-[rgb(var(--muted-foreground))]',
-  success: 'bg-green-500/20 text-green-400',
-  warning: 'bg-yellow-500/20 text-yellow-400',
-  error: 'bg-red-500/20 text-red-400',
-  info: 'bg-blue-500/20 text-blue-400',
-  // Task status variants using CSS variables
-  todo: 'bg-[rgb(var(--status-todo))]/20 text-[rgb(var(--status-todo))]',
-  inprogress: 'bg-[rgb(var(--status-inprogress))]/20 text-[rgb(var(--status-inprogress))]',
-  inreview: 'bg-[rgb(var(--status-inreview))]/20 text-[rgb(var(--status-inreview))]',
-  done: 'bg-[rgb(var(--status-done))]/20 text-[rgb(var(--status-done))]',
-  cancelled: 'bg-[rgb(var(--status-cancelled))]/20 text-[rgb(var(--status-cancelled))]',
+  default: 'bg-muted text-muted-foreground',
+  success: 'bg-success/20 text-success',
+  warning: 'bg-warning/20 text-warning',
+  error: 'bg-error/20 text-error',
+  info: 'bg-info/20 text-info',
+  // Task status variants using semantic status colors
+  todo: 'bg-status-todo/20 text-status-todo',
+  inprogress: 'bg-status-inprogress/20 text-status-inprogress',
+  inreview: 'bg-status-inreview/20 text-status-inreview',
+  done: 'bg-status-done/20 text-status-done',
+  cancelled: 'bg-status-cancelled/20 text-status-cancelled',
 };
 
 const sizeClasses: Record<BadgeSize, string> = {
@@ -83,15 +85,21 @@ export function taskStatusToLabel(status: TaskStatus): string {
  * <Badge variant="success">Completed</Badge>
  *
  * @example
- * <Badge variant="inprogress">In Progress</Badge>
+ * <Badge variant="inprogress" isStatus>In Progress</Badge>
  *
  * @example
  * // With task status
- * <Badge variant={taskStatusToVariant(task.status)}>
+ * <Badge variant={taskStatusToVariant(task.status)} isStatus>
  *   {taskStatusToLabel(task.status)}
  * </Badge>
  */
-export function Badge({ variant = 'default', size = 'md', className, children }: BadgeProps) {
+export function Badge({
+  variant = 'default',
+  size = 'md',
+  className,
+  children,
+  isStatus = false,
+}: BadgeProps) {
   return (
     <span
       className={cn(
@@ -104,6 +112,7 @@ export function Badge({ variant = 'default', size = 'md', className, children }:
         className
       )}
     >
+      {isStatus && <span className="sr-only">Status: </span>}
       {children}
     </span>
   );

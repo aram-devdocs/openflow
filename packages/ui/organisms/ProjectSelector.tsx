@@ -284,7 +284,7 @@ export function ProjectSelector({
           tabIndex={-1}
           onKeyDown={handleListKeyDown}
           className={cn(
-            'absolute z-50 mt-1 w-full overflow-auto',
+            'absolute z-50 mt-1 w-full overflow-auto scrollbar-thin',
             'rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--popover))]',
             'py-1 shadow-md',
             'max-h-60',

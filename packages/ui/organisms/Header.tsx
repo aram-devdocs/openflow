@@ -2,6 +2,8 @@ import { cn } from '@openflow/utils';
 import { MessageSquarePlus, Search, TerminalSquare } from 'lucide-react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
+import { ThemeToggleCompact } from '../atoms/ThemeToggleCompact';
+import type { ResolvedTheme } from '../atoms/ThemeToggleCompact';
 
 export interface HeaderProps {
   /** Callback when the search button is clicked (opens CommandPalette) */
@@ -20,6 +22,10 @@ export interface HeaderProps {
   newChatEnabled?: boolean;
   /** Whether the new terminal feature is available */
   newTerminalEnabled?: boolean;
+  /** Current resolved theme for theme toggle */
+  resolvedTheme?: ResolvedTheme;
+  /** Callback when theme toggle is clicked */
+  onThemeToggle?: () => void;
   /** Additional CSS classes */
   className?: string;
 }
@@ -33,6 +39,7 @@ export interface HeaderProps {
  * - New chat button for quick chat creation
  * - New terminal button for opening a terminal session
  * - Optional title and subtitle display
+ * - Quick theme toggle
  *
  * @example
  * <Header
@@ -41,6 +48,8 @@ export interface HeaderProps {
  *   onSearch={() => setCommandPaletteOpen(true)}
  *   onNewChat={() => createNewChat()}
  *   onNewTerminal={() => openTerminal()}
+ *   resolvedTheme="dark"
+ *   onThemeToggle={() => toggleTheme()}
  * />
  */
 export function Header({
@@ -52,14 +61,14 @@ export function Header({
   searchEnabled = true,
   newChatEnabled = true,
   newTerminalEnabled = true,
+  resolvedTheme,
+  onThemeToggle,
   className,
 }: HeaderProps) {
   return (
     <header
-      className={cn(
-        'flex h-14 items-center justify-between border-b border-[rgb(var(--border))] bg-[rgb(var(--background))] px-4',
-        className
-      )}
+      aria-label="Application header"
+      className={cn('flex h-full items-center justify-between px-4', className)}
     >
       {/* Left section: Title and subtitle */}
       <div className="flex flex-col justify-center">
@@ -103,6 +112,11 @@ export function Header({
             <Icon icon={TerminalSquare} size="sm" />
             <span className="hidden sm:inline">Terminal</span>
           </Button>
+        )}
+
+        {/* Theme toggle */}
+        {resolvedTheme && onThemeToggle && (
+          <ThemeToggleCompact resolvedTheme={resolvedTheme} onToggle={onThemeToggle} />
         )}
       </div>
     </header>

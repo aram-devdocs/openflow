@@ -12,7 +12,7 @@
  * Keeps page logic minimal (<200 lines) by delegating to UI components.
  */
 
-import type { CreateTaskRequest, TaskStatus } from '@openflow/generated';
+import type { CreateTaskRequest, TaskStatus, WorkflowTemplate } from '@openflow/generated';
 import {
   useCreateTask,
   useKeyboardShortcuts,
@@ -20,6 +20,7 @@ import {
   useProjects,
   useTasks,
   useUpdateTask,
+  useWorkflowTemplates,
 } from '@openflow/hooks';
 import {
   AppLayout,
@@ -28,9 +29,14 @@ import {
   FormField,
   Header,
   Input,
+  Label,
   Sidebar,
+  Skeleton,
+  SkeletonTaskCard,
   TaskList,
   Textarea,
+  WorkflowPreview,
+  WorkflowSelector,
 } from '@openflow/ui';
 import type { StatusFilter } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -51,12 +57,14 @@ function ProjectDetailPage() {
   const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowTemplate | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
 
   // Data fetching
   const { data: project, isLoading: isLoadingProject } = useProject(projectId);
   const { data: projects = [] } = useProjects();
   const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(projectId);
+  const { data: workflows = [], isLoading: isLoadingWorkflows } = useWorkflowTemplates(projectId);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
 
@@ -92,6 +100,7 @@ function ProjectDetailPage() {
     setCreateError(null);
     setNewTaskTitle('');
     setNewTaskDescription('');
+    setSelectedWorkflow(null);
     setIsCreateTaskDialogOpen(true);
   }, []);
 
@@ -134,6 +143,8 @@ function ProjectDetailPage() {
       projectId,
       title: newTaskTitle.trim(),
       ...(newTaskDescription.trim() ? { description: newTaskDescription.trim() } : {}),
+      // Include workflow template path if selected
+      ...(selectedWorkflow ? { workflowTemplate: selectedWorkflow.id } : {}),
     };
 
     createTask.mutate(request, {
@@ -141,13 +152,14 @@ function ProjectDetailPage() {
         setIsCreateTaskDialogOpen(false);
         setNewTaskTitle('');
         setNewTaskDescription('');
+        setSelectedWorkflow(null);
         navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
       },
       onError: (error) => {
         setCreateError(error.message);
       },
     });
-  }, [projectId, newTaskTitle, newTaskDescription, createTask, navigate]);
+  }, [projectId, newTaskTitle, newTaskDescription, selectedWorkflow, createTask, navigate]);
 
   const handleCloseCreateDialog = useCallback(() => {
     setIsCreateTaskDialogOpen(false);
@@ -172,10 +184,18 @@ function ProjectDetailPage() {
       <AppLayout
         sidebarCollapsed={true}
         sidebar={null}
-        header={<Header title="Loading..." onSearch={handleSearch} />}
+        header={
+          <div className="flex items-center gap-4 px-4 py-3 border-b border-[rgb(var(--border))]">
+            <Skeleton className="h-6 w-48" />
+          </div>
+        }
       >
-        <div className="flex h-full items-center justify-center">
-          <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading project...</div>
+        <div className="p-6">
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonTaskCard key={`skeleton-project-${i}`} />
+            ))}
+          </div>
         </div>
       </AppLayout>
     );
@@ -274,8 +294,10 @@ function ProjectDetailPage() {
         {/* Task board content */}
         <div className="flex-1 overflow-auto p-6">
           {isLoadingTasks ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading tasks...</div>
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonTaskCard key={`skeleton-tasks-${i}`} />
+              ))}
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center">
@@ -323,17 +345,45 @@ function ProjectDetailPage() {
               value={newTaskDescription}
               onChange={(e) => setNewTaskDescription(e.target.value)}
               placeholder="Describe what needs to be done..."
-              rows={4}
+              rows={3}
             />
           </FormField>
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
+          {/* Workflow template selector */}
+          <div className="space-y-2">
+            <Label>Workflow Template (optional)</Label>
+            <WorkflowSelector
+              workflows={workflows}
+              selectedWorkflow={selectedWorkflow}
+              onSelectWorkflow={setSelectedWorkflow}
+              loading={isLoadingWorkflows}
+              disabled={createTask.isPending}
+            />
+          </div>
+
+          {/* Preview selected workflow */}
+          {selectedWorkflow && (
+            <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-1))] p-4">
+              <WorkflowPreview workflow={selectedWorkflow} maxSteps={5} showDescriptions />
+            </div>
+          )}
+
+          {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseCreateDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseCreateDialog}
+              disabled={createTask.isPending}
+            >
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleCreateTask} loading={createTask.isPending}>
+            <Button
+              variant="primary"
+              onClick={handleCreateTask}
+              loading={createTask.isPending}
+              loadingText="Creating..."
+            >
               Create Task
             </Button>
           </div>

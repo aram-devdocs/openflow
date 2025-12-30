@@ -77,7 +77,14 @@ export function PermissionDialog({ request, onApprove, onDeny, className }: Perm
 
   return (
     <div
-      className={cn('fixed inset-0 z-50 flex items-center justify-center bg-black/50', className)}
+      className={cn(
+        'fixed inset-0 z-50 flex items-center justify-center',
+        // Solid backdrop for better accessibility
+        'bg-black/60',
+        // Enhanced opacity for users who prefer reduced transparency
+        '[@media(prefers-reduced-transparency:reduce)]:bg-black/80',
+        className
+      )}
     >
       <div
         className={cn(
@@ -87,8 +94,8 @@ export function PermissionDialog({ request, onApprove, onDeny, className }: Perm
       >
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-[rgb(var(--border))] px-4 py-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-yellow-500/20">
-            <Icon icon={AlertTriangle} size="md" className="text-yellow-400" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning/20">
+            <Icon icon={AlertTriangle} size="md" className="text-warning" />
           </div>
           <div className="flex-1">
             <h2 className="text-sm font-semibold text-[rgb(var(--foreground))]">

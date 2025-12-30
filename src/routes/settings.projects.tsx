@@ -13,7 +13,16 @@
 
 import type { Project, UpdateProjectRequest } from '@openflow/generated';
 import { useKeyboardShortcuts, useProject, useProjects, useUpdateProject } from '@openflow/hooks';
-import { Badge, Button, Card, Dropdown, FormField, Input, Textarea } from '@openflow/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  Dropdown,
+  FormField,
+  Input,
+  SkeletonSettings,
+  Textarea,
+} from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
 import {
   FileCode,
@@ -130,11 +139,7 @@ function ProjectSettingsPage() {
 
   // Loading states
   if (isLoadingProjects) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading projects...</div>
-      </div>
-    );
+    return <SkeletonSettings sectionCount={4} fieldsPerSection={3} />;
   }
 
   // Empty state
@@ -177,11 +182,7 @@ function ProjectSettingsPage() {
 
       {/* Loading project state */}
       {isLoadingProject && selectedProjectId && (
-        <div className="flex items-center justify-center py-8">
-          <div className="text-sm text-[rgb(var(--muted-foreground))]">
-            Loading project settings...
-          </div>
-        </div>
+        <SkeletonSettings sectionCount={4} fieldsPerSection={3} />
       )}
 
       {/* Project settings form */}
@@ -324,13 +325,14 @@ function ProjectSettingsPage() {
               variant="primary"
               onClick={handleSave}
               loading={updateProject.isPending}
+              loadingText="Saving..."
               disabled={!hasChanges}
             >
               <Save className="mr-2 h-4 w-4" />
               Save Changes
             </Button>
 
-            {saveError && <span className="text-sm text-red-400">{saveError}</span>}
+            {saveError && <span className="text-sm text-error">{saveError}</span>}
           </div>
         </div>
       )}

@@ -16,6 +16,7 @@ import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 import { Input } from '../atoms/Input';
 import { Spinner } from '../atoms/Spinner';
+import { EmptyState } from '../molecules/EmptyState';
 
 /** An action item that can be executed from the command palette */
 export interface CommandAction {
@@ -235,7 +236,8 @@ export function CommandPalette({
           'shadow-2xl',
           'mx-4',
           'max-h-[60vh]',
-          'animate-in fade-in-0 zoom-in-95 slide-in-from-top-2',
+          // Animation - respects reduced motion
+          'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:slide-in-from-top-2',
           className
         )}
       >
@@ -271,18 +273,15 @@ export function CommandPalette({
         </div>
 
         {/* Results list */}
-        <div ref={listRef} className="flex-1 overflow-y-auto p-2">
+        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-2">
           {/* Empty state when searching */}
           {query && !isSearching && searchResults.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Search className="mb-2 h-8 w-8 text-[rgb(var(--muted-foreground))]" />
-              <p className="text-sm text-[rgb(var(--muted-foreground))]">
-                No results found for "{query}"
-              </p>
-              <p className="mt-1 text-xs text-[rgb(var(--muted-foreground))]">
-                Try searching for something else
-              </p>
-            </div>
+            <EmptyState
+              icon={Search}
+              title={`No results found for "${query}"`}
+              description="Try searching for something else"
+              size="md"
+            />
           )}
 
           {/* Recent items section */}
@@ -306,7 +305,8 @@ export function CommandPalette({
                     }}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'transition-colors duration-75',
+                      'motion-safe:transition-colors motion-safe:duration-75',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
                         : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
@@ -356,7 +356,8 @@ export function CommandPalette({
                     }}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'transition-colors duration-75',
+                      'motion-safe:transition-colors motion-safe:duration-75',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
                         : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
@@ -401,7 +402,8 @@ export function CommandPalette({
                     }}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'transition-colors duration-75',
+                      'motion-safe:transition-colors motion-safe:duration-75',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
                         : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
@@ -431,13 +433,12 @@ export function CommandPalette({
 
           {/* Empty state when no query and no recent items */}
           {!query && recentItems.length === 0 && actions.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Command className="mb-2 h-8 w-8 text-[rgb(var(--muted-foreground))]" />
-              <p className="text-sm text-[rgb(var(--muted-foreground))]">Start typing to search</p>
-              <p className="mt-1 text-xs text-[rgb(var(--muted-foreground))]">
-                Find tasks, projects, and more
-              </p>
-            </div>
+            <EmptyState
+              icon={Command}
+              title="Start typing to search"
+              description="Find tasks, projects, and more"
+              size="md"
+            />
           )}
         </div>
 

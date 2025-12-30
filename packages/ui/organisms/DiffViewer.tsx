@@ -123,14 +123,14 @@ function DiffLineComponent({
   }
 
   const bgClass =
-    line.type === 'addition' ? 'bg-green-500/10' : line.type === 'deletion' ? 'bg-red-500/10' : '';
+    line.type === 'addition' ? 'bg-addition/10' : line.type === 'deletion' ? 'bg-deletion/10' : '';
 
   const textClass =
     line.type === 'addition'
-      ? 'text-green-400'
+      ? 'text-addition'
       : line.type === 'deletion'
-        ? 'text-red-400'
-        : 'text-[rgb(var(--foreground))]';
+        ? 'text-deletion'
+        : 'text-foreground';
 
   const prefix = line.type === 'addition' ? '+' : line.type === 'deletion' ? '-' : ' ';
 
@@ -293,13 +293,13 @@ export function DiffViewer({
           {totals.files} {totals.files === 1 ? 'file' : 'files'} changed
         </span>
         <div className="flex items-center gap-3 text-xs">
-          <span className="text-green-400">+{totals.additions}</span>
-          <span className="text-red-400">-{totals.deletions}</span>
+          <span className="text-addition">+{totals.additions}</span>
+          <span className="text-deletion">-{totals.deletions}</span>
         </div>
       </div>
 
       {/* File list */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[rgb(var(--border))]">
+      <div className="flex-1 overflow-y-auto scrollbar-thin divide-y divide-[rgb(var(--border))]">
         {diffs.map((diff) => {
           const expanded = isExpanded(diff.path);
           const FileIcon = getFileIcon(diff);
@@ -372,8 +372,8 @@ export function DiffViewer({
 
                 {/* Change stats */}
                 <div className="flex items-center gap-2 text-xs flex-shrink-0">
-                  {diff.additions > 0 && <span className="text-green-400">+{diff.additions}</span>}
-                  {diff.deletions > 0 && <span className="text-red-400">-{diff.deletions}</span>}
+                  {diff.additions > 0 && <span className="text-addition">+{diff.additions}</span>}
+                  {diff.deletions > 0 && <span className="text-deletion">-{diff.deletions}</span>}
                 </div>
               </button>
 

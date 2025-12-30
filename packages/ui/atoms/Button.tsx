@@ -12,6 +12,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   /** Show loading spinner and disable interactions */
   loading?: boolean;
+  /** Text to show while loading (replaces children when loading) */
+  loadingText?: string;
   /** Button content */
   children: ReactNode;
 }
@@ -27,9 +29,11 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-9 px-4 text-sm',
-  lg: 'h-10 px-6 text-base',
+  // Touch targets: 44px minimum on touch devices, normal sizing on pointer devices
+  // Small buttons scale up to 44px height on touch devices for accessibility
+  sm: 'h-8 px-3 text-xs min-h-[44px] sm:min-h-8',
+  md: 'h-9 px-4 text-sm min-h-[44px] sm:min-h-9',
+  lg: 'h-10 px-6 text-base min-h-[44px]',
 };
 
 const spinnerSizeMap: Record<ButtonSize, 'sm' | 'md' | 'lg'> = {
@@ -56,6 +60,7 @@ export function Button({
   variant = 'primary',
   size = 'md',
   loading = false,
+  loadingText,
   disabled,
   className,
   children,
@@ -67,10 +72,12 @@ export function Button({
     <button
       type="button"
       disabled={isDisabled}
+      aria-busy={loading || undefined}
+      aria-disabled={isDisabled || undefined}
       className={cn(
         // Base styles
         'inline-flex items-center justify-center gap-2 rounded-md font-medium',
-        'transition-colors duration-150',
+        'motion-safe:transition-colors motion-safe:duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
         // Variant and size
         variantClasses[variant],
@@ -82,7 +89,7 @@ export function Button({
       {...props}
     >
       {loading && <Spinner size={spinnerSizeMap[size]} />}
-      {children}
+      {loading && loadingText ? loadingText : children}
     </button>
   );
 }

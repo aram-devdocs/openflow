@@ -18,13 +18,24 @@ import type {
   UpdateExecutorProfileRequest,
 } from '@openflow/generated';
 import {
+  useConfirmDialog,
   useCreateExecutorProfile,
   useDeleteExecutorProfile,
   useExecutorProfiles,
   useKeyboardShortcuts,
   useUpdateExecutorProfile,
 } from '@openflow/hooks';
-import { Badge, Button, Card, Dialog, FormField, Input, Textarea } from '@openflow/ui';
+import {
+  Badge,
+  Button,
+  Card,
+  ConfirmDialog,
+  Dialog,
+  FormField,
+  Input,
+  SkeletonCard,
+  Textarea,
+} from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
 import { Check, Pencil, Plus, Star, Terminal, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -39,6 +50,9 @@ function ExecutorProfilesPage() {
   const [editingProfile, setEditingProfile] = useState<ExecutorProfile | null>(null);
   const [formData, setFormData] = useState<FormData>(getEmptyFormData());
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Confirm dialog
+  const { dialogProps, confirm } = useConfirmDialog();
 
   // Data fetching
   const { data: profiles = [], isLoading } = useExecutorProfiles();
@@ -164,12 +178,18 @@ function ExecutorProfilesPage() {
   }, [editingProfile, formData, updateProfile, handleCloseDialog]);
 
   const handleDelete = useCallback(
-    (profileId: string) => {
-      if (confirm('Are you sure you want to delete this executor profile?')) {
-        deleteProfile.mutate(profileId);
-      }
+    (profile: ExecutorProfile) => {
+      confirm({
+        title: 'Delete Executor Profile',
+        description: `Are you sure you want to delete "${profile.name}"? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'destructive',
+        onConfirm: async () => {
+          await deleteProfile.mutateAsync(profile.id);
+        },
+      });
     },
-    [deleteProfile]
+    [confirm, deleteProfile]
   );
 
   const handleSetDefault = useCallback(
@@ -187,10 +207,10 @@ function ExecutorProfilesPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">
-          Loading executor profiles...
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonCard key={`skeleton-profile-${i}`} showActions />
+        ))}
       </div>
     );
   }
@@ -233,7 +253,7 @@ function ExecutorProfilesPage() {
               key={profile.id}
               profile={profile}
               onEdit={() => handleOpenEditDialog(profile)}
-              onDelete={() => handleDelete(profile.id)}
+              onDelete={() => handleDelete(profile)}
               onSetDefault={() => handleSetDefault(profile)}
             />
           ))}
@@ -307,22 +327,30 @@ function ExecutorProfilesPage() {
             <span className="text-sm text-[rgb(var(--foreground))]">Set as default profile</span>
           </label>
 
-          {formError && <p className="text-sm text-red-400">{formError}</p>}
+          {formError && <p className="text-sm text-error">{formError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseDialog}
+              disabled={createProfile.isPending || updateProfile.isPending}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               onClick={editingProfile ? handleUpdate : handleCreate}
               loading={createProfile.isPending || updateProfile.isPending}
+              loadingText={editingProfile ? 'Updating...' : 'Creating...'}
             >
               {editingProfile ? 'Update Profile' : 'Create Profile'}
             </Button>
           </div>
         </div>
       </Dialog>
+
+      {/* Confirm delete dialog */}
+      <ConfirmDialog {...dialogProps} />
     </div>
   );
 }

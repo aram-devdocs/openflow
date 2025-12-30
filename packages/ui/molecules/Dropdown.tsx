@@ -206,10 +206,10 @@ export function Dropdown({
         onClick={() => (isOpen ? closeDropdown() : openDropdown())}
         onKeyDown={handleTriggerKeyDown}
         className={cn(
-          // Base styles
+          // Base styles with touch target: min-height 44px for accessibility
           'flex w-full items-center justify-between gap-2',
-          'rounded-md border px-3 py-2 text-sm',
-          'transition-colors duration-150',
+          'rounded-md border px-3 py-2 text-sm min-h-[44px]',
+          'motion-safe:transition-colors motion-safe:duration-150',
           // Default styles
           'border-[rgb(var(--border))] bg-[rgb(var(--background))]',
           'text-[rgb(var(--foreground))]',
@@ -239,7 +239,7 @@ export function Dropdown({
           icon={ChevronDown}
           size="sm"
           className={cn(
-            'shrink-0 text-[rgb(var(--muted-foreground))] transition-transform duration-200',
+            'shrink-0 text-[rgb(var(--muted-foreground))] motion-safe:transition-transform motion-safe:duration-200',
             isOpen && 'rotate-180'
           )}
         />
@@ -254,7 +254,7 @@ export function Dropdown({
           tabIndex={-1}
           onKeyDown={handleListKeyDown}
           className={cn(
-            'absolute z-50 mt-1 w-full overflow-auto',
+            'absolute z-50 mt-1 w-full overflow-auto scrollbar-thin',
             'rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--popover))]',
             'py-1 shadow-md',
             'max-h-60',
@@ -293,8 +293,9 @@ export function Dropdown({
                     }
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center gap-2 px-3 py-2 text-sm',
-                    'transition-colors duration-75',
+                    // Touch target: min-height 44px for accessibility
+                    'flex cursor-pointer items-center gap-2 px-3 py-3 text-sm min-h-[44px]',
+                    'motion-safe:transition-colors motion-safe:duration-75',
                     // Highlighted state
                     isHighlighted &&
                       !option.disabled &&

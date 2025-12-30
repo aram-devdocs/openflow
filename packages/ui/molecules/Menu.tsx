@@ -228,7 +228,8 @@ export function Menu({
         'z-50 min-w-[160px] overflow-hidden',
         'rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--popover))]',
         'py-1 shadow-md',
-        'animate-in fade-in-0 zoom-in-95 duration-150',
+        // Animation - respects reduced motion
+        'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150',
         'focus:outline-none',
         className
       )}
@@ -262,8 +263,9 @@ export function Menu({
               setHighlightedIndex(-1);
             }}
             className={cn(
-              'flex w-full items-center gap-2 px-3 py-2 text-sm',
-              'text-left transition-colors duration-75',
+              // Touch target: min-height 44px for accessibility
+              'flex w-full items-center gap-2 px-3 py-3 text-sm min-h-[44px]',
+              'text-left motion-safe:transition-colors motion-safe:duration-75',
               // Default text color
               !item.destructive && 'text-[rgb(var(--popover-foreground))]',
               // Destructive text color
