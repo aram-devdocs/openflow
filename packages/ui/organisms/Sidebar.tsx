@@ -107,7 +107,7 @@ function StatusFilterButton({
       onClick={onClick}
       className={cn(
         // Touch target: min-height 44px for accessibility
-        'flex items-center justify-between gap-2 rounded-md px-2 py-2.5 text-sm min-h-[44px]',
+        'flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm min-h-[44px]',
         'motion-safe:transition-colors motion-safe:duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
         isActive
@@ -425,7 +425,7 @@ export function Sidebar({
             aria-label={`Chats section, ${chats.length} chats`}
             className={cn(
               // Touch target: min-height 44px for accessibility
-              'mb-2 flex w-full items-center gap-2 rounded-md py-2.5 text-xs font-medium min-h-[44px]',
+              'mb-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium min-h-[44px]',
               'text-[rgb(var(--muted-foreground))]',
               'hover:text-[rgb(var(--foreground))]',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]'
@@ -454,7 +454,7 @@ export function Sidebar({
                     onClick={() => onSelectChat?.(chat.id)}
                     className={cn(
                       // Touch target: min-height 44px for accessibility
-                      'flex items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm min-h-[44px]',
+                      'flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm min-h-[44px]',
                       'motion-safe:transition-colors motion-safe:duration-150',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
                       selectedChatId === chat.id
@@ -475,7 +475,7 @@ export function Sidebar({
                 onClick={onNewChat}
                 className={cn(
                   // Touch target: min-height 44px for accessibility
-                  'flex items-center gap-2 rounded-md px-2 py-2.5 text-sm min-h-[44px]',
+                  'flex items-center gap-2 rounded-md px-3 py-2 text-sm min-h-[44px]',
                   'text-[rgb(var(--primary))]',
                   'hover:bg-[rgb(var(--muted))]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]'
@@ -496,7 +496,7 @@ export function Sidebar({
           onClick={onArchiveClick}
           className={cn(
             // Touch target: min-height 44px for accessibility
-            'flex items-center gap-2 rounded-md px-2 py-2.5 text-sm min-h-[44px]',
+            'flex items-center gap-2 rounded-md px-3 py-2 text-sm min-h-[44px]',
             'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
@@ -510,7 +510,7 @@ export function Sidebar({
           onClick={onSettingsClick}
           className={cn(
             // Touch target: min-height 44px for accessibility
-            'flex items-center gap-2 rounded-md px-2 py-2.5 text-sm min-h-[44px]',
+            'flex items-center gap-2 rounded-md px-3 py-2 text-sm min-h-[44px]',
             'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'

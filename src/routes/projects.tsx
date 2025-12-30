@@ -171,10 +171,12 @@ function ProjectsPage() {
         />
       }
     >
-      <div className="flex h-full flex-col p-6">
+      <div className="flex h-full flex-col p-4 md:p-6">
         {/* Header with create button */}
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-[rgb(var(--foreground))]">All Projects</h1>
+          <h1 className="text-xl font-semibold text-[rgb(var(--foreground))] md:text-2xl">
+            All Projects
+          </h1>
           <Button variant="primary" onClick={handleOpenCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
             New Project

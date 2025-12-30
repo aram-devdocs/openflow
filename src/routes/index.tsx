@@ -479,7 +479,7 @@ function DashboardPage() {
 
         {/* Project overview when project is selected */}
         {activeProjectId && !isLoadingTasks && (
-          <div className="flex-1 overflow-auto p-6">
+          <div className="flex-1 overflow-auto p-4 md:p-6">
             {/* Quick stats */}
             <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard label="Total Tasks" value={tasks.length} variant="default" />

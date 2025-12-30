@@ -181,7 +181,7 @@ export function SettingsLayout({
       <div className={cn('flex-1 overflow-y-auto', contentClassName)}>
         {/* Header with title and description - responsive padding */}
         {(title || description) && (
-          <header className="border-b border-[rgb(var(--border))] px-4 py-4 md:px-8 md:py-6">
+          <header className="border-b border-[rgb(var(--border))] px-4 py-4 md:px-6 md:py-6">
             {title && (
               <h1 className="text-xl font-semibold text-[rgb(var(--foreground))] md:text-2xl">
                 {title}
@@ -194,7 +194,7 @@ export function SettingsLayout({
         )}
 
         {/* Main content - responsive padding */}
-        <div className="p-4 md:p-8">{children}</div>
+        <div className="p-4 md:p-6">{children}</div>
       </div>
     </div>
   );

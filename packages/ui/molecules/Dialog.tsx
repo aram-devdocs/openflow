@@ -189,7 +189,7 @@ export function Dialog({
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-3 md:px-6">
             {title && (
               <h2 id={titleId} className="text-lg font-semibold text-[rgb(var(--foreground))]">
                 {title}
@@ -225,7 +225,7 @@ export function DialogHeader({ children, className, ...props }: DialogHeaderProp
   return (
     <div
       className={cn(
-        'flex flex-col space-y-1.5 border-b border-[rgb(var(--border))] px-4 py-3',
+        'flex flex-col space-y-1.5 border-b border-[rgb(var(--border))] px-4 py-3 md:px-6',
         className
       )}
       {...props}
@@ -241,7 +241,7 @@ export function DialogHeader({ children, className, ...props }: DialogHeaderProp
  */
 export function DialogContent({ children, className, ...props }: DialogContentProps) {
   return (
-    <div className={cn('flex-1 overflow-auto p-4', className)} {...props}>
+    <div className={cn('flex-1 overflow-auto p-4 md:p-6', className)} {...props}>
       {children}
     </div>
   );
@@ -255,7 +255,7 @@ export function DialogFooter({ children, className, ...props }: DialogFooterProp
   return (
     <div
       className={cn(
-        'flex items-center justify-end gap-2 border-t border-[rgb(var(--border))] px-4 py-3',
+        'flex items-center justify-end gap-2 border-t border-[rgb(var(--border))] px-4 py-3 md:px-6',
         className
       )}
       {...props}

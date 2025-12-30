@@ -108,7 +108,7 @@ function TasksPage() {
         </div>
 
         {/* Task content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 md:p-6">
           {isLoading ? (
             <div className="flex flex-col gap-2">
               {Array.from({ length: 5 }).map((_, i) => (

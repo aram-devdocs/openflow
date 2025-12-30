@@ -131,7 +131,7 @@ function ArchivePage() {
     >
       <div className="flex h-full flex-col">
         {/* Back button */}
-        <div className="border-b border-[rgb(var(--border))] px-6 py-3">
+        <div className="border-b border-[rgb(var(--border))] px-4 py-3 md:px-6">
           <button
             type="button"
             onClick={handleBack}
@@ -143,7 +143,7 @@ function ArchivePage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-4 md:p-6">
           {isLoading ? (
             <div className="flex h-full items-center justify-center">
               <div className="text-sm text-[rgb(var(--muted-foreground))]">

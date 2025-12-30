@@ -75,7 +75,7 @@ export function TaskCard({
       onClick={onSelect ? handleClick : undefined}
       className={cn('group', className)}
     >
-      <CardContent className="p-3">
+      <CardContent className="p-4">
         {/* Header: Title and Status */}
         <div className="flex items-start justify-between gap-2">
           <h3
@@ -118,7 +118,7 @@ export function TaskCard({
         )}
 
         {/* Footer: Metadata and indicators */}
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between">
           {/* Actions required badge */}
           {hasActionsRequired ? (
             <Badge variant="warning" size="sm">
