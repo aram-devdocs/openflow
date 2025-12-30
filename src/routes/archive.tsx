@@ -227,13 +227,14 @@ function ArchivePage() {
             ? This action cannot be undone.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={handleCancelDelete}>
+            <Button variant="ghost" onClick={handleCancelDelete} disabled={deleteTask.isPending}>
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleConfirmDelete}
               loading={deleteTask.isPending}
+              loadingText="Deleting..."
             >
               Delete
             </Button>

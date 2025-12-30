@@ -310,13 +310,18 @@ function ExecutorProfilesPage() {
           {formError && <p className="text-sm text-error">{formError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseDialog}
+              disabled={createProfile.isPending || updateProfile.isPending}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               onClick={editingProfile ? handleUpdate : handleCreate}
               loading={createProfile.isPending || updateProfile.isPending}
+              loadingText={editingProfile ? 'Updating...' : 'Creating...'}
             >
               {editingProfile ? 'Update Profile' : 'Create Profile'}
             </Button>

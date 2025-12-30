@@ -337,10 +337,19 @@ function ProjectDetailPage() {
           {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseCreateDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseCreateDialog}
+              disabled={createTask.isPending}
+            >
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleCreateTask} loading={createTask.isPending}>
+            <Button
+              variant="primary"
+              onClick={handleCreateTask}
+              loading={createTask.isPending}
+              loadingText="Creating..."
+            >
               Create Task
             </Button>
           </div>

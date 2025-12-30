@@ -230,8 +230,14 @@ export function NewChatDialog({
         <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
           Cancel
         </Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={!isValid || isSubmitting}>
-          {isSubmitting ? 'Creating...' : 'Create Chat'}
+        <Button
+          variant="primary"
+          onClick={handleSubmit}
+          disabled={!isValid || isSubmitting}
+          loading={isSubmitting}
+          loadingText="Creating..."
+        >
+          Create Chat
         </Button>
       </DialogFooter>
     </Dialog>

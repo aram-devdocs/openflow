@@ -553,13 +553,18 @@ function DashboardPage() {
           {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseCreateProjectDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseCreateProjectDialog}
+              disabled={createProject.isPending}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               onClick={handleCreateProject}
               loading={createProject.isPending}
+              loadingText="Creating..."
             >
               Create Project
             </Button>
@@ -598,10 +603,19 @@ function DashboardPage() {
           {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseCreateTaskDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseCreateTaskDialog}
+              disabled={createTask.isPending}
+            >
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleCreateTask} loading={createTask.isPending}>
+            <Button
+              variant="primary"
+              onClick={handleCreateTask}
+              loading={createTask.isPending}
+              loadingText="Creating..."
+            >
               Create Task
             </Button>
           </div>

@@ -324,6 +324,7 @@ function ProjectSettingsPage() {
               variant="primary"
               onClick={handleSave}
               loading={updateProject.isPending}
+              loadingText="Saving..."
               disabled={!hasChanges}
             >
               <Save className="mr-2 h-4 w-4" />

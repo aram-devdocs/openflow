@@ -267,13 +267,18 @@ function ProjectsPage() {
           {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseCreateDialog}>
+            <Button
+              variant="ghost"
+              onClick={handleCloseCreateDialog}
+              disabled={createProject.isPending}
+            >
               Cancel
             </Button>
             <Button
               variant="primary"
               onClick={handleCreateProject}
               loading={createProject.isPending}
+              loadingText="Creating..."
             >
               Create Project
             </Button>

@@ -12,6 +12,8 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   /** Show loading spinner and disable interactions */
   loading?: boolean;
+  /** Text to show while loading (replaces children when loading) */
+  loadingText?: string;
   /** Button content */
   children: ReactNode;
 }
@@ -56,6 +58,7 @@ export function Button({
   variant = 'primary',
   size = 'md',
   loading = false,
+  loadingText,
   disabled,
   className,
   children,
@@ -67,6 +70,8 @@ export function Button({
     <button
       type="button"
       disabled={isDisabled}
+      aria-busy={loading || undefined}
+      aria-disabled={isDisabled || undefined}
       className={cn(
         // Base styles
         'inline-flex items-center justify-center gap-2 rounded-md font-medium',
@@ -82,7 +87,7 @@ export function Button({
       {...props}
     >
       {loading && <Spinner size={spinnerSizeMap[size]} />}
-      {children}
+      {loading && loadingText ? loadingText : children}
     </button>
   );
 }

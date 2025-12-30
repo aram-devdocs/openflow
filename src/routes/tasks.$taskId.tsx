@@ -603,20 +603,28 @@ function TaskDetailPage() {
           </div>
         </DialogContent>
         <DialogFooter>
-          <Button variant="ghost" onClick={handleCloseAddStepDialog}>
+          <Button
+            variant="ghost"
+            onClick={handleCloseAddStepDialog}
+            disabled={createChat.isPending}
+          >
             Cancel
           </Button>
           <Button
             variant="secondary"
             onClick={() => handleCreateStep(false)}
-            disabled={!newStepTitle.trim()}
+            disabled={!newStepTitle.trim() || createChat.isPending}
+            loading={createChat.isPending}
+            loadingText="Adding..."
           >
             Add Step
           </Button>
           <Button
             variant="primary"
             onClick={() => handleCreateStep(true)}
-            disabled={!newStepTitle.trim()}
+            disabled={!newStepTitle.trim() || createChat.isPending}
+            loading={createChat.isPending}
+            loadingText="Adding..."
           >
             Add & Start
           </Button>
