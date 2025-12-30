@@ -1,5 +1,5 @@
 import type { ExecutionProcess } from '@openflow/generated';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './utils.js';
 
 /**
  * Process query wrappers for Tauri IPC.

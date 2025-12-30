@@ -4,7 +4,7 @@ import type {
   ExecutorProfile,
   UpdateExecutorProfileRequest,
 } from '@openflow/generated';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './utils.js';
 
 /**
  * Executor profile query wrappers for Tauri IPC.
@@ -35,7 +35,14 @@ export const executorProfileQueries = {
 
   /**
    * Run an executor (start a process) for a chat with a given prompt.
+   *
+   * @param chatId - The chat session to associate the execution with
+   * @param prompt - The prompt/instructions to send to the AI agent
+   * @param executorProfileId - Optional profile ID; uses default if not specified
    */
-  runExecutor: (chatId: string, prompt: string): Promise<ExecutionProcess> =>
-    invoke('run_executor', { chatId, prompt }),
+  runExecutor: (
+    chatId: string,
+    prompt: string,
+    executorProfileId?: string
+  ): Promise<ExecutionProcess> => invoke('run_executor', { chatId, prompt, executorProfileId }),
 };

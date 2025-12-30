@@ -10,7 +10,7 @@ import type {
   UpdateWorkflowTemplateRequest,
   WorkflowTemplate,
 } from '@openflow/generated';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './utils.js';
 
 /**
  * Workflow queries for communicating with the Rust backend.

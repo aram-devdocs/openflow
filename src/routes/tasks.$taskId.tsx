@@ -16,22 +16,38 @@
  */
 
 import type { Commit, FileDiff, TaskStatus, WorkflowStep } from '@openflow/generated';
-import { MessageRole, WorkflowStepStatus } from '@openflow/generated';
+import { ChatRole, MessageRole, WorkflowStepStatus } from '@openflow/generated';
 import {
   useChat,
+  useClaudeEvents,
+  useCreateChat,
   useCreateMessage,
   useExecutorProfiles,
   useKeyboardShortcuts,
   useMessages,
-  useStartWorkflowStep,
+  useRunExecutor,
   useTask,
   useUpdateTask,
 } from '@openflow/hooks';
-import { Button, ChatPanel, CommitList, DiffViewer, StepsPanel, TaskLayout } from '@openflow/ui';
+import {
+  Button,
+  ChatPanel,
+  ClaudeEventRenderer,
+  CommitList,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DiffViewer,
+  Input,
+  StepsPanel,
+  TaskLayout,
+  Textarea,
+  useToast,
+} from '@openflow/ui';
 import type { Tab } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { AlertCircle, GitCommitHorizontal, GitCompare, ListTodo } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { AlertCircle, GitCommitHorizontal, GitCompare, ListTodo, Terminal } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export const Route = createFileRoute('/tasks/$taskId')({
   component: TaskDetailPage,
@@ -40,6 +56,7 @@ export const Route = createFileRoute('/tasks/$taskId')({
 function TaskDetailPage() {
   const { taskId } = Route.useParams();
   const navigate = useNavigate();
+  const toast = useToast();
 
   // UI state
   const [activeTab, setActiveTab] = useState('steps');
@@ -49,13 +66,29 @@ function TaskDetailPage() {
   const [titleInputValue, setTitleInputValue] = useState('');
   const [expandedDiffFiles, setExpandedDiffFiles] = useState<Set<string>>(new Set());
   const [expandedCommits, setExpandedCommits] = useState<Set<string>>(new Set());
+  const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
+  const [showRawOutput, setShowRawOutput] = useState(false);
+
+  // Add Step dialog state
+  const [isAddStepDialogOpen, setIsAddStepDialogOpen] = useState(false);
+  const [newStepTitle, setNewStepTitle] = useState('');
+  const [newStepDescription, setNewStepDescription] = useState('');
 
   // Data fetching
   const { data: taskData, isLoading: isLoadingTask } = useTask(taskId);
   const { data: executorProfiles = [] } = useExecutorProfiles();
   const updateTask = useUpdateTask();
-  const startWorkflowStep = useStartWorkflowStep();
+  const runExecutor = useRunExecutor();
   const createMessage = useCreateMessage();
+  const createChat = useCreateChat();
+
+  // Claude events for streaming output
+  const {
+    events: claudeEvents,
+    rawOutput,
+    isRunning,
+    isComplete,
+  } = useClaudeEvents(activeProcessId);
 
   // Get the active chat based on the selected step
   const task = taskData?.task;
@@ -70,6 +103,7 @@ function TaskDetailPage() {
   }, [chats, activeStepIndex]);
 
   const activeChatId = activeChat?.id ?? '';
+  const selectedExecutorProfileId = activeChat?.executorProfileId ?? executorProfiles[0]?.id ?? '';
   useChat(activeChatId); // Keep chat data in cache
   const { data: messages = [] } = useMessages(activeChatId);
 
@@ -93,6 +127,7 @@ function TaskDetailPage() {
   ]);
 
   // Build workflow steps from chats
+  // Status is based on actual execution state, not selection
   const workflowSteps: WorkflowStep[] = useMemo(() => {
     return chats.map((chat, index) => ({
       index,
@@ -100,12 +135,15 @@ function TaskDetailPage() {
       description: chat.initialPrompt ?? '',
       status: chat.setupCompletedAt
         ? WorkflowStepStatus.Completed
-        : index === activeStepIndex
+        : isRunning && activeChat?.id === chat.id
           ? WorkflowStepStatus.InProgress
           : WorkflowStepStatus.Pending,
       chatId: chat.id,
     }));
-  }, [chats, activeStepIndex]);
+  }, [chats, activeChat?.id, isRunning]);
+
+  // Track previous completion state for auto-start detection
+  const prevIsCompleteRef = useRef(false);
 
   // Mock data for changes and commits (would come from git queries in real app)
   const diffs: FileDiff[] = useMemo(() => [], []);
@@ -185,14 +223,59 @@ function TaskDetailPage() {
   }, []);
 
   const handleStartStep = useCallback(
-    (stepIndex: number) => {
+    async (stepIndex: number) => {
       const chat = chats[stepIndex];
-      if (!chat) return;
-      startWorkflowStep.mutate(chat.id);
-      setActiveStepIndex(stepIndex);
+      if (!chat || !chat.initialPrompt) return;
+
+      try {
+        const process = await runExecutor.mutateAsync({
+          chatId: chat.id,
+          prompt: chat.initialPrompt,
+          executorProfileId: chat.executorProfileId,
+        });
+        setActiveProcessId(process.id);
+        setActiveStepIndex(stepIndex);
+        toast.success('Step started', `Running "${chat.title}"`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        toast.error('Failed to start step', message);
+      }
     },
-    [chats, startWorkflowStep]
+    [chats, runExecutor, toast]
   );
+
+  // Auto-start next step when current step completes
+  useEffect(() => {
+    // Detect transition from not-complete to complete
+    if (isComplete && !prevIsCompleteRef.current && autoStart && activeProcessId) {
+      const currentStepIndex = activeStepIndex;
+      const nextStepIndex = currentStepIndex + 1;
+      const nextChat = chats[nextStepIndex];
+
+      if (nextChat?.initialPrompt) {
+        // Mark current step as complete (would persist to DB in real app)
+        toast.success('Step completed', `Finished "${activeChat?.title}"`);
+
+        // Small delay before starting next step for UX
+        setTimeout(() => {
+          handleStartStep(nextStepIndex);
+        }, 500);
+      } else {
+        // No more steps to run
+        toast.success('Workflow completed', 'All steps have finished');
+      }
+    }
+    prevIsCompleteRef.current = isComplete;
+  }, [
+    isComplete,
+    autoStart,
+    activeProcessId,
+    activeStepIndex,
+    chats,
+    activeChat?.title,
+    handleStartStep,
+    toast,
+  ]);
 
   const handleToggleStep = useCallback((_stepIndex: number, _completed: boolean) => {
     // TODO: Implement step completion toggle
@@ -202,21 +285,105 @@ function TaskDetailPage() {
     setActiveStepIndex(stepIndex);
   }, []);
 
+  // Open the Add Step dialog with default values
   const handleAddStep = useCallback(() => {
-    // TODO: Open dialog to add new workflow step
-    console.log('Add step clicked');
+    if (!task) return;
+    // Pre-fill with task title/description as defaults
+    setNewStepTitle(`Step ${chats.length + 1}`);
+    setNewStepDescription(task.description || task.title);
+    setIsAddStepDialogOpen(true);
+  }, [task, chats.length]);
+
+  // Close the Add Step dialog
+  const handleCloseAddStepDialog = useCallback(() => {
+    setIsAddStepDialogOpen(false);
+    setNewStepTitle('');
+    setNewStepDescription('');
   }, []);
 
+  // Create the step and optionally auto-start it
+  const handleCreateStep = useCallback(
+    async (startImmediately: boolean) => {
+      if (!task || !newStepTitle.trim()) return;
+
+      const stepIndex = chats.length;
+      const defaultExecutorProfile =
+        executorProfiles.find((p) => p.isDefault) ?? executorProfiles[0];
+
+      createChat.mutate(
+        {
+          taskId: task.id,
+          title: newStepTitle.trim(),
+          chatRole: ChatRole.Main,
+          executorProfileId: defaultExecutorProfile?.id,
+          initialPrompt: newStepDescription.trim() || task.title,
+          workflowStepIndex: stepIndex,
+        },
+        {
+          onSuccess: async (newChat) => {
+            toast.success('Step added', `Created "${newChat.title}"`);
+            setActiveStepIndex(stepIndex);
+            handleCloseAddStepDialog();
+
+            // Auto-start if requested
+            if (startImmediately && newChat.initialPrompt) {
+              try {
+                const process = await runExecutor.mutateAsync({
+                  chatId: newChat.id,
+                  prompt: newChat.initialPrompt,
+                  executorProfileId: newChat.executorProfileId,
+                });
+                setActiveProcessId(process.id);
+              } catch (error) {
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                toast.error('Failed to start step', message);
+              }
+            }
+          },
+          onError: (error) => {
+            toast.error('Failed to add step', error.message);
+          },
+        }
+      );
+    },
+    [
+      task,
+      chats.length,
+      executorProfiles,
+      createChat,
+      toast,
+      newStepTitle,
+      newStepDescription,
+      handleCloseAddStepDialog,
+      runExecutor,
+    ]
+  );
+
   const handleSendMessage = useCallback(
-    (content: string) => {
+    async (content: string) => {
       if (!activeChatId) return;
+
+      // 1. Create user message in DB
       createMessage.mutate({
         chatId: activeChatId,
         role: MessageRole.User,
         content,
       });
+
+      // 2. Start executor with the message as prompt
+      try {
+        const process = await runExecutor.mutateAsync({
+          chatId: activeChatId,
+          prompt: content,
+          executorProfileId: selectedExecutorProfileId,
+        });
+        setActiveProcessId(process.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        toast.error('Failed to run executor', message);
+      }
     },
-    [activeChatId, createMessage]
+    [activeChatId, createMessage, runExecutor, selectedExecutorProfileId, toast]
   );
 
   const handleStopProcess = useCallback(() => {
@@ -313,52 +480,147 @@ function TaskDetailPage() {
     }
   };
 
-  // Compute selected executor profile ID
-  const selectedExecutorProfileId = activeChat?.executorProfileId ?? executorProfiles[0]?.id ?? '';
-
   // Determine if we have a branch for PR creation
   const hasBranch = chats.some((c) => c.branch);
 
   return (
-    <TaskLayout
-      task={task}
-      chats={chats}
-      tabs={tabs}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-      onStatusChange={handleStatusChange}
-      onTitleEditToggle={handleTitleEditToggle}
-      isTitleEditing={isTitleEditing}
-      titleInputValue={titleInputValue}
-      onTitleInputChange={handleTitleInputChange}
-      onTitleEditSubmit={handleTitleEditSubmit}
-      onTitleEditCancel={handleTitleEditCancel}
-      {...(hasBranch && { onCreatePR: handleCreatePR })}
-      stepsPanel={
-        <StepsPanel
-          steps={workflowSteps}
-          activeStepIndex={activeStepIndex}
-          onStartStep={handleStartStep}
-          onToggleStep={handleToggleStep}
-          onSelectStep={handleSelectStep}
-          onAddStep={handleAddStep}
-          autoStart={autoStart}
-          onAutoStartChange={setAutoStart}
-        />
-      }
-      mainPanel={
-        <ChatPanel
-          messages={messages}
-          onSendMessage={handleSendMessage}
-          isProcessing={startWorkflowStep.isPending}
-          onStopProcess={handleStopProcess}
-          executorProfiles={executorProfiles}
-          selectedExecutorProfileId={selectedExecutorProfileId}
-          showExecutorSelector={executorProfiles.length > 1}
-          placeholder="Type a message or instruction..."
-        />
-      }
-      tabContent={renderTabContent()}
-    />
+    <>
+      <TaskLayout
+        task={task}
+        chats={chats}
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onStatusChange={handleStatusChange}
+        onTitleEditToggle={handleTitleEditToggle}
+        isTitleEditing={isTitleEditing}
+        titleInputValue={titleInputValue}
+        onTitleInputChange={handleTitleInputChange}
+        onTitleEditSubmit={handleTitleEditSubmit}
+        onTitleEditCancel={handleTitleEditCancel}
+        {...(hasBranch && { onCreatePR: handleCreatePR })}
+        stepsPanel={
+          <StepsPanel
+            steps={workflowSteps}
+            activeStepIndex={activeStepIndex}
+            onStartStep={handleStartStep}
+            onToggleStep={handleToggleStep}
+            onSelectStep={handleSelectStep}
+            onAddStep={handleAddStep}
+            autoStart={autoStart}
+            onAutoStartChange={setAutoStart}
+          />
+        }
+        mainPanel={
+          <div className="flex h-full flex-col">
+            {/* Claude streaming output */}
+            {(claudeEvents.length > 0 || isRunning || rawOutput.length > 0) && (
+              <div className="flex-1 overflow-auto border-b border-[rgb(var(--border))]">
+                {/* Output header with view toggle */}
+                <div className="flex items-center justify-between border-b border-[rgb(var(--border))] px-4 py-2">
+                  <span className="text-xs font-medium text-[rgb(var(--muted-foreground))]">
+                    {isRunning ? 'Running...' : 'Output'}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowRawOutput(!showRawOutput)}
+                    className="h-7 gap-1.5 px-2 text-xs"
+                  >
+                    <Terminal className="h-3.5 w-3.5" />
+                    {showRawOutput ? 'Formatted' : 'Raw'}
+                  </Button>
+                </div>
+                <div className="p-4">
+                  <ClaudeEventRenderer
+                    events={claudeEvents}
+                    isStreaming={isRunning}
+                    showRawOutput={showRawOutput}
+                    rawOutput={rawOutput}
+                  />
+                </div>
+              </div>
+            )}
+            {/* Chat input panel */}
+            <ChatPanel
+              messages={messages}
+              onSendMessage={handleSendMessage}
+              isProcessing={runExecutor.isPending || isRunning}
+              onStopProcess={handleStopProcess}
+              executorProfiles={executorProfiles}
+              selectedExecutorProfileId={selectedExecutorProfileId}
+              showExecutorSelector={executorProfiles.length > 1}
+              placeholder="Type a message or instruction..."
+            />
+          </div>
+        }
+        tabContent={renderTabContent()}
+      />
+
+      {/* Add Step Dialog */}
+      <Dialog
+        isOpen={isAddStepDialogOpen}
+        onClose={handleCloseAddStepDialog}
+        title="Add New Step"
+        size="md"
+      >
+        <DialogContent>
+          <div className="space-y-4">
+            <div>
+              <label
+                htmlFor="step-title"
+                className="mb-1.5 block text-sm font-medium text-[rgb(var(--foreground))]"
+              >
+                Title
+              </label>
+              <Input
+                id="step-title"
+                value={newStepTitle}
+                onChange={(e) => setNewStepTitle(e.target.value)}
+                placeholder="Step name..."
+                autoFocus
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="step-description"
+                className="mb-1.5 block text-sm font-medium text-[rgb(var(--foreground))]"
+              >
+                Prompt / Instructions
+              </label>
+              <Textarea
+                id="step-description"
+                value={newStepDescription}
+                onChange={(e) => setNewStepDescription(e.target.value)}
+                placeholder="Describe what this step should accomplish..."
+                rows={5}
+              />
+              <p className="mt-1.5 text-xs text-[rgb(var(--muted-foreground))]">
+                This will be sent to the AI agent when the step is started.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+        <DialogFooter>
+          <Button variant="ghost" onClick={handleCloseAddStepDialog}>
+            Cancel
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => handleCreateStep(false)}
+            disabled={!newStepTitle.trim()}
+          >
+            Add Step
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => handleCreateStep(true)}
+            disabled={!newStepTitle.trim()}
+          >
+            Add & Start
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </>
   );
 }

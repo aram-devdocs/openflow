@@ -1,17 +1,24 @@
 //! Tauri commands for executor profile operations.
 //!
-//! These commands provide the IPC interface for executor profile management.
-//! Each command is a thin wrapper around ExecutorProfileService methods.
-//!
-//! The `run_executor` command is a placeholder that will be fully implemented
-//! in Phase 13 (Process Execution) when ProcessService is available.
+//! These commands provide the IPC interface for executor profile management
+//! and running AI coding CLI tools (Claude Code, Gemini CLI, etc.).
 
-use tauri::State;
+use std::collections::HashMap;
+use std::io::{BufRead, BufReader};
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use serde::{Deserialize, Serialize};
+use tauri::{Emitter, State};
 
 use crate::commands::AppState;
-use crate::services::ExecutorProfileService;
+use crate::services::process_service::{CreateProcessRequest, StartProcessRequest};
+use crate::services::{
+    ChatService, ExecutorProfileService, ProcessService, ProjectService, TaskService,
+};
 use crate::types::{
-    CreateExecutorProfileRequest, ExecutionProcess, ExecutorProfile, UpdateExecutorProfileRequest,
+    CreateExecutorProfileRequest, ExecutionProcess, ExecutorProfile, ProcessStatus,
+    ProcessStatusEvent, RunReason, UpdateExecutorProfileRequest,
 };
 
 /// List all executor profiles.
@@ -97,10 +104,48 @@ pub async fn delete_executor_profile(state: State<'_, AppState>, id: String) -> 
         .map_err(|e| e.to_string())
 }
 
+/// Claude Code stream-json event types.
+/// These match the JSON lines output from `claude --output-format stream-json`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ClaudeEvent {
+    #[serde(rename = "system")]
+    System {
+        subtype: String,
+        #[serde(flatten)]
+        data: serde_json::Value,
+    },
+    #[serde(rename = "assistant")]
+    Assistant { message: AssistantMessage },
+    #[serde(rename = "user")]
+    User { message: UserMessage },
+    #[serde(rename = "result")]
+    Result {
+        subtype: String,
+        #[serde(flatten)]
+        data: serde_json::Value,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AssistantMessage {
+    pub content: Option<String>,
+    #[serde(default)]
+    pub tool_use: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserMessage {
+    pub content: Option<String>,
+    #[serde(default)]
+    pub tool_result: Option<serde_json::Value>,
+}
+
 /// Run an executor (AI coding CLI) for a chat session.
 ///
 /// This command spawns a CLI process using the specified executor profile
-/// and sends the prompt to the AI coding agent.
+/// and sends the prompt to the AI coding agent. Output is streamed via
+/// Tauri events in JSON format.
 ///
 /// # Arguments
 /// * `chat_id` - The chat session to associate the execution with
@@ -109,19 +154,17 @@ pub async fn delete_executor_profile(state: State<'_, AppState>, id: String) -> 
 ///
 /// # Returns
 /// The ExecutionProcess record tracking this execution.
-///
-/// Note: Full implementation depends on ProcessService (Phase 13).
-/// This is a placeholder that validates inputs and creates a process record.
 #[tauri::command]
 pub async fn run_executor(
     state: State<'_, AppState>,
+    app_handle: tauri::AppHandle,
     chat_id: String,
     prompt: String,
     executor_profile_id: Option<String>,
 ) -> Result<ExecutionProcess, String> {
     let pool = state.db.lock().await;
 
-    // Get the executor profile (specified or default)
+    // 1. Get the executor profile (specified or default)
     let profile = match executor_profile_id {
         Some(id) => ExecutorProfileService::get(&pool, &id)
             .await
@@ -129,20 +172,130 @@ pub async fn run_executor(
         None => ExecutorProfileService::get_default(&pool)
             .await
             .map_err(|e| e.to_string())?
-            .ok_or_else(|| "No default executor profile configured".to_string())?,
+            .ok_or_else(|| {
+                "No default executor profile configured. Please create an executor profile first."
+                    .to_string()
+            })?,
     };
 
-    // Validate the chat exists
-    // Note: This will be handled properly once ProcessService is implemented
-    // For now, we return a placeholder error indicating this is not yet implemented
-    Err(format!(
-        "run_executor not yet implemented. Would run '{}' for chat {} with prompt: {}",
-        profile.command,
-        chat_id,
-        if prompt.len() > 50 {
-            format!("{}...", &prompt[..50])
-        } else {
-            prompt
+    // 2. Get the chat to find the task and project
+    let chat_with_messages = ChatService::get(&pool, &chat_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    let chat = chat_with_messages.chat;
+
+    // 3. Get task and project to determine working directory
+    let task_with_chats = TaskService::get(&pool, &chat.task_id)
+        .await
+        .map_err(|e| e.to_string())?;
+    let project = ProjectService::get(&pool, &task_with_chats.task.project_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // 4. Build command arguments
+    // Use --output-format stream-json for structured JSON output
+    let mut cmd_args: Vec<String> = vec![
+        "--output-format".to_string(),
+        "stream-json".to_string(),
+        "-p".to_string(),
+        prompt.clone(),
+    ];
+
+    // Add any args from the profile
+    if let Some(profile_args) = &profile.args {
+        if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(profile_args) {
+            cmd_args.extend(parsed_args);
         }
-    ))
+    }
+
+    // 5. Create process record
+    let create_req = CreateProcessRequest {
+        chat_id: chat_id.clone(),
+        executor_profile_id: Some(profile.id.clone()),
+        executor_action: format!("Run {} with prompt", profile.name),
+        run_reason: RunReason::Codingagent,
+        before_head_commit: None,
+    };
+
+    // 6. Start process with PTY
+    let start_req = StartProcessRequest {
+        command: profile.command.clone(),
+        args: cmd_args,
+        cwd: Some(PathBuf::from(&project.git_repo_path)),
+        env: HashMap::new(),
+        use_pty: true,
+        pty_cols: Some(120),
+        pty_rows: Some(40),
+    };
+
+    // Drop the pool lock before starting the process to avoid deadlock
+    drop(pool);
+
+    let pool = state.db.lock().await;
+    let process = state
+        .process_service
+        .start(&*pool, create_req, start_req)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // 7. Spawn background task to stream JSON output
+    spawn_json_output_streamer(
+        Arc::clone(&state.process_service),
+        app_handle,
+        process.id.clone(),
+    );
+
+    Ok(process)
+}
+
+/// Spawns a background task to read JSON lines from the PTY and emit Tauri events.
+fn spawn_json_output_streamer(
+    process_service: Arc<ProcessService>,
+    app_handle: tauri::AppHandle,
+    process_id: String,
+) {
+    std::thread::spawn(move || {
+        let pty_manager = process_service.pty_manager();
+
+        // Get reader from PTY
+        let reader = match pty_manager.try_clone_reader(&process_id) {
+            Ok(r) => BufReader::new(r),
+            Err(e) => {
+                eprintln!("Failed to get PTY reader for {}: {}", process_id, e);
+                return;
+            }
+        };
+
+        let event_channel = format!("claude-event-{}", process_id);
+        let raw_channel = format!("raw-output-{}", process_id);
+
+        // Read line by line (each line should be a JSON object)
+        for line in reader.lines() {
+            let line = match line {
+                Ok(l) => l,
+                Err(_) => break, // EOF or error
+            };
+
+            if line.trim().is_empty() {
+                continue;
+            }
+
+            // Try to parse as ClaudeEvent
+            if let Ok(event) = serde_json::from_str::<ClaudeEvent>(&line) {
+                let _ = app_handle.emit(&event_channel, &event);
+            } else {
+                // Fallback: emit raw line for unparsed output
+                let _ = app_handle.emit(&raw_channel, &line);
+            }
+        }
+
+        // Emit completion status
+        let status_channel = format!("process-status-{}", process_id);
+        let status_event = ProcessStatusEvent {
+            process_id: process_id.clone(),
+            status: ProcessStatus::Completed,
+            exit_code: Some(0),
+        };
+        let _ = app_handle.emit(&status_channel, &status_event);
+    });
 }

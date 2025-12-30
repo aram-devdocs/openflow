@@ -5,6 +5,7 @@
  * These are thin wrappers with no business logic.
  */
 
+export * from './utils';
 export * from './projects';
 export * from './tasks';
 export * from './chats';

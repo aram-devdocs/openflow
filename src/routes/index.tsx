@@ -11,12 +11,33 @@
  */
 
 import { SearchResultType } from '@openflow/generated';
-import type { TaskStatus } from '@openflow/generated';
-import { useKeyboardShortcuts, useProjects, useTasks, useUpdateTask } from '@openflow/hooks';
-import { AppLayout, CommandPalette, Header, Sidebar } from '@openflow/ui';
+import type { CreateProjectRequest, CreateTaskRequest, TaskStatus } from '@openflow/generated';
+import { ChatRole } from '@openflow/generated';
+import {
+  useCreateChat,
+  useCreateProject,
+  useCreateTask,
+  useExecutorProfiles,
+  useKeyboardShortcuts,
+  useProjects,
+  useTasks,
+  useUpdateTask,
+} from '@openflow/hooks';
+import {
+  AppLayout,
+  Button,
+  CommandPalette,
+  Dialog,
+  FormField,
+  Header,
+  Input,
+  Sidebar,
+  useToast,
+} from '@openflow/ui';
 import type { CommandAction, RecentItem, StatusFilter } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Archive, FolderPlus, Plus, Settings } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-dialog';
+import { Archive, FolderOpen, FolderPlus, Plus, Settings } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/')({
@@ -25,6 +46,7 @@ export const Route = createFileRoute('/')({
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const toast = useToast();
 
   // UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -32,10 +54,23 @@ function DashboardPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
+  // Dialog state
+  const [isCreateProjectDialogOpen, setIsCreateProjectDialogOpen] = useState(false);
+  const [isCreateTaskDialogOpen, setIsCreateTaskDialogOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectPath, setNewProjectPath] = useState('');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [createError, setCreateError] = useState<string | null>(null);
+
   // Data fetching
   const { data: projects = [], isLoading: isLoadingProjects } = useProjects();
   const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(selectedProjectId ?? '');
+  const { data: executorProfiles = [] } = useExecutorProfiles();
   const updateTask = useUpdateTask();
+  const createProject = useCreateProject();
+  const createTask = useCreateTask();
+  const createChat = useCreateChat();
 
   // Auto-select first project if none selected
   const activeProjectId = selectedProjectId ?? projects[0]?.id;
@@ -67,14 +102,145 @@ function DashboardPage() {
   );
 
   const handleNewTask = useCallback(() => {
-    // TODO: Open new task dialog
-    console.log('New task clicked');
+    setCreateError(null);
+    setNewTaskTitle('');
+    setNewTaskDescription('');
+    setIsCreateTaskDialogOpen(true);
   }, []);
 
   const handleNewProject = useCallback(() => {
-    // TODO: Open new project dialog
-    console.log('New project clicked');
+    setCreateError(null);
+    setNewProjectName('');
+    setNewProjectPath('');
+    setIsCreateProjectDialogOpen(true);
   }, []);
+
+  const handleBrowseFolder = useCallback(async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Git Repository',
+      });
+      if (selected && typeof selected === 'string') {
+        setNewProjectPath(selected);
+        // Try to auto-fill project name from folder name if not set
+        if (!newProjectName.trim()) {
+          const folderName = selected.split('/').pop() || '';
+          setNewProjectName(folderName);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to open folder picker:', error);
+      setCreateError('Failed to open folder picker. Please enter the path manually.');
+    }
+  }, [newProjectName]);
+
+  const handleCloseCreateProjectDialog = useCallback(() => {
+    setIsCreateProjectDialogOpen(false);
+  }, []);
+
+  const handleCloseCreateTaskDialog = useCallback(() => {
+    setIsCreateTaskDialogOpen(false);
+  }, []);
+
+  const handleCreateProject = useCallback(() => {
+    setCreateError(null);
+
+    if (!newProjectName.trim()) {
+      setCreateError('Project name is required');
+      return;
+    }
+
+    if (!newProjectPath.trim()) {
+      setCreateError('Git repository path is required');
+      return;
+    }
+
+    const request: CreateProjectRequest = {
+      name: newProjectName.trim(),
+      gitRepoPath: newProjectPath.trim(),
+    };
+
+    createProject.mutate(request, {
+      onSuccess: (project) => {
+        setIsCreateProjectDialogOpen(false);
+        setNewProjectName('');
+        setNewProjectPath('');
+        setSelectedProjectId(project.id);
+        toast.success('Project created', `"${project.name}" has been created successfully.`);
+      },
+      onError: (error) => {
+        setCreateError(error.message);
+        toast.error('Failed to create project', error.message);
+      },
+    });
+  }, [newProjectName, newProjectPath, createProject, toast]);
+
+  const handleCreateTask = useCallback(() => {
+    setCreateError(null);
+
+    if (!activeProjectId) {
+      setCreateError('Please select or create a project first');
+      return;
+    }
+
+    if (!newTaskTitle.trim()) {
+      setCreateError('Task title is required');
+      return;
+    }
+
+    const request: CreateTaskRequest = {
+      projectId: activeProjectId,
+      title: newTaskTitle.trim(),
+      description: newTaskDescription.trim() || undefined,
+    };
+
+    createTask.mutate(request, {
+      onSuccess: (task) => {
+        setIsCreateTaskDialogOpen(false);
+        setNewTaskTitle('');
+        setNewTaskDescription('');
+        toast.success('Task created', `"${task.title}" has been created.`);
+
+        // Auto-create an initial chat/step for the task
+        const defaultExecutorProfile =
+          executorProfiles.find((p) => p.isDefault) ?? executorProfiles[0];
+        createChat.mutate(
+          {
+            taskId: task.id,
+            title: 'Step 1',
+            chatRole: ChatRole.Main,
+            executorProfileId: defaultExecutorProfile?.id,
+            initialPrompt: task.description || task.title,
+            workflowStepIndex: 0,
+          },
+          {
+            onSuccess: () => {
+              navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
+            },
+            onError: () => {
+              // Still navigate even if chat creation fails
+              navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
+            },
+          }
+        );
+      },
+      onError: (error) => {
+        setCreateError(error.message);
+        toast.error('Failed to create task', error.message);
+      },
+    });
+  }, [
+    activeProjectId,
+    newTaskTitle,
+    newTaskDescription,
+    createTask,
+    createChat,
+    executorProfiles,
+    navigate,
+    toast,
+  ]);
 
   const handleStatusFilter = useCallback((status: StatusFilter) => {
     setStatusFilter(status);
@@ -105,9 +271,10 @@ function DashboardPage() {
   }, []);
 
   const handleNewChat = useCallback(() => {
-    // TODO: Open new chat dialog
-    console.log('New chat clicked');
-  }, []);
+    // New Chat creates a new task with an initial chat step
+    // (same as New Task, since chats are associated with tasks)
+    handleNewTask();
+  }, [handleNewTask]);
 
   const handleNewTerminal = useCallback(() => {
     // TODO: Open new terminal
@@ -299,6 +466,102 @@ function DashboardPage() {
         actions={commandActions}
         recentItems={recentItems}
       />
+
+      {/* Create project dialog */}
+      <Dialog
+        isOpen={isCreateProjectDialogOpen}
+        onClose={handleCloseCreateProjectDialog}
+        title="Create New Project"
+      >
+        <div className="space-y-4">
+          <FormField
+            label="Project Name"
+            required
+            {...(!newProjectName.trim() && createError ? { error: 'Required' } : {})}
+          >
+            <Input
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder="My Awesome Project"
+              autoFocus
+            />
+          </FormField>
+
+          <FormField
+            label="Git Repository Path"
+            required
+            {...(!newProjectPath.trim() && createError ? { error: 'Required' } : {})}
+          >
+            <div className="flex gap-2">
+              <Input
+                value={newProjectPath}
+                onChange={(e) => setNewProjectPath(e.target.value)}
+                placeholder="/path/to/your/repo"
+                className="flex-1"
+              />
+              <Button variant="secondary" onClick={handleBrowseFolder} type="button">
+                <FolderOpen className="h-4 w-4" />
+              </Button>
+            </div>
+          </FormField>
+
+          {createError && <p className="text-sm text-red-400">{createError}</p>}
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="ghost" onClick={handleCloseCreateProjectDialog}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreateProject}
+              loading={createProject.isPending}
+            >
+              Create Project
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {/* Create task dialog */}
+      <Dialog
+        isOpen={isCreateTaskDialogOpen}
+        onClose={handleCloseCreateTaskDialog}
+        title="Create New Task"
+      >
+        <div className="space-y-4">
+          <FormField
+            label="Task Title"
+            required
+            {...(!newTaskTitle.trim() && createError ? { error: 'Required' } : {})}
+          >
+            <Input
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder="What needs to be done?"
+              autoFocus
+            />
+          </FormField>
+
+          <FormField label="Description">
+            <Input
+              value={newTaskDescription}
+              onChange={(e) => setNewTaskDescription(e.target.value)}
+              placeholder="Optional description..."
+            />
+          </FormField>
+
+          {createError && <p className="text-sm text-red-400">{createError}</p>}
+
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="ghost" onClick={handleCloseCreateTaskDialog}>
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleCreateTask} loading={createTask.isPending}>
+              Create Task
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </AppLayout>
   );
 }

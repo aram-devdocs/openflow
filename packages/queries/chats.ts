@@ -4,7 +4,7 @@ import type {
   CreateChatRequest,
   ExecutionProcess,
 } from '@openflow/generated';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './utils.js';
 
 /**
  * Chat query wrappers for Tauri IPC.

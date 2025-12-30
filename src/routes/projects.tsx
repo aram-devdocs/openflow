@@ -18,9 +18,10 @@ import {
   useKeyboardShortcuts,
   useProjects,
 } from '@openflow/hooks';
-import { AppLayout, Button, Dialog, FormField, Header, Input } from '@openflow/ui';
+import { AppLayout, Button, Dialog, FormField, Header, Input, useToast } from '@openflow/ui';
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
-import { ChevronRight, FolderGit2, Plus, Settings } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-dialog';
+import { ChevronRight, FolderGit2, FolderOpen, Plus, Settings } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/projects')({
@@ -29,6 +30,7 @@ export const Route = createFileRoute('/projects')({
 
 function ProjectsPage() {
   const navigate = useNavigate();
+  const toast = useToast();
 
   // UI state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -85,21 +87,30 @@ function ProjectsPage() {
         setIsCreateDialogOpen(false);
         setNewProjectName('');
         setNewProjectPath('');
+        toast.success('Project created', `"${project.name}" has been created successfully.`);
         navigate({ to: '/projects/$projectId', params: { projectId: project.id } });
       },
       onError: (error) => {
         setCreateError(error.message);
+        toast.error('Failed to create project', error.message);
       },
     });
-  }, [newProjectName, newProjectPath, createProject, navigate]);
+  }, [newProjectName, newProjectPath, createProject, navigate, toast]);
 
   const handleDeleteProject = useCallback(
     (projectId: string) => {
       if (confirm('Are you sure you want to delete this project?')) {
-        deleteProject.mutate(projectId);
+        deleteProject.mutate(projectId, {
+          onSuccess: () => {
+            toast.success('Project deleted', 'The project has been deleted.');
+          },
+          onError: (error) => {
+            toast.error('Failed to delete project', error.message);
+          },
+        });
       }
     },
-    [deleteProject]
+    [deleteProject, toast]
   );
 
   const handleOpenCreateDialog = useCallback(() => {
@@ -108,6 +119,27 @@ function ProjectsPage() {
     setNewProjectPath('');
     setIsCreateDialogOpen(true);
   }, []);
+
+  const handleBrowseFolder = useCallback(async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Git Repository',
+      });
+      if (selected && typeof selected === 'string') {
+        setNewProjectPath(selected);
+        // Try to auto-fill project name from folder name if not set
+        if (!newProjectName.trim()) {
+          const folderName = selected.split('/').pop() || '';
+          setNewProjectName(folderName);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to open folder picker:', error);
+      setCreateError('Failed to open folder picker. Please enter the path manually.');
+    }
+  }, [newProjectName]);
 
   const handleCloseCreateDialog = useCallback(() => {
     setIsCreateDialogOpen(false);
@@ -212,11 +244,17 @@ function ProjectsPage() {
             required
             {...(!newProjectPath.trim() && createError ? { error: 'Required' } : {})}
           >
-            <Input
-              value={newProjectPath}
-              onChange={(e) => setNewProjectPath(e.target.value)}
-              placeholder="/path/to/your/repo"
-            />
+            <div className="flex gap-2">
+              <Input
+                value={newProjectPath}
+                onChange={(e) => setNewProjectPath(e.target.value)}
+                placeholder="/path/to/your/repo"
+                className="flex-1"
+              />
+              <Button variant="secondary" onClick={handleBrowseFolder} type="button">
+                <FolderOpen className="h-4 w-4" />
+              </Button>
+            </div>
           </FormField>
 
           {createError && <p className="text-sm text-red-400">{createError}</p>}

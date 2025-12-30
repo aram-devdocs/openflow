@@ -1,5 +1,5 @@
 import type { SearchResult, SearchResultType } from '@openflow/generated';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './utils.js';
 
 /**
  * Search query wrappers for Tauri IPC.

@@ -1,5 +1,5 @@
 import type { Commit, FileDiff } from '@openflow/generated';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './utils.js';
 
 /**
  * Git query wrappers for Tauri IPC.

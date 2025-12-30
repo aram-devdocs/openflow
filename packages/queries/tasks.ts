@@ -5,7 +5,7 @@ import type {
   TaskWithChats,
   UpdateTaskRequest,
 } from '@openflow/generated';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './utils.js';
 
 /**
  * Task query wrappers for Tauri IPC.

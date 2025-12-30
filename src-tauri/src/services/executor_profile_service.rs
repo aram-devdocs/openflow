@@ -211,6 +211,35 @@ impl ExecutorProfileService {
 
         Ok(())
     }
+
+    /// Seed the default Claude Code executor profile if no profiles exist.
+    ///
+    /// This ensures there's always at least one executor profile available
+    /// for running AI coding CLI tools.
+    pub async fn seed_default_profile(pool: &SqlitePool) -> ServiceResult<()> {
+        // Check if any profiles exist
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM executor_profiles")
+            .fetch_one(pool)
+            .await?;
+
+        if count == 0 {
+            // Create the default Claude Code profile
+            let request = CreateExecutorProfileRequest {
+                name: "Claude Code".to_string(),
+                description: Some("Anthropic's Claude Code CLI for AI-assisted coding".to_string()),
+                command: "claude".to_string(),
+                args: None,
+                env: None,
+                model: None,
+                is_default: Some(true),
+            };
+
+            Self::create(pool, request).await?;
+            println!("Created default Claude Code executor profile");
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

@@ -1,7 +1,7 @@
 //! Database pool initialization and management.
 //!
 //! This module handles creating the SQLite database file in the app data directory,
-//! running migrations, and providing a connection pool for the application.
+//! running migrations, seeding default data, and providing a connection pool for the application.
 
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::SqlitePool;
@@ -9,6 +9,8 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 use thiserror::Error;
+
+use crate::services::ExecutorProfileService;
 
 /// Errors that can occur during database initialization.
 #[derive(Debug, Error)]
@@ -21,6 +23,9 @@ pub enum DbError {
 
     #[error("Failed to run migrations: {0}")]
     Migration(#[from] sqlx::migrate::MigrateError),
+
+    #[error("Failed to seed database: {0}")]
+    Seed(#[from] crate::services::ServiceError),
 
     #[error("Failed to get app data directory")]
     NoAppDataDir,
@@ -71,6 +76,9 @@ pub async fn init_db(app_data_dir: PathBuf) -> Result<SqlitePool, DbError> {
 
     // Run migrations
     sqlx::migrate!("./migrations").run(&pool).await?;
+
+    // Seed default data
+    ExecutorProfileService::seed_default_profile(&pool).await?;
 
     Ok(pool)
 }

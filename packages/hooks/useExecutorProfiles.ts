@@ -93,16 +93,41 @@ export function useDeleteExecutorProfile(): UseMutationResult<void, Error, strin
 
 /**
  * Run an executor for a chat with a given prompt.
- * Starts a new process using the chat's configured executor profile.
+ * Starts a new process using the specified or default executor profile.
  *
  * @returns Mutation for running an executor
+ *
+ * @example
+ * ```tsx
+ * function ChatInput({ chatId }: { chatId: string }) {
+ *   const runExecutor = useRunExecutor();
+ *   const [processId, setProcessId] = useState<string | null>(null);
+ *   const { events, isComplete } = useClaudeEvents(processId);
+ *
+ *   const handleSend = async (content: string) => {
+ *     const process = await runExecutor.mutateAsync({
+ *       chatId,
+ *       prompt: content,
+ *     });
+ *     setProcessId(process.id);
+ *   };
+ *
+ *   return (
+ *     <div>
+ *       <input onSubmit={handleSend} />
+ *       {events.map(e => <EventRenderer event={e} />)}
+ *     </div>
+ *   );
+ * }
+ * ```
  */
 export function useRunExecutor(): UseMutationResult<
   ExecutionProcess,
   Error,
-  { chatId: string; prompt: string }
+  { chatId: string; prompt: string; executorProfileId?: string }
 > {
   return useMutation({
-    mutationFn: ({ chatId, prompt }) => executorProfileQueries.runExecutor(chatId, prompt),
+    mutationFn: ({ chatId, prompt, executorProfileId }) =>
+      executorProfileQueries.runExecutor(chatId, prompt, executorProfileId),
   });
 }

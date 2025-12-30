@@ -5,6 +5,23 @@
 
 use tauri::Manager;
 
+/// MCP GUI socket path - must match the plugin config
+#[cfg(feature = "mcp-gui")]
+const MCP_SOCKET_PATH: &str = "/tmp/openflow-mcp.sock";
+
+/// Clean up stale MCP socket file if it exists.
+/// This prevents "Socket address already in use" errors after crashes.
+#[cfg(feature = "mcp-gui")]
+fn cleanup_mcp_socket() {
+    if std::path::Path::new(MCP_SOCKET_PATH).exists() {
+        if let Err(e) = std::fs::remove_file(MCP_SOCKET_PATH) {
+            eprintln!("Warning: Failed to clean up MCP socket: {}", e);
+        } else {
+            println!("Cleaned up stale MCP socket");
+        }
+    }
+}
+
 pub mod commands;
 pub mod db;
 pub mod process;
@@ -24,7 +41,13 @@ use db::init_db;
 /// - MCP GUI plugin (when mcp-gui feature is enabled)
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default().plugin(tauri_plugin_shell::init());
+    // Clean up stale MCP socket before starting (prevents "address already in use" errors)
+    #[cfg(feature = "mcp-gui")]
+    cleanup_mcp_socket();
+
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init());
 
     // Add MCP GUI plugin when feature is enabled (for AI agent interaction)
     #[cfg(feature = "mcp-gui")]

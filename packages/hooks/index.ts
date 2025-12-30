@@ -15,6 +15,7 @@ export * from './useMessages';
 export * from './useProcesses';
 export * from './useProcessOutput';
 export * from './useExecutorProfiles';
+export * from './useClaudeEvents';
 export * from './useSettings';
 export * from './useKeyboardShortcuts';
 export * from './useWorkflows';

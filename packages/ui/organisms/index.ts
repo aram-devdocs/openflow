@@ -11,6 +11,15 @@ export { TaskList, type TaskListProps } from './TaskList';
 export { ProjectSelector, type ProjectSelectorProps } from './ProjectSelector';
 export { ChatMessage, type ChatMessageProps } from './ChatMessage';
 export { ChatPanel, type ChatPanelProps } from './ChatPanel';
+export {
+  ClaudeEventRenderer,
+  type ClaudeEventRendererProps,
+  type ClaudeEvent,
+  type ClaudeSystemEvent,
+  type ClaudeAssistantEvent,
+  type ClaudeUserEvent,
+  type ClaudeResultEvent,
+} from './ClaudeEventRenderer';
 export { StepsPanel, type StepsPanelProps } from './StepsPanel';
 export { DiffViewer, type DiffViewerProps } from './DiffViewer';
 export { CommitList, type CommitListProps } from './CommitList';

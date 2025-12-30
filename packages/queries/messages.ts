@@ -1,5 +1,5 @@
 import type { CreateMessageRequest, Message } from '@openflow/generated';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from './utils.js';
 
 /**
  * Message query wrappers for Tauri IPC.

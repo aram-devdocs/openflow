@@ -5,6 +5,7 @@
  */
 
 import { type ChildProcess, spawn } from 'node:child_process';
+import { existsSync, unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type {
   AppState,
@@ -28,6 +29,9 @@ const READY_POLL_INTERVAL = 500;
 
 /** Timeout for graceful shutdown before using SIGKILL */
 const GRACEFUL_SHUTDOWN_TIMEOUT = 5000;
+
+/** MCP GUI socket path */
+const MCP_SOCKET_PATH = '/tmp/openflow-mcp.sock';
 
 /**
  * Manages the Tauri application lifecycle including starting, stopping,
@@ -65,6 +69,11 @@ export class AppManager {
         devServerUrl: this.devServerUrl,
         error: `App is already ${this.state}`,
       };
+    }
+
+    // Clean up stale socket from previous crash/session
+    if (enableMcpGui) {
+      this.cleanupSocket();
     }
 
     // Reset state
@@ -208,6 +217,9 @@ export class AppManager {
       this.devServerUrl = null;
       this.process = null;
 
+      // Clean up socket on stop
+      this.cleanupSocket();
+
       return {
         success: true,
         error: null,
@@ -303,6 +315,23 @@ export class AppManager {
       message: message.trim(),
     };
     this.logBuffer.push(entry);
+  }
+
+  /**
+   * Clean up stale MCP GUI socket file.
+   * This prevents "Socket address already in use" errors on restart.
+   */
+  private cleanupSocket(): void {
+    try {
+      if (existsSync(MCP_SOCKET_PATH)) {
+        unlinkSync(MCP_SOCKET_PATH);
+        this.addLogEntry(`Cleaned up stale socket: ${MCP_SOCKET_PATH}`, 'info');
+      }
+    } catch (err) {
+      // Log but don't fail if we can't clean up
+      const message = err instanceof Error ? err.message : String(err);
+      this.addLogEntry(`Warning: Could not clean up socket: ${message}`, 'warn');
+    }
   }
 
   /**

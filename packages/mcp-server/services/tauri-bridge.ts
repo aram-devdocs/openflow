@@ -183,6 +183,14 @@ export class TauriBridge extends EventEmitter {
   > = new Map();
   private requestId = 0;
 
+  // Request serialization: ensure only one request is in flight at a time
+  // This prevents response mismatching since the protocol doesn't include request IDs
+  private requestQueue: Array<() => void> = [];
+  private isProcessingRequest = false;
+
+  // Cached device pixel ratio for Retina display scaling
+  private cachedDevicePixelRatio: number | null = null;
+
   constructor(socketPath: string = DEFAULT_SOCKET_PATH) {
     super();
     this.socketPath = socketPath;
@@ -280,6 +288,11 @@ export class TauriBridge extends EventEmitter {
       pending.reject(new Error('Disconnected'));
     }
     this.pendingRequests.clear();
+
+    // Clear request queue
+    this.requestQueue = [];
+    this.isProcessingRequest = false;
+
     this.emit('disconnected');
   }
 
@@ -297,6 +310,10 @@ export class TauriBridge extends EventEmitter {
       pending.reject(new Error('Connection lost'));
     }
     this.pendingRequests.clear();
+
+    // Clear request queue
+    this.requestQueue = [];
+    this.isProcessingRequest = false;
 
     if (wasConnected) {
       this.emit('disconnected');
@@ -368,7 +385,20 @@ export class TauriBridge extends EventEmitter {
   }
 
   /**
+   * Process the next request in the queue.
+   */
+  private processNextRequest(): void {
+    if (this.requestQueue.length > 0 && !this.isProcessingRequest) {
+      const next = this.requestQueue.shift();
+      if (next) {
+        next();
+      }
+    }
+  }
+
+  /**
    * Send a command to the Tauri plugin and wait for response.
+   * Requests are serialized to prevent response mismatching (FIFO protocol).
    */
   async sendCommand<T = unknown>(
     command: string,
@@ -380,36 +410,59 @@ export class TauriBridge extends EventEmitter {
       await this.connect();
     }
 
-    return new Promise<T>((resolve, reject) => {
-      const id = ++this.requestId;
+    // Serialize requests: wait if another request is in flight
+    return new Promise<T>((outerResolve, outerReject) => {
+      const executeRequest = () => {
+        this.isProcessingRequest = true;
 
-      const timeoutId = setTimeout(() => {
-        this.pendingRequests.delete(id);
-        reject(new Error(`Command '${command}' timed out after ${timeout}ms`));
-      }, timeout);
+        const id = ++this.requestId;
 
-      this.pendingRequests.set(id, {
-        resolve: (response: SocketResponse) => {
-          if (response.success) {
-            resolve(response.data as T);
-          } else {
-            reject(new Error(response.error || `Command '${command}' failed`));
-          }
-        },
-        reject,
-        timeoutId,
-      });
+        const cleanup = () => {
+          this.isProcessingRequest = false;
+          this.processNextRequest();
+        };
 
-      const request: SocketRequest = { command, payload };
-      const message = `${JSON.stringify(request)}\n`;
-
-      this.socket?.write(message, (err) => {
-        if (err) {
-          clearTimeout(timeoutId);
+        const timeoutId = setTimeout(() => {
           this.pendingRequests.delete(id);
-          reject(new Error(`Failed to send command: ${err.message}`));
-        }
-      });
+          cleanup();
+          outerReject(new Error(`Command '${command}' timed out after ${timeout}ms`));
+        }, timeout);
+
+        this.pendingRequests.set(id, {
+          resolve: (response: SocketResponse) => {
+            cleanup();
+            if (response.success) {
+              outerResolve(response.data as T);
+            } else {
+              outerReject(new Error(response.error || `Command '${command}' failed`));
+            }
+          },
+          reject: (err: Error) => {
+            cleanup();
+            outerReject(err);
+          },
+          timeoutId,
+        });
+
+        const request: SocketRequest = { command, payload };
+        const message = `${JSON.stringify(request)}\n`;
+
+        this.socket?.write(message, (err) => {
+          if (err) {
+            clearTimeout(timeoutId);
+            this.pendingRequests.delete(id);
+            cleanup();
+            outerReject(new Error(`Failed to send command: ${err.message}`));
+          }
+        });
+      };
+
+      // Queue the request if another is in flight
+      if (this.isProcessingRequest) {
+        this.requestQueue.push(executeRequest);
+      } else {
+        executeRequest();
+      }
     });
   }
 
@@ -503,10 +556,53 @@ export class TauriBridge extends EventEmitter {
   // --------------------------------------------------------------------------
 
   /**
-   * Click at specific coordinates.
+   * Get the device pixel ratio for Retina display scaling.
+   * Cached after first retrieval to avoid repeated JS execution.
    */
-  async click(x: number, y: number, button: 'left' | 'right' | 'middle' = 'left'): Promise<void> {
-    await this.mouseMove({ x, y, click: true, button });
+  async getDevicePixelRatio(windowLabel = 'main'): Promise<number> {
+    if (this.cachedDevicePixelRatio !== null) {
+      return this.cachedDevicePixelRatio;
+    }
+
+    try {
+      const result = await this.evaluate<number>('window.devicePixelRatio', windowLabel, 2000);
+      this.cachedDevicePixelRatio = typeof result === 'number' && result > 0 ? result : 1;
+    } catch {
+      // Default to 1 if we can't get the ratio
+      this.cachedDevicePixelRatio = 1;
+    }
+
+    return this.cachedDevicePixelRatio;
+  }
+
+  /**
+   * Clear the cached device pixel ratio.
+   * Call this if the window moves to a different display.
+   */
+  clearDevicePixelRatioCache(): void {
+    this.cachedDevicePixelRatio = null;
+  }
+
+  /**
+   * Click at specific coordinates.
+   * Coordinates are automatically scaled for Retina displays.
+   */
+  async click(
+    x: number,
+    y: number,
+    button: 'left' | 'right' | 'middle' = 'left',
+    scaleForRetina = true
+  ): Promise<void> {
+    let scaledX = x;
+    let scaledY = y;
+
+    if (scaleForRetina) {
+      const dpr = await this.getDevicePixelRatio();
+      scaledX = Math.round(x * dpr);
+      scaledY = Math.round(y * dpr);
+    }
+
+    await this.mouseMove({ x: scaledX, y: scaledY, click: true, button });
   }
 
   /**
@@ -518,9 +614,10 @@ export class TauriBridge extends EventEmitter {
       selector_type: 'css',
       selector_value: selector,
       should_click: true,
+      raw_coordinates: true, // Get raw coordinates, we'll scale them ourselves
     });
 
-    // Click in the center of the element
+    // Click in the center of the element (scaling is handled in click())
     await this.click(position.x + position.width / 2, position.y + position.height / 2);
   }
 
