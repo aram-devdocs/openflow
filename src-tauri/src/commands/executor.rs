@@ -3,9 +3,7 @@
 //! These commands provide the IPC interface for executor profile management
 //! and running AI coding CLI tools (Claude Code, Gemini CLI, etc.).
 
-use std::collections::HashMap;
 use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
 use std::sync::{Arc, LazyLock};
 
 use regex::Regex;
@@ -13,11 +11,11 @@ use serde::{Deserialize, Serialize};
 use tauri::{Emitter, State};
 
 use crate::commands::AppState;
-use crate::services::process_service::{CreateProcessRequest, StartProcessRequest};
-use crate::services::{ChatService, ExecutorProfileService, ProcessService, ProjectService};
+use crate::services::executor_service::RunExecutorRequest;
+use crate::services::{ExecutorProfileService, ExecutorService, ProcessService};
 use crate::types::{
     CreateExecutorProfileRequest, ExecutionProcess, ExecutorProfile, ProcessStatus,
-    ProcessStatusEvent, RunReason, UpdateExecutorProfileRequest,
+    ProcessStatusEvent, UpdateExecutorProfileRequest,
 };
 
 /// List all executor profiles.
@@ -172,130 +170,30 @@ pub async fn run_executor(
     prompt: String,
     executor_profile_id: Option<String>,
 ) -> Result<ExecutionProcess, String> {
+    // Prepare the executor context (validates inputs, resolves profile, builds args)
     let pool = state.db.lock().await;
+    let context = ExecutorService::prepare(
+        &pool,
+        RunExecutorRequest {
+            chat_id,
+            prompt,
+            executor_profile_id,
+        },
+    )
+    .await
+    .map_err(|e| e.to_string())?;
 
-    // 1. Get the executor profile (specified or default)
-    let profile = match executor_profile_id {
-        Some(id) => ExecutorProfileService::get(&pool, &id)
-            .await
-            .map_err(|e| e.to_string())?,
-        None => ExecutorProfileService::get_default(&pool)
-            .await
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| {
-                "No default executor profile configured. Please create an executor profile first."
-                    .to_string()
-            })?,
-    };
-
-    // 2. Get the chat to find the project
-    let chat_with_messages = ChatService::get(&pool, &chat_id)
-        .await
-        .map_err(|e| e.to_string())?;
-    let chat = chat_with_messages.chat;
-
-    #[cfg(debug_assertions)]
-    {
-        let is_standalone = chat.task_id.is_none();
-        println!(
-            "[run_executor] Chat: id={}, project_id={}, task_id={:?}, is_standalone={}",
-            chat.id, chat.project_id, chat.task_id, is_standalone
-        );
-    }
-
-    // 3. Get project directly from chat.project_id (works for both standalone and task-linked chats)
-    let project = ProjectService::get(&pool, &chat.project_id)
+    // Start the process
+    let process = ExecutorService::start(&pool, &state.process_service, context)
         .await
         .map_err(|e| e.to_string())?;
 
-    #[cfg(debug_assertions)]
-    println!(
-        "[run_executor] Project: id={}, name={}, path={}",
-        project.id, project.name, project.git_repo_path
-    );
-
-    // 4. Build command arguments
-    // Use --output-format stream-json for structured JSON output
-    // Use -p flag (print mode) for non-interactive execution with clean JSON output
-    // --verbose is required when using stream-json with -p
-    // --dangerously-skip-permissions auto-approves tool use (no interactive prompts in -p mode)
-    // Use --resume to continue existing session (if session ID exists)
-    let mut cmd_args: Vec<String> = if let Some(session_id) = &chat.claude_session_id {
-        // Resume existing Claude Code session
-        vec![
-            "--output-format".to_string(),
-            "stream-json".to_string(),
-            "--verbose".to_string(),
-            "--dangerously-skip-permissions".to_string(),
-            "--resume".to_string(),
-            session_id.clone(),
-            "-p".to_string(),
-            prompt.clone(),
-        ]
-    } else {
-        // Start new session
-        vec![
-            "--output-format".to_string(),
-            "stream-json".to_string(),
-            "--verbose".to_string(),
-            "--dangerously-skip-permissions".to_string(),
-            "-p".to_string(),
-            prompt.clone(),
-        ]
-    };
-
-    // Add any args from the profile
-    if let Some(profile_args) = &profile.args {
-        if let Ok(parsed_args) = serde_json::from_str::<Vec<String>>(profile_args) {
-            cmd_args.extend(parsed_args);
-        }
-    }
-
-    // 5. Create process record
-    let create_req = CreateProcessRequest {
-        chat_id: chat_id.clone(),
-        executor_profile_id: Some(profile.id.clone()),
-        executor_action: format!("Run {} with prompt", profile.name),
-        run_reason: RunReason::Codingagent,
-        before_head_commit: None,
-    };
-
-    // 6. Build environment variables to disable ANSI colors
-    let mut env = HashMap::new();
-    env.insert("NO_COLOR".to_string(), "1".to_string());
-    env.insert("FORCE_COLOR".to_string(), "0".to_string());
-    env.insert("TERM".to_string(), "dumb".to_string());
-
-    // 7. Start process with PTY for output streaming
-    // Using -p flag ensures non-interactive mode with clean JSON output
-    let start_req = StartProcessRequest {
-        command: profile.command.clone(),
-        args: cmd_args,
-        cwd: Some(PathBuf::from(&project.git_repo_path)),
-        env,
-        use_pty: true,
-        pty_cols: Some(120),
-        pty_rows: Some(40),
-    };
-
-    // Drop the pool lock before starting the process to avoid deadlock
-    drop(pool);
-
-    let pool = state.db.lock().await;
-    let process = state
-        .process_service
-        .start(&pool, create_req, start_req)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    // 8. Spawn background task to stream JSON output
+    // Spawn background task to stream JSON output
     spawn_json_output_streamer(
         Arc::clone(&state.process_service),
         app_handle,
         process.id.clone(),
     );
-
-    // Note: With -p flag, prompt is passed as command argument, no stdin needed
 
     Ok(process)
 }
@@ -316,7 +214,13 @@ fn spawn_json_output_streamer(
     process_id: String,
 ) {
     std::thread::spawn(move || {
-        let pty_manager = process_service.pty_manager();
+        let pty_manager = match process_service.pty_manager() {
+            Ok(pm) => pm,
+            Err(e) => {
+                eprintln!("Failed to get PTY manager for {}: {}", process_id, e);
+                return;
+            }
+        };
 
         // Get reader from PTY
         let reader = match pty_manager.try_clone_reader(&process_id) {

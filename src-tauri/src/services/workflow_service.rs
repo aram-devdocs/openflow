@@ -173,41 +173,47 @@ impl WorkflowService {
     /// Get built-in workflow templates.
     ///
     /// Returns the default workflow templates: Feature, Bug Fix, and Refactor.
-    pub fn get_builtin_templates() -> Vec<WorkflowTemplate> {
+    pub fn get_builtin_templates() -> ServiceResult<Vec<WorkflowTemplate>> {
         let now = Utc::now().to_rfc3339();
-        vec![
-            Self::create_feature_template(&now),
-            Self::create_bugfix_template(&now),
-            Self::create_refactor_template(&now),
-        ]
+        Ok(vec![
+            Self::create_feature_template(&now)?,
+            Self::create_bugfix_template(&now)?,
+            Self::create_refactor_template(&now)?,
+        ])
     }
 
     /// Get a built-in template by ID.
-    pub fn get_builtin_template(id: &str) -> Option<WorkflowTemplate> {
-        Self::get_builtin_templates()
+    pub fn get_builtin_template(id: &str) -> ServiceResult<Option<WorkflowTemplate>> {
+        Ok(Self::get_builtin_templates()?
             .into_iter()
-            .find(|t| t.id == id)
+            .find(|t| t.id == id))
     }
 
     /// Substitute workflow variables in content using a HashMap.
     ///
     /// Variables are in format: {@variable_name}
     /// This method is provided for simple use cases with arbitrary variables.
-    pub fn substitute_variables(content: &str, vars: &HashMap<String, String>) -> String {
+    pub fn substitute_variables(
+        content: &str,
+        vars: &HashMap<String, String>,
+    ) -> ServiceResult<String> {
         let mut result = content.to_string();
         for (key, value) in vars {
             let pattern = format!("{{@{}}}", key);
             result = result.replace(&pattern, value);
         }
-        result
+        Ok(result)
     }
 
     /// Substitute workflow variables in content using the WorkflowContext.
     ///
     /// Uses the WorkflowContext::substitute method for consistent variable substitution.
     /// This is the preferred method when using standard workflow variables.
-    pub fn substitute_with_context(content: &str, context: &WorkflowContext) -> String {
-        context.substitute(content)
+    pub fn substitute_with_context(
+        content: &str,
+        context: &WorkflowContext,
+    ) -> ServiceResult<String> {
+        Ok(context.substitute(content))
     }
 
     /// Extract the title from markdown content (first # heading).
@@ -252,7 +258,7 @@ impl WorkflowService {
     }
 
     /// Create the Feature workflow template.
-    fn create_feature_template(timestamp: &str) -> WorkflowTemplate {
+    fn create_feature_template(timestamp: &str) -> ServiceResult<WorkflowTemplate> {
         let content = r#"# Feature Workflow
 
 A structured workflow for implementing new features with proper requirements gathering, specification, planning, and implementation.
@@ -298,9 +304,9 @@ Execute the implementation plan step by step.
 4. Update plan.md as steps are completed
 "#;
 
-        let steps = Self::parse_workflow(content).unwrap_or_default();
+        let steps = Self::parse_workflow(content)?;
 
-        WorkflowTemplate {
+        Ok(WorkflowTemplate {
             id: "builtin:feature".to_string(),
             name: "Feature".to_string(),
             description: Some(
@@ -312,11 +318,11 @@ Execute the implementation plan step by step.
             steps,
             created_at: timestamp.to_string(),
             updated_at: timestamp.to_string(),
-        }
+        })
     }
 
     /// Create the Bug Fix workflow template.
-    fn create_bugfix_template(timestamp: &str) -> WorkflowTemplate {
+    fn create_bugfix_template(timestamp: &str) -> ServiceResult<WorkflowTemplate> {
         let content = r#"# Bug Fix Workflow
 
 A methodical workflow for diagnosing and fixing bugs with proper root cause analysis and verification.
@@ -362,9 +368,9 @@ Verify the fix is complete and doesn't cause regressions.
 4. Document the fix in `{@artifacts_path}/resolution.md`
 "#;
 
-        let steps = Self::parse_workflow(content).unwrap_or_default();
+        let steps = Self::parse_workflow(content)?;
 
-        WorkflowTemplate {
+        Ok(WorkflowTemplate {
             id: "builtin:bugfix".to_string(),
             name: "Bug Fix".to_string(),
             description: Some(
@@ -376,11 +382,11 @@ Verify the fix is complete and doesn't cause regressions.
             steps,
             created_at: timestamp.to_string(),
             updated_at: timestamp.to_string(),
-        }
+        })
     }
 
     /// Create the Refactor workflow template.
-    fn create_refactor_template(timestamp: &str) -> WorkflowTemplate {
+    fn create_refactor_template(timestamp: &str) -> ServiceResult<WorkflowTemplate> {
         let content = r#"# Refactor Workflow
 
 A safe workflow for refactoring code with proper analysis, planning, and verification.
@@ -424,9 +430,9 @@ Verify the refactoring is complete and behavior is preserved.
 4. Document improvements in `{@artifacts_path}/summary.md`
 "#;
 
-        let steps = Self::parse_workflow(content).unwrap_or_default();
+        let steps = Self::parse_workflow(content)?;
 
-        WorkflowTemplate {
+        Ok(WorkflowTemplate {
             id: "builtin:refactor".to_string(),
             name: "Refactor".to_string(),
             description: Some(
@@ -438,7 +444,7 @@ Verify the refactoring is complete and behavior is preserved.
             steps,
             created_at: timestamp.to_string(),
             updated_at: timestamp.to_string(),
-        }
+        })
     }
 }
 
@@ -613,7 +619,7 @@ Done.
 
     #[test]
     fn test_get_builtin_templates() {
-        let templates = WorkflowService::get_builtin_templates();
+        let templates = WorkflowService::get_builtin_templates().unwrap();
 
         assert_eq!(templates.len(), 3);
 
@@ -652,15 +658,15 @@ Done.
 
     #[test]
     fn test_get_builtin_template_by_id() {
-        let feature = WorkflowService::get_builtin_template("builtin:feature");
+        let feature = WorkflowService::get_builtin_template("builtin:feature").unwrap();
         assert!(feature.is_some());
         assert_eq!(feature.unwrap().name, "Feature");
 
-        let bugfix = WorkflowService::get_builtin_template("builtin:bugfix");
+        let bugfix = WorkflowService::get_builtin_template("builtin:bugfix").unwrap();
         assert!(bugfix.is_some());
         assert_eq!(bugfix.unwrap().name, "Bug Fix");
 
-        let nonexistent = WorkflowService::get_builtin_template("builtin:nonexistent");
+        let nonexistent = WorkflowService::get_builtin_template("builtin:nonexistent").unwrap();
         assert!(nonexistent.is_none());
     }
 
@@ -671,7 +677,7 @@ Done.
         vars.insert("name".to_string(), "Alice".to_string());
         vars.insert("project".to_string(), "OpenFlow".to_string());
 
-        let result = WorkflowService::substitute_variables(content, &vars);
+        let result = WorkflowService::substitute_variables(content, &vars).unwrap();
         assert_eq!(result, "Hello Alice, welcome to OpenFlow!");
     }
 
@@ -680,7 +686,7 @@ Done.
         let content = "Hello {@name}, welcome to {@project}!";
         let vars = HashMap::new();
 
-        let result = WorkflowService::substitute_variables(content, &vars);
+        let result = WorkflowService::substitute_variables(content, &vars).unwrap();
         assert_eq!(result, "Hello {@name}, welcome to {@project}!");
     }
 
@@ -693,7 +699,7 @@ Done.
             ..Default::default()
         };
 
-        let result = WorkflowService::substitute_with_context(content, &context);
+        let result = WorkflowService::substitute_with_context(content, &context).unwrap();
         assert_eq!(result, "Save to /tasks/123/spec.md in /home/project");
     }
 
@@ -705,7 +711,7 @@ Done.
             ..Default::default()
         };
 
-        let result = WorkflowService::substitute_with_context(content, &context);
+        let result = WorkflowService::substitute_with_context(content, &context).unwrap();
         assert_eq!(result, "Path: /tasks/123, Worktree: {@worktree_path}");
     }
 
@@ -721,7 +727,7 @@ Done.
             project_name: Some("F".to_string()),
         };
 
-        let result = WorkflowService::substitute_with_context(content, &context);
+        let result = WorkflowService::substitute_with_context(content, &context).unwrap();
         assert_eq!(result, "A B C D E F");
     }
 
@@ -867,7 +873,7 @@ Instructions here.
 
     #[test]
     fn test_builtin_templates_have_variables() {
-        let templates = WorkflowService::get_builtin_templates();
+        let templates = WorkflowService::get_builtin_templates().unwrap();
 
         for template in templates {
             // Each template should use {@artifacts_path}

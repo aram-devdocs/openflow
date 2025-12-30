@@ -130,8 +130,8 @@ impl ProcessService {
     }
 
     /// Get the PTY manager for direct access.
-    pub fn pty_manager(&self) -> Arc<PtyManager> {
-        Arc::clone(&self.pty_manager)
+    pub fn pty_manager(&self) -> ServiceResult<Arc<PtyManager>> {
+        Ok(Arc::clone(&self.pty_manager))
     }
 
     /// Get a process by ID.
@@ -526,15 +526,15 @@ impl ProcessService {
     }
 
     /// Check if a process is currently running.
-    pub async fn is_running(&self, process_id: &str) -> bool {
+    pub async fn is_running(&self, process_id: &str) -> ServiceResult<bool> {
         let running = self.running_processes.lock().await;
-        running.contains_key(process_id)
+        Ok(running.contains_key(process_id))
     }
 
     /// Get the count of running processes.
-    pub async fn running_count(&self) -> usize {
+    pub async fn running_count(&self) -> ServiceResult<usize> {
         let running = self.running_processes.lock().await;
-        running.len()
+        Ok(running.len())
     }
 
     /// Kill all running processes (cleanup on shutdown).
@@ -555,12 +555,12 @@ impl ProcessService {
     }
 
     /// Create a process status event for the given process.
-    pub fn create_status_event(process: &ExecutionProcess) -> ProcessStatusEvent {
-        ProcessStatusEvent {
+    pub fn create_status_event(process: &ExecutionProcess) -> ServiceResult<ProcessStatusEvent> {
+        Ok(ProcessStatusEvent {
             process_id: process.id.clone(),
             status: process.status.clone(),
             exit_code: process.exit_code,
-        }
+        })
     }
 }
 
@@ -902,7 +902,8 @@ mod tests {
             .await
             .expect("Failed to create process");
 
-        let event = ProcessService::create_status_event(&process);
+        let event =
+            ProcessService::create_status_event(&process).expect("Failed to create status event");
 
         assert_eq!(event.process_id, process.id);
         assert_eq!(event.status, ProcessStatus::Running);
@@ -912,10 +913,22 @@ mod tests {
     #[tokio::test]
     async fn test_service_new_and_default() {
         let service = ProcessService::new();
-        assert_eq!(service.running_count().await, 0);
+        assert_eq!(
+            service
+                .running_count()
+                .await
+                .expect("Failed to get running count"),
+            0
+        );
 
         let service_default = ProcessService::default();
-        assert_eq!(service_default.running_count().await, 0);
+        assert_eq!(
+            service_default
+                .running_count()
+                .await
+                .expect("Failed to get running count"),
+            0
+        );
     }
 
     #[tokio::test]

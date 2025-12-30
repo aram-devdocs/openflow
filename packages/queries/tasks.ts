@@ -5,11 +5,13 @@ import type {
   TaskWithChats,
   UpdateTaskRequest,
 } from '@openflow/generated';
+import { createTaskSchema, updateTaskSchema } from '@openflow/validation';
 import { invoke } from './utils.js';
 
 /**
  * Task query wrappers for Tauri IPC.
  * Thin wrappers around invoke() calls with type safety.
+ * Input validation is performed using Zod schemas before invoking Tauri commands.
  */
 export const taskQueries = {
   /**
@@ -28,14 +30,21 @@ export const taskQueries = {
 
   /**
    * Create a new task.
+   * Input is validated against createTaskSchema before invoking.
    */
-  create: (request: CreateTaskRequest): Promise<Task> => invoke('create_task', { request }),
+  create: (request: CreateTaskRequest): Promise<Task> => {
+    const validated = createTaskSchema.parse(request);
+    return invoke('create_task', { request: validated });
+  },
 
   /**
    * Update an existing task.
+   * Input is validated against updateTaskSchema before invoking.
    */
-  update: (id: string, request: UpdateTaskRequest): Promise<Task> =>
-    invoke('update_task', { id, request }),
+  update: (id: string, request: UpdateTaskRequest): Promise<Task> => {
+    const validated = updateTaskSchema.parse(request);
+    return invoke('update_task', { id, request: validated });
+  },
 
   /**
    * Archive a task (soft delete).

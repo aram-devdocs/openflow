@@ -3,6 +3,7 @@
  *
  * Thin wrappers around Tauri invoke() calls for workflow operations.
  * No business logic - just type-safe IPC calls.
+ * Input validation is performed using Zod schemas before invoking Tauri commands.
  */
 
 import type {
@@ -10,6 +11,7 @@ import type {
   UpdateWorkflowTemplateRequest,
   WorkflowTemplate,
 } from '@openflow/generated';
+import { createWorkflowTemplateSchema, updateWorkflowTemplateSchema } from '@openflow/validation';
 import { invoke } from './utils.js';
 
 /**
@@ -44,22 +46,28 @@ export const workflowQueries = {
 
   /**
    * Create a new custom workflow template.
+   * Input is validated against createWorkflowTemplateSchema before invoking.
    *
    * @param request - Template creation request
    * @returns The created workflow template
    */
-  create: (request: CreateWorkflowTemplateRequest): Promise<WorkflowTemplate> =>
-    invoke('create_workflow_template', { request }),
+  create: (request: CreateWorkflowTemplateRequest): Promise<WorkflowTemplate> => {
+    const validated = createWorkflowTemplateSchema.parse(request);
+    return invoke('create_workflow_template', { request: validated });
+  },
 
   /**
    * Update an existing workflow template.
+   * Input is validated against updateWorkflowTemplateSchema before invoking.
    *
    * @param id - Template ID to update
    * @param request - Update request with fields to modify
    * @returns The updated workflow template
    */
-  update: (id: string, request: UpdateWorkflowTemplateRequest): Promise<WorkflowTemplate> =>
-    invoke('update_workflow_template', { id, request }),
+  update: (id: string, request: UpdateWorkflowTemplateRequest): Promise<WorkflowTemplate> => {
+    const validated = updateWorkflowTemplateSchema.parse(request);
+    return invoke('update_workflow_template', { id, request: validated });
+  },
 
   /**
    * Delete a custom workflow template.

@@ -478,8 +478,24 @@ impl GitService {
     /// # Arguments
     /// * `task_id` - The task identifier
     /// * `chat_role` - The chat role (e.g., "main", "review", "test")
-    pub fn generate_branch_name(task_id: &str, chat_role: &str) -> String {
-        format!("openflow/{}/{}", task_id, chat_role.to_lowercase())
+    ///
+    /// # Returns
+    /// The generated branch name.
+    ///
+    /// # Errors
+    /// Returns an error if the task_id or chat_role is empty.
+    pub fn generate_branch_name(task_id: &str, chat_role: &str) -> ServiceResult<String> {
+        if task_id.is_empty() {
+            return Err(ServiceError::Validation(
+                "task_id cannot be empty".to_string(),
+            ));
+        }
+        if chat_role.is_empty() {
+            return Err(ServiceError::Validation(
+                "chat_role cannot be empty".to_string(),
+            ));
+        }
+        Ok(format!("openflow/{}/{}", task_id, chat_role.to_lowercase()))
     }
 
     /// Generate a worktree path for a chat.
@@ -634,17 +650,27 @@ mod tests {
     #[test]
     fn test_generate_branch_name() {
         assert_eq!(
-            GitService::generate_branch_name("task123", "main"),
+            GitService::generate_branch_name("task123", "main").unwrap(),
             "openflow/task123/main"
         );
         assert_eq!(
-            GitService::generate_branch_name("abc-def", "Review"),
+            GitService::generate_branch_name("abc-def", "Review").unwrap(),
             "openflow/abc-def/review"
         );
         assert_eq!(
-            GitService::generate_branch_name("task456", "TEST"),
+            GitService::generate_branch_name("task456", "TEST").unwrap(),
             "openflow/task456/test"
         );
+    }
+
+    #[test]
+    fn test_generate_branch_name_validation() {
+        // Empty task_id should fail
+        assert!(GitService::generate_branch_name("", "main").is_err());
+        // Empty chat_role should fail
+        assert!(GitService::generate_branch_name("task123", "").is_err());
+        // Both empty should fail
+        assert!(GitService::generate_branch_name("", "").is_err());
     }
 
     #[test]

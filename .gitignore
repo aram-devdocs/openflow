@@ -50,6 +50,9 @@ Desktop.ini
 coverage/
 .nyc_output/
 
+# Validation reports (auto-generated)
+reports/*.json
+
 # SQLite databases
 *.db
 *.db-journal

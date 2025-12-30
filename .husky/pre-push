@@ -1,43 +1,203 @@
 #!/bin/sh
 
-# Pre-push validation suite
-# Runs comprehensive checks before pushing to remote
+# =============================================================================
+# OpenFlow Pre-Push Validation Suite
+# =============================================================================
+#
+# Runs comprehensive checks before pushing to remote.
+# All phases must pass for the push to succeed.
+#
+# Bypass: SKIP_VALIDATION=1 git push
+#
+# Phases:
+#   1. Generation   - TypeScript types, TanStack Router routes
+#   2. Type Check   - Full TypeScript compilation
+#   3. Linting      - Biome lint and format
+#   4. Validation   - Blocking validators (architecture, types, etc.)
+#   5. Tests        - Unit tests (e2e excluded)
+#   6. Rust         - cargo check, test, clippy
+#   7. Warnings     - Non-blocking validators (routes, storybook, etc.)
+#
+# Note: Blocking validators must pass. Non-blocking show warnings only.
+# =============================================================================
 
-echo "Running pre-push validation suite..."
+# -----------------------------------------------------------------------------
+# Bypass check
+# -----------------------------------------------------------------------------
+if [ "$SKIP_VALIDATION" = "1" ]; then
+  echo "⚠️  SKIP_VALIDATION=1 - Bypassing all pre-push validation"
+  echo "   Use with caution! This may push broken code."
+  exit 0
+fi
 
-# Regenerate TypeScript types from Rust
-echo "Generating types..."
-pnpm generate:types || exit 1
+echo ""
+echo "╔══════════════════════════════════════════════════════════════════════════╗"
+echo "║                    OpenFlow Pre-Push Validation Suite                     ║"
+echo "╚══════════════════════════════════════════════════════════════════════════╝"
+echo ""
 
-# Generate TanStack Router routes
-echo "Generating routes..."
-pnpm generate:routes || exit 1
+# Track overall timing
+START_TIME=$(date +%s)
 
-# Full TypeScript check
-echo "Running typecheck..."
-pnpm typecheck || exit 1
+# Helper function for phase headers
+print_phase() {
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Phase $1: $2"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+}
 
-# Full Biome lint check
-echo "Running lint..."
-pnpm lint || exit 1
+# Helper function for success messages
+print_success() {
+  echo "  ✓ $1"
+}
 
-# Unit tests (e2e tests are excluded - they require the Tauri app running)
-# Run with: pnpm test:e2e (after starting the app with pnpm dev:mcp)
-echo "Running unit tests..."
-pnpm test --passWithNoTests || exit 1
+# Helper function for failure messages
+print_failure() {
+  echo "  ✗ $1"
+}
 
-# Architecture validation
-echo "Validating architecture..."
-pnpm validate:arch || exit 1
+# =============================================================================
+# Phase 1: Generation
+# =============================================================================
+print_phase "1" "Generation (types, routes)"
 
-# Rust checks
-echo "Running Rust checks..."
+echo "  → Generating TypeScript types from Rust..."
+pnpm generate:types
+if [ $? -ne 0 ]; then
+  print_failure "Type generation failed"
+  exit 1
+fi
+print_success "TypeScript types generated"
+
+echo "  → Generating TanStack Router routes..."
+pnpm generate:routes
+if [ $? -ne 0 ]; then
+  print_failure "Route generation failed"
+  exit 1
+fi
+print_success "Routes generated"
+
+# =============================================================================
+# Phase 2: Type Checking
+# =============================================================================
+print_phase "2" "Type Checking"
+
+echo "  → Running TypeScript compiler..."
+pnpm typecheck
+if [ $? -ne 0 ]; then
+  print_failure "TypeScript type check failed"
+  exit 1
+fi
+print_success "TypeScript compilation successful"
+
+# =============================================================================
+# Phase 3: Linting
+# =============================================================================
+print_phase "3" "Linting"
+
+echo "  → Running Biome lint..."
+pnpm lint
+if [ $? -ne 0 ]; then
+  print_failure "Biome lint failed"
+  exit 1
+fi
+print_success "Biome lint passed"
+
+# =============================================================================
+# Phase 4: Blocking Validators
+# =============================================================================
+print_phase "4" "Blocking Validators"
+
+echo "  Running blocking validators..."
+echo "  Architecture, type safety, and core pattern validators must pass."
+echo ""
+
+# Run blocking validators via the orchestrator
+pnpm validate:blocking
+VALIDATION_EXIT=$?
+
+if [ $VALIDATION_EXIT -ne 0 ]; then
+  echo ""
+  print_failure "Blocking validation failed!"
+  echo ""
+  echo "  Fix the above errors before pushing."
+  echo "  Run 'pnpm validate:blocking' for detailed output."
+  exit 1
+fi
+print_success "Blocking validators passed"
+
+# =============================================================================
+# Phase 5: Unit Tests
+# =============================================================================
+print_phase "5" "Unit Tests"
+
+echo "  → Running Vitest unit tests..."
+echo "    (e2e tests excluded - run 'pnpm test:e2e' with app running)"
+pnpm test --passWithNoTests
+if [ $? -ne 0 ]; then
+  print_failure "Unit tests failed"
+  exit 1
+fi
+print_success "Unit tests passed"
+
+# =============================================================================
+# Phase 6: Rust Validation
+# =============================================================================
+print_phase "6" "Rust Validation"
+
 # Create dist directory if it doesn't exist (required by Tauri config)
 mkdir -p dist
-cd src-tauri
-cargo check || exit 1
-cargo test || exit 1
-cargo clippy -- -D warnings || exit 1
-cd ..
 
-echo "Pre-push validation complete!"
+echo "  → Running cargo check..."
+(cd src-tauri && cargo check)
+if [ $? -ne 0 ]; then
+  print_failure "Cargo check failed"
+  exit 1
+fi
+print_success "Cargo check passed"
+
+echo "  → Running cargo test..."
+(cd src-tauri && cargo test)
+if [ $? -ne 0 ]; then
+  print_failure "Cargo tests failed"
+  exit 1
+fi
+print_success "Cargo tests passed"
+
+echo "  → Running cargo clippy..."
+(cd src-tauri && cargo clippy -- -D warnings)
+if [ $? -ne 0 ]; then
+  print_failure "Cargo clippy failed"
+  exit 1
+fi
+print_success "Cargo clippy passed"
+
+# =============================================================================
+# Phase 7: Non-Blocking Validators (Warnings Only)
+# =============================================================================
+print_phase "7" "Non-Blocking Validators (Warnings)"
+
+echo "  Running non-blocking validators..."
+echo "  These show warnings but do not block the push."
+echo ""
+
+# Run non-blocking validators - don't fail on exit code
+pnpm validate:all --non-blocking || true
+print_success "Non-blocking validators checked (see warnings above)"
+
+# =============================================================================
+# Summary
+# =============================================================================
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+
+echo ""
+echo "╔══════════════════════════════════════════════════════════════════════════╗"
+echo "║                      Pre-Push Validation Complete!                        ║"
+echo "╠══════════════════════════════════════════════════════════════════════════╣"
+printf "║  Total time: %3ds                                                         ║\n" $DURATION
+echo "╚══════════════════════════════════════════════════════════════════════════╝"
+echo ""
+
+exit 0

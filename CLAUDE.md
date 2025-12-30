@@ -115,12 +115,285 @@ pnpm typecheck        # TypeScript check
 pnpm lint             # Biome lint/format
 pnpm test             # Vitest tests
 pnpm validate:arch    # Check dependency rules
+pnpm validate:all     # Run all validators
+pnpm validate:blocking # Run blocking validators only
 
 # Rust
 cd src-tauri && cargo check
 cd src-tauri && cargo test
 cd src-tauri && cargo clippy -- -D warnings
 ```
+
+## Validation Suite
+
+OpenFlow includes a comprehensive validation suite that enforces architectural patterns, detects code quality issues, and prevents regressions. Validators run in pre-push hooks and GitHub Actions CI.
+
+### Quick Reference
+
+```bash
+# Run all validators
+pnpm validate:all
+
+# Run only blocking validators (must pass)
+pnpm validate:blocking
+
+# Run with JSON reports
+pnpm validate:all --report
+
+# Run in parallel (faster)
+pnpm validate:all --parallel
+
+# Run specific validator
+pnpm validate:arch
+pnpm validate:ui
+pnpm validate:queries
+pnpm validate:hooks
+pnpm validate:zod
+pnpm validate:circular
+pnpm validate:routes
+pnpm validate:dead-code
+pnpm validate:type-staleness
+pnpm validate:storybook
+pnpm validate:coverage
+pnpm validate:tauri
+pnpm validate:rust
+```
+
+### Validator Categories
+
+Validators are divided into two categories based on their severity:
+
+**Blocking Validators** (must pass for push/CI):
+| Validator | Script | Description |
+|-----------|--------|-------------|
+| Architecture | `validate:arch` | Enforces dependency hierarchy between packages |
+| UI Stateless | `validate:ui` | Ensures UI components don't use hooks/queries directly |
+| Query Layer | `validate:queries` | Validates queries are thin invoke wrappers |
+| Hook Layer | `validate:hooks` | Ensures hooks use queries, not direct invoke |
+| Circular Deps | `validate:circular` | Detects circular dependencies |
+| Type Staleness | `validate:type-staleness` | Ensures generated types are fresh |
+| Tauri Commands | `validate:tauri` | Validates all Rust commands are registered |
+| Dead Code | `validate:dead-code` | Identifies unused exports/dependencies |
+
+**Non-Blocking Validators** (warnings only):
+| Validator | Script | Description |
+|-----------|--------|-------------|
+| Zod Coverage | `validate:zod` | Reports types missing Zod schemas |
+| Route Validator | `validate:routes` | Checks route file patterns and size |
+| Storybook | `validate:storybook` | Reports components missing stories |
+| Test Coverage | `validate:coverage` | Checks test coverage thresholds |
+| Rust Services | `validate:rust` | Validates Rust service layer pattern |
+
+### Validation Rules
+
+#### Architecture Validator (`validate:arch`)
+Enforces the dependency hierarchy defined in the Architecture section.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `arch/level-violation` | error | Package imports from higher-level package |
+| `arch/circular-import` | error | Circular dependency between packages |
+
+#### UI Stateless Validator (`validate:ui`)
+Ensures UI components remain pure functions of props.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `ui/no-tauri-invoke` | error | No imports from @tauri-apps/api/core |
+| `ui/no-tanstack-query` | error | No imports from @tanstack/react-query |
+| `ui/no-hooks-package` | error | No imports from @openflow/hooks |
+| `ui/no-queries-package` | error | No imports from @openflow/queries |
+
+#### Query Layer Validator (`validate:queries`)
+Validates queries are thin wrappers around Tauri invoke.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `query/must-use-invoke` | error | Exported functions must call invoke |
+| `query/no-react-hooks` | error | No React hook definitions (use* functions) |
+| `query/must-return-promise` | warning | Functions should return Promise |
+
+#### Hook Layer Validator (`validate:hooks`)
+Ensures hooks use the query layer for data fetching.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `hook/no-direct-invoke` | error | No imports from @tauri-apps/api/core |
+| `hook/must-use-queries` | warning | Data hooks should import from queries |
+
+Exceptions: Event subscription hooks (`use*Events`, `use*Output`) and local state hooks.
+
+#### Circular Dependency Validator (`validate:circular`)
+Detects dependency cycles at package and module levels.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `circular/package-level` | error | Cycle between @openflow/* packages |
+| `circular/module-level` | warning | Cycle between modules within a package |
+
+#### Type Staleness Validator (`validate:type-staleness`)
+Ensures generated TypeScript types match Rust source.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `types/stale-generation` | error | Generated types older than Rust source |
+| `types/manual-edits` | error | Manual edits detected in generated file |
+
+Fix: Run `pnpm generate:types` to regenerate.
+
+#### Zod Coverage Validator (`validate:zod`)
+Tracks Zod schema coverage for API types.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `zod/missing-input-schema` | error | Input type needs Zod schema |
+| `zod/missing-output-schema` | warning | Output type needs Zod schema |
+| `zod/unused-schema` | info | Schema defined but not used |
+
+#### Route Validator (`validate:routes`)
+Checks route files follow architecture patterns.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `route/no-queries-import` | warning | Routes should use hooks, not queries |
+| `route/no-direct-invoke` | error | No direct Tauri invoke in routes |
+| `route/max-lines` | warning | Route file exceeds 300 lines |
+
+#### Dead Code Validator (`validate:dead-code`)
+Identifies unused code for cleanup.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `dead/unused-export` | info | Export not imported anywhere |
+| `dead/unused-dependency` | warning | Package.json dependency not used |
+| `dead/orphan-file` | info | File has no importers |
+
+#### Storybook Validator (`validate:storybook`)
+Ensures UI components have Storybook stories.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `storybook/missing-story` | warning | Component has no story file |
+| `storybook/orphan-story` | info | Story for non-existent component |
+
+#### Test Coverage Validator (`validate:coverage`)
+Enforces minimum test coverage thresholds.
+
+| Package | Minimum Coverage |
+|---------|-----------------|
+| hooks | 40% |
+| queries | 60% |
+| validation | 80% |
+| overall | 30% |
+
+Requires: Run `pnpm test --coverage` first to generate coverage data.
+
+#### Tauri Command Validator (`validate:tauri`)
+Validates Rust command registration.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `tauri/unregistered-command` | error | #[tauri::command] not registered |
+| `tauri/orphan-registration` | warning | Registered but no handler exists |
+| `tauri/naming-convention` | info | Command name not snake_case |
+
+#### Rust Service Validator (`validate:rust`)
+Enforces Rust service layer patterns.
+
+| Rule | Severity | Description |
+|------|----------|-------------|
+| `rust/business-in-command` | warning | Complex logic in command handler |
+| `rust/service-not-result` | error | Service must return Result type |
+| `rust/command-complexity` | info | Command exceeds 20 lines |
+
+### Bypass Mechanisms
+
+**Skip pre-push validation entirely:**
+```bash
+SKIP_VALIDATION=1 git push
+```
+
+**Skip specific validators:**
+```bash
+pnpm validate:all --validators arch,ui,queries
+```
+
+**Run only non-blocking validators:**
+```bash
+pnpm validate:all --non-blocking
+```
+
+### JSON Reports
+
+All validators support JSON output for CI integration:
+
+```bash
+# Generate individual report
+pnpm validate:arch --report
+# Output: reports/architecture.json
+
+# Generate all reports
+pnpm validate:all --report
+# Output: reports/all.json (aggregated)
+```
+
+**Report Schema:**
+```typescript
+interface ValidationReport {
+  validator: string;
+  timestamp: string;
+  status: 'pass' | 'fail' | 'warn';
+  counts: {
+    errors: number;
+    warnings: number;
+    info: number;
+  };
+  violations: Violation[];
+  executionTimeMs: number;
+  metadata?: Record<string, unknown>;
+}
+
+interface Violation {
+  file: string;
+  line?: number;
+  column?: number;
+  rule: string;
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+  suggestion?: string;
+}
+```
+
+### Pre-Push Hook Phases
+
+The pre-push hook runs validation in phases:
+
+1. **Generation** - Regenerate types and routes if needed
+2. **Type Checking** - TypeScript compilation
+3. **Linting** - Biome lint/format check
+4. **Blocking Validators** - Must pass (architecture, UI, queries, hooks, etc.)
+5. **Unit Tests** - Vitest test suite
+6. **Rust Validation** - cargo check, test, clippy
+7. **Non-Blocking Validators** - Warnings only, doesn't fail push
+
+### CI Integration
+
+GitHub Actions runs validation on every PR:
+
+- Blocking validators must pass for merge
+- Non-blocking validators report as warnings
+- JSON reports uploaded as artifacts
+- PR comments show validation summary
+
+### Adding New Validators
+
+1. Create `scripts/validate-<name>.ts`
+2. Import shared libraries from `scripts/lib/`
+3. Use `Reporter` class for output
+4. Add script to `package.json`
+5. Add to `VALIDATOR_CONFIGS` in `scripts/lib/config.ts`
+6. Update `scripts/validate-all.ts` with new validator
+7. Document in this section
 
 ## Commit Guidelines
 
