@@ -107,7 +107,7 @@ function StatusFilterButton({
       onClick={onClick}
       className={cn(
         'flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm',
-        'transition-colors duration-150',
+        'motion-safe:transition-colors motion-safe:duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
         isActive
           ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
@@ -420,7 +420,7 @@ export function Sidebar({
             <Icon
               icon={ChevronDown}
               size="xs"
-              className={cn('transition-transform', !isChatsExpanded && '-rotate-90')}
+              className={cn('motion-safe:transition-transform', !isChatsExpanded && '-rotate-90')}
             />
             <Icon icon={MessageSquare} size="xs" />
             <span>Chats</span>
@@ -440,7 +440,7 @@ export function Sidebar({
                     onClick={() => onSelectChat?.(chat.id)}
                     className={cn(
                       'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
-                      'transition-colors duration-150',
+                      'motion-safe:transition-colors motion-safe:duration-150',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
                       selectedChatId === chat.id
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'

@@ -304,7 +304,7 @@ export function TaskLayout({
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-[rgb(var(--background))]/80 z-10">
           <div className="flex items-center gap-2 text-[rgb(var(--muted-foreground))]">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            <div className="h-5 w-5 motion-safe:animate-spin rounded-full border-2 border-current border-t-transparent" />
             <span>Loading task...</span>
           </div>
         </div>

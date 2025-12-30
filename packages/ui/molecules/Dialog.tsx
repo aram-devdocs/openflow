@@ -152,7 +152,7 @@ export function Dialog({
       {/* Backdrop - click is supplementary to keyboard Escape handling */}
       <div
         className={cn(
-          'fixed inset-0 transition-opacity',
+          'fixed inset-0 motion-safe:transition-opacity',
           // Solid backdrop for better accessibility
           'bg-black/60',
           // Enhanced opacity for users who prefer reduced transparency
@@ -176,8 +176,8 @@ export function Dialog({
           'rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]',
           'shadow-lg',
           'mx-4',
-          // Animation
-          'animate-in fade-in-0 zoom-in-95',
+          // Animation - respects reduced motion
+          'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95',
           // Size
           sizeClasses[size],
           // Focus styles

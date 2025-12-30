@@ -44,7 +44,7 @@ export function ThemeToggleCompact({
         'flex h-9 w-9 items-center justify-center rounded-md',
         'text-[rgb(var(--muted-foreground))] hover:text-[rgb(var(--foreground))] hover:bg-[rgb(var(--surface-1))]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
-        'transition-colors',
+        'motion-safe:transition-colors',
         className
       )}
       aria-label={`Switch to ${resolvedTheme === 'dark' ? 'light' : 'dark'} theme`}

@@ -73,7 +73,7 @@ export function AppLayout({
       {/* Sidebar */}
       <div
         className={cn(
-          'shrink-0 transition-[width] duration-200 ease-in-out',
+          'shrink-0 motion-safe:transition-[width] motion-safe:duration-200 motion-safe:ease-in-out',
           sidebarCollapsed ? 'w-14' : 'w-72'
         )}
       >

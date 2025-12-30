@@ -55,14 +55,12 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        // Base styles
-        'animate-pulse bg-[rgb(var(--muted))]',
+        // Base styles with motion-safe animation
+        'bg-[rgb(var(--muted))] motion-safe:animate-pulse',
         // Variant-specific styles
         variant === 'circular' && 'rounded-full',
         variant === 'rectangular' && 'rounded-md',
         variant === 'text' && 'h-4 rounded',
-        // Respect reduced motion preferences
-        'motion-reduce:animate-none motion-reduce:bg-[rgb(var(--muted))]/70',
         className
       )}
       style={computedStyle}

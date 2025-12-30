@@ -42,7 +42,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             'peer h-4 w-4 shrink-0 appearance-none rounded',
             'border border-[rgb(var(--input))]',
             'bg-[rgb(var(--background))]',
-            'transition-colors duration-150',
+            'motion-safe:transition-colors motion-safe:duration-150',
             // Focus state
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
             // Checked state
@@ -60,7 +60,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           className={cn(
             'pointer-events-none absolute left-0 h-4 w-4 stroke-[3]',
             'text-[rgb(var(--primary-foreground))]',
-            'opacity-0 transition-opacity duration-150',
+            'opacity-0 motion-safe:transition-opacity motion-safe:duration-150',
             'peer-checked:opacity-100',
             'peer-indeterminate:hidden'
           )}
@@ -71,7 +71,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           className={cn(
             'pointer-events-none absolute left-1 top-1/2 h-0.5 w-2 -translate-y-1/2',
             'bg-[rgb(var(--primary-foreground))]',
-            'opacity-0 transition-opacity duration-150',
+            'opacity-0 motion-safe:transition-opacity motion-safe:duration-150',
             'peer-indeterminate:opacity-100',
             'peer-checked:hidden'
           )}

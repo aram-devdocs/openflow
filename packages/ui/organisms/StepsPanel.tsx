@@ -216,7 +216,7 @@ export function StepsPanel({
                       size="sm"
                       className={cn(
                         isCompleted && 'text-[rgb(var(--success))]',
-                        isInProgress && 'text-[rgb(var(--primary))] animate-spin',
+                        isInProgress && 'text-[rgb(var(--primary))] motion-safe:animate-spin',
                         isSkipped && 'text-[rgb(var(--muted-foreground))]',
                         !isCompleted &&
                           !isInProgress &&
@@ -254,7 +254,7 @@ export function StepsPanel({
                   {isInProgress && (
                     <div className="mt-2 flex items-center gap-1.5 text-xs text-[rgb(var(--primary))]">
                       <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[rgb(var(--primary))] opacity-75" />
+                        <span className="absolute inline-flex h-full w-full motion-safe:animate-ping rounded-full bg-[rgb(var(--primary))] opacity-75" />
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-[rgb(var(--primary))]" />
                       </span>
                       Running...
@@ -263,7 +263,7 @@ export function StepsPanel({
                 </div>
 
                 {/* Start button */}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 motion-safe:transition-opacity">
                   {canStart && (
                     <Tooltip content="Start this step" position="left">
                       <Button

@@ -135,7 +135,8 @@ export function Tooltip({
           aria-label={ariaLabel}
           className={cn(
             'absolute z-50 pointer-events-none',
-            'animate-in fade-in-0 zoom-in-95 duration-150',
+            // Animation - respects reduced motion
+            'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150',
             positionClasses[position]
           )}
         >

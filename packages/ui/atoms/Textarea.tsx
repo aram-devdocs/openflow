@@ -38,7 +38,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           'flex min-h-[80px] w-full rounded-md px-3 py-2 text-sm',
           'bg-[rgb(var(--background))] text-[rgb(var(--foreground))]',
           'border border-[rgb(var(--input))]',
-          'transition-colors duration-150',
+          'motion-safe:transition-colors motion-safe:duration-150',
           // Placeholder
           'placeholder:text-[rgb(var(--muted-foreground))]',
           // Focus state

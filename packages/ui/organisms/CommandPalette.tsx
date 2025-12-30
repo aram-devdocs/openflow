@@ -236,7 +236,8 @@ export function CommandPalette({
           'shadow-2xl',
           'mx-4',
           'max-h-[60vh]',
-          'animate-in fade-in-0 zoom-in-95 slide-in-from-top-2',
+          // Animation - respects reduced motion
+          'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:slide-in-from-top-2',
           className
         )}
       >
@@ -304,7 +305,7 @@ export function CommandPalette({
                     }}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'transition-colors duration-75',
+                      'motion-safe:transition-colors motion-safe:duration-75',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
@@ -355,7 +356,7 @@ export function CommandPalette({
                     }}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'transition-colors duration-75',
+                      'motion-safe:transition-colors motion-safe:duration-75',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
@@ -401,7 +402,7 @@ export function CommandPalette({
                     }}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'transition-colors duration-75',
+                      'motion-safe:transition-colors motion-safe:duration-75',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'

@@ -48,7 +48,7 @@ export function ThemeToggle({ theme, onThemeChange, className }: ThemeToggleProp
           aria-checked={theme === value}
           onClick={() => onThemeChange(value)}
           className={cn(
-            'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+            'flex items-center gap-2 rounded-md px-3 py-2 text-sm motion-safe:transition-colors',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
             theme === value
               ? 'bg-[rgb(var(--background))] text-[rgb(var(--foreground))] shadow-sm'

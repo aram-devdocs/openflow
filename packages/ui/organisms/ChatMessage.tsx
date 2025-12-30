@@ -123,7 +123,9 @@ export function ChatMessage({ message, isStreaming = false, className }: ChatMes
           {content ? (
             <div className="whitespace-pre-wrap">{content}</div>
           ) : showStreaming ? (
-            <span className="animate-pulse text-[rgb(var(--muted-foreground))]">Thinking...</span>
+            <span className="motion-safe:animate-pulse text-[rgb(var(--muted-foreground))]">
+              Thinking...
+            </span>
           ) : null}
         </div>
 
