@@ -18,6 +18,8 @@
 import type { Commit, FileDiff, TaskStatus, WorkflowStep } from '@openflow/generated';
 import { ChatRole, MessageRole, WorkflowStepStatus } from '@openflow/generated';
 import {
+  useArtifactContent,
+  useArtifacts,
   useChat,
   useClaudeEvents,
   useCreateChat,
@@ -25,11 +27,15 @@ import {
   useExecutorProfiles,
   useKeyboardShortcuts,
   useMessages,
+  useOpenArtifact,
   useRunExecutor,
   useTask,
   useUpdateTask,
 } from '@openflow/hooks';
+import type { ArtifactFile } from '@openflow/queries';
 import {
+  ArtifactPreviewDialog,
+  ArtifactsPanel,
   Button,
   ChatPanel,
   ClaudeEventRenderer,
@@ -46,7 +52,14 @@ import {
 } from '@openflow/ui';
 import type { Tab } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { AlertCircle, GitCommitHorizontal, GitCompare, ListTodo, Terminal } from 'lucide-react';
+import {
+  AlertCircle,
+  FileText,
+  GitCommitHorizontal,
+  GitCompare,
+  ListTodo,
+  Terminal,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export const Route = createFileRoute('/tasks/$taskId')({
@@ -74,13 +87,22 @@ function TaskDetailPage() {
   const [newStepTitle, setNewStepTitle] = useState('');
   const [newStepDescription, setNewStepDescription] = useState('');
 
+  // Artifact preview state
+  const [previewArtifact, setPreviewArtifact] = useState<ArtifactFile | null>(null);
+
   // Data fetching
   const { data: taskData, isLoading: isLoadingTask } = useTask(taskId);
   const { data: executorProfiles = [] } = useExecutorProfiles();
+  const { data: artifacts = [], isLoading: isLoadingArtifacts } = useArtifacts(taskId);
+  const { data: previewContent, isLoading: isLoadingPreview } = useArtifactContent(
+    taskId,
+    previewArtifact?.name ?? ''
+  );
   const updateTask = useUpdateTask();
   const runExecutor = useRunExecutor();
   const createMessage = useCreateMessage();
   const createChat = useCreateChat();
+  const openArtifact = useOpenArtifact();
 
   // Claude events for streaming output
   const {
@@ -117,10 +139,15 @@ function TaskDetailPage() {
     {
       key: '2',
       meta: true,
-      action: () => setActiveTab('changes'),
+      action: () => setActiveTab('artifacts'),
     },
     {
       key: '3',
+      meta: true,
+      action: () => setActiveTab('changes'),
+    },
+    {
+      key: '4',
       meta: true,
       action: () => setActiveTab('commits'),
     },
@@ -153,6 +180,22 @@ function TaskDetailPage() {
   const tabs: Tab[] = useMemo(() => {
     const tabsList: Tab[] = [{ id: 'steps', label: 'Steps', icon: ListTodo }];
 
+    // Artifacts tab with badge showing count
+    if (artifacts.length > 0) {
+      tabsList.push({
+        id: 'artifacts',
+        label: 'Artifacts',
+        icon: FileText,
+        badge: artifacts.length,
+      });
+    } else {
+      tabsList.push({
+        id: 'artifacts',
+        label: 'Artifacts',
+        icon: FileText,
+      });
+    }
+
     if (diffs.length > 0) {
       tabsList.push({
         id: 'changes',
@@ -184,7 +227,7 @@ function TaskDetailPage() {
     }
 
     return tabsList;
-  }, [diffs.length, commits.length]);
+  }, [artifacts.length, diffs.length, commits.length]);
 
   // Callbacks
   const handleStatusChange = useCallback(
@@ -426,6 +469,26 @@ function TaskDetailPage() {
     console.log('View commit clicked');
   }, []);
 
+  // Artifact handlers
+  const handleOpenArtifact = useCallback(
+    (artifact: ArtifactFile) => {
+      openArtifact.mutate(artifact.path, {
+        onError: (error) => {
+          toast.error('Failed to open artifact', error.message);
+        },
+      });
+    },
+    [openArtifact, toast]
+  );
+
+  const handlePreviewArtifact = useCallback((artifact: ArtifactFile) => {
+    setPreviewArtifact(artifact);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setPreviewArtifact(null);
+  }, []);
+
   // Loading state
   if (isLoadingTask) {
     return (
@@ -454,6 +517,15 @@ function TaskDetailPage() {
   // Render tab content
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'artifacts':
+        return (
+          <ArtifactsPanel
+            artifacts={artifacts}
+            loading={isLoadingArtifacts}
+            onOpenArtifact={handleOpenArtifact}
+            onPreviewArtifact={handlePreviewArtifact}
+          />
+        );
       case 'changes':
         return (
           <div className="p-4">
@@ -630,6 +702,15 @@ function TaskDetailPage() {
           </Button>
         </DialogFooter>
       </Dialog>
+
+      {/* Artifact Preview Dialog */}
+      <ArtifactPreviewDialog
+        isOpen={previewArtifact !== null}
+        onClose={handleClosePreview}
+        fileName={previewArtifact?.name ?? ''}
+        content={previewContent ?? null}
+        loading={isLoadingPreview}
+      />
     </>
   );
 }

@@ -16,3 +16,4 @@ export * from './settings';
 export * from './git';
 export * from './search';
 export * from './workflows';
+export * from './artifacts';

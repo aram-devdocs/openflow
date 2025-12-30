@@ -22,3 +22,4 @@ export * from './useKeyboardShortcutsDialog';
 export * from './useWorkflows';
 export * from './useTheme';
 export * from './useToastMutation';
+export * from './useArtifacts';
