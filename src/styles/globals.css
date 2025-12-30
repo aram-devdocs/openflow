@@ -14,6 +14,7 @@
     --border: 63 63 70;
     --input: 63 63 70;
     --ring: 161 161 170;
+    --ring-offset: 24 24 27;
 
     --primary: 244 244 245;
     --primary-foreground: 24 24 27;
@@ -28,6 +29,27 @@
     --accent-foreground: 244 244 245;
 
     --radius: 0.5rem;
+
+    /* Semantic colors */
+    --success: 34 197 94;
+    --success-foreground: 255 255 255;
+    --warning: 234 179 8;
+    --warning-foreground: 24 24 27;
+    --info: 59 130 246;
+    --info-foreground: 255 255 255;
+    --error: 239 68 68;
+    --error-foreground: 255 255 255;
+
+    /* Surface layers (depth hierarchy) */
+    --surface-0: 24 24 27;
+    --surface-1: 39 39 42;
+    --surface-2: 52 52 56;
+
+    /* Card/Popover (solid backgrounds, no glassmorphism) */
+    --card: 39 39 42;
+    --card-foreground: 244 244 245;
+    --popover: 39 39 42;
+    --popover-foreground: 244 244 245;
 
     /* Status colors */
     --status-todo: 161 161 170;
@@ -46,7 +68,8 @@
 
     --border: 228 228 231;
     --input: 228 228 231;
-    --ring: 24 24 27;
+    --ring: 113 113 122;
+    --ring-offset: 255 255 255;
 
     --primary: 24 24 27;
     --primary-foreground: 244 244 245;
@@ -59,6 +82,27 @@
 
     --accent: 244 244 245;
     --accent-foreground: 24 24 27;
+
+    /* Semantic colors */
+    --success: 22 163 74;
+    --success-foreground: 255 255 255;
+    --warning: 202 138 4;
+    --warning-foreground: 255 255 255;
+    --info: 37 99 235;
+    --info-foreground: 255 255 255;
+    --error: 220 38 38;
+    --error-foreground: 255 255 255;
+
+    /* Surface layers (depth hierarchy) */
+    --surface-0: 255 255 255;
+    --surface-1: 244 244 245;
+    --surface-2: 228 228 231;
+
+    /* Card/Popover (solid backgrounds, no glassmorphism) */
+    --card: 255 255 255;
+    --card-foreground: 24 24 27;
+    --popover: 255 255 255;
+    --popover-foreground: 24 24 27;
   }
 
   * {
