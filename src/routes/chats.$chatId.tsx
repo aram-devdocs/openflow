@@ -19,7 +19,15 @@ import {
   useSendInput,
   useUpdateChat,
 } from '@openflow/hooks';
-import { Button, Icon, PermissionDialog, Spinner, useToast } from '@openflow/ui';
+import {
+  Button,
+  Icon,
+  PermissionDialog,
+  Skeleton,
+  SkeletonChat,
+  Spinner,
+  useToast,
+} from '@openflow/ui';
 import { cn } from '@openflow/utils';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import {
@@ -220,8 +228,35 @@ function StandaloneChatPage() {
   // Loading state
   if (isLoadingChat) {
     return (
-      <div className="flex h-full items-center justify-center bg-[rgb(var(--background))]">
-        <Spinner size="lg" />
+      <div className="flex h-full flex-col bg-[rgb(var(--background))]">
+        {/* Skeleton Header */}
+        <header className="flex items-center gap-3 border-b border-[rgb(var(--border))] bg-[rgb(var(--card))] px-4 py-3">
+          <Skeleton variant="circular" width={32} height={32} />
+          <div className="flex items-center gap-2.5">
+            <Skeleton variant="circular" width={32} height={32} />
+            <div className="space-y-1">
+              <Skeleton variant="text" className="h-4 w-32" />
+              <Skeleton variant="text" className="h-3 w-20" />
+            </div>
+          </div>
+        </header>
+
+        {/* Skeleton Chat Messages */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-4xl px-4 py-6">
+            <SkeletonChat messageCount={4} />
+          </div>
+        </div>
+
+        {/* Skeleton Input Area */}
+        <div className="border-t border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+          <div className="mx-auto max-w-4xl px-4 py-4">
+            <div className="flex gap-3">
+              <Skeleton className="flex-1 h-12 rounded-xl" />
+              <Skeleton variant="circular" width={48} height={48} className="rounded-xl" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

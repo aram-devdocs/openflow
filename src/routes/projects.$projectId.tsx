@@ -29,6 +29,7 @@ import {
   Header,
   Input,
   Sidebar,
+  SkeletonTaskCard,
   TaskList,
   Textarea,
 } from '@openflow/ui';
@@ -174,8 +175,12 @@ function ProjectDetailPage() {
         sidebar={null}
         header={<Header title="Loading..." onSearch={handleSearch} />}
       >
-        <div className="flex h-full items-center justify-center">
-          <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading project...</div>
+        <div className="p-6">
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonTaskCard key={`skeleton-project-${i}`} />
+            ))}
+          </div>
         </div>
       </AppLayout>
     );
@@ -274,8 +279,10 @@ function ProjectDetailPage() {
         {/* Task board content */}
         <div className="flex-1 overflow-auto p-6">
           {isLoadingTasks ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading tasks...</div>
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonTaskCard key={`skeleton-tasks-${i}`} />
+              ))}
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center">

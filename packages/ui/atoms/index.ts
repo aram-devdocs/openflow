@@ -43,3 +43,6 @@ export type { ThemeToggleProps, Theme } from './ThemeToggle';
 
 export { ThemeToggleCompact } from './ThemeToggleCompact';
 export type { ThemeToggleCompactProps, ResolvedTheme } from './ThemeToggleCompact';
+
+export { Skeleton } from './Skeleton';
+export type { SkeletonProps, SkeletonVariant } from './Skeleton';

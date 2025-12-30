@@ -13,7 +13,7 @@
 
 import { TaskStatus } from '@openflow/generated';
 import { useKeyboardShortcuts, useProjects, useTasks, useUpdateTask } from '@openflow/hooks';
-import { AppLayout, Header, TaskList } from '@openflow/ui';
+import { AppLayout, Header, SkeletonTaskCard, TaskList } from '@openflow/ui';
 import type { StatusFilter } from '@openflow/ui';
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { ListTodo } from 'lucide-react';
@@ -110,8 +110,10 @@ function TasksPage() {
         {/* Task content */}
         <div className="flex-1 overflow-auto p-6">
           {isLoading ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading tasks...</div>
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonTaskCard key={`skeleton-task-${i}`} />
+              ))}
             </div>
           ) : filteredTasks.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center">
