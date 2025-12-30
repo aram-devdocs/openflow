@@ -37,3 +37,9 @@ export type { ToastProviderProps } from './ToastProvider';
 
 export { ThemeProvider } from './ThemeProvider';
 export type { ThemeProviderProps } from './ThemeProvider';
+
+export { ThemeToggle } from './ThemeToggle';
+export type { ThemeToggleProps, Theme } from './ThemeToggle';
+
+export { ThemeToggleCompact } from './ThemeToggleCompact';
+export type { ThemeToggleCompactProps, ResolvedTheme } from './ThemeToggleCompact';
