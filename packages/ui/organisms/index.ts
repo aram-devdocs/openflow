@@ -37,3 +37,5 @@ export {
   type PermissionDialogProps,
   type PermissionRequest,
 } from './PermissionDialog';
+export { ErrorBoundary, type ErrorBoundaryProps } from './ErrorBoundary';
+export { RouteError, type RouteErrorProps } from './RouteError';
