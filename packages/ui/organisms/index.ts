@@ -46,3 +46,5 @@ export {
   defaultShortcutGroups,
 } from './KeyboardShortcutsDialog';
 export { Drawer, type DrawerProps } from './Drawer';
+export { WorkflowSelector, type WorkflowSelectorProps } from './WorkflowSelector';
+export { WorkflowPreview, type WorkflowPreviewProps } from './WorkflowPreview';
