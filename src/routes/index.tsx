@@ -54,6 +54,7 @@ function DashboardPage() {
 
   // UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -103,13 +104,6 @@ function DashboardPage() {
   const handleSelectTask = useCallback(
     (taskId: string) => {
       navigate({ to: '/tasks/$taskId', params: { taskId } });
-    },
-    [navigate]
-  );
-
-  const handleSelectChat = useCallback(
-    (chatId: string) => {
-      navigate({ to: '/chats/$chatId', params: { chatId } });
     },
     [navigate]
   );
@@ -395,9 +389,33 @@ function DashboardPage() {
     return `${inProgressCount} task${inProgressCount === 1 ? '' : 's'} in progress`;
   };
 
+  // Close mobile drawer when navigating
+  const handleMobileDrawerToggle = useCallback((open: boolean) => {
+    setMobileDrawerOpen(open);
+  }, []);
+
+  // Close mobile drawer on navigation
+  const handleSelectTaskWithDrawerClose = useCallback(
+    (taskId: string) => {
+      setMobileDrawerOpen(false);
+      navigate({ to: '/tasks/$taskId', params: { taskId } });
+    },
+    [navigate]
+  );
+
+  const handleSelectChatWithDrawerClose = useCallback(
+    (chatId: string) => {
+      setMobileDrawerOpen(false);
+      navigate({ to: '/chats/$chatId', params: { chatId } });
+    },
+    [navigate]
+  );
+
   return (
     <AppLayout
       sidebarCollapsed={sidebarCollapsed}
+      isMobileDrawerOpen={isMobileDrawerOpen}
+      onMobileDrawerToggle={handleMobileDrawerToggle}
       sidebar={
         <Sidebar
           projects={projects}
@@ -406,8 +424,8 @@ function DashboardPage() {
           {...(activeProjectId ? { selectedProjectId: activeProjectId } : {})}
           statusFilter={statusFilter}
           onSelectProject={handleSelectProject}
-          onSelectTask={handleSelectTask}
-          onSelectChat={handleSelectChat}
+          onSelectTask={handleSelectTaskWithDrawerClose}
+          onSelectChat={handleSelectChatWithDrawerClose}
           onNewTask={handleNewTask}
           onNewChat={handleNewChat}
           onNewProject={handleNewProject}

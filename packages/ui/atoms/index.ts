@@ -52,3 +52,6 @@ export type { SkipLinkProps } from './SkipLink';
 
 export { KeyboardShortcutsDialogProvider } from './KeyboardShortcutsDialogProvider';
 export type { KeyboardShortcutsDialogProviderProps } from './KeyboardShortcutsDialogProvider';
+
+export { HamburgerButton } from './HamburgerButton';
+export type { HamburgerButtonProps } from './HamburgerButton';

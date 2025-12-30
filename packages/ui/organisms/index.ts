@@ -45,3 +45,4 @@ export {
   type ShortcutGroup,
   defaultShortcutGroups,
 } from './KeyboardShortcutsDialog';
+export { Drawer, type DrawerProps } from './Drawer';

@@ -68,10 +68,7 @@ export function Header({
   return (
     <header
       aria-label="Application header"
-      className={cn(
-        'flex h-14 items-center justify-between border-b border-[rgb(var(--border))] bg-[rgb(var(--background))] px-4',
-        className
-      )}
+      className={cn('flex h-full items-center justify-between px-4', className)}
     >
       {/* Left section: Title and subtitle */}
       <div className="flex flex-col justify-center">
