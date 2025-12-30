@@ -273,7 +273,7 @@ export function CommandPalette({
         </div>
 
         {/* Results list */}
-        <div ref={listRef} className="flex-1 overflow-y-auto p-2">
+        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-2">
           {/* Empty state when searching */}
           {query && !isSearching && searchResults.length === 0 && (
             <EmptyState

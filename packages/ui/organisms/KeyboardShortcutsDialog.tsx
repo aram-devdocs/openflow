@@ -103,7 +103,7 @@ export function KeyboardShortcutsDialog({
       size="lg"
       className={className}
     >
-      <DialogContent className="max-h-[60vh] overflow-y-auto">
+      <DialogContent className="max-h-[60vh] overflow-y-auto scrollbar-thin">
         <div className="space-y-6">
           {/* Header with icon */}
           <div className="flex items-center gap-2 text-[rgb(var(--muted-foreground))]">

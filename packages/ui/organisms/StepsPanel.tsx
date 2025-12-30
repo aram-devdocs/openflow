@@ -105,7 +105,7 @@ function StepsPanelSkeleton({ className }: { className?: string }) {
       </div>
 
       {/* Steps list skeleton */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
         <ul className="divide-y divide-[rgb(var(--border))]" role="list">
           {[1, 2, 3, 4].map((i) => (
             <li key={i} className="px-4 py-3">

@@ -83,7 +83,7 @@ export function SettingsLayout({
     >
       {/* Mobile: Horizontal scrollable navigation */}
       <nav
-        className="shrink-0 border-b border-[rgb(var(--border))] overflow-x-auto md:hidden"
+        className="shrink-0 border-b border-[rgb(var(--border))] overflow-x-auto scrollbar-hidden md:hidden"
         aria-label="Settings navigation"
       >
         <div className="flex gap-1 p-2">
@@ -123,7 +123,7 @@ export function SettingsLayout({
 
       {/* Desktop: Vertical sidebar navigation */}
       <nav
-        className="hidden shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto md:block"
+        className="hidden shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto scrollbar-thin md:block"
         style={{ width: navWidth }}
         aria-label="Settings navigation"
       >
@@ -178,7 +178,7 @@ export function SettingsLayout({
       </nav>
 
       {/* Settings Content Area */}
-      <div className={cn('flex-1 overflow-y-auto', contentClassName)}>
+      <div className={cn('flex-1 overflow-y-auto scrollbar-thin', contentClassName)}>
         {/* Header with title and description - responsive padding */}
         {(title || description) && (
           <header className="border-b border-[rgb(var(--border))] px-4 py-4 md:px-6 md:py-6">

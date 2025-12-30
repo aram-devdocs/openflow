@@ -299,7 +299,7 @@ export function DiffViewer({
       </div>
 
       {/* File list */}
-      <div className="flex-1 overflow-y-auto divide-y divide-[rgb(var(--border))]">
+      <div className="flex-1 overflow-y-auto scrollbar-thin divide-y divide-[rgb(var(--border))]">
         {diffs.map((diff) => {
           const expanded = isExpanded(diff.path);
           const FileIcon = getFileIcon(diff);

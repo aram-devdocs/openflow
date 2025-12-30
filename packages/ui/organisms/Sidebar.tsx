@@ -386,7 +386,7 @@ export function Sidebar({
       </div>
 
       {/* Scrollable content: Tasks and Chats */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
         {/* Task list */}
         <div className="p-3">
           {filteredTasks.length > 0 ? (

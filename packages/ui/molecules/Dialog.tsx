@@ -241,7 +241,7 @@ export function DialogHeader({ children, className, ...props }: DialogHeaderProp
  */
 export function DialogContent({ children, className, ...props }: DialogContentProps) {
   return (
-    <div className={cn('flex-1 overflow-auto p-4 md:p-6', className)} {...props}>
+    <div className={cn('flex-1 overflow-auto scrollbar-thin p-4 md:p-6', className)} {...props}>
       {children}
     </div>
   );

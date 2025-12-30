@@ -125,7 +125,7 @@ export function AppLayout({
           id="main-content"
           tabIndex={-1}
           className={cn(
-            'flex-1 overflow-auto focus:outline-none',
+            'flex-1 overflow-auto scrollbar-thin focus:outline-none',
             'bg-[rgb(var(--background))]',
             contentClassName
           )}

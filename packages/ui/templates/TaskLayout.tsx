@@ -281,7 +281,7 @@ export function TaskLayout({
       </header>
 
       {/* Tabs - horizontal scroll on mobile */}
-      <div className="shrink-0 overflow-x-auto border-b border-[rgb(var(--border))] px-3 md:px-4">
+      <div className="shrink-0 overflow-x-auto scrollbar-hidden border-b border-[rgb(var(--border))] px-3 md:px-4">
         <Tabs
           tabs={tabs}
           activeTab={activeTab}
@@ -321,7 +321,7 @@ export function TaskLayout({
               {!isStepsPanelCollapsed && (
                 <div
                   id="mobile-steps-panel"
-                  className="max-h-64 overflow-y-auto border-b border-[rgb(var(--border))]"
+                  className="max-h-64 overflow-y-auto scrollbar-thin border-b border-[rgb(var(--border))]"
                 >
                   {stepsPanel}
                 </div>
@@ -330,7 +330,7 @@ export function TaskLayout({
 
             {/* Desktop: Fixed sidebar */}
             <div
-              className="hidden shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto lg:block"
+              className="hidden shrink-0 border-r border-[rgb(var(--border))] overflow-y-auto scrollbar-thin lg:block"
               style={{ width: stepsPanelWidth }}
             >
               {stepsPanel}
@@ -342,7 +342,9 @@ export function TaskLayout({
         )}
 
         {/* Tab content for other tabs (Changes, Commits) */}
-        {activeTab !== 'steps' && <div className="flex-1 overflow-auto">{tabContent}</div>}
+        {activeTab !== 'steps' && (
+          <div className="flex-1 overflow-auto scrollbar-thin">{tabContent}</div>
+        )}
       </div>
 
       {/* Loading overlay */}

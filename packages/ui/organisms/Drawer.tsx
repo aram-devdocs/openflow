@@ -172,7 +172,7 @@ export function Drawer({
         </button>
 
         {/* Drawer content */}
-        <div className="flex-1 overflow-y-auto">{children}</div>
+        <div className="flex-1 overflow-y-auto scrollbar-thin">{children}</div>
       </div>
     </div>
   );

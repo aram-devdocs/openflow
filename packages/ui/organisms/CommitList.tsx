@@ -331,7 +331,7 @@ export function CommitList({
       </div>
 
       {/* Commit list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
         {commits.map((commit) => (
           <CommitRow
             key={commit.hash}
