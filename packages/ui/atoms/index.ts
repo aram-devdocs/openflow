@@ -49,3 +49,6 @@ export type { SkeletonProps, SkeletonVariant } from './Skeleton';
 
 export { SkipLink } from './SkipLink';
 export type { SkipLinkProps } from './SkipLink';
+
+export { KeyboardShortcutsDialogProvider } from './KeyboardShortcutsDialogProvider';
+export type { KeyboardShortcutsDialogProviderProps } from './KeyboardShortcutsDialogProvider';

@@ -19,6 +19,7 @@ import {
   useCreateTask,
   useExecutorProfiles,
   useKeyboardShortcuts,
+  useKeyboardShortcutsDialog,
   useProjects,
   useStandaloneChats,
   useTasks,
@@ -39,7 +40,7 @@ import {
 import type { CommandAction, RecentItem, StatusFilter } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Archive, FolderOpen, FolderPlus, Plus, Settings } from 'lucide-react';
+import { Archive, FolderOpen, FolderPlus, Keyboard, Plus, Settings } from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 export const Route = createFileRoute('/')({
@@ -49,6 +50,7 @@ export const Route = createFileRoute('/')({
 function DashboardPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const keyboardShortcutsDialog = useKeyboardShortcutsDialog();
 
   // UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -338,6 +340,7 @@ function DashboardPage() {
       id: 'new-task',
       label: 'New Task',
       icon: Plus,
+      shortcut: '⌘N',
       onSelect: handleNewTask,
     },
     {
@@ -350,7 +353,18 @@ function DashboardPage() {
       id: 'settings',
       label: 'Open Settings',
       icon: Settings,
+      shortcut: '⌘,',
       onSelect: handleSettingsClick,
+    },
+    {
+      id: 'keyboard-shortcuts',
+      label: 'Keyboard Shortcuts',
+      icon: Keyboard,
+      shortcut: '⌘/',
+      onSelect: () => {
+        handleCloseCommandPalette();
+        keyboardShortcutsDialog.open();
+      },
     },
     {
       id: 'archive',

@@ -39,3 +39,9 @@ export {
 } from './PermissionDialog';
 export { ErrorBoundary, type ErrorBoundaryProps } from './ErrorBoundary';
 export { RouteError, type RouteErrorProps } from './RouteError';
+export {
+  KeyboardShortcutsDialog,
+  type KeyboardShortcutsDialogProps,
+  type ShortcutGroup,
+  defaultShortcutGroups,
+} from './KeyboardShortcutsDialog';

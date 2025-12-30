@@ -18,6 +18,7 @@ export * from './useExecutorProfiles';
 export * from './useClaudeEvents';
 export * from './useSettings';
 export * from './useKeyboardShortcuts';
+export * from './useKeyboardShortcutsDialog';
 export * from './useWorkflows';
 export * from './useTheme';
 export * from './useToastMutation';
