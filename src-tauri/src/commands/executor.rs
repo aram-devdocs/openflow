@@ -234,7 +234,7 @@ pub async fn run_executor(
     let pool = state.db.lock().await;
     let process = state
         .process_service
-        .start(&*pool, create_req, start_req)
+        .start(&pool, create_req, start_req)
         .await
         .map_err(|e| e.to_string())?;
 
