@@ -121,9 +121,10 @@ export function Tabs({
   };
 
   const sizeStyles = {
-    sm: 'text-xs px-2 py-1 gap-1',
-    md: 'text-sm px-3 py-1.5 gap-1.5',
-    lg: 'text-base px-4 py-2 gap-2',
+    // Touch target: min-height 44px for accessibility on all sizes
+    sm: 'text-xs px-2 py-1 gap-1 min-h-[44px]',
+    md: 'text-sm px-3 py-1.5 gap-1.5 min-h-[44px]',
+    lg: 'text-base px-4 py-2 gap-2 min-h-[44px]',
   };
 
   const containerStyles = {

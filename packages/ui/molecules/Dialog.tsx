@@ -201,7 +201,7 @@ export function Dialog({
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                className="h-8 w-8 p-0"
+                className="h-11 w-11 min-h-[44px] min-w-[44px] p-0"
                 aria-label="Close dialog"
               >
                 <Icon icon={X} size="sm" />

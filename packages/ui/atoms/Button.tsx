@@ -29,9 +29,11 @@ const variantClasses: Record<ButtonVariant, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-9 px-4 text-sm',
-  lg: 'h-10 px-6 text-base',
+  // Touch targets: 44px minimum on touch devices, normal sizing on pointer devices
+  // Small buttons scale up to 44px height on touch devices for accessibility
+  sm: 'h-8 px-3 text-xs min-h-[44px] sm:min-h-8',
+  md: 'h-9 px-4 text-sm min-h-[44px] sm:min-h-9',
+  lg: 'h-10 px-6 text-base min-h-[44px]',
 };
 
 const spinnerSizeMap: Record<ButtonSize, 'sm' | 'md' | 'lg'> = {

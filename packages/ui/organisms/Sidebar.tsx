@@ -106,7 +106,8 @@ function StatusFilterButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm',
+        // Touch target: min-height 44px for accessibility
+        'flex items-center justify-between gap-2 rounded-md px-2 py-2.5 text-sm min-h-[44px]',
         'motion-safe:transition-colors motion-safe:duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
         isActive
@@ -161,7 +162,9 @@ function CollapsedSidebar({
           type="button"
           onClick={onToggleCollapse}
           className={cn(
-            'rounded-md p-2 text-[rgb(var(--muted-foreground))]',
+            // Touch target: 44x44px minimum for accessibility
+            'flex h-11 w-11 items-center justify-center rounded-md',
+            'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
           )}
@@ -172,13 +175,15 @@ function CollapsedSidebar({
       </div>
 
       {/* Action buttons */}
-      <div className="flex flex-1 flex-col items-center gap-2 p-2">
+      <div className="flex flex-1 flex-col items-center gap-1 p-1">
         {/* New task button */}
         <button
           type="button"
           onClick={onNewTask}
           className={cn(
-            'rounded-md p-2 text-[rgb(var(--primary))]',
+            // Touch target: 44x44px minimum for accessibility
+            'flex h-11 w-11 items-center justify-center rounded-md',
+            'text-[rgb(var(--primary))]',
             'hover:bg-[rgb(var(--muted))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
           )}
@@ -191,7 +196,9 @@ function CollapsedSidebar({
           type="button"
           onClick={onNewChat}
           className={cn(
-            'rounded-md p-2 text-[rgb(var(--muted-foreground))]',
+            // Touch target: 44x44px minimum for accessibility
+            'flex h-11 w-11 items-center justify-center rounded-md',
+            'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
           )}
@@ -202,12 +209,14 @@ function CollapsedSidebar({
       </div>
 
       {/* Footer actions */}
-      <div className="flex flex-col items-center gap-2 border-t border-[rgb(var(--border))] p-2">
+      <div className="flex flex-col items-center gap-1 border-t border-[rgb(var(--border))] p-1">
         <button
           type="button"
           onClick={onArchiveClick}
           className={cn(
-            'rounded-md p-2 text-[rgb(var(--muted-foreground))]',
+            // Touch target: 44x44px minimum for accessibility
+            'flex h-11 w-11 items-center justify-center rounded-md',
+            'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
           )}
@@ -219,7 +228,9 @@ function CollapsedSidebar({
           type="button"
           onClick={onSettingsClick}
           className={cn(
-            'rounded-md p-2 text-[rgb(var(--muted-foreground))]',
+            // Touch target: 44x44px minimum for accessibility
+            'flex h-11 w-11 items-center justify-center rounded-md',
+            'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
           )}
@@ -335,7 +346,9 @@ export function Sidebar({
           type="button"
           onClick={onToggleCollapse}
           className={cn(
-            'shrink-0 rounded-md p-2 text-[rgb(var(--muted-foreground))]',
+            // Touch target: 44x44px minimum for accessibility
+            'flex h-11 w-11 shrink-0 items-center justify-center rounded-md',
+            'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
           )}
@@ -411,7 +424,8 @@ export function Sidebar({
             aria-expanded={isChatsExpanded}
             aria-label={`Chats section, ${chats.length} chats`}
             className={cn(
-              'mb-2 flex w-full items-center gap-2 rounded-md text-xs font-medium',
+              // Touch target: min-height 44px for accessibility
+              'mb-2 flex w-full items-center gap-2 rounded-md py-2.5 text-xs font-medium min-h-[44px]',
               'text-[rgb(var(--muted-foreground))]',
               'hover:text-[rgb(var(--foreground))]',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]'
@@ -439,7 +453,8 @@ export function Sidebar({
                     type="button"
                     onClick={() => onSelectChat?.(chat.id)}
                     className={cn(
-                      'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
+                      // Touch target: min-height 44px for accessibility
+                      'flex items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm min-h-[44px]',
                       'motion-safe:transition-colors motion-safe:duration-150',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
                       selectedChatId === chat.id
@@ -459,7 +474,8 @@ export function Sidebar({
                 type="button"
                 onClick={onNewChat}
                 className={cn(
-                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm',
+                  // Touch target: min-height 44px for accessibility
+                  'flex items-center gap-2 rounded-md px-2 py-2.5 text-sm min-h-[44px]',
                   'text-[rgb(var(--primary))]',
                   'hover:bg-[rgb(var(--muted))]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]'
@@ -479,7 +495,8 @@ export function Sidebar({
           type="button"
           onClick={onArchiveClick}
           className={cn(
-            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm',
+            // Touch target: min-height 44px for accessibility
+            'flex items-center gap-2 rounded-md px-2 py-2.5 text-sm min-h-[44px]',
             'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
@@ -492,7 +509,8 @@ export function Sidebar({
           type="button"
           onClick={onSettingsClick}
           className={cn(
-            'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm',
+            // Touch target: min-height 44px for accessibility
+            'flex items-center gap-2 rounded-md px-2 py-2.5 text-sm min-h-[44px]',
             'text-[rgb(var(--muted-foreground))]',
             'hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'

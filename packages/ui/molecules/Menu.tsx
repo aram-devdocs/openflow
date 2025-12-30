@@ -263,7 +263,8 @@ export function Menu({
               setHighlightedIndex(-1);
             }}
             className={cn(
-              'flex w-full items-center gap-2 px-3 py-2 text-sm',
+              // Touch target: min-height 44px for accessibility
+              'flex w-full items-center gap-2 px-3 py-3 text-sm min-h-[44px]',
               'text-left motion-safe:transition-colors motion-safe:duration-75',
               // Default text color
               !item.destructive && 'text-[rgb(var(--popover-foreground))]',

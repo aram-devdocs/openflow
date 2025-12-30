@@ -23,7 +23,7 @@ export interface ThemeToggleCompactProps {
  * Features:
  * - Single button toggle between light and dark
  * - Accessible with proper ARIA label
- * - Minimum 44x44px touch target
+ * - 44x44px touch target (WCAG 2.5.5/2.5.8)
  * - Focus-visible ring for keyboard navigation
  *
  * @example
@@ -41,7 +41,8 @@ export function ThemeToggleCompact({
       type="button"
       onClick={onToggle}
       className={cn(
-        'flex h-9 w-9 items-center justify-center rounded-md',
+        // Touch target: 44x44px minimum for accessibility
+        'flex h-11 w-11 items-center justify-center rounded-md',
         'text-[rgb(var(--muted-foreground))] hover:text-[rgb(var(--foreground))] hover:bg-[rgb(var(--surface-1))]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
         'motion-safe:transition-colors',
