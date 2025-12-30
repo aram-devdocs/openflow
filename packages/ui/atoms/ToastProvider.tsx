@@ -1,5 +1,5 @@
 import { type ReactNode, createContext, useCallback, useContext, useState } from 'react';
-import { Toast, type ToastVariant } from './Toast';
+import { Toast, type ToastAction, type ToastVariant } from './Toast';
 
 export interface ToastData {
   id: string;
@@ -7,15 +7,38 @@ export interface ToastData {
   title: string;
   description?: string;
   duration?: number;
+  /** Optional action button */
+  action?: ToastAction;
+}
+
+export interface ToastOptions {
+  /** Toast title */
+  title: string;
+  /** Optional description */
+  description?: string;
+  /** Toast variant - defaults to 'info' */
+  variant?: ToastVariant;
+  /** Duration in ms before auto-dismiss. Use 0 for infinite. Defaults to 5000ms (8000ms for errors) */
+  duration?: number;
+  /** Optional action button */
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
   toasts: ToastData[];
+  /** Add a toast with full options */
+  toast: (options: ToastOptions) => string;
+  /** Add a toast with full options (alias for toast) */
   addToast: (toast: Omit<ToastData, 'id'>) => string;
+  /** Remove a toast by id */
   removeToast: (id: string) => void;
+  /** Shorthand for success toast */
   success: (title: string, description?: string) => string;
+  /** Shorthand for error toast */
   error: (title: string, description?: string) => string;
+  /** Shorthand for warning toast */
   warning: (title: string, description?: string) => string;
+  /** Shorthand for info toast */
   info: (title: string, description?: string) => string;
 }
 
@@ -90,8 +113,20 @@ export function ToastProvider({ children }: ToastProviderProps) {
     [addToast]
   );
 
+  // Main toast function that accepts full options
+  const toast = useCallback(
+    (options: ToastOptions): string => {
+      const { variant = 'info', duration, ...rest } = options;
+      // Use default duration based on variant if not specified
+      const finalDuration = duration ?? (variant === 'error' ? 8000 : DEFAULT_DURATION);
+      return addToast({ variant, duration: finalDuration, ...rest });
+    },
+    [addToast]
+  );
+
   const value: ToastContextValue = {
     toasts,
+    toast,
     addToast,
     removeToast,
     success,
@@ -103,15 +138,20 @@ export function ToastProvider({ children }: ToastProviderProps) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {/* Toast container - fixed position at bottom-right */}
-      <div className="pointer-events-none fixed bottom-0 right-0 z-50 flex max-h-screen w-full flex-col gap-2 p-4 sm:max-w-md">
-        {toasts.map((toast) => (
+      {/* Toast container with ARIA live region for accessibility */}
+      <div
+        role="region"
+        aria-label="Notifications"
+        className="pointer-events-none fixed bottom-0 right-0 z-50 flex max-h-screen w-full flex-col gap-2 p-4 sm:max-w-md"
+      >
+        {toasts.map((t) => (
           <Toast
-            key={toast.id}
-            id={toast.id}
-            variant={toast.variant}
-            title={toast.title}
-            description={toast.description}
+            key={t.id}
+            id={t.id}
+            variant={t.variant}
+            title={t.title}
+            description={t.description}
+            action={t.action}
             onDismiss={removeToast}
           />
         ))}
