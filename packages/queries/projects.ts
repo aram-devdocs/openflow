@@ -32,4 +32,22 @@ export const projectQueries = {
    * Delete a project by ID.
    */
   delete: (id: string): Promise<void> => invoke('delete_project', { id }),
+
+  /**
+   * Archive a project by ID.
+   * Cascades to archive all tasks in the project.
+   */
+  archive: (id: string): Promise<Project> => invoke('archive_project', { id }),
+
+  /**
+   * Unarchive a project by ID.
+   * Makes the project visible in list queries again.
+   * Note: Tasks remain archived and must be restored individually.
+   */
+  unarchive: (id: string): Promise<Project> => invoke('unarchive_project', { id }),
+
+  /**
+   * List all archived projects.
+   */
+  listArchived: (): Promise<Project[]> => invoke('list_archived_projects'),
 };

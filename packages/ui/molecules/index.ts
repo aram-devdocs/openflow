@@ -36,6 +36,9 @@ export type { TooltipProps, TooltipPosition } from './Tooltip';
 export { Menu } from './Menu';
 export type { MenuProps, MenuItem, MenuPosition } from './Menu';
 
+export { EntityContextMenu } from './EntityContextMenu';
+export type { EntityContextMenuProps, EntityType } from './EntityContextMenu';
+
 export { SkeletonCard } from './SkeletonCard';
 export type { SkeletonCardProps } from './SkeletonCard';
 

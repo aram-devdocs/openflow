@@ -88,10 +88,13 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             // Project commands
             commands::list_projects,
+            commands::list_archived_projects,
             commands::get_project,
             commands::create_project,
             commands::update_project,
             commands::delete_project,
+            commands::archive_project,
+            commands::unarchive_project,
             // Task commands
             commands::list_tasks,
             commands::get_task,
@@ -104,6 +107,7 @@ pub fn run() {
             commands::list_chats,
             commands::list_standalone_chats,
             commands::list_chats_by_project,
+            commands::list_archived_chats,
             commands::get_chat,
             commands::create_chat,
             commands::update_chat,

@@ -107,6 +107,9 @@ pnpm storybook        # Component development
 # Type generation
 pnpm generate:types   # Regenerate TS from Rust
 
+# Route generation
+pnpm tsr generate     # Regenerate TanStack Router routes after adding/modifying route files
+
 # Validation
 pnpm typecheck        # TypeScript check
 pnpm lint             # Biome lint/format

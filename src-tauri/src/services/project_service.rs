@@ -13,7 +13,7 @@ use super::{ServiceError, ServiceResult};
 pub struct ProjectService;
 
 impl ProjectService {
-    /// List all projects ordered by name.
+    /// List all non-archived projects ordered by name.
     pub async fn list(pool: &SqlitePool) -> ServiceResult<Vec<Project>> {
         let projects = sqlx::query_as::<_, Project>(
             r#"
@@ -31,10 +31,44 @@ impl ProjectService {
                 always_included_rules,
                 workflows_folder,
                 verification_config,
+                archived_at,
                 created_at,
                 updated_at
             FROM projects
+            WHERE archived_at IS NULL
             ORDER BY name ASC
+            "#,
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(projects)
+    }
+
+    /// List all archived projects ordered by archived_at DESC.
+    pub async fn list_archived(pool: &SqlitePool) -> ServiceResult<Vec<Project>> {
+        let projects = sqlx::query_as::<_, Project>(
+            r#"
+            SELECT
+                id,
+                name,
+                git_repo_path,
+                base_branch,
+                setup_script,
+                dev_script,
+                cleanup_script,
+                copy_files,
+                icon,
+                rule_folders,
+                always_included_rules,
+                workflows_folder,
+                verification_config,
+                archived_at,
+                created_at,
+                updated_at
+            FROM projects
+            WHERE archived_at IS NOT NULL
+            ORDER BY archived_at DESC
             "#,
         )
         .fetch_all(pool)
@@ -61,6 +95,7 @@ impl ProjectService {
                 always_included_rules,
                 workflows_folder,
                 verification_config,
+                archived_at,
                 created_at,
                 updated_at
             FROM projects
@@ -198,6 +233,66 @@ impl ProjectService {
             .await?;
 
         Ok(())
+    }
+
+    /// Archive a project by ID.
+    ///
+    /// Sets the archived_at timestamp and cascades to archive all tasks in the project.
+    /// Archived projects are excluded from list queries but can still be accessed by ID.
+    pub async fn archive(pool: &SqlitePool, id: &str) -> ServiceResult<Project> {
+        // Verify the project exists first
+        Self::get(pool, id).await?;
+
+        // Archive the project
+        sqlx::query(
+            r#"
+            UPDATE projects
+            SET archived_at = datetime('now', 'subsec'),
+                updated_at = datetime('now', 'subsec')
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+        // Cascade: archive all tasks in this project
+        sqlx::query(
+            r#"
+            UPDATE tasks
+            SET archived_at = datetime('now', 'subsec'),
+                updated_at = datetime('now', 'subsec')
+            WHERE project_id = ? AND archived_at IS NULL
+            "#,
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+        Self::get(pool, id).await
+    }
+
+    /// Unarchive a project by ID.
+    ///
+    /// Clears the archived_at timestamp, making the project visible in list queries again.
+    /// Note: Tasks remain archived and must be restored individually.
+    pub async fn unarchive(pool: &SqlitePool, id: &str) -> ServiceResult<Project> {
+        // Verify the project exists first
+        Self::get(pool, id).await?;
+
+        sqlx::query(
+            r#"
+            UPDATE projects
+            SET archived_at = NULL,
+                updated_at = datetime('now', 'subsec')
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .execute(pool)
+        .await?;
+
+        Self::get(pool, id).await
     }
 }
 

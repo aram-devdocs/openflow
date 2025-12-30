@@ -1,6 +1,7 @@
 import type { Chat, Task, TaskStatus } from '@openflow/generated';
 import { cn } from '@openflow/utils';
 import {
+  ArrowLeft,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -22,6 +23,8 @@ export interface TaskLayoutProps {
   task: Task;
   /** Chats associated with this task */
   chats: Chat[];
+  /** Callback when back button is clicked */
+  onBack?: () => void;
   /** Content for the steps/sidebar panel */
   stepsPanel: ReactNode;
   /** Content for the main panel (chat interface) */
@@ -121,6 +124,7 @@ function getCurrentBranch(chats: Chat[]): string | null {
 export function TaskLayout({
   task,
   chats,
+  onBack,
   stepsPanel,
   mainPanel,
   tabs,
@@ -164,8 +168,22 @@ export function TaskLayout({
       <header className="shrink-0 border-b border-[rgb(var(--border))] px-3 py-2 md:px-4 md:py-3">
         {/* Mobile: Stack title and controls */}
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
-          {/* Left side: Title and status */}
+          {/* Left side: Back button, Title and status */}
           <div className="flex min-w-0 flex-1 items-center gap-2 md:gap-3">
+            {/* Back button */}
+            {onBack && (
+              <Tooltip content="Go back">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onBack}
+                  className="h-8 w-8 shrink-0 p-0"
+                  aria-label="Go back"
+                >
+                  <Icon icon={ArrowLeft} size="sm" />
+                </Button>
+              </Tooltip>
+            )}
             {/* Title - editable */}
             {isTitleEditing ? (
               <input

@@ -8,6 +8,7 @@ import {
   ClipboardList,
   ListFilter,
   MessageSquare,
+  MoreVertical,
   Plus,
   Settings,
 } from 'lucide-react';
@@ -52,6 +53,12 @@ export interface SidebarProps {
   onStatusFilter?: (status: StatusFilter) => void;
   /** Callback when task status is changed */
   onTaskStatusChange?: (taskId: string, status: TaskStatus) => void;
+  /** Callback when task context menu is triggered (right-click or more button) */
+  onTaskContextMenu?: (taskId: string, event: React.MouseEvent) => void;
+  /** Callback when chat context menu is triggered (right-click or more button) */
+  onChatContextMenu?: (chatId: string, event: React.MouseEvent) => void;
+  /** Callback to navigate to all chats page */
+  onViewAllChats?: () => void;
   /** Callback when Settings link is clicked */
   onSettingsClick?: () => void;
   /** Callback when Archive link is clicked */
@@ -289,6 +296,9 @@ export function Sidebar({
   onNewProject,
   onStatusFilter,
   onTaskStatusChange,
+  onTaskContextMenu,
+  onChatContextMenu,
+  onViewAllChats,
   onSettingsClick,
   onArchiveClick,
   isCollapsed = false,
@@ -398,6 +408,8 @@ export function Sidebar({
                   isSelected={selectedTaskId === task.id}
                   {...(onSelectTask && { onSelect: onSelectTask })}
                   {...(onTaskStatusChange && { onStatusChange: onTaskStatusChange })}
+                  {...(onTaskContextMenu && { onMoreClick: onTaskContextMenu })}
+                  {...(onTaskContextMenu && { onContextMenu: onTaskContextMenu })}
                 />
               ))}
             </div>
@@ -417,54 +429,104 @@ export function Sidebar({
 
         {/* Chats section */}
         <div className="border-t border-[rgb(var(--border))] p-3">
-          {/* Collapsible header */}
-          <button
-            type="button"
-            onClick={() => setIsChatsExpanded(!isChatsExpanded)}
-            aria-expanded={isChatsExpanded}
-            aria-label={`Chats section, ${chats.length} chats`}
-            className={cn(
-              // Touch target: min-height 44px for accessibility
-              'mb-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs font-medium min-h-[44px]',
-              'text-[rgb(var(--muted-foreground))]',
-              'hover:text-[rgb(var(--foreground))]',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]'
+          {/* Collapsible header with View All link */}
+          <div className="mb-2 flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setIsChatsExpanded(!isChatsExpanded)}
+              aria-expanded={isChatsExpanded}
+              aria-label={`Chats section, ${chats.length} chats`}
+              className={cn(
+                // Touch target: min-height 44px for accessibility
+                'flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-xs font-medium min-h-[44px]',
+                'text-[rgb(var(--muted-foreground))]',
+                'hover:text-[rgb(var(--foreground))]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]'
+              )}
+            >
+              <Icon
+                icon={ChevronDown}
+                size="xs"
+                className={cn('motion-safe:transition-transform', !isChatsExpanded && '-rotate-90')}
+              />
+              <Icon icon={MessageSquare} size="xs" />
+              <span>Chats</span>
+              <span className="ml-auto rounded-full bg-[rgb(var(--muted))] px-1.5 py-0.5 text-xs">
+                {chats.length}
+              </span>
+            </button>
+            {/* View All link */}
+            {onViewAllChats && chats.length > 0 && (
+              <button
+                type="button"
+                onClick={onViewAllChats}
+                className={cn(
+                  'rounded-md px-2 py-1 text-xs',
+                  'text-[rgb(var(--primary))]',
+                  'hover:bg-[rgb(var(--muted))]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
+                )}
+              >
+                View All
+              </button>
             )}
-          >
-            <Icon
-              icon={ChevronDown}
-              size="xs"
-              className={cn('motion-safe:transition-transform', !isChatsExpanded && '-rotate-90')}
-            />
-            <Icon icon={MessageSquare} size="xs" />
-            <span>Chats</span>
-            <span className="ml-auto rounded-full bg-[rgb(var(--muted))] px-1.5 py-0.5 text-xs">
-              {chats.length}
-            </span>
-          </button>
+          </div>
 
           {/* Chat list */}
           {isChatsExpanded && (
             <div className="flex flex-col gap-1">
               {chats.length > 0 ? (
                 chats.map((chat) => (
-                  <button
+                  <div
                     key={chat.id}
-                    type="button"
-                    onClick={() => onSelectChat?.(chat.id)}
                     className={cn(
-                      // Touch target: min-height 44px for accessibility
-                      'flex items-center gap-2 rounded-md px-3 py-2 text-left text-sm min-h-[44px]',
+                      'group flex items-center gap-1 rounded-md',
                       'motion-safe:transition-colors motion-safe:duration-150',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
                       selectedChatId === chat.id
-                        ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
-                        : 'text-[rgb(var(--muted-foreground))] hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]'
+                        ? 'bg-[rgb(var(--accent))]'
+                        : 'hover:bg-[rgb(var(--muted))]'
                     )}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      onChatContextMenu?.(chat.id, e);
+                    }}
                   >
-                    <Icon icon={MessageSquare} size="xs" className="shrink-0" />
-                    <span className="truncate">{chat.title ?? 'Untitled Chat'}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => onSelectChat?.(chat.id)}
+                      className={cn(
+                        // Touch target: min-height 44px for accessibility
+                        'flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-left text-sm min-h-[44px]',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
+                        selectedChatId === chat.id
+                          ? 'text-[rgb(var(--accent-foreground))]'
+                          : 'text-[rgb(var(--muted-foreground))] hover:text-[rgb(var(--foreground))]'
+                      )}
+                    >
+                      <Icon icon={MessageSquare} size="xs" className="shrink-0" />
+                      <span className="truncate">{chat.title ?? 'Untitled Chat'}</span>
+                    </button>
+                    {/* More button for context menu */}
+                    {onChatContextMenu && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onChatContextMenu(chat.id, e);
+                        }}
+                        className={cn(
+                          'mr-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md',
+                          'opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
+                          'text-[rgb(var(--muted-foreground))] hover:text-[rgb(var(--foreground))]',
+                          'hover:bg-[rgb(var(--accent))]',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
+                        )}
+                        aria-label={`More actions for ${chat.title ?? 'Untitled Chat'}`}
+                      >
+                        <Icon icon={MoreVertical} size="xs" />
+                      </button>
+                    )}
+                  </div>
                 ))
               ) : (
                 <EmptyState icon={MessageSquare} title="No chats yet" size="sm" />

@@ -18,12 +18,15 @@
 import type { Commit, FileDiff, TaskStatus, WorkflowStep } from '@openflow/generated';
 import { ChatRole, MessageRole, WorkflowStepStatus } from '@openflow/generated';
 import {
+  useArchiveTask,
   useArtifactContent,
   useArtifacts,
   useChat,
   useClaudeEvents,
+  useConfirmDialog,
   useCreateChat,
   useCreateMessage,
+  useDeleteTask,
   useExecutorProfiles,
   useKeyboardShortcuts,
   useMessages,
@@ -40,10 +43,12 @@ import {
   ChatPanel,
   ClaudeEventRenderer,
   CommitList,
+  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogFooter,
   DiffViewer,
+  EntityContextMenu,
   Input,
   SkeletonTaskDetail,
   StepsPanel,
@@ -91,6 +96,15 @@ function TaskDetailPage() {
   // Artifact preview state
   const [previewArtifact, setPreviewArtifact] = useState<ArtifactFile | null>(null);
 
+  // More actions menu state
+  const [moreMenuState, setMoreMenuState] = useState<{
+    isOpen: boolean;
+    position: { x: number; y: number };
+  }>({ isOpen: false, position: { x: 0, y: 0 } });
+
+  // Confirm dialog
+  const { dialogProps, confirm } = useConfirmDialog();
+
   // Data fetching
   const { data: taskData, isLoading: isLoadingTask } = useTask(taskId);
   const { data: executorProfiles = [] } = useExecutorProfiles();
@@ -104,6 +118,8 @@ function TaskDetailPage() {
   const createMessage = useCreateMessage();
   const createChat = useCreateChat();
   const openArtifact = useOpenArtifact();
+  const archiveTask = useArchiveTask();
+  const deleteTask = useDeleteTask();
 
   // Claude events for streaming output
   const {
@@ -436,10 +452,72 @@ function TaskDetailPage() {
     console.log('Stop process clicked');
   }, []);
 
+  const handleBack = useCallback(() => {
+    // Navigate back to project if task has one, otherwise to tasks list
+    if (task?.projectId) {
+      navigate({ to: '/projects/$projectId', params: { projectId: task.projectId } });
+    } else {
+      navigate({ to: '/tasks' });
+    }
+  }, [task?.projectId, navigate]);
+
   const handleCreatePR = useCallback(() => {
     // TODO: Implement PR creation
     console.log('Create PR clicked');
   }, []);
+
+  // More actions menu handlers
+  const handleMoreActions = useCallback((event?: React.MouseEvent) => {
+    const rect = (event?.currentTarget as HTMLElement)?.getBoundingClientRect();
+    setMoreMenuState({
+      isOpen: true,
+      position: {
+        x: rect ? rect.right : 0,
+        y: rect ? rect.bottom + 4 : 0,
+      },
+    });
+  }, []);
+
+  const handleCloseMoreMenu = useCallback(() => {
+    setMoreMenuState((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
+  const handleArchiveTask = useCallback(async () => {
+    if (!task) return;
+    handleCloseMoreMenu();
+
+    try {
+      await archiveTask.mutateAsync(task.id);
+      toast.success('Task archived', 'The task has been moved to the archive.');
+      navigate({ to: '/tasks' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error('Failed to archive task', message);
+    }
+  }, [task, archiveTask, handleCloseMoreMenu, toast, navigate]);
+
+  const handleDeleteTask = useCallback(() => {
+    if (!task) return;
+    handleCloseMoreMenu();
+
+    confirm({
+      title: 'Delete Task',
+      description: `Are you sure you want to delete "${task.title}"? This will permanently delete all chats and messages and cannot be undone.`,
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      variant: 'destructive',
+      onConfirm: async () => {
+        try {
+          await deleteTask.mutateAsync(task.id);
+          toast.success('Task deleted', 'The task has been permanently deleted.');
+          navigate({ to: '/tasks' });
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          toast.error('Failed to delete task', message);
+        }
+      },
+    });
+  }, [task, handleCloseMoreMenu, confirm, deleteTask, toast, navigate]);
 
   const handleFileToggle = useCallback((path: string) => {
     setExpandedDiffFiles((prev) => {
@@ -558,6 +636,7 @@ function TaskDetailPage() {
       <TaskLayout
         task={task}
         chats={chats}
+        onBack={handleBack}
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -569,6 +648,7 @@ function TaskDetailPage() {
         onTitleEditSubmit={handleTitleEditSubmit}
         onTitleEditCancel={handleTitleEditCancel}
         {...(hasBranch && { onCreatePR: handleCreatePR })}
+        onMoreActions={handleMoreActions}
         stepsPanel={
           <StepsPanel
             steps={workflowSteps}
@@ -708,6 +788,19 @@ function TaskDetailPage() {
         content={previewContent ?? null}
         loading={isLoadingPreview}
       />
+
+      {/* More actions context menu */}
+      <EntityContextMenu
+        entityType="task"
+        isOpen={moreMenuState.isOpen}
+        position={moreMenuState.position}
+        onClose={handleCloseMoreMenu}
+        onArchive={handleArchiveTask}
+        onDelete={handleDeleteTask}
+      />
+
+      {/* Confirm dialog */}
+      <ConfirmDialog {...dialogProps} />
     </>
   );
 }

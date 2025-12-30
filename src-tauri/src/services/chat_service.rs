@@ -99,6 +99,29 @@ impl ChatService {
         Ok(chats)
     }
 
+    /// List all archived chats across all projects.
+    ///
+    /// Returns archived chats ordered by archived_at DESC (most recently archived first).
+    pub async fn list_archived(pool: &SqlitePool) -> ServiceResult<Vec<Chat>> {
+        let chats = sqlx::query_as::<_, Chat>(
+            r#"
+            SELECT
+                id, task_id, project_id, title, chat_role, executor_profile_id,
+                base_branch, branch, worktree_path, worktree_deleted,
+                setup_completed_at, initial_prompt, hidden_prompt,
+                is_plan_container, main_chat_id, workflow_step_index,
+                claude_session_id, archived_at, created_at, updated_at
+            FROM chats
+            WHERE archived_at IS NOT NULL
+            ORDER BY archived_at DESC
+            "#,
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(chats)
+    }
+
     /// Get a chat by ID with its messages.
     pub async fn get(pool: &SqlitePool, id: &str) -> ServiceResult<ChatWithMessages> {
         let chat = sqlx::query_as::<_, Chat>(

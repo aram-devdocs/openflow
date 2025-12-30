@@ -25,6 +25,8 @@ pub struct Project {
     pub workflows_folder: String,
     /// JSON object with verification command configuration
     pub verification_config: Option<String>,
+    /// Timestamp when the project was archived (soft-delete)
+    pub archived_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

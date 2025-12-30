@@ -8,6 +8,8 @@
 
 export { TaskCard, type TaskCardProps } from './TaskCard';
 export { TaskList, type TaskListProps } from './TaskList';
+export { ChatCard, type ChatCardProps } from './ChatCard';
+export { ChatsList, type ChatsListProps, type ChatFilter } from './ChatsList';
 export { ProjectSelector, type ProjectSelectorProps } from './ProjectSelector';
 export { ChatMessage, type ChatMessageProps } from './ChatMessage';
 export { ChatPanel, type ChatPanelProps } from './ChatPanel';

@@ -16,6 +16,7 @@ export const projectKeys = {
   all: ['projects'] as const,
   lists: () => [...projectKeys.all, 'list'] as const,
   list: () => [...projectKeys.lists()] as const,
+  archived: () => [...projectKeys.lists(), 'archived'] as const,
   details: () => [...projectKeys.all, 'detail'] as const,
   detail: (id: string) => [...projectKeys.details(), id] as const,
 };
@@ -96,6 +97,57 @@ export function useDeleteProject(): UseMutationResult<void, Error, string> {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
       queryClient.removeQueries({ queryKey: projectKeys.detail(id) });
+    },
+  });
+}
+
+/**
+ * Fetch all archived projects.
+ *
+ * @returns Query result with array of archived projects
+ */
+export function useArchivedProjects(): UseQueryResult<Project[]> {
+  return useQuery({
+    queryKey: projectKeys.archived(),
+    queryFn: () => projectQueries.listArchived(),
+  });
+}
+
+/**
+ * Archive a project.
+ * Cascades to archive all tasks in the project.
+ *
+ * @returns Mutation for archiving a project
+ */
+export function useArchiveProject(): UseMutationResult<Project, Error, string> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => projectQueries.archive(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.archived() });
+    },
+  });
+}
+
+/**
+ * Unarchive a project.
+ * Makes the project visible in list queries again.
+ * Note: Tasks remain archived and must be restored individually.
+ *
+ * @returns Mutation for unarchiving a project
+ */
+export function useUnarchiveProject(): UseMutationResult<Project, Error, string> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => projectQueries.unarchive(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: projectKeys.archived() });
     },
   });
 }

@@ -68,3 +68,38 @@ pub async fn delete_project(state: State<'_, AppState>, id: String) -> Result<()
         .await
         .map_err(|e| e.to_string())
 }
+
+/// Archive a project by ID.
+///
+/// Sets the archived_at timestamp. Archived projects are hidden from list queries.
+/// Cascades to archive all tasks in the project.
+#[tauri::command]
+pub async fn archive_project(state: State<'_, AppState>, id: String) -> Result<Project, String> {
+    let pool = state.db.lock().await;
+    ProjectService::archive(&pool, &id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Unarchive a project by ID.
+///
+/// Clears the archived_at timestamp, making the project visible again.
+/// Note: Tasks remain archived and must be restored individually.
+#[tauri::command]
+pub async fn unarchive_project(state: State<'_, AppState>, id: String) -> Result<Project, String> {
+    let pool = state.db.lock().await;
+    ProjectService::unarchive(&pool, &id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// List all archived projects.
+///
+/// Returns archived projects ordered by archived_at DESC (most recently archived first).
+#[tauri::command]
+pub async fn list_archived_projects(state: State<'_, AppState>) -> Result<Vec<Project>, String> {
+    let pool = state.db.lock().await;
+    ProjectService::list_archived(&pool)
+        .await
+        .map_err(|e| e.to_string())
+}

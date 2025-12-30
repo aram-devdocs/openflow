@@ -134,6 +134,17 @@ pub async fn list_chats_by_project(
         .map_err(|e| e.to_string())
 }
 
+/// List all archived chats across all projects.
+///
+/// Returns archived chats ordered by archived_at DESC (most recently archived first).
+#[tauri::command]
+pub async fn list_archived_chats(state: State<'_, AppState>) -> Result<Vec<Chat>, String> {
+    let pool = state.db.lock().await;
+    ChatService::list_archived(&pool)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Start a workflow step execution for a chat.
 ///
 /// This triggers the executor to run on the chat's initial prompt.

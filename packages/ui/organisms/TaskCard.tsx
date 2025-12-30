@@ -15,6 +15,10 @@ export interface TaskCardProps {
   onSelect?: (id: string) => void;
   /** Callback when the task status is changed */
   onStatusChange?: (id: string, status: TaskStatus) => void;
+  /** Callback when more options button is clicked (for context menu) */
+  onMoreClick?: (id: string, event: React.MouseEvent) => void;
+  /** Callback when context menu is triggered (right-click) */
+  onContextMenu?: (id: string, event: React.MouseEvent) => void;
   /** Additional CSS classes */
   className?: string;
 }
@@ -51,6 +55,8 @@ export function TaskCard({
   isSelected = false,
   onSelect,
   onStatusChange,
+  onMoreClick,
+  onContextMenu,
   className,
 }: TaskCardProps) {
   const handleClick = () => {
@@ -66,6 +72,19 @@ export function TaskCard({
     e.stopPropagation();
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (onContextMenu) {
+      e.preventDefault();
+      e.stopPropagation();
+      onContextMenu(task.id, e);
+    }
+  };
+
+  const handleMoreClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onMoreClick?.(task.id, e);
+  };
+
   const hasActionsRequired = task.actionsRequiredCount > 0;
 
   return (
@@ -73,6 +92,7 @@ export function TaskCard({
       isSelected={isSelected}
       isClickable={Boolean(onSelect)}
       onClick={onSelect ? handleClick : undefined}
+      onContextMenu={handleContextMenu}
       className={cn('group', className)}
     >
       <CardContent className="p-4">
@@ -130,7 +150,7 @@ export function TaskCard({
             <span />
           )}
 
-          {/* Context menu placeholder - visible on hover */}
+          {/* Context menu button - visible on hover */}
           <button
             type="button"
             className={cn(
@@ -139,10 +159,7 @@ export function TaskCard({
               'hover:bg-[rgb(var(--accent))] hover:text-[rgb(var(--accent-foreground))]',
               'focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]'
             )}
-            onClick={(e) => {
-              e.stopPropagation();
-              // Context menu will be handled by parent
-            }}
+            onClick={handleMoreClick}
             aria-label="Task options"
           >
             <Icon icon={MoreVertical} size="sm" />

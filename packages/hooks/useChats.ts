@@ -25,6 +25,7 @@ export const chatKeys = {
   list: (taskId: string) => [...chatKeys.lists(), { taskId }] as const,
   standalone: (projectId: string) => [...chatKeys.lists(), 'standalone', { projectId }] as const,
   byProject: (projectId: string) => [...chatKeys.lists(), 'project', { projectId }] as const,
+  archived: () => [...chatKeys.lists(), 'archived'] as const,
   details: () => [...chatKeys.all, 'detail'] as const,
   detail: (id: string) => [...chatKeys.details(), id] as const,
 };
@@ -68,6 +69,18 @@ export function useChatsByProject(projectId: string): UseQueryResult<Chat[]> {
     queryKey: chatKeys.byProject(projectId),
     queryFn: () => chatQueries.listByProject(projectId),
     enabled: Boolean(projectId),
+  });
+}
+
+/**
+ * Fetch all archived chats across all projects.
+ *
+ * @returns Query result with array of archived chats
+ */
+export function useArchivedChats(): UseQueryResult<Chat[]> {
+  return useQuery({
+    queryKey: chatKeys.archived(),
+    queryFn: () => chatQueries.listArchived(),
   });
 }
 
@@ -220,6 +233,7 @@ export function useArchiveChat(): UseMutationResult<Chat, Error, string> {
       }
       queryClient.invalidateQueries({ queryKey: chatKeys.standalone(data.projectId) });
       queryClient.invalidateQueries({ queryKey: chatKeys.byProject(data.projectId) });
+      queryClient.invalidateQueries({ queryKey: chatKeys.archived() });
     },
   });
 }
@@ -243,6 +257,7 @@ export function useUnarchiveChat(): UseMutationResult<Chat, Error, string> {
       }
       queryClient.invalidateQueries({ queryKey: chatKeys.standalone(data.projectId) });
       queryClient.invalidateQueries({ queryKey: chatKeys.byProject(data.projectId) });
+      queryClient.invalidateQueries({ queryKey: chatKeys.archived() });
     },
   });
 }

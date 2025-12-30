@@ -67,6 +67,11 @@ export const chatQueries = {
   unarchive: (id: string): Promise<Chat> => invoke('unarchive_chat', { id }),
 
   /**
+   * List all archived chats across all projects.
+   */
+  listArchived: (): Promise<Chat[]> => invoke('list_archived_chats'),
+
+  /**
    * Start a workflow step execution for a chat.
    * This triggers the executor to run on the chat's initial prompt.
    * @param chatId - The chat ID to start the workflow step for
