@@ -50,3 +50,4 @@ export { WorkflowSelector, type WorkflowSelectorProps } from './WorkflowSelector
 export { WorkflowPreview, type WorkflowPreviewProps } from './WorkflowPreview';
 export { ArtifactsPanel, type ArtifactsPanelProps } from './ArtifactsPanel';
 export { ArtifactPreviewDialog, type ArtifactPreviewDialogProps } from './ArtifactPreviewDialog';
+export { ConfirmDialog, type ConfirmDialogProps } from './ConfirmDialog';

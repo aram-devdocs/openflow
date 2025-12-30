@@ -23,3 +23,4 @@ export * from './useWorkflows';
 export * from './useTheme';
 export * from './useToastMutation';
 export * from './useArtifacts';
+export * from './useConfirmDialog';

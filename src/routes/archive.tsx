@@ -13,12 +13,13 @@
 import type { Task } from '@openflow/generated';
 import {
   useArchivedTasks,
+  useConfirmDialog,
   useDeleteTask,
   useKeyboardShortcuts,
   useProjects,
   useRestoreTask,
 } from '@openflow/hooks';
-import { AppLayout, Button, Dialog, EmptyState, Header } from '@openflow/ui';
+import { AppLayout, ConfirmDialog, EmptyState, Header } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Archive, ArrowLeft, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -32,7 +33,9 @@ function ArchivePage() {
 
   // UI state
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<Task | null>(null);
+
+  // Confirm dialog
+  const { dialogProps, confirm } = useConfirmDialog();
 
   // Data fetching
   const { data: archivedTasks = [], isLoading } = useArchivedTasks();
@@ -46,7 +49,6 @@ function ArchivePage() {
       key: 'Escape',
       action: () => {
         setSelectedTask(null);
-        setConfirmDelete(null);
       },
     },
   ]);
@@ -83,24 +85,21 @@ function ArchivePage() {
     [restoreTask]
   );
 
-  const handleDeleteClick = useCallback((task: Task) => {
-    setConfirmDelete(task);
-  }, []);
-
-  const handleConfirmDelete = useCallback(() => {
-    if (confirmDelete) {
-      deleteTask.mutate(confirmDelete.id, {
-        onSuccess: () => {
-          setConfirmDelete(null);
+  const handleDeleteClick = useCallback(
+    (task: Task) => {
+      confirm({
+        title: 'Delete Task Permanently',
+        description: `Are you sure you want to permanently delete "${task.title}"? This action cannot be undone.`,
+        confirmLabel: 'Delete',
+        variant: 'destructive',
+        onConfirm: async () => {
+          await deleteTask.mutateAsync(task.id);
           setSelectedTask(null);
         },
       });
-    }
-  }, [confirmDelete, deleteTask]);
-
-  const handleCancelDelete = useCallback(() => {
-    setConfirmDelete(null);
-  }, []);
+    },
+    [confirm, deleteTask]
+  );
 
   const handleSearch = useCallback(() => {
     // TODO: Open command palette for search
@@ -213,34 +212,7 @@ function ArchivePage() {
       </div>
 
       {/* Confirm delete dialog */}
-      <Dialog
-        isOpen={confirmDelete !== null}
-        onClose={handleCancelDelete}
-        title="Delete Task Permanently"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-[rgb(var(--muted-foreground))]">
-            Are you sure you want to permanently delete{' '}
-            <span className="font-medium text-[rgb(var(--foreground))]">
-              {confirmDelete?.title}
-            </span>
-            ? This action cannot be undone.
-          </p>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={handleCancelDelete} disabled={deleteTask.isPending}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmDelete}
-              loading={deleteTask.isPending}
-              loadingText="Deleting..."
-            >
-              Delete
-            </Button>
-          </div>
-        </div>
-      </Dialog>
+      <ConfirmDialog {...dialogProps} />
     </AppLayout>
   );
 }
