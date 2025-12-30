@@ -108,6 +108,7 @@ function StatusFilterButton({
       className={cn(
         'flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm',
         'transition-colors duration-150',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
         isActive
           ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
           : 'text-[rgb(var(--muted-foreground))] hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]'
@@ -406,9 +407,10 @@ export function Sidebar({
             type="button"
             onClick={() => setIsChatsExpanded(!isChatsExpanded)}
             className={cn(
-              'mb-2 flex w-full items-center gap-2 text-xs font-medium',
+              'mb-2 flex w-full items-center gap-2 rounded-md text-xs font-medium',
               'text-[rgb(var(--muted-foreground))]',
-              'hover:text-[rgb(var(--foreground))]'
+              'hover:text-[rgb(var(--foreground))]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]'
             )}
           >
             <Icon
@@ -435,6 +437,7 @@ export function Sidebar({
                     className={cn(
                       'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm',
                       'transition-colors duration-150',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
                       selectedChatId === chat.id
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
                         : 'text-[rgb(var(--muted-foreground))] hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]'
@@ -454,7 +457,8 @@ export function Sidebar({
                 className={cn(
                   'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm',
                   'text-[rgb(var(--primary))]',
-                  'hover:bg-[rgb(var(--muted))]'
+                  'hover:bg-[rgb(var(--muted))]',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]'
                 )}
               >
                 <Icon icon={Plus} size="xs" />

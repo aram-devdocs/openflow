@@ -125,6 +125,23 @@
 }
 
 @layer utilities {
+  /* Standardized focus ring for all interactive elements */
+  .focus-ring {
+    @apply focus-visible:outline-none
+           focus-visible:ring-2
+           focus-visible:ring-ring
+           focus-visible:ring-offset-2
+           focus-visible:ring-offset-background;
+  }
+
+  /* Focus ring without offset (for elements on colored backgrounds) */
+  .focus-ring-inset {
+    @apply focus-visible:outline-none
+           focus-visible:ring-2
+           focus-visible:ring-ring
+           focus-visible:ring-inset;
+  }
+
   /* Accessibility: solid backgrounds for users who prefer reduced transparency */
   /* biome-ignore lint/correctness/noUnknownMediaFeatureName: CSS4 Media Query - experimental but valid for future compatibility */
   @media (prefers-reduced-transparency: reduce) {

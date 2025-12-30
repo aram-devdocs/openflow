@@ -179,6 +179,7 @@ export function StepsPanel({
                   'group relative flex items-start gap-3 px-4 py-3',
                   'transition-colors duration-150',
                   'cursor-pointer',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                   isActive && 'bg-[rgb(var(--accent))]',
                   !isActive && 'hover:bg-[rgb(var(--muted))]',
                   disabled && 'opacity-60 cursor-not-allowed'

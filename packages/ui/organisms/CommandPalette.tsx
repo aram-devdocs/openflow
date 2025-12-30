@@ -305,6 +305,7 @@ export function CommandPalette({
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
                       'transition-colors duration-75',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
                         : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
@@ -355,6 +356,7 @@ export function CommandPalette({
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
                       'transition-colors duration-75',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
                         : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
@@ -400,6 +402,7 @@ export function CommandPalette({
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
                       'transition-colors duration-75',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
                       isSelected
                         ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
                         : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
