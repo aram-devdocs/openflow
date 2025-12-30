@@ -45,6 +45,7 @@ import {
   DialogFooter,
   DiffViewer,
   Input,
+  SkeletonTaskDetail,
   StepsPanel,
   TaskLayout,
   Textarea,
@@ -491,11 +492,7 @@ function TaskDetailPage() {
 
   // Loading state
   if (isLoadingTask) {
-    return (
-      <div className="flex h-full items-center justify-center bg-[rgb(var(--background))]">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading task...</div>
-      </div>
-    );
+    return <SkeletonTaskDetail />;
   }
 
   // Not found state

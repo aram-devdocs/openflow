@@ -26,6 +26,7 @@ import {
   FormField,
   Header,
   Input,
+  SkeletonProjectCard,
   useToast,
 } from '@openflow/ui';
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -185,8 +186,10 @@ function ProjectsPage() {
 
         {/* Loading state */}
         {isLoading && (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading projects...</div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonProjectCard key={`skeleton-project-card-${i}`} />
+            ))}
           </div>
         )}
 

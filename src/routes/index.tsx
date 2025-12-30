@@ -35,6 +35,8 @@ import {
   Input,
   NewChatDialog,
   Sidebar,
+  SkeletonStats,
+  SkeletonTaskCard,
   useToast,
 } from '@openflow/ui';
 import type { CommandAction, RecentItem, StatusFilter } from '@openflow/ui';
@@ -383,7 +385,7 @@ function DashboardPage() {
 
   // Build header subtitle
   const getHeaderSubtitle = () => {
-    if (isLoadingTasks) return 'Loading tasks...';
+    if (isLoadingTasks) return undefined; // Let skeleton handle loading
     const inProgressCount = tasks.filter((t) => t.status === 'inprogress').length;
     if (inProgressCount === 0) return `${tasks.length} tasks`;
     return `${inProgressCount} task${inProgressCount === 1 ? '' : 's'} in progress`;
@@ -472,8 +474,21 @@ function DashboardPage() {
 
         {/* Loading state */}
         {(isLoadingProjects || isLoadingTasks) && activeProjectId && (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading...</div>
+          <div className="flex-1 overflow-auto p-4 md:p-6">
+            {/* Stats skeleton */}
+            <SkeletonStats className="mb-6" />
+
+            {/* Recent tasks skeleton */}
+            <div className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]">
+              <div className="border-b border-[rgb(var(--border))] px-4 py-3">
+                <div className="h-5 w-24 rounded bg-[rgb(var(--muted))] motion-safe:animate-pulse" />
+              </div>
+              <div className="p-4 space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <SkeletonTaskCard key={`dashboard-skeleton-${i}`} />
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

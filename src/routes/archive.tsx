@@ -19,7 +19,7 @@ import {
   useProjects,
   useRestoreTask,
 } from '@openflow/hooks';
-import { AppLayout, ConfirmDialog, EmptyState, Header } from '@openflow/ui';
+import { AppLayout, ConfirmDialog, EmptyState, Header, SkeletonArchiveList } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Archive, ArrowLeft, RotateCcw, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
@@ -145,11 +145,7 @@ function ArchivePage() {
         {/* Content */}
         <div className="flex-1 overflow-auto p-4 md:p-6">
           {isLoading ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-sm text-[rgb(var(--muted-foreground))]">
-                Loading archived tasks...
-              </div>
-            </div>
+            <SkeletonArchiveList />
           ) : archivedTasks.length === 0 ? (
             <EmptyState
               icon={Archive}

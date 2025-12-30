@@ -31,6 +31,7 @@ import {
   Input,
   Label,
   Sidebar,
+  Skeleton,
   SkeletonTaskCard,
   TaskList,
   Textarea,
@@ -183,7 +184,11 @@ function ProjectDetailPage() {
       <AppLayout
         sidebarCollapsed={true}
         sidebar={null}
-        header={<Header title="Loading..." onSearch={handleSearch} />}
+        header={
+          <div className="flex items-center gap-4 px-4 py-3 border-b border-[rgb(var(--border))]">
+            <Skeleton className="h-6 w-48" />
+          </div>
+        }
       >
         <div className="p-6">
           <div className="flex flex-col gap-2">

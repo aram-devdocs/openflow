@@ -33,6 +33,7 @@ import {
   Dialog,
   FormField,
   Input,
+  SkeletonCard,
   Textarea,
 } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
@@ -206,10 +207,10 @@ function ExecutorProfilesPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">
-          Loading executor profiles...
-        </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonCard key={`skeleton-profile-${i}`} showActions />
+        ))}
       </div>
     );
   }

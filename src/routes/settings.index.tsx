@@ -8,7 +8,7 @@
  */
 
 import { useAllSettings, useKeyboardShortcuts, useSetSetting, useTheme } from '@openflow/hooks';
-import { Badge, Button, Card, FormField, ThemeToggle } from '@openflow/ui';
+import { Badge, Button, Card, FormField, SkeletonSettings, ThemeToggle } from '@openflow/ui';
 import type { Theme } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
 import { HardDrive, Moon, Save } from 'lucide-react';
@@ -77,11 +77,7 @@ function GeneralSettingsPage() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-sm text-[rgb(var(--muted-foreground))]">Loading settings...</div>
-      </div>
-    );
+    return <SkeletonSettings sectionCount={3} fieldsPerSection={2} />;
   }
 
   return (
