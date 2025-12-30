@@ -718,10 +718,10 @@ function AssistantResponse({
                 className={cn(
                   'rounded-lg px-3 py-2 text-xs font-medium',
                   item.subtype === 'success'
-                    ? 'bg-green-500/10 text-green-400'
+                    ? 'bg-success/10 text-success'
                     : item.subtype === 'error'
-                      ? 'bg-red-500/10 text-red-400'
-                      : 'bg-blue-500/10 text-blue-400'
+                      ? 'bg-error/10 text-error'
+                      : 'bg-info/10 text-info'
                 )}
               >
                 {item.subtype === 'success'
@@ -825,10 +825,10 @@ function ToolCallCard({ tool }: ToolCallCardProps) {
       className={cn(
         'overflow-hidden rounded-xl border',
         tool.isError
-          ? 'border-red-500/30 bg-red-500/5'
+          ? 'border-error/30 bg-error/5'
           : isInProgress
-            ? 'border-blue-500/30 bg-blue-500/5'
-            : 'border-[rgb(var(--border))] bg-[rgb(var(--card))]'
+            ? 'border-info/30 bg-info/5'
+            : 'border-border bg-card'
       )}
     >
       {/* Header */}
@@ -843,35 +843,26 @@ function ToolCallCard({ tool }: ToolCallCardProps) {
         <div
           className={cn(
             'flex h-7 w-7 items-center justify-center rounded-lg',
-            tool.isError
-              ? 'bg-red-500/20'
-              : isInProgress
-                ? 'bg-blue-500/20'
-                : 'bg-[rgb(var(--primary))]/10'
+            tool.isError ? 'bg-error/20' : isInProgress ? 'bg-info/20' : 'bg-primary/10'
           )}
         >
           {isInProgress ? (
             <Spinner size="sm" />
           ) : (
-            <Wrench
-              className={cn(
-                'h-3.5 w-3.5',
-                tool.isError ? 'text-red-400' : 'text-[rgb(var(--primary))]'
-              )}
-            />
+            <Wrench className={cn('h-3.5 w-3.5', tool.isError ? 'text-error' : 'text-primary')} />
           )}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <code className="text-sm font-semibold text-[rgb(var(--foreground))]">{tool.name}</code>
+            <code className="text-sm font-semibold text-foreground">{tool.name}</code>
             {tool.isError && (
-              <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
+              <span className="rounded bg-error/20 px-1.5 py-0.5 text-[10px] font-medium text-error">
                 Error
               </span>
             )}
             {isInProgress && (
-              <span className="rounded bg-blue-500/20 px-1.5 py-0.5 text-[10px] font-medium text-blue-400">
+              <span className="rounded bg-info/20 px-1.5 py-0.5 text-[10px] font-medium text-info">
                 Running
               </span>
             )}
@@ -907,9 +898,7 @@ function ToolCallCard({ tool }: ToolCallCardProps) {
               <pre
                 className={cn(
                   'max-h-48 overflow-auto rounded-lg p-3 text-xs',
-                  tool.isError
-                    ? 'bg-red-500/10 text-red-300'
-                    : 'bg-[rgb(var(--background))] text-[rgb(var(--muted-foreground))]'
+                  tool.isError ? 'bg-error/10 text-error' : 'bg-background text-muted-foreground'
                 )}
               >
                 {tool.output}

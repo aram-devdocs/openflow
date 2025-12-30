@@ -200,7 +200,7 @@ function ArchivePage() {
                     <button
                       type="button"
                       onClick={() => handleDeleteClick(task)}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/20"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-error/10 px-3 py-1.5 text-xs font-medium text-error hover:bg-error/20"
                       title="Delete permanently"
                     >
                       <Trash2 className="h-3.5 w-3.5" />

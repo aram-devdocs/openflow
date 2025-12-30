@@ -327,7 +327,7 @@ function ProjectDetailPage() {
             />
           </FormField>
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
+          {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="ghost" onClick={handleCloseCreateDialog}>

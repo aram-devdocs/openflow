@@ -20,10 +20,10 @@ export interface ToastProps {
 }
 
 const variantClasses: Record<ToastVariant, string> = {
-  success: 'border-green-500/50 bg-green-500/10',
-  error: 'border-red-500/50 bg-red-500/10',
-  warning: 'border-yellow-500/50 bg-yellow-500/10',
-  info: 'border-blue-500/50 bg-blue-500/10',
+  success: 'border-success/50 bg-success/10',
+  error: 'border-error/50 bg-error/10',
+  warning: 'border-warning/50 bg-warning/10',
+  info: 'border-info/50 bg-info/10',
 };
 
 const variantIcons: Record<ToastVariant, typeof CheckCircle> = {
@@ -34,10 +34,10 @@ const variantIcons: Record<ToastVariant, typeof CheckCircle> = {
 };
 
 const variantIconColors: Record<ToastVariant, string> = {
-  success: 'text-green-500',
-  error: 'text-red-500',
-  warning: 'text-yellow-500',
-  info: 'text-blue-500',
+  success: 'text-success',
+  error: 'text-error',
+  warning: 'text-warning',
+  info: 'text-info',
 };
 
 /**

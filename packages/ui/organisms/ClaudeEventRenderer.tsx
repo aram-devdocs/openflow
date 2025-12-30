@@ -277,9 +277,7 @@ function ToolCallGroup({ tools, defaultExpanded = false }: ToolCallGroupProps) {
     <div
       className={cn(
         'rounded-lg border',
-        hasErrors
-          ? 'border-red-500/30 bg-red-500/10'
-          : 'border-[rgb(var(--border))] bg-[rgb(var(--muted))]/50'
+        hasErrors ? 'border-error/30 bg-error/10' : 'border-border bg-muted/50'
       )}
     >
       {/* Header - always visible */}
@@ -298,16 +296,12 @@ function ToolCallGroup({ tools, defaultExpanded = false }: ToolCallGroupProps) {
           size="sm"
           className="text-[rgb(var(--muted-foreground))]"
         />
-        <Icon
-          icon={Wrench}
-          size="sm"
-          className={hasErrors ? 'text-red-400' : 'text-[rgb(var(--primary))]'}
-        />
+        <Icon icon={Wrench} size="sm" className={hasErrors ? 'text-error' : 'text-primary'} />
         <span className="text-sm font-medium text-[rgb(var(--foreground))]">
           {tools.length} {tools.length === 1 ? 'tool' : 'tools'} used
         </span>
         {hasErrors && (
-          <span className="ml-auto text-xs text-red-400">
+          <span className="ml-auto text-xs text-error">
             {tools.filter((t) => t.isError).length} error(s)
           </span>
         )}
@@ -342,22 +336,15 @@ function ToolCallItem({ tool }: ToolCallItemProps) {
     <div
       className={cn(
         'rounded border p-2',
-        tool.isError
-          ? 'border-red-500/30 bg-red-500/5'
-          : 'border-[rgb(var(--border))] bg-[rgb(var(--background))]'
+        tool.isError ? 'border-error/30 bg-error/5' : 'border-border bg-background'
       )}
     >
       {/* Tool name */}
       <div className="flex items-center gap-2">
-        <code
-          className={cn(
-            'text-xs font-medium',
-            tool.isError ? 'text-red-400' : 'text-[rgb(var(--primary))]'
-          )}
-        >
+        <code className={cn('text-xs font-medium', tool.isError ? 'text-error' : 'text-primary')}>
           {tool.name}
         </code>
-        {tool.isError && <span className="text-xs text-red-400">Error</span>}
+        {tool.isError && <span className="text-xs text-error">Error</span>}
       </div>
 
       {/* Input toggle */}
@@ -392,9 +379,7 @@ function ToolCallItem({ tool }: ToolCallItemProps) {
             <pre
               className={cn(
                 'mt-1 max-h-40 overflow-auto rounded p-2 text-xs',
-                tool.isError
-                  ? 'bg-red-500/10 text-red-300'
-                  : 'bg-[rgb(var(--muted))] text-[rgb(var(--muted-foreground))]'
+                tool.isError ? 'bg-error/10 text-error' : 'bg-muted text-muted-foreground'
               )}
             >
               {tool.output}
@@ -416,10 +401,10 @@ interface SystemEventBlockProps {
 
 function SystemEventBlock({ subtype, data }: SystemEventBlockProps) {
   return (
-    <div className="rounded border border-yellow-500/20 bg-yellow-500/10 px-3 py-2 text-xs">
-      <span className="font-medium text-yellow-400">System: {subtype}</span>
+    <div className="rounded border border-warning/20 bg-warning/10 px-3 py-2 text-xs">
+      <span className="font-medium text-warning">System: {subtype}</span>
       {Object.keys(data).length > 0 && (
-        <pre className="mt-1 text-yellow-300/70">{JSON.stringify(data, null, 2)}</pre>
+        <pre className="mt-1 text-warning/70">{JSON.stringify(data, null, 2)}</pre>
       )}
     </div>
   );
@@ -435,10 +420,10 @@ interface ResultEventBlockProps {
 
 function ResultEventBlock({ subtype, data }: ResultEventBlockProps) {
   return (
-    <div className="rounded border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs">
-      <span className="font-medium text-green-400">Result: {subtype}</span>
+    <div className="rounded border border-success/20 bg-success/10 px-3 py-2 text-xs">
+      <span className="font-medium text-success">Result: {subtype}</span>
       {Object.keys(data).length > 0 && (
-        <pre className="mt-1 text-green-300/70">{JSON.stringify(data, null, 2)}</pre>
+        <pre className="mt-1 text-success/70">{JSON.stringify(data, null, 2)}</pre>
       )}
     </div>
   );

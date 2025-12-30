@@ -307,7 +307,7 @@ function ExecutorProfilesPage() {
             <span className="text-sm text-[rgb(var(--foreground))]">Set as default profile</span>
           </label>
 
-          {formError && <p className="text-sm text-red-400">{formError}</p>}
+          {formError && <p className="text-sm text-error">{formError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="ghost" onClick={handleCloseDialog}>

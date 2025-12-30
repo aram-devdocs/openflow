@@ -330,7 +330,7 @@ function ProjectSettingsPage() {
               Save Changes
             </Button>
 
-            {saveError && <span className="text-sm text-red-400">{saveError}</span>}
+            {saveError && <span className="text-sm text-error">{saveError}</span>}
           </div>
         </div>
       )}

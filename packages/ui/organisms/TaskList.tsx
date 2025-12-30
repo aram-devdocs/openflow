@@ -39,11 +39,11 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 
 /** Colors for status column headers */
 const STATUS_COLORS: Record<TaskStatus, string> = {
-  todo: 'text-[rgb(var(--muted-foreground))]',
-  inprogress: 'text-blue-500',
-  inreview: 'text-purple-500',
-  done: 'text-green-500',
-  cancelled: 'text-[rgb(var(--muted-foreground))]',
+  todo: 'text-status-todo',
+  inprogress: 'text-status-inprogress',
+  inreview: 'text-status-inreview',
+  done: 'text-status-done',
+  cancelled: 'text-status-cancelled',
 };
 
 /**

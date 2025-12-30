@@ -550,7 +550,7 @@ function DashboardPage() {
             </div>
           </FormField>
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
+          {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="ghost" onClick={handleCloseCreateProjectDialog}>
@@ -595,7 +595,7 @@ function DashboardPage() {
             />
           </FormField>
 
-          {createError && <p className="text-sm text-red-400">{createError}</p>}
+          {createError && <p className="text-sm text-error">{createError}</p>}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button variant="ghost" onClick={handleCloseCreateTaskDialog}>
@@ -633,17 +633,17 @@ interface StatCardProps {
 
 function StatCard({ label, value, variant = 'default' }: StatCardProps) {
   const variantStyles = {
-    default: 'border-[rgb(var(--border))]',
-    info: 'border-blue-500/30 bg-blue-500/5',
-    warning: 'border-yellow-500/30 bg-yellow-500/5',
-    success: 'border-green-500/30 bg-green-500/5',
+    default: 'border-border',
+    info: 'border-info/30 bg-info/5',
+    warning: 'border-warning/30 bg-warning/5',
+    success: 'border-success/30 bg-success/5',
   };
 
   const valueStyles = {
-    default: 'text-[rgb(var(--foreground))]',
-    info: 'text-blue-400',
-    warning: 'text-yellow-400',
-    success: 'text-green-400',
+    default: 'text-foreground',
+    info: 'text-info',
+    warning: 'text-warning',
+    success: 'text-success',
   };
 
   return (
@@ -660,11 +660,11 @@ interface StatusBadgeProps {
 
 function StatusBadge({ status }: StatusBadgeProps) {
   const statusStyles: Record<TaskStatus, string> = {
-    todo: 'bg-zinc-500/20 text-zinc-400',
-    inprogress: 'bg-blue-500/20 text-blue-400',
-    inreview: 'bg-yellow-500/20 text-yellow-400',
-    done: 'bg-green-500/20 text-green-400',
-    cancelled: 'bg-red-500/20 text-red-400',
+    todo: 'bg-status-todo/20 text-status-todo',
+    inprogress: 'bg-status-inprogress/20 text-status-inprogress',
+    inreview: 'bg-status-inreview/20 text-status-inreview',
+    done: 'bg-status-done/20 text-status-done',
+    cancelled: 'bg-status-cancelled/20 text-status-cancelled',
   };
 
   const statusLabels: Record<TaskStatus, string> = {

@@ -40,16 +40,16 @@ const roleConfig: Record<MessageRole, { label: string; icon: typeof User }> = {
 
 /** Role-based styling */
 const roleStyles: Record<MessageRole, string> = {
-  user: 'bg-[rgb(var(--primary))]/10 border-[rgb(var(--primary))]/20',
-  assistant: 'bg-[rgb(var(--muted))] border-[rgb(var(--border))]',
-  system: 'bg-yellow-500/10 border-yellow-500/20',
+  user: 'bg-primary/10 border-primary/20',
+  assistant: 'bg-muted border-border',
+  system: 'bg-warning/10 border-warning/20',
 };
 
 /** Role icon background styles */
 const iconBgStyles: Record<MessageRole, string> = {
-  user: 'bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))]',
-  assistant: 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]',
-  system: 'bg-yellow-500/20 text-yellow-400',
+  user: 'bg-primary text-primary-foreground',
+  assistant: 'bg-accent text-accent-foreground',
+  system: 'bg-warning/20 text-warning',
 };
 
 /**

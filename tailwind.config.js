@@ -58,6 +58,16 @@ export default {
           1: 'rgb(var(--surface-1) / <alpha-value>)',
           2: 'rgb(var(--surface-2) / <alpha-value>)',
         },
+        status: {
+          todo: 'rgb(var(--status-todo) / <alpha-value>)',
+          inprogress: 'rgb(var(--status-inprogress) / <alpha-value>)',
+          inreview: 'rgb(var(--status-inreview) / <alpha-value>)',
+          done: 'rgb(var(--status-done) / <alpha-value>)',
+          cancelled: 'rgb(var(--status-cancelled) / <alpha-value>)',
+        },
+        // Git diff semantic colors
+        addition: 'rgb(var(--success) / <alpha-value>)',
+        deletion: 'rgb(var(--error) / <alpha-value>)',
       },
       borderRadius: {
         lg: 'var(--radius)',

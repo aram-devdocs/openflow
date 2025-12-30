@@ -80,13 +80,13 @@ function CommitStats({
         {filesChanged} {filesChanged === 1 ? 'file' : 'files'}
       </span>
       {additions > 0 && (
-        <span className="flex items-center gap-0.5 text-green-400">
+        <span className="flex items-center gap-0.5 text-addition">
           <Icon icon={Plus} size="sm" />
           {additions}
         </span>
       )}
       {deletions > 0 && (
-        <span className="flex items-center gap-0.5 text-red-400">
+        <span className="flex items-center gap-0.5 text-deletion">
           <Icon icon={Minus} size="sm" />
           {deletions}
         </span>
@@ -325,8 +325,8 @@ export function CommitList({
           <span className="text-[rgb(var(--muted-foreground))]">
             {totals.filesChanged} {totals.filesChanged === 1 ? 'file' : 'files'}
           </span>
-          <span className="text-green-400">+{totals.additions}</span>
-          <span className="text-red-400">-{totals.deletions}</span>
+          <span className="text-addition">+{totals.additions}</span>
+          <span className="text-deletion">-{totals.deletions}</span>
         </div>
       </div>
 
