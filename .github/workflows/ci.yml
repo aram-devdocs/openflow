@@ -51,6 +51,9 @@ jobs:
       - name: Generate types
         run: pnpm generate:types
 
+      - name: Generate routes
+        run: pnpm generate:routes
+
       - name: TypeScript check
         run: pnpm typecheck
 

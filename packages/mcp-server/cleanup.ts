@@ -50,8 +50,10 @@ function findProcesses(pattern: string): ProcessInfo[] {
       .filter(Boolean)
       .map((line) => {
         const match = line.match(/^(\d+)\s+(.+)$/);
-        if (match) {
-          return { pid: Number.parseInt(match[1], 10), command: match[2] };
+        const pid = match?.[1];
+        const command = match?.[2];
+        if (pid && command) {
+          return { pid: Number.parseInt(pid, 10), command };
         }
         return null;
       })

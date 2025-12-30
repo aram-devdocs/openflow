@@ -53,17 +53,20 @@ function createCommit(
   };
 }
 
+// Named first commit for single commit stories
+const firstCommit: Commit = createCommit(
+  'abc1234',
+  'feat: add user authentication with JWT tokens',
+  'Alice Chen',
+  0,
+  8,
+  245,
+  12
+);
+
 // Sample commits for stories
 const sampleCommits: Commit[] = [
-  createCommit(
-    'abc1234',
-    'feat: add user authentication with JWT tokens',
-    'Alice Chen',
-    0,
-    8,
-    245,
-    12
-  ),
+  firstCommit,
   createCommit(
     'def5678',
     'fix: resolve race condition in data fetching',
@@ -192,7 +195,7 @@ export const AllExpanded: Story = {
  */
 export const SingleCommit: Story = {
   args: {
-    commits: [sampleCommits[0]],
+    commits: [firstCommit],
     defaultExpanded: true,
   },
 };

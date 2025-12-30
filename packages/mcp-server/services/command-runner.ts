@@ -188,8 +188,9 @@ export function parseLintOutput(output: string): {
   // Biome outputs diagnostics in various formats
   // Look for error count in summary line: "Found X errors"
   const errorMatch = output.match(/Found\s+(\d+)\s+error/i);
-  if (errorMatch) {
-    errors = Number.parseInt(errorMatch[1], 10);
+  const errorCount = errorMatch?.[1];
+  if (errorCount) {
+    errors = Number.parseInt(errorCount, 10);
   }
 
   // Count individual error occurrences
@@ -201,22 +202,25 @@ export function parseLintOutput(output: string): {
 
   // Look for warning count
   const warningMatch = output.match(/Found\s+(\d+)\s+warning/i);
-  if (warningMatch) {
-    warnings = Number.parseInt(warningMatch[1], 10);
+  const warningCount = warningMatch?.[1];
+  if (warningCount) {
+    warnings = Number.parseInt(warningCount, 10);
   } else {
     warnings = (output.match(/\bwarning\b/gi) || []).length;
   }
 
   // Look for fixed count (when running with --fix)
   const fixedMatch = output.match(/Fixed\s+(\d+)/i);
-  if (fixedMatch) {
-    fixed = Number.parseInt(fixedMatch[1], 10);
+  const fixedCount = fixedMatch?.[1];
+  if (fixedCount) {
+    fixed = Number.parseInt(fixedCount, 10);
   }
 
   // Biome also shows "Applied N fixes" format
   const appliedMatch = output.match(/Applied\s+(\d+)\s+fix/i);
-  if (appliedMatch) {
-    fixed = Number.parseInt(appliedMatch[1], 10);
+  const appliedCount = appliedMatch?.[1];
+  if (appliedCount) {
+    fixed = Number.parseInt(appliedCount, 10);
   }
 
   return { errors, warnings, fixed };
@@ -241,13 +245,16 @@ export function parseTestOutput(output: string): {
     /Tests?\s+(\d+)\s+passed(?:\s*\|\s*(\d+)\s+failed)?(?:\s*\|\s*(\d+)\s+skipped)?/i
   );
 
-  if (summaryMatch) {
-    passed = Number.parseInt(summaryMatch[1], 10);
-    if (summaryMatch[2]) {
-      failed = Number.parseInt(summaryMatch[2], 10);
+  const passedCount = summaryMatch?.[1];
+  const failedCount = summaryMatch?.[2];
+  const skippedCount = summaryMatch?.[3];
+  if (passedCount) {
+    passed = Number.parseInt(passedCount, 10);
+    if (failedCount) {
+      failed = Number.parseInt(failedCount, 10);
     }
-    if (summaryMatch[3]) {
-      skipped = Number.parseInt(summaryMatch[3], 10);
+    if (skippedCount) {
+      skipped = Number.parseInt(skippedCount, 10);
     }
   } else {
     // Alternative: count individual test results
@@ -284,7 +291,7 @@ export function parseTypecheckOutput(output: string): {
 
   for (const match of errorMatches) {
     errors++;
-    const file = match[1].trim();
+    const file = match[1]?.trim();
     if (file && !files.includes(file)) {
       files.push(file);
     }
@@ -296,7 +303,7 @@ export function parseTypecheckOutput(output: string): {
 
   for (const match of altMatches) {
     errors++;
-    const file = match[1].trim();
+    const file = match[1]?.trim();
     if (file && !files.includes(file)) {
       files.push(file);
     }
@@ -304,8 +311,9 @@ export function parseTypecheckOutput(output: string): {
 
   // Summary line: "Found X errors in Y files"
   const summaryMatch = output.match(/Found\s+(\d+)\s+error/i);
-  if (summaryMatch) {
-    errors = Number.parseInt(summaryMatch[1], 10);
+  const errorSummary = summaryMatch?.[1];
+  if (errorSummary) {
+    errors = Number.parseInt(errorSummary, 10);
   }
 
   return { errors, files };
@@ -334,7 +342,7 @@ export function parseCargoOutput(output: string): {
   const fileMatches = output.matchAll(filePattern);
 
   for (const match of fileMatches) {
-    const file = match[1].trim();
+    const file = match[1]?.trim();
     if (file && !files.includes(file)) {
       files.push(file);
     }

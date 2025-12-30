@@ -25,20 +25,23 @@ const meta: Meta<typeof ProjectSelector> = {
 export default meta;
 type Story = StoryObj<typeof ProjectSelector>;
 
+// Named mock project for reuse
+const openflowProject: Project = {
+  id: 'proj-1',
+  name: 'OpenFlow',
+  gitRepoPath: '/Users/dev/openflow',
+  baseBranch: 'main',
+  setupScript: 'pnpm install',
+  devScript: 'pnpm dev',
+  icon: 'folder-git',
+  workflowsFolder: '.openflow/workflows',
+  createdAt: '2024-01-15T10:00:00Z',
+  updatedAt: '2024-01-20T15:30:00Z',
+};
+
 // Mock project data
 const mockProjects: Project[] = [
-  {
-    id: 'proj-1',
-    name: 'OpenFlow',
-    gitRepoPath: '/Users/dev/openflow',
-    baseBranch: 'main',
-    setupScript: 'pnpm install',
-    devScript: 'pnpm dev',
-    icon: 'folder-git',
-    workflowsFolder: '.openflow/workflows',
-    createdAt: '2024-01-15T10:00:00Z',
-    updatedAt: '2024-01-20T15:30:00Z',
-  },
+  openflowProject,
   {
     id: 'proj-2',
     name: 'My API Backend',
@@ -112,7 +115,7 @@ export const EmptyProjects: Story = {
  */
 export const SingleProject: Story = {
   args: {
-    projects: [mockProjects[0]],
+    projects: [openflowProject],
     selectedProjectId: 'proj-1',
   },
 };
@@ -230,37 +233,37 @@ export const DifferentIcons: Story = {
   args: {
     projects: [
       {
-        ...mockProjects[0],
+        ...openflowProject,
         id: 'icon-1',
         name: 'Default Folder',
         icon: 'folder',
       },
       {
-        ...mockProjects[0],
+        ...openflowProject,
         id: 'icon-2',
         name: 'Git Repository',
         icon: 'folder-git',
       },
       {
-        ...mockProjects[0],
+        ...openflowProject,
         id: 'icon-3',
         name: 'Code Project',
         icon: 'folder-code',
       },
       {
-        ...mockProjects[0],
+        ...openflowProject,
         id: 'icon-4',
         name: 'Kanban Board',
         icon: 'folder-kanban',
       },
       {
-        ...mockProjects[0],
+        ...openflowProject,
         id: 'icon-5',
         name: 'Open Folder',
         icon: 'folder-open',
       },
       {
-        ...mockProjects[0],
+        ...openflowProject,
         id: 'icon-6',
         name: 'Unknown Icon (fallback)',
         icon: 'unknown-icon-name',

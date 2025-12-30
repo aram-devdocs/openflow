@@ -243,36 +243,50 @@ export async function handleUiTool(
   try {
     switch (name) {
       case 'openflow_screenshot': {
+        const savePath = args?.save_path as string | undefined;
+        const quality = args?.quality as number | undefined;
+        const maxWidth = args?.max_width as number | undefined;
         const result = await takeScreenshot({
-          savePath: args?.save_path as string | undefined,
-          quality: args?.quality as number | undefined,
-          maxWidth: args?.max_width as number | undefined,
+          ...(savePath !== undefined && { savePath }),
+          ...(quality !== undefined && { quality }),
+          ...(maxWidth !== undefined && { maxWidth }),
         });
         return formatToolResponse(result);
       }
       case 'openflow_inspect': {
+        const selector = args?.selector as string | undefined;
+        const includeStyles = args?.include_styles as boolean | undefined;
         const result = await inspectDom({
-          selector: args?.selector as string | undefined,
-          includeStyles: args?.include_styles as boolean | undefined,
+          ...(selector !== undefined && { selector }),
+          ...(includeStyles !== undefined && { includeStyles }),
         });
         return formatToolResponse(result);
       }
       case 'openflow_click': {
+        const selector = args?.selector as string | undefined;
+        const x = args?.x as number | undefined;
+        const y = args?.y as number | undefined;
+        const button = args?.button as 'left' | 'right' | 'middle' | undefined;
+        const doubleClick = args?.double_click as boolean | undefined;
         const result = await clickElement({
-          selector: args?.selector as string | undefined,
-          x: args?.x as number | undefined,
-          y: args?.y as number | undefined,
-          button: args?.button as 'left' | 'right' | 'middle' | undefined,
-          doubleClick: args?.double_click as boolean | undefined,
+          ...(selector !== undefined && { selector }),
+          ...(x !== undefined && { x }),
+          ...(y !== undefined && { y }),
+          ...(button !== undefined && { button }),
+          ...(doubleClick !== undefined && { doubleClick }),
         });
         return formatToolResponse(result);
       }
       case 'openflow_type': {
+        const text = args?.text as string;
+        const selector = args?.selector as string | undefined;
+        const delayMs = args?.delay_ms as number | undefined;
+        const clearFirst = args?.clear_first as boolean | undefined;
         const result = await typeText({
-          text: args?.text as string,
-          selector: args?.selector as string | undefined,
-          delayMs: args?.delay_ms as number | undefined,
-          clearFirst: args?.clear_first as boolean | undefined,
+          text,
+          ...(selector !== undefined && { selector }),
+          ...(delayMs !== undefined && { delayMs }),
+          ...(clearFirst !== undefined && { clearFirst }),
         });
         return formatToolResponse(result);
       }
@@ -283,24 +297,29 @@ export async function handleUiTool(
         return formatToolResponse(result);
       }
       case 'openflow_evaluate': {
+        const timeoutMs = args?.timeout_ms as number | undefined;
         const result = await evaluateJs({
           code: args?.code as string,
-          timeoutMs: args?.timeout_ms as number | undefined,
+          ...(timeoutMs !== undefined && { timeoutMs }),
         });
         return formatToolResponse(result);
       }
       case 'openflow_console': {
+        const level = args?.level as string | undefined;
+        const limit = args?.limit as number | undefined;
         const result = await getConsoleMessages({
-          level: args?.level as string | undefined,
-          limit: args?.limit as number | undefined,
+          ...(level !== undefined && { level }),
+          ...(limit !== undefined && { limit }),
         });
         return formatToolResponse(result);
       }
       case 'openflow_wait_for_element': {
+        const timeoutMs = args?.timeout_ms as number | undefined;
+        const visible = args?.visible as boolean | undefined;
         const result = await waitForElement({
           selector: args?.selector as string,
-          timeoutMs: args?.timeout_ms as number | undefined,
-          visible: args?.visible as boolean | undefined,
+          ...(timeoutMs !== undefined && { timeoutMs }),
+          ...(visible !== undefined && { visible }),
         });
         return formatToolResponse(result);
       }
@@ -658,7 +677,7 @@ async function pressKey(options: { key: string }): Promise<ToolResult> {
   try {
     // Parse key combination (e.g., "Ctrl+A", "Cmd+S", "Shift+Tab")
     const keyParts = options.key.split('+');
-    const mainKey = keyParts[keyParts.length - 1];
+    const mainKey = keyParts[keyParts.length - 1] ?? options.key;
     const modifiers = keyParts.slice(0, -1).map((m) => m.toLowerCase());
 
     // Build JavaScript to simulate key press

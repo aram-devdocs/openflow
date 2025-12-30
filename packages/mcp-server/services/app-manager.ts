@@ -312,8 +312,9 @@ export class AppManager {
     // Look for Vite's "Local:" URL output
     // Example: "  ➜  Local:   http://localhost:1420/"
     const localMatch = line.match(/Local:\s+(https?:\/\/[^\s]+)/);
-    if (localMatch) {
-      this.devServerUrl = localMatch[1].replace(/\/$/, ''); // Remove trailing slash
+    const url = localMatch?.[1];
+    if (url) {
+      this.devServerUrl = url.replace(/\/$/, ''); // Remove trailing slash
       this.addLogEntry(`Detected dev server URL: ${this.devServerUrl}`, 'info');
     }
   }
@@ -331,7 +332,7 @@ export class AppManager {
       try {
         // Negative PID kills the process group
         process.kill(-this.pid, signal);
-      } catch (err) {
+      } catch {
         // Process might already be dead, try killing just the process
         try {
           this.process.kill(signal);

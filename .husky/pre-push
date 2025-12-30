@@ -9,6 +9,10 @@ echo "Running pre-push validation suite..."
 echo "Generating types..."
 pnpm generate:types || exit 1
 
+# Generate TanStack Router routes
+echo "Generating routes..."
+pnpm generate:routes || exit 1
+
 # Full TypeScript check
 echo "Running typecheck..."
 pnpm typecheck || exit 1
@@ -27,6 +31,8 @@ pnpm validate:arch || exit 1
 
 # Rust checks
 echo "Running Rust checks..."
+# Create dist directory if it doesn't exist (required by Tauri config)
+mkdir -p dist
 cd src-tauri
 cargo check || exit 1
 cargo test || exit 1

@@ -75,6 +75,9 @@ const mockTasks: Task[] = [
   }),
 ];
 
+/** Named first task for single task stories */
+const firstTask = mockTasks[0];
+
 /** Fewer tasks for simpler stories */
 const fewTasks = mockTasks.slice(0, 3);
 
@@ -232,7 +235,7 @@ export const SparseKanban: Story = {
 /** Single task in list */
 export const SingleTask: Story = {
   args: {
-    tasks: [fewTasks[0]],
+    tasks: firstTask ? [firstTask] : [],
   },
   decorators: [
     (Story) => (

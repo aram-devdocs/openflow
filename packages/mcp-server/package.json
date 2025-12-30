@@ -13,10 +13,8 @@
   "bin": {
     "openflow-mcp": "./index.ts"
   },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
-  },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.1",
     "@types/node": "^22.0.0"
   }
 }

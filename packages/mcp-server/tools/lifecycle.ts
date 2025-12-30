@@ -114,8 +114,9 @@ export async function handleLifecycleTool(
     switch (name) {
       case 'openflow_start': {
         const enableMcpGui = (args?.enable_mcp_gui as boolean) ?? true;
+        const timeoutSeconds = (args?.timeout_seconds as number) ?? 120;
         const result = await startApp({
-          timeout: ((args?.timeout_seconds as number) ?? 120) * 1000,
+          timeout: timeoutSeconds * 1000,
           waitForReady: true,
           enableMcpGui,
         });
@@ -130,20 +131,24 @@ export async function handleLifecycleTool(
         return formatToolResponse(result);
       }
       case 'openflow_restart': {
+        const timeoutSeconds = (args?.timeout_seconds as number) ?? 120;
         const result = await restartApp({
-          timeout: ((args?.timeout_seconds as number) ?? 120) * 1000,
+          timeout: timeoutSeconds * 1000,
           waitForReady: true,
         });
         return formatToolResponse(result);
       }
       case 'openflow_wait_ready': {
-        const result = await waitForReady(((args?.timeout_seconds as number) ?? 60) * 1000);
+        const timeoutSeconds = (args?.timeout_seconds as number) ?? 60;
+        const result = await waitForReady(timeoutSeconds * 1000);
         return formatToolResponse(result);
       }
       case 'openflow_logs': {
+        const lines = (args?.lines as number) ?? 50;
+        const level = args?.level as 'debug' | 'info' | 'warn' | 'error' | undefined;
         const result = await getLogs({
-          limit: Math.min((args?.lines as number) ?? 50, 500),
-          level: args?.level as 'debug' | 'info' | 'warn' | 'error' | undefined,
+          limit: Math.min(lines, 500),
+          ...(level !== undefined && { level }),
         });
         return formatToolResponse(result);
       }
@@ -195,7 +200,7 @@ export async function startApp(options: {
   const manager = getAppManager();
   const result = await manager.start({
     waitForReady: options.waitForReady ?? true,
-    timeout: options.timeout,
+    ...(options.timeout !== undefined && { timeout: options.timeout }),
     enableMcpGui,
   });
 
@@ -290,7 +295,7 @@ export async function restartApp(options: {
   // Start the app
   const startResult = await manager.start({
     waitForReady: options.waitForReady ?? true,
-    timeout: options.timeout,
+    ...(options.timeout !== undefined && { timeout: options.timeout }),
     enableMcpGui,
   });
 

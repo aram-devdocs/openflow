@@ -95,7 +95,8 @@ export async function handleDevelopmentTool(
   try {
     switch (name) {
       case 'openflow_lint': {
-        const result = await runLint({ fix: args?.fix as boolean });
+        const fix = args?.fix as boolean | undefined;
+        const result = await runLint({ ...(fix !== undefined && { fix }) });
         return formatToolResponse(result);
       }
       case 'openflow_typecheck': {
@@ -103,7 +104,8 @@ export async function handleDevelopmentTool(
         return formatToolResponse(result);
       }
       case 'openflow_test': {
-        const result = await runTest({ filter: args?.filter as string });
+        const filter = args?.filter as string | undefined;
+        const result = await runTest({ ...(filter !== undefined && { filter }) });
         return formatToolResponse(result);
       }
       case 'openflow_build': {
@@ -144,7 +146,7 @@ function formatToolResponse(result: ToolResult): ToolResponse {
   // This helps AI agents understand what went wrong
   const responseData: Record<string, unknown> = {
     success: result.success,
-    error: result.error,
+    ...(result.error !== undefined && { error: result.error }),
   };
 
   // Spread the data fields if available
@@ -181,7 +183,7 @@ export async function runLint(options: { fix?: boolean }): Promise<ToolResult> {
       fixed: parsed.fixed,
       output: output.slice(0, 5000), // Limit output size
     },
-    error: result.success ? undefined : (result.error ?? 'Linting failed'),
+    ...(!result.success && { error: result.error ?? 'Linting failed' }),
   };
 }
 
@@ -202,7 +204,7 @@ export async function runTypecheck(): Promise<ToolResult> {
       filesWithErrors: parsed.files,
       output: output.slice(0, 5000), // Limit output size
     },
-    error: result.success ? undefined : (result.error ?? 'Type checking failed'),
+    ...(!result.success && { error: result.error ?? 'Type checking failed' }),
   };
 }
 
@@ -238,7 +240,7 @@ export async function runTest(options: {
       total: parsed.total,
       output: output.slice(0, 5000), // Limit output size
     },
-    error: result.success ? undefined : (result.error ?? 'Tests failed'),
+    ...(!result.success && { error: result.error ?? 'Tests failed' }),
   };
 }
 
@@ -257,7 +259,7 @@ export async function runBuild(): Promise<ToolResult> {
       exitCode: result.exitCode,
       output: output.slice(0, 5000), // Limit output size
     },
-    error: result.success ? undefined : (result.error ?? 'Build failed'),
+    ...(!result.success && { error: result.error ?? 'Build failed' }),
   };
 }
 
@@ -275,7 +277,7 @@ export async function generateTypes(): Promise<ToolResult> {
       exitCode: result.exitCode,
       output: output.slice(0, 5000), // Limit output size
     },
-    error: result.success ? undefined : (result.error ?? 'Type generation failed'),
+    ...(!result.success && { error: result.error ?? 'Type generation failed' }),
   };
 }
 
@@ -297,6 +299,6 @@ export async function runRustCheck(): Promise<ToolResult> {
       filesWithErrors: parsed.files,
       output: output.slice(0, 5000), // Limit output size
     },
-    error: result.success ? undefined : (result.error ?? 'Cargo check failed'),
+    ...(!result.success && { error: result.error ?? 'Cargo check failed' }),
   };
 }

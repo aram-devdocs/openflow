@@ -28,16 +28,19 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// Named first message for single message stories
+const firstMessage: Message = {
+  id: 'msg-1',
+  chatId: 'chat-1',
+  role: MessageRole.User,
+  content: 'Can you help me create a new React component?',
+  isStreaming: false,
+  createdAt: '2024-01-15T10:00:00Z',
+};
+
 // Sample messages for stories
 const sampleMessages: Message[] = [
-  {
-    id: 'msg-1',
-    chatId: 'chat-1',
-    role: MessageRole.User,
-    content: 'Can you help me create a new React component?',
-    isStreaming: false,
-    createdAt: '2024-01-15T10:00:00Z',
-  },
+  firstMessage,
   {
     id: 'msg-2',
     chatId: 'chat-1',
@@ -191,7 +194,7 @@ export const WithSystemMessage: Story = {
  */
 export const SingleMessage: Story = {
   args: {
-    messages: [sampleMessages[0]],
+    messages: [firstMessage],
   },
 };
 

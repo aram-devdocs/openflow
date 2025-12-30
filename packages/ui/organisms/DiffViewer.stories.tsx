@@ -37,17 +37,16 @@ function createHunk(
   return { oldStart, oldLines, newStart, newLines, content };
 }
 
-// Sample file diffs for stories
-const sampleDiffs: FileDiff[] = [
-  {
-    path: 'src/components/Button.tsx',
-    hunks: [
-      createHunk(
-        10,
-        6,
-        10,
-        8,
-        `@@ -10,6 +10,8 @@
+// Named sample diffs for stories
+const buttonDiff: FileDiff = {
+  path: 'src/components/Button.tsx',
+  hunks: [
+    createHunk(
+      10,
+      6,
+      10,
+      8,
+      `@@ -10,6 +10,8 @@
  import { cn } from '../utils';
 
 +export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -58,13 +57,13 @@ const sampleDiffs: FileDiff[] = [
    size?: 'sm' | 'md' | 'lg';
    children: React.ReactNode;
  }`
-      ),
-      createHunk(
-        25,
-        4,
-        27,
-        6,
-        `@@ -25,4 +27,6 @@
+    ),
+    createHunk(
+      25,
+      4,
+      27,
+      6,
+      `@@ -25,4 +27,6 @@
    return (
 -    <button className={cn(styles)}>
 +    <button
@@ -74,24 +73,25 @@ const sampleDiffs: FileDiff[] = [
        {children}
      </button>
    );`
-      ),
-    ],
-    additions: 6,
-    deletions: 2,
-    isBinary: false,
-    isNew: false,
-    isDeleted: false,
-    isRenamed: false,
-  },
-  {
-    path: 'src/hooks/useTheme.ts',
-    hunks: [
-      createHunk(
-        1,
-        0,
-        1,
-        15,
-        `@@ -0,0 +1,15 @@
+    ),
+  ],
+  additions: 6,
+  deletions: 2,
+  isBinary: false,
+  isNew: false,
+  isDeleted: false,
+  isRenamed: false,
+};
+
+const newFileDiff: FileDiff = {
+  path: 'src/hooks/useTheme.ts',
+  hunks: [
+    createHunk(
+      1,
+      0,
+      1,
+      15,
+      `@@ -0,0 +1,15 @@
 +import { useState, useEffect } from 'react';
 +
 +export function useTheme() {
@@ -108,24 +108,25 @@ const sampleDiffs: FileDiff[] = [
 +
 +  return { theme, toggleTheme };
 +}`
-      ),
-    ],
-    additions: 15,
-    deletions: 0,
-    isBinary: false,
-    isNew: true,
-    isDeleted: false,
-    isRenamed: false,
-  },
-  {
-    path: 'src/deprecated/oldUtils.ts',
-    hunks: [
-      createHunk(
-        1,
-        20,
-        0,
-        0,
-        `@@ -1,20 +0,0 @@
+    ),
+  ],
+  additions: 15,
+  deletions: 0,
+  isBinary: false,
+  isNew: true,
+  isDeleted: false,
+  isRenamed: false,
+};
+
+const deletedFileDiff: FileDiff = {
+  path: 'src/deprecated/oldUtils.ts',
+  hunks: [
+    createHunk(
+      1,
+      20,
+      0,
+      0,
+      `@@ -1,20 +0,0 @@
 -// Old utility functions - deprecated
 -export function oldHelper() {
 -  console.log('deprecated');
@@ -143,16 +144,18 @@ const sampleDiffs: FileDiff[] = [
 -  anotherOldHelper,
 -  LEGACY_CONSTANT,
 -};`
-      ),
-    ],
-    additions: 0,
-    deletions: 17,
-    isBinary: false,
-    isNew: false,
-    isDeleted: true,
-    isRenamed: false,
-  },
-];
+    ),
+  ],
+  additions: 0,
+  deletions: 17,
+  isBinary: false,
+  isNew: false,
+  isDeleted: true,
+  isRenamed: false,
+};
+
+// Array of sample diffs for stories that need multiple
+const sampleDiffs: FileDiff[] = [buttonDiff, newFileDiff, deletedFileDiff];
 
 const renamedFileDiff: FileDiff = {
   path: 'src/utils/helpers.ts',
@@ -321,7 +324,7 @@ export const WithRenamedFile: Story = {
  */
 export const WithBinaryFile: Story = {
   args: {
-    diffs: [binaryFileDiff, sampleDiffs[0]],
+    diffs: [binaryFileDiff, buttonDiff],
     defaultExpanded: true,
   },
 };
@@ -341,7 +344,7 @@ export const LargeDiff: Story = {
  */
 export const NewFilesOnly: Story = {
   args: {
-    diffs: [sampleDiffs[1]], // The new file
+    diffs: [newFileDiff],
     defaultExpanded: true,
   },
 };
@@ -351,7 +354,7 @@ export const NewFilesOnly: Story = {
  */
 export const DeletedFilesOnly: Story = {
   args: {
-    diffs: [sampleDiffs[2]], // The deleted file
+    diffs: [deletedFileDiff],
     defaultExpanded: true,
   },
 };
@@ -415,19 +418,19 @@ export const ManyFiles: Story = {
       renamedFileDiff,
       binaryFileDiff,
       {
-        ...sampleDiffs[0],
+        ...buttonDiff,
         path: 'src/components/Input.tsx',
         additions: 12,
         deletions: 3,
       },
       {
-        ...sampleDiffs[0],
+        ...buttonDiff,
         path: 'src/components/Card.tsx',
         additions: 8,
         deletions: 5,
       },
       {
-        ...sampleDiffs[0],
+        ...buttonDiff,
         path: 'src/components/Modal.tsx',
         additions: 25,
         deletions: 10,
@@ -442,7 +445,7 @@ export const ManyFiles: Story = {
  */
 export const SingleFile: Story = {
   args: {
-    diffs: [sampleDiffs[0]],
+    diffs: [buttonDiff],
     defaultExpanded: true,
   },
 };
