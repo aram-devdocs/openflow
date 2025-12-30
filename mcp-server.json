@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "openflow": {
-      "command": "npx",
-      "args": ["tsx", "packages/mcp-server/index.ts"],
-      "cwd": "${workspaceFolder}"
-    }
-  }
-}
