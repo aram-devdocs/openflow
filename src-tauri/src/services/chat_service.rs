@@ -458,8 +458,12 @@ mod tests {
             ..test_standalone_request(&project_id)
         };
 
-        ChatService::create(&test_db.pool, standalone1).await.unwrap();
-        ChatService::create(&test_db.pool, standalone2).await.unwrap();
+        ChatService::create(&test_db.pool, standalone1)
+            .await
+            .unwrap();
+        ChatService::create(&test_db.pool, standalone2)
+            .await
+            .unwrap();
 
         // List standalone should only return standalone chats
         let standalone_chats = ChatService::list_standalone(&test_db.pool, &project_id)

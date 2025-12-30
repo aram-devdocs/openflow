@@ -349,7 +349,9 @@ fn spawn_json_output_streamer(
 
             // Check for permission prompts (non-JSON lines from Claude Code)
             // Claude Code shows prompts like: "Allow Claude to write to file.txt? (y/n)"
-            if trimmed.contains("Allow") && (trimmed.contains("(y/n)") || trimmed.contains("? [y/n]")) {
+            if trimmed.contains("Allow")
+                && (trimmed.contains("(y/n)") || trimmed.contains("? [y/n]"))
+            {
                 // Extract tool name and file path from permission prompt
                 let permission_event = PermissionRequestEvent {
                     process_id: process_id.clone(),
@@ -399,7 +401,11 @@ fn extract_tool_name(prompt: &str) -> String {
         "Write".to_string()
     } else if prompt.contains("read") || prompt.contains("Read") {
         "Read".to_string()
-    } else if prompt.contains("execute") || prompt.contains("Execute") || prompt.contains("bash") || prompt.contains("Bash") {
+    } else if prompt.contains("execute")
+        || prompt.contains("Execute")
+        || prompt.contains("bash")
+        || prompt.contains("Bash")
+    {
         "Bash".to_string()
     } else {
         "Tool".to_string()
@@ -423,12 +429,12 @@ fn extract_file_path(prompt: &str) -> Option<String> {
 /// Matches: CSI sequences, OSC sequences, and other escape sequences.
 static ANSI_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(concat!(
-        r"\x1b\[[0-9;]*[A-Za-z]", // CSI sequences (colors, cursor, etc.)
-        r"|\x1b\][^\x07]*\x07",    // OSC sequences (terminated by BEL)
-        r"|\x1b[PX^_][^\x1b]*\x1b\\", // DCS/SOS/PM/APC sequences
+        r"\x1b\[[0-9;]*[A-Za-z]",            // CSI sequences (colors, cursor, etc.)
+        r"|\x1b\][^\x07]*\x07",              // OSC sequences (terminated by BEL)
+        r"|\x1b[PX^_][^\x1b]*\x1b\\",        // DCS/SOS/PM/APC sequences
         r"|\x1b[\[\]()#;?]*[0-9;]*[A-Za-z]", // Other escape sequences
-        r"|\x1b.",                 // Simple escape sequences
-        r"|[\x00-\x08\x0b\x0c\x0e-\x1f]", // Control characters (except newline, tab, CR)
+        r"|\x1b.",                           // Simple escape sequences
+        r"|[\x00-\x08\x0b\x0c\x0e-\x1f]",    // Control characters (except newline, tab, CR)
     ))
     .expect("Invalid ANSI regex pattern")
 });
