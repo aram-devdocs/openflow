@@ -1,5 +1,6 @@
 import { cn } from '@openflow/utils';
 import type { ReactNode } from 'react';
+import { SkipLink } from '../atoms/SkipLink';
 
 export interface AppLayoutProps {
   /** Sidebar content (typically the Sidebar component) */
@@ -66,6 +67,9 @@ export function AppLayout({
         className
       )}
     >
+      {/* Skip link - first focusable element for keyboard navigation */}
+      <SkipLink />
+
       {/* Sidebar */}
       <div
         className={cn(
@@ -83,7 +87,13 @@ export function AppLayout({
 
         {/* Main content */}
         <main
-          className={cn('flex-1 overflow-auto', 'bg-[rgb(var(--background))]', contentClassName)}
+          id="main-content"
+          tabIndex={-1}
+          className={cn(
+            'flex-1 overflow-auto focus:outline-none',
+            'bg-[rgb(var(--background))]',
+            contentClassName
+          )}
         >
           {children}
         </main>

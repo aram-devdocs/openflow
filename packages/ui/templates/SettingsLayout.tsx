@@ -147,7 +147,7 @@ export function SettingsLayout({
         )}
 
         {/* Main content */}
-        <main className="p-8">{children}</main>
+        <div className="p-8">{children}</div>
       </div>
     </div>
   );
