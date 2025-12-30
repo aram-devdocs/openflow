@@ -35,9 +35,6 @@ export type { ToastProps, ToastVariant, ToastAction } from './Toast';
 export { ToastProvider, useToast } from './ToastProvider';
 export type { ToastProviderProps, ToastOptions, ToastData } from './ToastProvider';
 
-export { ThemeProvider } from './ThemeProvider';
-export type { ThemeProviderProps } from './ThemeProvider';
-
 export { ThemeToggle } from './ThemeToggle';
 export type { ThemeToggleProps, Theme } from './ThemeToggle';
 
@@ -49,9 +46,6 @@ export type { SkeletonProps, SkeletonVariant } from './Skeleton';
 
 export { SkipLink } from './SkipLink';
 export type { SkipLinkProps } from './SkipLink';
-
-export { KeyboardShortcutsDialogProvider } from './KeyboardShortcutsDialogProvider';
-export type { KeyboardShortcutsDialogProviderProps } from './KeyboardShortcutsDialogProvider';
 
 export { HamburgerButton } from './HamburgerButton';
 export type { HamburgerButtonProps } from './HamburgerButton';

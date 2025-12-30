@@ -6,11 +6,12 @@
  * Includes ErrorBoundary for graceful error handling.
  */
 
-import { ErrorBoundary, KeyboardShortcutsDialogProvider, RouteError } from '@openflow/ui';
+import { ErrorBoundary, RouteError } from '@openflow/ui';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { KeyboardShortcutsDialogProvider } from '../providers';
 import type { RouterContext } from '../routerContext';
 
 export const Route = createRootRouteWithContext<RouterContext>()({

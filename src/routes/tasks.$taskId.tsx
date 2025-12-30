@@ -32,8 +32,8 @@ import {
   useTask,
   useUpdateTask,
 } from '@openflow/hooks';
-import type { ArtifactFile } from '@openflow/queries';
 import {
+  type ArtifactFile,
   ArtifactPreviewDialog,
   ArtifactsPanel,
   Button,

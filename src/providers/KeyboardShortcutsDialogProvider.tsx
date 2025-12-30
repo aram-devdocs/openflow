@@ -1,9 +1,15 @@
+/**
+ * KeyboardShortcutsDialogProvider
+ *
+ * Provides keyboard shortcuts dialog context to the application.
+ * This provider lives in src/ because it needs to import from both hooks and UI packages.
+ */
 import {
   KeyboardShortcutsDialogContext,
   useKeyboardShortcutsDialogProvider,
 } from '@openflow/hooks';
+import { KeyboardShortcutsDialog, type ShortcutGroup } from '@openflow/ui';
 import type { ReactNode } from 'react';
-import { KeyboardShortcutsDialog, type ShortcutGroup } from '../organisms/KeyboardShortcutsDialog';
 
 export interface KeyboardShortcutsDialogProviderProps {
   children: ReactNode;

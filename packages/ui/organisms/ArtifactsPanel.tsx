@@ -1,4 +1,3 @@
-import type { ArtifactFile } from '@openflow/queries';
 import { cn } from '@openflow/utils';
 import { ExternalLink, Eye, File, FileText, Folder } from 'lucide-react';
 import { Button } from '../atoms/Button';
@@ -6,6 +5,23 @@ import { Icon } from '../atoms/Icon';
 import { Skeleton } from '../atoms/Skeleton';
 import { EmptyState } from '../molecules/EmptyState';
 import { Tooltip } from '../molecules/Tooltip';
+
+/**
+ * Represents a file or directory in the task artifacts folder.
+ * Duplicated from queries package to maintain UI package independence.
+ */
+export interface ArtifactFile {
+  /** File or directory name */
+  name: string;
+  /** Full path to the file */
+  path: string;
+  /** File size in bytes */
+  size: number;
+  /** Last modified timestamp (ISO string) */
+  modifiedAt: string;
+  /** Whether this is a directory */
+  isDirectory: boolean;
+}
 
 export interface ArtifactsPanelProps {
   /** Array of artifact files to display */

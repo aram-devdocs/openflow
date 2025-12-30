@@ -1,9 +1,8 @@
-import type { ArtifactFile } from '@openflow/queries';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { Button } from '../atoms/Button';
 import { Dialog, DialogContent, DialogFooter } from '../molecules/Dialog';
-import { ArtifactsPanel } from './ArtifactsPanel';
+import { type ArtifactFile, ArtifactsPanel } from './ArtifactsPanel';
 
 const meta: Meta<typeof ArtifactsPanel> = {
   title: 'Organisms/ArtifactsPanel',

@@ -1,3 +1,9 @@
+/**
+ * ThemeProvider
+ *
+ * Provides theme context to the application.
+ * This provider lives in src/ because it needs to import from both hooks and UI packages.
+ */
 import { ThemeContext, useThemeProvider } from '@openflow/hooks';
 import type { ReactNode } from 'react';
 
