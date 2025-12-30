@@ -77,7 +77,14 @@ export function PermissionDialog({ request, onApprove, onDeny, className }: Perm
 
   return (
     <div
-      className={cn('fixed inset-0 z-50 flex items-center justify-center bg-black/50', className)}
+      className={cn(
+        'fixed inset-0 z-50 flex items-center justify-center',
+        // Solid backdrop for better accessibility
+        'bg-black/60',
+        // Enhanced opacity for users who prefer reduced transparency
+        '[@media(prefers-reduced-transparency:reduce)]:bg-black/80',
+        className
+      )}
     >
       <div
         className={cn(

@@ -149,7 +149,13 @@ export function Dialog({
     <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop - click is supplementary to keyboard Escape handling */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className={cn(
+          'fixed inset-0 transition-opacity',
+          // Solid backdrop for better accessibility
+          'bg-black/60',
+          // Enhanced opacity for users who prefer reduced transparency
+          '[@media(prefers-reduced-transparency:reduce)]:bg-black/80'
+        )}
         aria-hidden="true"
         onClick={handleBackdropClick}
         onKeyDown={(e) => e.key === 'Escape' && onClose?.()}
