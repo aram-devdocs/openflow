@@ -5,6 +5,55 @@
 
 echo "Running pre-push validation suite..."
 
+# =============================================================================
+# WORKAROUND: Detect and prevent "Initial commit" commits that wipe codebase
+# ZenFlow's worktree creation sometimes creates spurious commits that delete
+# all code and replace with just README.md. This check prevents pushing them.
+# =============================================================================
+echo "Checking for corrupted commits..."
+
+# Get the number of files in HEAD
+FILE_COUNT=$(git ls-tree --name-only HEAD | wc -l | tr -d ' ')
+
+# If HEAD only has 1-2 files (like just README.md), it's likely corrupted
+if [ "$FILE_COUNT" -lt 10 ]; then
+    echo ""
+    echo "ERROR: Detected potentially corrupted commit!"
+    echo "HEAD commit only contains $FILE_COUNT files."
+    echo ""
+    echo "This is likely caused by ZenFlow's worktree initialization bug"
+    echo "which creates 'Initial commit' that wipes out the codebase."
+    echo ""
+    echo "To fix:"
+    echo "  1. Find the last good commit: git log --oneline"
+    echo "  2. Reset to it: git reset --hard <good-commit>"
+    echo "  3. Push again with: HUSKY=0 git push --force --no-verify"
+    echo ""
+    exit 1
+fi
+
+# Also check if the most recent commit message is "Initial commit"
+# and the parent has way more files (indicating a wipe)
+LAST_MSG=$(git log -1 --format=%s)
+if [ "$LAST_MSG" = "Initial commit" ]; then
+    PARENT_FILE_COUNT=$(git ls-tree --name-only HEAD^ 2>/dev/null | wc -l | tr -d ' ')
+    if [ -n "$PARENT_FILE_COUNT" ] && [ "$PARENT_FILE_COUNT" -gt 50 ]; then
+        echo ""
+        echo "ERROR: Detected 'Initial commit' that appears to wipe codebase!"
+        echo "Current commit has $FILE_COUNT files, parent had $PARENT_FILE_COUNT files."
+        echo ""
+        echo "This is caused by ZenFlow's worktree initialization bug."
+        echo ""
+        echo "To fix:"
+        echo "  git reset --hard HEAD^"
+        echo "  HUSKY=0 git push --force --no-verify"
+        echo ""
+        exit 1
+    fi
+fi
+
+echo "Commit structure looks healthy ($FILE_COUNT files tracked)"
+
 # Regenerate TypeScript types from Rust
 echo "Generating types..."
 pnpm generate:types || exit 1
