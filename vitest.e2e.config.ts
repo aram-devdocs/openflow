@@ -1,27 +1,17 @@
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
+/**
+ * E2E test configuration.
+ * These tests require the Tauri app to be running.
+ * Run with: pnpm test:e2e (after starting the app with pnpm dev:mcp)
+ */
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
-    // Exclude e2e tests - they require the Tauri app running
-    exclude: ['tests/e2e/**', 'node_modules/**'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/**',
-        'dist/**',
-        'src-tauri/**',
-        '**/*.d.ts',
-        '**/*.test.ts',
-        '**/*.test.tsx',
-        '**/index.ts',
-        'tests/**',
-      ],
-    },
+    include: ['tests/e2e/**/*.test.ts', 'tests/e2e/**/*.test.tsx'],
+    setupFiles: ['tests/e2e/setup.ts'],
   },
   resolve: {
     alias: {
