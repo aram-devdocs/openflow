@@ -367,16 +367,16 @@ mod tests {
     async fn test_list_executor_profiles() {
         let test_db = setup_test_db().await;
 
-        // Start with empty list
+        // Start with seeded default Claude Code profile
         let profiles = ExecutorProfileService::list(&test_db.pool)
             .await
             .expect("Failed to list executor profiles");
-        assert!(profiles.is_empty());
+        assert_eq!(profiles.len(), 1);
+        assert_eq!(profiles[0].name, "Claude Code");
 
-        // Create multiple profiles
+        // Create additional profiles
         let request1 = test_create_request("Gemini CLI", "gemini");
-        let request2 = test_create_request("Claude Code", "claude");
-        let request3 = test_create_request("Cursor CLI", "cursor");
+        let request2 = test_create_request("Cursor CLI", "cursor");
 
         ExecutorProfileService::create(&test_db.pool, request1)
             .await
@@ -384,11 +384,8 @@ mod tests {
         ExecutorProfileService::create(&test_db.pool, request2)
             .await
             .unwrap();
-        ExecutorProfileService::create(&test_db.pool, request3)
-            .await
-            .unwrap();
 
-        // List should return all profiles ordered by name
+        // List should return all profiles ordered by name (including seeded one)
         let profiles = ExecutorProfileService::list(&test_db.pool)
             .await
             .expect("Failed to list executor profiles");
@@ -510,17 +507,18 @@ mod tests {
     async fn test_get_default_executor_profile() {
         let test_db = setup_test_db().await;
 
-        // No default profile initially
+        // Seeded default Claude Code profile should be present
         let default = ExecutorProfileService::get_default(&test_db.pool)
             .await
             .expect("Failed to get default executor profile");
-        assert!(default.is_none());
+        assert!(default.is_some());
+        assert_eq!(default.unwrap().name, "Claude Code");
 
-        // Create a default profile
+        // Create a new default profile (should replace the seeded one as default)
         let request = CreateExecutorProfileRequest {
-            name: "Default Profile".to_string(),
+            name: "New Default Profile".to_string(),
             description: None,
-            command: "claude".to_string(),
+            command: "new-cmd".to_string(),
             args: None,
             env: None,
             model: None,
@@ -530,12 +528,12 @@ mod tests {
             .await
             .expect("Failed to create executor profile");
 
-        // Should now have a default
+        // New profile should now be the default
         let default = ExecutorProfileService::get_default(&test_db.pool)
             .await
             .expect("Failed to get default executor profile");
         assert!(default.is_some());
-        assert_eq!(default.unwrap().name, "Default Profile");
+        assert_eq!(default.unwrap().name, "New Default Profile");
     }
 
     #[tokio::test]
