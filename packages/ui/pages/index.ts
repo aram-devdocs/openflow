@@ -14,12 +14,20 @@
  * Examples: DashboardPage, TaskPage, ArchivePage, SettingsPage
  */
 
-// Placeholder export to make this a valid module
-// Remove this when actual page components are added
-export type PagePlaceholder = Record<string, never>;
+// Page components
+export {
+  DashboardPage,
+  type DashboardPageProps,
+  type DashboardPageSidebarProps,
+  type DashboardPageHeaderProps,
+  type DashboardPageContentProps,
+  type DashboardPageCommandPaletteProps,
+  type DashboardPageCreateProjectDialogProps,
+  type DashboardPageCreateTaskDialogProps,
+  type DashboardPageNewChatDialogProps,
+} from './DashboardPage';
 
-// Page components will be exported here as they are created
-// export { DashboardPage, type DashboardPageProps } from './DashboardPage';
+// Upcoming page components (to be implemented)
 // export { ArchivePage, type ArchivePageProps } from './ArchivePage';
 // export { TaskPage, type TaskPageProps } from './TaskPage';
 // export { ChatPage, type ChatPageProps } from './ChatPage';
