@@ -34,3 +34,4 @@ export * from './useProjectDetailSession';
 export * from './useProjectsListSession';
 export * from './useNavigation';
 export * from './useToast';
+export * from './useSearch';
