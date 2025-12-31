@@ -10,7 +10,7 @@ import { ChatRole, MessageRole, WorkflowStepStatus } from '@openflow/generated';
 import type { ArtifactFile } from '@openflow/queries';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useArtifactContent, useArtifacts, useOpenArtifact } from './useArtifacts';
-import { useChat, useCreateChat } from './useChats';
+import { useChat, useCreateChat, useToggleStepComplete } from './useChats';
 import { useClaudeEvents } from './useClaudeEvents';
 import { useConfirmDialog } from './useConfirmDialog';
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
@@ -248,6 +248,7 @@ export function useTaskSession({
   const archiveTask = useArchiveTask();
   const deleteTask = useDeleteTask();
   const killProcess = useKillProcess();
+  const toggleStepComplete = useToggleStepComplete();
 
   // Claude events for streaming output
   const {
@@ -402,9 +403,24 @@ export function useTaskSession({
     [chats, runExecutor, onSuccess, onError]
   );
 
-  const handleToggleStep = useCallback((_stepIndex: number, _completed: boolean) => {
-    // TODO: Implement step completion toggle
-  }, []);
+  const handleToggleStep = useCallback(
+    (stepIndex: number, _completed: boolean) => {
+      const chat = chats[stepIndex];
+      if (!chat) return;
+
+      toggleStepComplete.mutate(chat.id, {
+        onSuccess: (updatedChat) => {
+          const action = updatedChat.setupCompletedAt ? 'completed' : 'reopened';
+          onSuccess?.('Step updated', `"${chat.title}" has been ${action}`);
+        },
+        onError: (error) => {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          onError?.('Failed to update step', message);
+        },
+      });
+    },
+    [chats, toggleStepComplete, onSuccess, onError]
+  );
 
   const handleSelectStep = useCallback((stepIndex: number) => {
     setActiveStepIndex(stepIndex);
