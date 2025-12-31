@@ -45,8 +45,14 @@ export type { ThemeToggleProps, Theme } from './ThemeToggle';
 export { ThemeToggleCompact } from './ThemeToggleCompact';
 export type { ThemeToggleCompactProps, ResolvedTheme } from './ThemeToggleCompact';
 
-export { Skeleton } from './Skeleton';
-export type { SkeletonProps, SkeletonVariant } from './Skeleton';
+export { Skeleton, getVariantClasses, SKELETON_BASE_CLASSES } from './Skeleton';
+export type {
+  SkeletonProps,
+  SkeletonVariant,
+  SkeletonDimension,
+  SkeletonBreakpoint,
+  ResponsiveSkeletonDimension,
+} from './Skeleton';
 
 export { SkipLink } from './SkipLink';
 export type { SkipLinkProps } from './SkipLink';
