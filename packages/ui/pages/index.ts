@@ -57,10 +57,53 @@ export {
   type TaskPageConfirmDialogProps,
 } from './TaskPage';
 
-// Upcoming page components (to be implemented)
-// export { ChatPage, type ChatPageProps } from './ChatPage';
-// export { ProjectsListPage, type ProjectsListPageProps } from './ProjectsListPage';
-// export { ProjectDetailPage, type ProjectDetailPageProps } from './ProjectDetailPage';
-// export { SettingsPage, type SettingsPageProps } from './SettingsPage';
-// export { ProfilesSettingsPage, type ProfilesSettingsPageProps } from './ProfilesSettingsPage';
-// export { ProjectsSettingsPage, type ProjectsSettingsPageProps } from './ProjectsSettingsPage';
+export {
+  ChatPage,
+  type ChatPageProps,
+  type ChatPageHeaderProps,
+  type ChatPageContentProps,
+  type ChatPageInputAreaProps,
+  type ChatPagePermissionDialogProps,
+} from './ChatPage';
+
+export {
+  ProjectsListPage,
+  type ProjectsListPageProps,
+  type ProjectsListPageHeaderProps,
+  type ProjectsListPageContentProps,
+  type ProjectsListPageCreateDialogProps,
+} from './ProjectsListPage';
+
+export {
+  ProjectDetailPage,
+  type ProjectDetailPageProps,
+  type ProjectDetailPageSidebarProps,
+  type ProjectDetailPageHeaderProps,
+  type ProjectDetailPageInfoBarProps,
+  type ProjectDetailPageContentProps,
+  type ProjectDetailPageCreateTaskDialogProps,
+} from './ProjectDetailPage';
+
+export {
+  SettingsPage,
+  type SettingsPageProps,
+  type SettingsPageAppearanceProps,
+  type SettingsPageBehaviorProps,
+  type SettingsPageAboutProps,
+  type SettingsPageSaveProps,
+} from './SettingsPage';
+
+export {
+  ProfilesSettingsPage,
+  type ProfilesSettingsPageProps,
+  type ProfilesSettingsPageContentProps,
+  type ProfilesSettingsPageFormDialogProps,
+} from './ProfilesSettingsPage';
+
+export {
+  ProjectsSettingsPage,
+  type ProjectsSettingsPageProps,
+  type ProjectSettingsPageSelectorOption,
+  type ProjectsSettingsPageSelectorProps,
+  type ProjectsSettingsPageFormProps,
+} from './ProjectsSettingsPage';
