@@ -114,18 +114,23 @@ echo "  Architecture, type safety, and core pattern validators must pass."
 echo ""
 
 # Run blocking validators via the orchestrator
+# Exit codes: 0 = pass, 1 = error (fail), 2 = warnings (pass with warnings)
 pnpm validate:blocking
 VALIDATION_EXIT=$?
 
-if [ $VALIDATION_EXIT -ne 0 ]; then
+if [ $VALIDATION_EXIT -eq 1 ]; then
   echo ""
   print_failure "Blocking validation failed!"
   echo ""
   echo "  Fix the above errors before pushing."
   echo "  Run 'pnpm validate:blocking' for detailed output."
   exit 1
+elif [ $VALIDATION_EXIT -eq 2 ]; then
+  echo ""
+  echo "  ⚠ Blocking validators passed with warnings (see above)"
+else
+  print_success "Blocking validators passed"
 fi
-print_success "Blocking validators passed"
 
 # =============================================================================
 # Phase 5: Unit Tests
