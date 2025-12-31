@@ -18,9 +18,11 @@
 use std::path::Path;
 use std::process::Command;
 
+use sqlx::SqlitePool;
+
 use crate::types::{Commit, DiffHunk, FileDiff};
 
-use super::{ServiceError, ServiceResult};
+use super::{ProjectService, ServiceError, ServiceResult, TaskService};
 
 /// Service for git operations including worktree management.
 pub struct GitService;
@@ -594,6 +596,81 @@ impl GitService {
         }
 
         Ok(worktrees)
+    }
+
+    /// Get the diff for uncommitted changes in a task's worktree.
+    ///
+    /// This method resolves the task's worktree path by checking its associated chats.
+    /// If no worktree exists, it falls back to the project's main git repository.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `task_id` - The task identifier
+    ///
+    /// # Returns
+    /// A vector of file diffs showing all uncommitted changes.
+    pub async fn get_task_diff(pool: &SqlitePool, task_id: &str) -> ServiceResult<Vec<FileDiff>> {
+        // Get the task with its chats
+        let task_with_chats = TaskService::get(pool, task_id).await?;
+
+        // Find the first chat with a worktree path (prefer main role)
+        let worktree_path = task_with_chats
+            .chats
+            .iter()
+            .filter(|c| c.worktree_path.is_some() && !c.worktree_deleted)
+            .min_by_key(|c| c.workflow_step_index.unwrap_or(i32::MAX))
+            .and_then(|c| c.worktree_path.clone());
+
+        // If no worktree, fall back to project's git repo
+        let diff_path = match worktree_path {
+            Some(path) => path,
+            None => {
+                let project = ProjectService::get(pool, &task_with_chats.task.project_id).await?;
+                project.git_repo_path
+            }
+        };
+
+        Self::get_diff(&diff_path).await
+    }
+
+    /// Get commits for a task's worktree/branch.
+    ///
+    /// This method resolves the task's worktree path by checking its associated chats.
+    /// If no worktree exists, it falls back to the project's main git repository.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `task_id` - The task identifier
+    /// * `limit` - Maximum number of commits to return (default: 50)
+    ///
+    /// # Returns
+    /// A vector of commits, most recent first.
+    pub async fn get_task_commits(
+        pool: &SqlitePool,
+        task_id: &str,
+        limit: Option<usize>,
+    ) -> ServiceResult<Vec<Commit>> {
+        // Get the task with its chats
+        let task_with_chats = TaskService::get(pool, task_id).await?;
+
+        // Find the first chat with a worktree path (prefer by step index)
+        let worktree_path = task_with_chats
+            .chats
+            .iter()
+            .filter(|c| c.worktree_path.is_some() && !c.worktree_deleted)
+            .min_by_key(|c| c.workflow_step_index.unwrap_or(i32::MAX))
+            .and_then(|c| c.worktree_path.clone());
+
+        // If no worktree, fall back to project's git repo
+        let commits_path = match worktree_path {
+            Some(path) => path,
+            None => {
+                let project = ProjectService::get(pool, &task_with_chats.task.project_id).await?;
+                project.git_repo_path
+            }
+        };
+
+        Self::get_commits(&commits_path, limit).await
     }
 }
 

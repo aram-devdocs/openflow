@@ -155,6 +155,8 @@ pub fn run() {
             commands::delete_worktree,
             commands::get_diff,
             commands::get_commits,
+            commands::get_task_diff,
+            commands::get_task_commits,
             commands::push_branch,
             commands::get_current_branch,
             commands::get_head_commit,
