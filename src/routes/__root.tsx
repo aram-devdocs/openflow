@@ -15,6 +15,7 @@ import {
   GlobalShortcutsProvider,
   KeyboardShortcutsDialogProvider,
   NavigationProvider,
+  WebviewBoundsProvider,
 } from '../providers';
 import type { RouterContext } from '../routerContext';
 
@@ -35,21 +36,23 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <KeyboardShortcutsDialogProvider>
-        <NavigationProvider>
-          <GlobalShortcutsProvider>
-            <div className="min-h-screen bg-background text-foreground">
-              <ErrorBoundary
-                fallback={(error) => (
-                  <RouteError error={error} onRetry={handleRetry} onGoHome={handleGoHome} />
-                )}
-              >
-                <Outlet />
-              </ErrorBoundary>
-            </div>
-          </GlobalShortcutsProvider>
-        </NavigationProvider>
-      </KeyboardShortcutsDialogProvider>
+      <WebviewBoundsProvider>
+        <KeyboardShortcutsDialogProvider>
+          <NavigationProvider>
+            <GlobalShortcutsProvider>
+              <div className="min-h-screen bg-background text-foreground">
+                <ErrorBoundary
+                  fallback={(error) => (
+                    <RouteError error={error} onRetry={handleRetry} onGoHome={handleGoHome} />
+                  )}
+                >
+                  <Outlet />
+                </ErrorBoundary>
+              </div>
+            </GlobalShortcutsProvider>
+          </NavigationProvider>
+        </KeyboardShortcutsDialogProvider>
+      </WebviewBoundsProvider>
 
       {/* Development tools - only shown in dev mode */}
       {import.meta.env.DEV && (

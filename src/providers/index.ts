@@ -15,3 +15,7 @@ export {
   GlobalShortcutsProvider,
   type GlobalShortcutsProviderProps,
 } from './GlobalShortcutsProvider';
+export {
+  WebviewBoundsProvider,
+  type WebviewBoundsProviderProps,
+} from './WebviewBoundsProvider';
