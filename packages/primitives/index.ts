@@ -61,7 +61,7 @@ export type {
   // Landmark primitives
   // SectionProps is exported from ./Section component
   // ArticleProps is exported from ./Article component
-  NavProps,
+  // NavProps is exported from ./Nav component
   MainProps,
   AsideProps,
   HeaderProps,
@@ -119,7 +119,7 @@ export {
 // Landmark primitives
 export { Section, type SectionProps, type SectionSpacingProps } from './Section';
 export { Article, type ArticleProps, type ArticleSpacingProps } from './Article';
-// export { Nav } from './Nav';
+export { Nav, type NavProps, type NavSpacingProps } from './Nav';
 // export { Main } from './Main';
 // export { Aside } from './Aside';
 // export { Header } from './Header';
