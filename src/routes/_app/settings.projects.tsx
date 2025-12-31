@@ -12,60 +12,78 @@
  */
 
 import { useProjectsSettingsSession } from '@openflow/hooks';
-import {
-  ProjectSettingsEmptyState,
-  ProjectSettingsForm,
-  ProjectSettingsLayout,
-  ProjectSettingsLoadingSkeleton,
-  ProjectSettingsSelector,
-} from '@openflow/ui';
+import { ProjectsSettingsPage } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/settings/projects')({
-  component: ProjectSettingsPage,
+  component: ProjectSettingsRoute,
 });
 
-function ProjectSettingsPage() {
+function ProjectSettingsRoute() {
   const session = useProjectsSettingsSession();
 
   // Loading state
   if (session.isLoadingProjects) {
-    return <ProjectSettingsLoadingSkeleton sectionCount={4} fieldsPerSection={3} />;
+    return <ProjectsSettingsPage state="loading" />;
   }
 
   // Empty state
   if (session.projects.length === 0) {
-    return <ProjectSettingsEmptyState />;
+    return <ProjectsSettingsPage state="empty" />;
   }
 
-  return (
-    <ProjectSettingsLayout>
-      {/* Project selector */}
-      <ProjectSettingsSelector
-        options={session.projectOptions}
-        selectedProjectId={session.selectedProjectId}
-        onSelect={session.handleProjectSelect}
-        hasChanges={session.hasChanges}
-        saveSuccess={session.saveSuccess}
+  // Loading selected project state
+  if (session.isLoadingProject && session.selectedProjectId) {
+    return (
+      <ProjectsSettingsPage
+        state="loading-project"
+        selector={{
+          options: session.projectOptions,
+          selectedProjectId: session.selectedProjectId,
+          onSelect: session.handleProjectSelect,
+          hasChanges: session.hasChanges,
+          saveSuccess: session.saveSuccess,
+        }}
       />
+    );
+  }
 
-      {/* Loading project state */}
-      {session.isLoadingProject && session.selectedProjectId && (
-        <ProjectSettingsLoadingSkeleton sectionCount={4} fieldsPerSection={3} />
-      )}
+  // Ready state - needs project and formData
+  if (!session.selectedProject || !session.formData) {
+    return (
+      <ProjectsSettingsPage
+        state="loading-project"
+        selector={{
+          options: session.projectOptions,
+          selectedProjectId: session.selectedProjectId,
+          onSelect: session.handleProjectSelect,
+          hasChanges: session.hasChanges,
+          saveSuccess: session.saveSuccess,
+        }}
+      />
+    );
+  }
 
-      {/* Project settings form */}
-      {session.selectedProject && session.formData && (
-        <ProjectSettingsForm
-          project={session.selectedProject}
-          formData={session.formData}
-          onFormChange={session.handleFormChange}
-          isSaving={session.isSaving}
-          hasChanges={session.hasChanges}
-          saveError={session.saveError}
-          onSave={session.handleSave}
-        />
-      )}
-    </ProjectSettingsLayout>
+  // Ready state
+  return (
+    <ProjectsSettingsPage
+      state="ready"
+      selector={{
+        options: session.projectOptions,
+        selectedProjectId: session.selectedProjectId,
+        onSelect: session.handleProjectSelect,
+        hasChanges: session.hasChanges,
+        saveSuccess: session.saveSuccess,
+      }}
+      project={session.selectedProject}
+      form={{
+        formData: session.formData,
+        onFormChange: session.handleFormChange,
+        isSaving: session.isSaving,
+        hasChanges: session.hasChanges,
+        saveError: session.saveError,
+        onSave: session.handleSave,
+      }}
+    />
   );
 }

@@ -13,26 +13,15 @@
  */
 
 import { useProfilesSession } from '@openflow/hooks';
-import {
-  ProfileFormDialog,
-  ProfilesConfirmDialog,
-  ProfilesContent,
-  ProfilesLoadingSkeleton,
-  ProfilesPageLayout,
-} from '@openflow/ui';
+import { ProfilesSettingsPage } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/settings/profiles')({
-  component: ExecutorProfilesPage,
+  component: ExecutorProfilesRoute,
 });
 
-function ExecutorProfilesPage() {
+function ExecutorProfilesRoute() {
   const session = useProfilesSession();
-
-  // Loading state
-  if (session.isLoading) {
-    return <ProfilesLoadingSkeleton count={4} />;
-  }
 
   // Determine dialog state
   const isDialogOpen = session.isCreateDialogOpen || session.editingProfile !== null;
@@ -42,34 +31,30 @@ function ExecutorProfilesPage() {
   const isPending = session.isCreating || session.isUpdating;
 
   return (
-    <ProfilesPageLayout
+    <ProfilesSettingsPage
+      isLoading={session.isLoading}
       description="Executor profiles define which AI CLI tools to use for tasks."
       onCreateClick={session.handleOpenCreateDialog}
-    >
-      <ProfilesContent
-        profiles={session.profiles}
-        onCreateClick={session.handleOpenCreateDialog}
-        onEdit={session.handleOpenEditDialog}
-        onDelete={session.handleDelete}
-        onSetDefault={session.handleSetDefault}
-      />
-
-      {/* Create/Edit Dialog */}
-      <ProfileFormDialog
-        isOpen={isDialogOpen}
-        onClose={session.handleCloseDialog}
-        title={dialogTitle}
-        formData={session.formData}
-        onFormChange={session.handleFormChange}
-        onSubmit={session.editingProfile ? session.handleUpdate : session.handleCreate}
-        isPending={isPending}
-        error={session.formError}
-        submitLabel={submitLabel}
-        loadingText={loadingText}
-      />
-
-      {/* Confirm delete dialog */}
-      <ProfilesConfirmDialog {...session.confirmDialogProps} />
-    </ProfilesPageLayout>
+      content={{
+        profiles: session.profiles,
+        onCreateClick: session.handleOpenCreateDialog,
+        onEdit: session.handleOpenEditDialog,
+        onDelete: session.handleDelete,
+        onSetDefault: session.handleSetDefault,
+      }}
+      formDialog={{
+        isOpen: isDialogOpen,
+        onClose: session.handleCloseDialog,
+        title: dialogTitle,
+        formData: session.formData,
+        onFormChange: session.handleFormChange,
+        onSubmit: session.editingProfile ? session.handleUpdate : session.handleCreate,
+        isPending,
+        error: session.formError,
+        submitLabel,
+        loadingText,
+      }}
+      confirmDialog={session.confirmDialogProps}
+    />
   );
 }

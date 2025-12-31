@@ -10,36 +10,22 @@
  * - View commit history
  * - Create pull requests
  *
- * Uses TaskLayout template with tabs for Steps, Changes, and Commits.
+ * Uses TaskPage component with tabs for Steps, Artifacts, Changes, and Commits.
  * Route is pure composition - all state is in useTaskSession hook.
  */
 
 import { useTaskSession } from '@openflow/hooks';
-import {
-  AddStepDialog,
-  ArtifactPreviewDialog,
-  ConfirmDialog,
-  EntityContextMenu,
-  SkeletonTaskDetail,
-  TaskArtifactsTab,
-  TaskChangesTab,
-  TaskCommitsTab,
-  TaskLayout,
-  TaskMainPanel,
-  TaskNotFound,
-  TaskStepsPanel,
-  useToast,
-} from '@openflow/ui';
-import type { Tab } from '@openflow/ui';
+import { TaskPage, useToast } from '@openflow/ui';
+import type { TaskPageTab } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { FileText, GitCommitHorizontal, GitCompare, ListTodo } from 'lucide-react';
 import { useMemo } from 'react';
 
 export const Route = createFileRoute('/_app/tasks/$taskId')({
-  component: TaskDetailPage,
+  component: TaskDetailRoute,
 });
 
-function TaskDetailPage() {
+function TaskDetailRoute() {
   const { taskId } = Route.useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -53,7 +39,7 @@ function TaskDetailPage() {
   });
 
   // Build tabs with icons (hook returns badge counts, we add icons here)
-  const tabs: Tab[] = useMemo(
+  const tabs: TaskPageTab[] = useMemo(
     () => [
       { id: 'steps', label: 'Steps', icon: ListTodo },
       {
@@ -80,129 +66,102 @@ function TaskDetailPage() {
 
   // Loading state
   if (session.isLoadingTask) {
-    return <SkeletonTaskDetail />;
+    return <TaskPage state="loading" />;
   }
 
   // Not found state
   if (!session.task) {
-    return <TaskNotFound onBack={() => navigate({ to: '/' })} />;
+    return <TaskPage state="not-found" onNotFoundBack={() => navigate({ to: '/' })} />;
   }
 
-  // Render tab content
-  const renderTabContent = () => {
-    switch (session.activeTab) {
-      case 'artifacts':
-        return (
-          <TaskArtifactsTab
-            artifacts={session.artifacts}
-            loading={session.isLoadingArtifacts}
-            onOpenArtifact={session.handleOpenArtifact}
-            onPreviewArtifact={session.handlePreviewArtifact}
-          />
-        );
-      case 'changes':
-        return (
-          <TaskChangesTab
-            diffs={session.diffs}
-            expandedFiles={session.expandedDiffFiles}
-            onFileToggle={session.handleFileToggle}
-          />
-        );
-      case 'commits':
-        return (
-          <TaskCommitsTab
-            commits={session.commits}
-            expandedCommits={session.expandedCommits}
-            onCommitToggle={session.handleCommitToggle}
-            onViewCommit={session.handleViewCommit}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
+  // Ready state
   return (
-    <>
-      <TaskLayout
-        task={session.task}
-        chats={session.chats}
-        onBack={session.handleBack}
-        tabs={tabs}
-        activeTab={session.activeTab}
-        onTabChange={session.setActiveTab}
-        onStatusChange={session.handleStatusChange}
-        onTitleEditToggle={session.handleTitleEditToggle}
-        isTitleEditing={session.isTitleEditing}
-        titleInputValue={session.titleInputValue}
-        onTitleInputChange={session.handleTitleInputChange}
-        onTitleEditSubmit={session.handleTitleEditSubmit}
-        onTitleEditCancel={session.handleTitleEditCancel}
-        {...(session.hasBranch && { onCreatePR: session.handleCreatePR })}
-        onMoreActions={session.handleMoreActions}
-        stepsPanel={
-          <TaskStepsPanel
-            steps={session.workflowSteps}
-            activeStepIndex={session.activeStepIndex}
-            onStartStep={session.handleStartStep}
-            onToggleStep={session.handleToggleStep}
-            onSelectStep={session.handleSelectStep}
-            onAddStep={session.handleAddStep}
-            autoStart={session.autoStart}
-            onAutoStartChange={session.setAutoStart}
-          />
-        }
-        mainPanel={
-          <TaskMainPanel
-            claudeEvents={session.claudeEvents}
-            rawOutput={session.rawOutput}
-            isRunning={session.isRunning}
-            showRawOutput={session.showRawOutput}
-            onToggleRawOutput={() => session.setShowRawOutput(!session.showRawOutput)}
-            messages={session.messages ?? []}
-            onSendMessage={session.handleSendMessage}
-            isProcessing={session.isRunningExecutor || session.isRunning}
-            onStopProcess={session.handleStopProcess}
-            executorProfiles={session.executorProfiles ?? []}
-            selectedExecutorProfileId={session.selectedExecutorProfileId}
-          />
-        }
-        tabContent={renderTabContent()}
-      />
-
-      {/* Add Step Dialog */}
-      <AddStepDialog
-        isOpen={session.addStepDialog.isOpen}
-        onClose={session.handleCloseAddStepDialog}
-        title={session.addStepDialog.title}
-        description={session.addStepDialog.description}
-        onTitleChange={session.handleNewStepTitleChange}
-        onDescriptionChange={session.handleNewStepDescriptionChange}
-        onCreateStep={session.handleCreateStep}
-        isCreating={session.isCreatingChat}
-      />
-
-      {/* Artifact Preview Dialog */}
-      <ArtifactPreviewDialog
-        isOpen={session.previewArtifact !== null}
-        onClose={session.handleClosePreview}
-        fileName={session.previewArtifact?.name ?? ''}
-        content={session.previewContent}
-        loading={session.isLoadingPreview}
-      />
-
-      {/* More actions context menu */}
-      <EntityContextMenu
-        entityType="task"
-        isOpen={session.moreMenuState.isOpen}
-        position={session.moreMenuState.position}
-        onClose={session.handleCloseMoreMenu}
-        onArchive={session.handleArchiveTask}
-        onDelete={session.handleDeleteTask}
-      />
-
-      {/* Confirm dialog */}
-      <ConfirmDialog {...session.confirmDialogProps} />
-    </>
+    <TaskPage
+      state="ready"
+      task={session.task}
+      chats={session.chats}
+      header={{
+        onBack: session.handleBack,
+        onStatusChange: session.handleStatusChange,
+        onTitleEditToggle: session.handleTitleEditToggle,
+        isTitleEditing: session.isTitleEditing,
+        titleInputValue: session.titleInputValue,
+        onTitleInputChange: session.handleTitleInputChange,
+        onTitleEditSubmit: session.handleTitleEditSubmit,
+        onTitleEditCancel: session.handleTitleEditCancel,
+        onCreatePR: session.hasBranch ? session.handleCreatePR : undefined,
+        onMoreActions: session.handleMoreActions,
+      }}
+      tabs={{
+        tabs,
+        activeTab: session.activeTab,
+        onTabChange: session.setActiveTab,
+      }}
+      stepsPanel={{
+        steps: session.workflowSteps,
+        activeStepIndex: session.activeStepIndex,
+        onStartStep: session.handleStartStep,
+        onToggleStep: session.handleToggleStep,
+        onSelectStep: session.handleSelectStep,
+        onAddStep: session.handleAddStep,
+        autoStart: session.autoStart,
+        onAutoStartChange: session.setAutoStart,
+      }}
+      mainPanel={{
+        claudeEvents: session.claudeEvents,
+        rawOutput: session.rawOutput,
+        isRunning: session.isRunning,
+        showRawOutput: session.showRawOutput,
+        onToggleRawOutput: () => session.setShowRawOutput(!session.showRawOutput),
+        messages: session.messages ?? [],
+        onSendMessage: session.handleSendMessage,
+        isProcessing: session.isRunningExecutor || session.isRunning,
+        onStopProcess: session.handleStopProcess,
+        executorProfiles: session.executorProfiles ?? [],
+        selectedExecutorProfileId: session.selectedExecutorProfileId,
+      }}
+      artifactsTab={{
+        artifacts: session.artifacts,
+        loading: session.isLoadingArtifacts,
+        onOpenArtifact: session.handleOpenArtifact,
+        onPreviewArtifact: session.handlePreviewArtifact,
+      }}
+      changesTab={{
+        diffs: session.diffs,
+        expandedFiles: session.expandedDiffFiles,
+        onFileToggle: session.handleFileToggle,
+      }}
+      commitsTab={{
+        commits: session.commits,
+        expandedCommits: session.expandedCommits,
+        onCommitToggle: session.handleCommitToggle,
+        onViewCommit: session.handleViewCommit,
+      }}
+      addStepDialog={{
+        isOpen: session.addStepDialog.isOpen,
+        onClose: session.handleCloseAddStepDialog,
+        title: session.addStepDialog.title,
+        description: session.addStepDialog.description,
+        onTitleChange: session.handleNewStepTitleChange,
+        onDescriptionChange: session.handleNewStepDescriptionChange,
+        onCreateStep: session.handleCreateStep,
+        isCreating: session.isCreatingChat,
+      }}
+      artifactPreviewDialog={{
+        isOpen: session.previewArtifact !== null,
+        onClose: session.handleClosePreview,
+        fileName: session.previewArtifact?.name ?? '',
+        content: session.previewContent,
+        loading: session.isLoadingPreview,
+      }}
+      moreMenu={{
+        isOpen: session.moreMenuState.isOpen,
+        position: session.moreMenuState.position,
+        onClose: session.handleCloseMoreMenu,
+        onArchive: session.handleArchiveTask,
+        onDelete: session.handleDeleteTask,
+      }}
+      confirmDialog={session.confirmDialogProps}
+    />
   );
 }

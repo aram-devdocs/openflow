@@ -8,17 +8,16 @@
  */
 
 import { useAllSettings, useKeyboardShortcuts, useSetSetting, useTheme } from '@openflow/hooks';
-import { Badge, Button, Card, FormField, SkeletonSettings, ThemeToggle } from '@openflow/ui';
+import { SettingsPage } from '@openflow/ui';
 import type { Theme } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
-import { HardDrive, Moon, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 export const Route = createFileRoute('/_app/settings/')({
-  component: GeneralSettingsPage,
+  component: GeneralSettingsRoute,
 });
 
-function GeneralSettingsPage() {
+function GeneralSettingsRoute() {
   // Theme from context (applies immediately)
   const { theme, setTheme: setThemeContext } = useTheme();
 
@@ -37,17 +36,6 @@ function GeneralSettingsPage() {
       setAutoSave(settings.autoSave === 'true');
     }
   }, [settings]);
-
-  // Keyboard shortcuts
-  useKeyboardShortcuts([
-    {
-      key: 's',
-      meta: true,
-      action: () => {
-        if (hasChanges) handleSave();
-      },
-    },
-  ]);
 
   // Handlers
   const handleThemeChange = useCallback(
@@ -75,104 +63,38 @@ function GeneralSettingsPage() {
     }
   }, [autoSave, setSetting]);
 
-  // Loading state
-  if (isLoading) {
-    return <SkeletonSettings sectionCount={3} fieldsPerSection={2} />;
-  }
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 's',
+      meta: true,
+      action: () => {
+        if (hasChanges) handleSave();
+      },
+    },
+  ]);
 
   return (
-    <div className="space-y-6">
-      {/* Status badges */}
-      {(hasChanges || saveSuccess) && (
-        <div className="flex items-center gap-2">
-          {hasChanges && <Badge variant="warning">Unsaved changes</Badge>}
-          {saveSuccess && <Badge variant="success">Saved successfully</Badge>}
-        </div>
-      )}
-
-      {/* Appearance Section */}
-      <Card className="overflow-hidden">
-        <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--muted))]/50 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Moon className="h-4 w-4 text-[rgb(var(--primary))]" />
-            <h3 className="font-medium text-[rgb(var(--foreground))]">Appearance</h3>
-          </div>
-          <p className="mt-0.5 text-xs text-[rgb(var(--muted-foreground))]">
-            Customize how OpenFlow looks
-          </p>
-        </div>
-        <div className="p-4">
-          <FormField label="Theme">
-            <ThemeToggle theme={theme} onThemeChange={handleThemeChange} />
-          </FormField>
-          <p className="mt-2 text-xs text-[rgb(var(--muted-foreground))]">
-            Theme changes are applied immediately and persisted automatically.
-          </p>
-        </div>
-      </Card>
-
-      {/* Behavior Section */}
-      <Card className="overflow-hidden">
-        <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--muted))]/50 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <HardDrive className="h-4 w-4 text-[rgb(var(--primary))]" />
-            <h3 className="font-medium text-[rgb(var(--foreground))]">Behavior</h3>
-          </div>
-          <p className="mt-0.5 text-xs text-[rgb(var(--muted-foreground))]">
-            Configure application behavior
-          </p>
-        </div>
-        <div className="p-4">
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={autoSave}
-              onChange={(e) => handleAutoSaveChange(e.target.checked)}
-              className="h-4 w-4 rounded border-[rgb(var(--border))] bg-[rgb(var(--background))] text-[rgb(var(--primary))] focus:ring-[rgb(var(--primary))]"
-            />
-            <div>
-              <span className="text-sm font-medium text-[rgb(var(--foreground))]">
-                Auto-save task descriptions
-              </span>
-              <p className="text-xs text-[rgb(var(--muted-foreground))]">
-                Automatically save changes as you type
-              </p>
-            </div>
-          </label>
-        </div>
-      </Card>
-
-      {/* About Section */}
-      <Card className="overflow-hidden">
-        <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--muted))]/50 px-4 py-3">
-          <h3 className="font-medium text-[rgb(var(--foreground))]">About</h3>
-        </div>
-        <div className="p-4">
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-[rgb(var(--muted-foreground))]">Version</span>
-              <span className="text-[rgb(var(--foreground))]">0.1.0</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[rgb(var(--muted-foreground))]">Build</span>
-              <span className="text-[rgb(var(--foreground))]">Development</span>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Save button */}
-      <div className="flex items-center gap-4 border-t border-[rgb(var(--border))] pt-6">
-        <Button
-          variant="primary"
-          onClick={handleSave}
-          loading={setSetting.isPending}
-          disabled={!hasChanges}
-        >
-          <Save className="mr-2 h-4 w-4" />
-          Save Changes
-        </Button>
-      </div>
-    </div>
+    <SettingsPage
+      isLoading={isLoading}
+      appearance={{
+        theme,
+        onThemeChange: handleThemeChange,
+      }}
+      behavior={{
+        autoSave,
+        onAutoSaveChange: handleAutoSaveChange,
+      }}
+      about={{
+        version: '0.1.0',
+        build: 'Development',
+      }}
+      save={{
+        hasChanges,
+        saveSuccess,
+        isSaving: setSetting.isPending,
+        onSave: handleSave,
+      }}
+    />
   );
 }

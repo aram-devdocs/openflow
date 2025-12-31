@@ -9,23 +9,14 @@
  */
 
 import { useChatSession, useKeyboardShortcuts } from '@openflow/hooks';
-import {
-  ChatContent,
-  ChatHeader,
-  ChatInputArea,
-  ChatLoadingSkeleton,
-  ChatNotFound,
-  ChatPageLayout,
-  ChatPermissionDialog,
-  useToast,
-} from '@openflow/ui';
+import { ChatPage, useToast } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/chats/$chatId')({
-  component: StandaloneChatPage,
+  component: StandaloneChatRoute,
 });
 
-function StandaloneChatPage() {
+function StandaloneChatRoute() {
   const { chatId } = Route.useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -40,55 +31,54 @@ function StandaloneChatPage() {
     { key: 'Escape', action: () => navigate({ to: '/' }) },
   ]);
 
+  // Loading state
   if (session.isLoadingChat) {
-    return <ChatLoadingSkeleton />;
+    return <ChatPage state="loading" />;
   }
 
+  // Not found state
   if (!session.chat) {
-    return <ChatNotFound onBack={() => navigate({ to: '/' })} />;
+    return <ChatPage state="not-found" onNotFoundBack={() => navigate({ to: '/' })} />;
   }
 
+  // Ready state
   return (
-    <ChatPageLayout
-      permissionDialog={
-        <ChatPermissionDialog
-          request={session.permissionRequest}
-          onApprove={session.handleApprovePermission}
-          onDeny={session.handleDenyPermission}
-        />
-      }
-      header={
-        <ChatHeader
-          title={session.chat.title}
-          projectName={session.project?.name}
-          showRawOutput={session.showRawOutput}
-          onToggleRawOutput={session.toggleRawOutput}
-          onBack={() => navigate({ to: '/' })}
-        />
-      }
-      inputArea={
-        <ChatInputArea
-          inputValue={session.inputValue}
-          isProcessing={session.isProcessing}
-          textareaRef={session.textareaRef}
-          onInputChange={session.setInputValue}
-          onKeyDown={session.handleKeyDown}
-          onSend={session.handleSend}
-          onStop={session.handleStopProcess}
-        />
-      }
-    >
-      <ChatContent
-        hasContent={session.hasContent}
-        isProcessing={session.isProcessing}
-        messages={session.messages}
-        displayItems={session.displayItems}
-        activeProcessId={session.activeProcessId}
-        isRunning={session.isRunning}
-        showRawOutput={session.showRawOutput}
-        rawOutput={session.rawOutput}
-        scrollRef={session.messagesEndRef}
-      />
-    </ChatPageLayout>
+    <ChatPage
+      state="ready"
+      chat={session.chat}
+      project={session.project}
+      header={{
+        title: session.chat.title,
+        projectName: session.project?.name,
+        showRawOutput: session.showRawOutput,
+        onToggleRawOutput: session.toggleRawOutput,
+        onBack: () => navigate({ to: '/' }),
+      }}
+      content={{
+        hasContent: session.hasContent,
+        isProcessing: session.isProcessing,
+        messages: session.messages,
+        displayItems: session.displayItems,
+        activeProcessId: session.activeProcessId,
+        isRunning: session.isRunning,
+        showRawOutput: session.showRawOutput,
+        rawOutput: session.rawOutput,
+        scrollRef: session.messagesEndRef,
+      }}
+      inputArea={{
+        inputValue: session.inputValue,
+        isProcessing: session.isProcessing,
+        textareaRef: session.textareaRef,
+        onInputChange: session.setInputValue,
+        onKeyDown: session.handleKeyDown,
+        onSend: session.handleSend,
+        onStop: session.handleStopProcess,
+      }}
+      permissionDialog={{
+        request: session.permissionRequest,
+        onApprove: session.handleApprovePermission,
+        onDeny: session.handleDenyPermission,
+      }}
+    />
   );
 }

@@ -10,67 +10,63 @@
  */
 
 import { useArchiveSession } from '@openflow/hooks';
-import {
-  ArchiveContent,
-  ArchiveHeader,
-  ArchiveLayout,
-  ArchiveTabBar,
-  ConfirmDialog,
-} from '@openflow/ui';
+import { ArchivePage } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/archive')({
-  component: ArchivePage,
+  component: ArchiveRoute,
 });
 
-function ArchivePage() {
+function ArchiveRoute() {
   const navigate = useNavigate();
   const session = useArchiveSession({ navigate });
 
   return (
-    <ArchiveLayout
-      header={
-        <ArchiveHeader
-          archivedCount={session.archivedCount}
-          activeTab={session.activeTab}
-          onSearch={session.handleSearch}
-        />
-      }
-    >
-      <ArchiveTabBar
-        activeTab={session.activeTab}
-        onTabChange={session.setActiveTab}
-        taskCount={session.archivedTasks.length}
-        chatCount={session.archivedChats.length}
-        projectCount={session.archivedProjects.length}
-        onBack={session.handleBack}
-      />
-      <ArchiveContent
-        activeTab={session.activeTab}
-        isLoading={session.isLoading}
-        archivedTasks={session.archivedTasks}
-        selectedTask={session.selectedTask}
-        isRestoringTask={session.isRestoringTask}
-        archivedChats={session.archivedChats}
-        selectedChat={session.selectedChat}
-        isRestoringChat={session.isRestoringChat}
-        archivedProjects={session.archivedProjects}
-        selectedProject={session.selectedProject}
-        isRestoringProject={session.isRestoringProject}
-        getProjectName={session.getProjectName}
-        getTaskTitle={session.getTaskTitle}
-        formatDate={session.formatDate}
-        onSelectTask={session.handleSelectTask}
-        onSelectChat={session.handleSelectChat}
-        onSelectProject={session.handleSelectProject}
-        onRestoreTask={session.handleRestoreTask}
-        onRestoreChat={session.handleRestoreChat}
-        onRestoreProject={session.handleRestoreProject}
-        onDeleteTask={session.handleDeleteTask}
-        onDeleteChat={session.handleDeleteChat}
-        onDeleteProject={session.handleDeleteProject}
-      />
-      <ConfirmDialog {...session.confirmDialogProps} />
-    </ArchiveLayout>
+    <ArchivePage
+      isLoading={session.isLoading}
+      header={{
+        archivedCount: session.archivedCount,
+        activeTab: session.activeTab,
+        onSearch: session.handleSearch,
+      }}
+      tabBar={{
+        activeTab: session.activeTab,
+        onTabChange: session.setActiveTab,
+        taskCount: session.archivedTasks.length,
+        chatCount: session.archivedChats.length,
+        projectCount: session.archivedProjects.length,
+        onBack: session.handleBack,
+      }}
+      tasks={{
+        archivedTasks: session.archivedTasks,
+        selectedTask: session.selectedTask,
+        isRestoringTask: session.isRestoringTask,
+        onSelectTask: session.handleSelectTask,
+        onRestoreTask: session.handleRestoreTask,
+        onDeleteTask: session.handleDeleteTask,
+      }}
+      chats={{
+        archivedChats: session.archivedChats,
+        selectedChat: session.selectedChat,
+        isRestoringChat: session.isRestoringChat,
+        onSelectChat: session.handleSelectChat,
+        onRestoreChat: session.handleRestoreChat,
+        onDeleteChat: session.handleDeleteChat,
+      }}
+      projects={{
+        archivedProjects: session.archivedProjects,
+        selectedProject: session.selectedProject,
+        isRestoringProject: session.isRestoringProject,
+        onSelectProject: session.handleSelectProject,
+        onRestoreProject: session.handleRestoreProject,
+        onDeleteProject: session.handleDeleteProject,
+      }}
+      helpers={{
+        getProjectName: session.getProjectName,
+        getTaskTitle: session.getTaskTitle,
+        formatDate: session.formatDate,
+      }}
+      confirmDialog={session.confirmDialogProps}
+    />
   );
 }
