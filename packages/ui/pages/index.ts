@@ -40,8 +40,24 @@ export {
   // Note: ArchiveTab is already exported from ../organisms/ArchivePageComponents
 } from './ArchivePage';
 
+export {
+  TaskPage,
+  type TaskPageProps,
+  type TaskPageHeaderProps,
+  type TaskPageTab,
+  type TaskPageTabsProps,
+  type TaskPageStepsPanelProps,
+  type TaskPageMainPanelProps,
+  type TaskPageArtifactsTabProps,
+  type TaskPageChangesTabProps,
+  type TaskPageCommitsTabProps,
+  type TaskPageAddStepDialogProps,
+  type TaskPageArtifactPreviewDialogProps,
+  type TaskPageMoreMenuProps,
+  type TaskPageConfirmDialogProps,
+} from './TaskPage';
+
 // Upcoming page components (to be implemented)
-// export { TaskPage, type TaskPageProps } from './TaskPage';
 // export { ChatPage, type ChatPageProps } from './ChatPage';
 // export { ProjectsListPage, type ProjectsListPageProps } from './ProjectsListPage';
 // export { ProjectDetailPage, type ProjectDetailPageProps } from './ProjectDetailPage';
