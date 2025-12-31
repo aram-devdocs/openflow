@@ -65,7 +65,7 @@ export type {
   // MainProps is exported from ./Main component
   // AsideProps is exported from ./Aside component
   // HeaderProps is exported from ./Header component
-  FooterProps,
+  // FooterProps is exported from ./Footer component
   // Utility types
   SpacingPropKeys,
   A11yPropKeys,
@@ -123,4 +123,4 @@ export { Nav, type NavProps, type NavSpacingProps } from './Nav';
 export { Main, type MainProps, type MainSpacingProps, DEFAULT_MAIN_ID } from './Main';
 export { Aside, type AsideProps, type AsideSpacingProps } from './Aside';
 export { Header, type HeaderProps, type HeaderSpacingProps } from './Header';
-// export { Footer } from './Footer';
+export { Footer, type FooterProps, type FooterSpacingProps } from './Footer';
