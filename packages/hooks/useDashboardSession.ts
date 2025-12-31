@@ -743,6 +743,8 @@ export function useDashboardSession({
           // Create chats for each workflow step sequentially
           const createStepChats = async () => {
             const steps = selectedWorkflow.steps;
+            const errors: string[] = [];
+
             for (let i = 0; i < steps.length; i++) {
               const step = steps[i];
               if (!step) continue;
@@ -759,11 +761,20 @@ export function useDashboardSession({
                   },
                   {
                     onSuccess: () => resolve(),
-                    onError: () => resolve(), // Continue even if one fails
+                    onError: (error) => {
+                      errors.push(`Step ${i + 1} "${step.name}": ${error.message}`);
+                      resolve(); // Continue with remaining steps
+                    },
                   }
                 );
               });
             }
+
+            // Report any errors that occurred during step creation
+            if (errors.length > 0) {
+              onError?.('Some workflow steps failed to create', errors.join('\n'));
+            }
+
             navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
           };
           createStepChats();
@@ -947,18 +958,22 @@ export function useDashboardSession({
     ]
   );
 
-  // Build recent items for the command palette
-  const recentItems: RecentItem[] = tasks.slice(0, 5).map((task) => {
-    const item: RecentItem = {
-      id: task.id,
-      type: SearchResultType.Task,
-      title: task.title,
-    };
-    if (activeProject?.name) {
-      item.subtitle = activeProject.name;
-    }
-    return item;
-  });
+  // Build recent items for the command palette (memoized to prevent unnecessary re-renders)
+  const recentItems: RecentItem[] = useMemo(
+    () =>
+      tasks.slice(0, 5).map((task) => {
+        const item: RecentItem = {
+          id: task.id,
+          type: SearchResultType.Task,
+          title: task.title,
+        };
+        if (activeProject?.name) {
+          item.subtitle = activeProject.name;
+        }
+        return item;
+      }),
+    [tasks, activeProject?.name]
+  );
 
   // Build header subtitle
   const getHeaderSubtitle = (): string | undefined => {

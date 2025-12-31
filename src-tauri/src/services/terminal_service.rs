@@ -186,7 +186,14 @@ impl TerminalService {
             }
         };
 
-        // 3. Determine working directory
+        // 3. Determine and validate working directory
+        let project_root = std::fs::canonicalize(&project.git_repo_path).map_err(|e| {
+            ServiceError::Validation(format!(
+                "Failed to resolve project path {}: {}",
+                project.git_repo_path, e
+            ))
+        })?;
+
         let cwd = request
             .cwd
             .unwrap_or_else(|| PathBuf::from(&project.git_repo_path));
@@ -197,6 +204,21 @@ impl TerminalService {
                 "Working directory does not exist: {}",
                 cwd.display()
             )));
+        }
+
+        // Canonicalize and validate cwd is within project boundaries (security)
+        let cwd = std::fs::canonicalize(&cwd).map_err(|e| {
+            ServiceError::Validation(format!(
+                "Failed to resolve working directory {}: {}",
+                cwd.display(),
+                e
+            ))
+        })?;
+
+        if !cwd.starts_with(&project_root) {
+            return Err(ServiceError::Validation(
+                "Working directory must be within the project directory".to_string(),
+            ));
         }
 
         // 4. Determine shell

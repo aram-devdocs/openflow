@@ -14,7 +14,64 @@ use crate::types::PullRequestResult;
 /// Service for GitHub operations including PR creation.
 pub struct GitHubService;
 
+/// Maximum allowed length for PR titles (GitHub's limit is around 256)
+const MAX_PR_TITLE_LENGTH: usize = 256;
+
+/// Maximum allowed length for PR body (GitHub allows up to 65536 for body)
+const MAX_PR_BODY_LENGTH: usize = 65536;
+
 impl GitHubService {
+    /// Validate PR title for security and API constraints.
+    ///
+    /// - Must not be empty
+    /// - Must not exceed 256 characters
+    /// - Must not contain control characters (except newlines/tabs in body)
+    fn validate_pr_title(title: &str) -> ServiceResult<()> {
+        if title.is_empty() {
+            return Err(ServiceError::Validation(
+                "Pull request title cannot be empty".to_string(),
+            ));
+        }
+
+        if title.len() > MAX_PR_TITLE_LENGTH {
+            return Err(ServiceError::Validation(format!(
+                "Pull request title exceeds maximum length of {} characters",
+                MAX_PR_TITLE_LENGTH
+            )));
+        }
+
+        // Check for control characters (but allow printable characters and common whitespace)
+        if title.chars().any(|c| c.is_control() && c != '\t') {
+            return Err(ServiceError::Validation(
+                "Pull request title contains invalid control characters".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Validate PR body for security and API constraints.
+    fn validate_pr_body(body: &str) -> ServiceResult<()> {
+        if body.len() > MAX_PR_BODY_LENGTH {
+            return Err(ServiceError::Validation(format!(
+                "Pull request body exceeds maximum length of {} characters",
+                MAX_PR_BODY_LENGTH
+            )));
+        }
+
+        // Body can contain newlines and tabs, but not other control characters
+        if body
+            .chars()
+            .any(|c| c.is_control() && c != '\n' && c != '\r' && c != '\t')
+        {
+            return Err(ServiceError::Validation(
+                "Pull request body contains invalid control characters".to_string(),
+            ));
+        }
+
+        Ok(())
+    }
+
     /// Check if the `gh` CLI is installed and available.
     ///
     /// # Returns
@@ -133,8 +190,11 @@ impl GitHubService {
         // 4. Get project for default base branch
         let project = ProjectService::get(pool, &task.project_id).await?;
 
-        // 5. Determine the title (default to task title)
+        // 5. Determine the title (default to task title) with validation
         let pr_title = title.unwrap_or_else(|| task.title.clone());
+
+        // Validate PR title
+        Self::validate_pr_title(&pr_title)?;
 
         // 6. Determine the base branch (prefer: param > task > project > "main")
         let base_branch = base
@@ -163,8 +223,9 @@ impl GitHubService {
             base_branch,
         ];
 
-        // Add body if provided
+        // Add body if provided, with validation
         if let Some(body_text) = body {
+            Self::validate_pr_body(&body_text)?;
             args.push("--body".to_string());
             args.push(body_text);
         } else {
@@ -290,6 +351,75 @@ impl GitHubService {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // Title validation tests
+    #[test]
+    fn test_validate_pr_title_valid() {
+        assert!(GitHubService::validate_pr_title("Add new feature").is_ok());
+        assert!(GitHubService::validate_pr_title("Fix: bug in login").is_ok());
+        assert!(GitHubService::validate_pr_title("Update README.md with examples").is_ok());
+    }
+
+    #[test]
+    fn test_validate_pr_title_empty() {
+        let result = GitHubService::validate_pr_title("");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("cannot be empty"));
+    }
+
+    #[test]
+    fn test_validate_pr_title_too_long() {
+        let long_title = "a".repeat(257);
+        let result = GitHubService::validate_pr_title(&long_title);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("exceeds maximum"));
+    }
+
+    #[test]
+    fn test_validate_pr_title_control_characters() {
+        let result = GitHubService::validate_pr_title("Title with\x00null");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("control characters"));
+
+        let result = GitHubService::validate_pr_title("Title with\x07bell");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_pr_title_allows_tab() {
+        // Tabs are allowed in titles
+        assert!(GitHubService::validate_pr_title("Title\twith\ttabs").is_ok());
+    }
+
+    // Body validation tests
+    #[test]
+    fn test_validate_pr_body_valid() {
+        assert!(GitHubService::validate_pr_body("This is a PR body").is_ok());
+        assert!(GitHubService::validate_pr_body("Body with\nnewlines").is_ok());
+        assert!(GitHubService::validate_pr_body("Body with\ttabs").is_ok());
+        assert!(GitHubService::validate_pr_body("Body with\r\nwindows newlines").is_ok());
+    }
+
+    #[test]
+    fn test_validate_pr_body_too_long() {
+        let long_body = "a".repeat(65537);
+        let result = GitHubService::validate_pr_body(&long_body);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("exceeds maximum"));
+    }
+
+    #[test]
+    fn test_validate_pr_body_control_characters() {
+        let result = GitHubService::validate_pr_body("Body with\x00null");
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("control characters"));
+    }
 
     #[test]
     fn test_check_gh_cli_installed() {

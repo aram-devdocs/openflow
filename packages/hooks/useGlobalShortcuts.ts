@@ -60,6 +60,18 @@ export interface GlobalShortcutsContextValue {
 export const GlobalShortcutsContext = createContext<GlobalShortcutsContextValue | null>(null);
 
 /**
+ * Internal type for tracking handler registrations with unique IDs.
+ * Using IDs prevents race conditions when components rapidly mount/unmount.
+ */
+interface HandlerRegistration {
+  id: number;
+  handler: () => void;
+}
+
+// Counter for unique registration IDs
+let registrationIdCounter = 0;
+
+/**
  * Provider hook for global shortcuts.
  * Use this in the GlobalShortcutsProvider component.
  *
@@ -69,19 +81,22 @@ export function useGlobalShortcutsProvider(
   navigate?: (path: string) => void
 ): GlobalShortcutsContextValue {
   // Use refs for handlers to avoid re-registering event listeners
-  const newTaskHandlerRef = useRef<(() => void) | null>(null);
-  const settingsHandlerRef = useRef<(() => void) | null>(null);
+  // Store as registration objects to prevent race conditions
+  const newTaskHandlerRef = useRef<HandlerRegistration | null>(null);
+  const settingsHandlerRef = useRef<HandlerRegistration | null>(null);
 
   // Track if handlers exist (for UI hints)
   const [hasNewTaskHandler, setHasNewTaskHandler] = useState(false);
   const [hasSettingsHandler, setHasSettingsHandler] = useState(false);
 
   const registerNewTaskHandler = useCallback((handler: () => void) => {
-    newTaskHandlerRef.current = handler;
+    const id = ++registrationIdCounter;
+    newTaskHandlerRef.current = { id, handler };
     setHasNewTaskHandler(true);
 
     return () => {
-      if (newTaskHandlerRef.current === handler) {
+      // Only clear if this is still the current registration (prevents race conditions)
+      if (newTaskHandlerRef.current?.id === id) {
         newTaskHandlerRef.current = null;
         setHasNewTaskHandler(false);
       }
@@ -89,11 +104,13 @@ export function useGlobalShortcutsProvider(
   }, []);
 
   const registerSettingsHandler = useCallback((handler: () => void) => {
-    settingsHandlerRef.current = handler;
+    const id = ++registrationIdCounter;
+    settingsHandlerRef.current = { id, handler };
     setHasSettingsHandler(true);
 
     return () => {
-      if (settingsHandlerRef.current === handler) {
+      // Only clear if this is still the current registration (prevents race conditions)
+      if (settingsHandlerRef.current?.id === id) {
         settingsHandlerRef.current = null;
         setHasSettingsHandler(false);
       }
@@ -102,13 +119,13 @@ export function useGlobalShortcutsProvider(
 
   const triggerNewTask = useCallback(() => {
     if (newTaskHandlerRef.current) {
-      newTaskHandlerRef.current();
+      newTaskHandlerRef.current.handler();
     }
   }, []);
 
   const triggerSettings = useCallback(() => {
     if (settingsHandlerRef.current) {
-      settingsHandlerRef.current();
+      settingsHandlerRef.current.handler();
     } else if (navigate) {
       // Fallback: navigate to settings if no custom handler
       navigate('/settings');
@@ -124,7 +141,7 @@ export function useGlobalShortcutsProvider(
       if (isMeta && e.key.toLowerCase() === 'n' && !e.shiftKey && !e.altKey) {
         if (newTaskHandlerRef.current) {
           e.preventDefault();
-          newTaskHandlerRef.current();
+          newTaskHandlerRef.current.handler();
           return;
         }
       }
@@ -133,7 +150,7 @@ export function useGlobalShortcutsProvider(
       if (isMeta && e.key === ',' && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         if (settingsHandlerRef.current) {
-          settingsHandlerRef.current();
+          settingsHandlerRef.current.handler();
         } else if (navigate) {
           navigate('/settings');
         }
