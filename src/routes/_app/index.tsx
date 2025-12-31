@@ -8,12 +8,14 @@
  *
  * This route is a pure composition of UI components and hooks.
  * All business logic is encapsulated in useDashboardSession.
+ * Navigation state (sidebar, mobile drawer) comes from NavigationContext.
  * All UI components are stateless and imported from @openflow/ui.
  */
 
-import { useDashboardSession } from '@openflow/hooks';
+import { useDashboardSession, useNavigation } from '@openflow/hooks';
 import { DashboardPage, useToast } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useCallback } from 'react';
 
 export const Route = createFileRoute('/_app/')({
   component: DashboardRoute,
@@ -22,6 +24,7 @@ export const Route = createFileRoute('/_app/')({
 function DashboardRoute() {
   const navigate = useNavigate();
   const toast = useToast();
+  const navigation = useNavigation();
 
   const session = useDashboardSession({
     navigate,
@@ -29,11 +32,28 @@ function DashboardRoute() {
     onError: (title, message) => toast.error(title, message),
   });
 
+  // Combine navigation context drawer close with session handlers
+  const handleSelectTaskWithDrawerClose = useCallback(
+    (taskId: string) => {
+      navigation.closeMobileDrawer();
+      session.handleSelectTaskWithDrawerClose(taskId);
+    },
+    [navigation, session]
+  );
+
+  const handleSelectChatWithDrawerClose = useCallback(
+    (chatId: string) => {
+      navigation.closeMobileDrawer();
+      session.handleSelectChatWithDrawerClose(chatId);
+    },
+    [navigation, session]
+  );
+
   return (
     <DashboardPage
-      sidebarCollapsed={session.sidebarCollapsed}
-      isMobileDrawerOpen={session.isMobileDrawerOpen}
-      onMobileDrawerToggle={session.handleMobileDrawerToggle}
+      sidebarCollapsed={navigation.sidebarCollapsed}
+      isMobileDrawerOpen={navigation.isMobileDrawerOpen}
+      onMobileDrawerToggle={navigation.setMobileDrawerOpen}
       sidebar={{
         projects: session.projects,
         tasks: session.tasks,
@@ -41,8 +61,8 @@ function DashboardRoute() {
         selectedProjectId: session.activeProjectId,
         statusFilter: session.statusFilter,
         onSelectProject: session.handleSelectProject,
-        onSelectTask: session.handleSelectTaskWithDrawerClose,
-        onSelectChat: session.handleSelectChatWithDrawerClose,
+        onSelectTask: handleSelectTaskWithDrawerClose,
+        onSelectChat: handleSelectChatWithDrawerClose,
         onNewTask: session.handleNewTask,
         onNewChat: session.handleNewChat,
         onNewProject: session.handleNewProject,
@@ -50,8 +70,8 @@ function DashboardRoute() {
         onTaskStatusChange: session.handleTaskStatusChange,
         onSettingsClick: session.handleSettingsClick,
         onArchiveClick: session.handleArchiveClick,
-        isCollapsed: session.sidebarCollapsed,
-        onToggleCollapse: session.handleToggleSidebar,
+        isCollapsed: navigation.sidebarCollapsed,
+        onToggleCollapse: navigation.toggleSidebar,
       }}
       header={{
         title: session.activeProject?.name ?? 'OpenFlow',
