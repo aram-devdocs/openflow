@@ -32,14 +32,14 @@ export type {
   // Base props
   BaseProps,
   PolymorphicProps,
-  // Layout primitives (BoxProps exported from ./Box, FlexProps from ./Flex)
+  // Layout primitives (BoxProps exported from ./Box, FlexProps from ./Flex, GridProps from ./Grid)
   BoxProps as BoxPropsBase,
   // FlexProps is exported from ./Flex component
   FlexDirection,
   FlexWrap,
   JustifyContent,
   AlignItems,
-  GridProps,
+  // GridProps is exported from ./Grid component
   StackProps,
   StackDirection,
   // Typography primitives
@@ -77,7 +77,14 @@ export type {
 // Layout primitives
 export { Box, type BoxProps } from './Box';
 export { Flex, type FlexProps, type FlexElement } from './Flex';
-// export { Grid } from './Grid';
+export {
+  Grid,
+  type GridProps,
+  type GridElement,
+  type GridColumns,
+  type GridRows,
+  type GridFlow,
+} from './Grid';
 // export { Stack } from './Stack';
 
 // Typography primitives
