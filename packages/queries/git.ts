@@ -43,4 +43,22 @@ export const gitQueries = {
    * @param chatId - The chat ID whose branch should be pushed
    */
   pushBranch: (chatId: string): Promise<void> => invoke('push_branch', { chatId }),
+
+  /**
+   * Get the diff for a task's worktree.
+   * Resolves the task's worktree path from its associated chats.
+   * @param taskId - The task ID to get diff for
+   * @returns Array of file diffs showing changes
+   */
+  getTaskDiff: (taskId: string): Promise<FileDiff[]> => invoke('get_task_diff', { taskId }),
+
+  /**
+   * Get commits for a task's worktree/branch.
+   * Resolves the task's worktree path from its associated chats.
+   * @param taskId - The task ID to get commits for
+   * @param limit - Optional maximum number of commits to return (default: 50)
+   * @returns Array of commits, most recent first
+   */
+  getTaskCommits: (taskId: string, limit?: number): Promise<Commit[]> =>
+    invoke('get_task_commits', { taskId, limit }),
 };
