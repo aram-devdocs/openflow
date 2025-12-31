@@ -27,8 +27,20 @@ export {
   type DashboardPageNewChatDialogProps,
 } from './DashboardPage';
 
+export {
+  ArchivePage,
+  type ArchivePageProps,
+  type ArchivePageHeaderProps,
+  type ArchivePageTabBarProps,
+  type ArchivePageTasksProps,
+  type ArchivePageChatsProps,
+  type ArchivePageProjectsProps,
+  type ArchivePageHelpersProps,
+  type ArchivePageConfirmDialogProps,
+  // Note: ArchiveTab is already exported from ../organisms/ArchivePageComponents
+} from './ArchivePage';
+
 // Upcoming page components (to be implemented)
-// export { ArchivePage, type ArchivePageProps } from './ArchivePage';
 // export { TaskPage, type TaskPageProps } from './TaskPage';
 // export { ChatPage, type ChatPageProps } from './ChatPage';
 // export { ProjectsListPage, type ProjectsListPageProps } from './ProjectsListPage';
