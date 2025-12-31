@@ -35,7 +35,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { FileText, GitCommitHorizontal, GitCompare, ListTodo } from 'lucide-react';
 import { useMemo } from 'react';
 
-export const Route = createFileRoute('/tasks/$taskId')({
+export const Route = createFileRoute('/_app/tasks/$taskId')({
   component: TaskDetailPage,
 });
 

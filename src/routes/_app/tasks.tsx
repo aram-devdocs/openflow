@@ -25,7 +25,7 @@ import {
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 
-export const Route = createFileRoute('/tasks')({
+export const Route = createFileRoute('/_app/tasks')({
   component: TasksPage,
 });
 
