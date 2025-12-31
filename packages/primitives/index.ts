@@ -59,7 +59,7 @@ export type {
   // Accessibility primitives
   // VisuallyHiddenProps is exported from ./VisuallyHidden component
   // Landmark primitives
-  SectionProps,
+  // SectionProps is exported from ./Section component
   ArticleProps,
   NavProps,
   MainProps,
@@ -117,7 +117,7 @@ export {
 } from './VisuallyHidden';
 
 // Landmark primitives
-// export { Section } from './Section';
+export { Section, type SectionProps, type SectionSpacingProps } from './Section';
 // export { Article } from './Article';
 // export { Nav } from './Nav';
 // export { Main } from './Main';
