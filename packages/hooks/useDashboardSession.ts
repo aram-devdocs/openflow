@@ -162,6 +162,8 @@ export interface DashboardSessionState {
   // Command palette actions
   handleCommandSearch: (query: string) => void;
   handleCloseCommandPalette: () => void;
+  handleSelectSearchResult: (result: SearchResult) => void;
+  handleSelectRecent: (item: RecentItem) => void;
 }
 
 // ============================================================================
@@ -520,7 +522,47 @@ export function useDashboardSession({
 
   const handleCloseCommandPalette = useCallback(() => {
     setCommandPaletteOpen(false);
+    setSearchQuery(''); // Clear search when closing
   }, []);
+
+  const handleSelectSearchResult = useCallback(
+    (result: SearchResult) => {
+      handleCloseCommandPalette();
+      switch (result.resultType) {
+        case SearchResultType.Task:
+          navigate({ to: '/tasks/$taskId', params: { taskId: result.id } });
+          break;
+        case SearchResultType.Project:
+          // Select the project in the sidebar
+          setSelectedProjectId(result.id);
+          break;
+        case SearchResultType.Chat:
+        case SearchResultType.Message:
+          navigate({ to: '/chats/$chatId', params: { chatId: result.id } });
+          break;
+      }
+    },
+    [handleCloseCommandPalette, navigate]
+  );
+
+  const handleSelectRecent = useCallback(
+    (item: RecentItem) => {
+      handleCloseCommandPalette();
+      switch (item.type) {
+        case SearchResultType.Task:
+          navigate({ to: '/tasks/$taskId', params: { taskId: item.id } });
+          break;
+        case SearchResultType.Project:
+          setSelectedProjectId(item.id);
+          break;
+        case SearchResultType.Chat:
+        case SearchResultType.Message:
+          navigate({ to: '/chats/$chatId', params: { chatId: item.id } });
+          break;
+      }
+    },
+    [handleCloseCommandPalette, navigate]
+  );
 
   // Build command actions for the palette
   const commandActions: CommandAction[] = useMemo(
@@ -678,5 +720,7 @@ export function useDashboardSession({
     // Command palette actions
     handleCommandSearch,
     handleCloseCommandPalette,
+    handleSelectSearchResult,
+    handleSelectRecent,
   };
 }

@@ -94,6 +94,11 @@ function DashboardRoute() {
         onSearch: session.handleCommandSearch,
         actions: session.commandActions,
         recentItems: session.recentItems,
+        query: session.searchQuery,
+        searchResults: session.searchResults,
+        isSearching: session.isSearching,
+        onSelectResult: session.handleSelectSearchResult,
+        onSelectRecent: session.handleSelectRecent,
       }}
       createProjectDialog={{
         isOpen: session.isCreateProjectDialogOpen,

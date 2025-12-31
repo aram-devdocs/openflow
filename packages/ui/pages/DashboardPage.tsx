@@ -16,7 +16,14 @@
  * - DashboardNewChatDialog (create new chat)
  */
 
-import type { Chat, ExecutorProfile, Project, Task, TaskStatus } from '@openflow/generated';
+import type {
+  Chat,
+  ExecutorProfile,
+  Project,
+  SearchResult,
+  Task,
+  TaskStatus,
+} from '@openflow/generated';
 import type { CommandAction, RecentItem } from '../organisms/CommandPalette';
 import {
   CreateProjectDialog,
@@ -114,6 +121,16 @@ export interface DashboardPageCommandPaletteProps {
   actions: CommandAction[];
   /** Recent items */
   recentItems: RecentItem[];
+  /** Current search query */
+  query?: string;
+  /** Search results to display */
+  searchResults?: SearchResult[];
+  /** Whether search is loading */
+  isSearching?: boolean;
+  /** Callback when a search result is selected */
+  onSelectResult?: (result: SearchResult) => void;
+  /** Callback when a recent item is selected */
+  onSelectRecent?: (item: RecentItem) => void;
 }
 
 /** Props for the create project dialog */
@@ -342,6 +359,11 @@ export function DashboardPage({
         onSearch={commandPalette.onSearch}
         actions={commandPalette.actions}
         recentItems={commandPalette.recentItems}
+        query={commandPalette.query}
+        searchResults={commandPalette.searchResults}
+        isSearching={commandPalette.isSearching}
+        onSelectResult={commandPalette.onSelectResult}
+        onSelectRecent={commandPalette.onSelectRecent}
       />
 
       {/* Create project dialog */}

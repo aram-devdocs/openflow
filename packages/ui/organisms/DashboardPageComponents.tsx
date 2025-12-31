@@ -5,7 +5,7 @@
  * from the useDashboardSession hook. They render UI and call callbacks on user interaction.
  */
 
-import type { Chat, Project, Task, TaskStatus } from '@openflow/generated';
+import type { Chat, Project, SearchResult, Task, TaskStatus } from '@openflow/generated';
 import type { ExecutorProfile } from '@openflow/generated';
 import { SearchResultType } from '@openflow/generated';
 import { Archive, FolderOpen, FolderPlus, Keyboard, Plus, Settings } from 'lucide-react';
@@ -195,6 +195,16 @@ export interface DashboardCommandPaletteProps {
   actions: CommandAction[];
   /** Recent items */
   recentItems: RecentItem[];
+  /** Current search query */
+  query?: string;
+  /** Search results to display */
+  searchResults?: SearchResult[];
+  /** Whether search is loading */
+  isSearching?: boolean;
+  /** Callback when a search result is selected */
+  onSelectResult?: (result: SearchResult) => void;
+  /** Callback when a recent item is selected */
+  onSelectRecent?: (item: RecentItem) => void;
 }
 
 /** Props for DashboardContent component */
@@ -666,6 +676,11 @@ export function DashboardCommandPalette({
   onSearch,
   actions,
   recentItems,
+  query,
+  searchResults,
+  isSearching,
+  onSelectResult,
+  onSelectRecent,
 }: DashboardCommandPaletteProps) {
   return (
     <CommandPalette
@@ -674,6 +689,11 @@ export function DashboardCommandPalette({
       onSearch={onSearch}
       actions={actions}
       recentItems={recentItems}
+      query={query}
+      searchResults={searchResults}
+      isSearching={isSearching}
+      onSelectResult={onSelectResult}
+      onSelectRecent={onSelectRecent}
     />
   );
 }
