@@ -195,8 +195,24 @@ export type { SkeletonStatsProps } from './SkeletonStats';
 export { SkeletonSettings } from './SkeletonSettings';
 export type { SkeletonSettingsProps } from './SkeletonSettings';
 
-export { SkeletonProjectCard } from './SkeletonProjectCard';
-export type { SkeletonProjectCardProps } from './SkeletonProjectCard';
+export {
+  SkeletonProjectCard,
+  getBaseSize as getSkeletonProjectCardBaseSize,
+  getResponsiveSizeClasses as getSkeletonProjectCardResponsiveSizeClasses,
+  getIconDimensions as getSkeletonProjectCardIconDimensions,
+  SKELETON_PROJECT_CARD_BASE_CLASSES,
+  SKELETON_PROJECT_CARD_PADDING_CLASSES,
+  SKELETON_PROJECT_CARD_ICON_CLASSES,
+  SKELETON_PROJECT_CARD_ICON_MARGIN_CLASSES,
+  SKELETON_PROJECT_CARD_TITLE_CLASSES,
+  SKELETON_PROJECT_CARD_TITLE_MARGIN_CLASSES,
+  SKELETON_PROJECT_CARD_DESCRIPTION_CLASSES,
+} from './SkeletonProjectCard';
+export type {
+  SkeletonProjectCardProps,
+  SkeletonProjectCardSize,
+  SkeletonProjectCardBreakpoint,
+} from './SkeletonProjectCard';
 
 export { SkeletonTaskDetail } from './SkeletonTaskDetail';
 export type { SkeletonTaskDetailProps } from './SkeletonTaskDetail';
