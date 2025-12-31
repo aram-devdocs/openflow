@@ -160,8 +160,28 @@ export type {
   SkeletonListBreakpoint,
 } from './SkeletonList';
 
-export { SkeletonTaskCard } from './SkeletonTaskCard';
-export type { SkeletonTaskCardProps } from './SkeletonTaskCard';
+export {
+  SkeletonTaskCard,
+  getBaseSize as getSkeletonTaskCardBaseSize,
+  getResponsiveSizeClasses as getSkeletonTaskCardResponsiveSizeClasses,
+  getBadgeDimensions as getSkeletonTaskCardBadgeDimensions,
+  SKELETON_TASK_CARD_BASE_CLASSES,
+  SKELETON_TASK_CARD_PADDING_CLASSES,
+  SKELETON_TASK_CARD_SPACING_CLASSES,
+  SKELETON_TASK_CARD_HEADER_GAP_CLASSES,
+  SKELETON_TASK_CARD_TITLE_CLASSES,
+  SKELETON_TASK_CARD_BADGE_CLASSES,
+  SKELETON_TASK_CARD_DESCRIPTION_CLASSES,
+  SKELETON_TASK_CARD_DESCRIPTION_GAP_CLASSES,
+  SKELETON_TASK_CARD_FOOTER_CLASSES,
+  SKELETON_TASK_CARD_FOOTER_GAP_CLASSES,
+  SKELETON_TASK_CARD_FOOTER_PADDING_CLASSES,
+} from './SkeletonTaskCard';
+export type {
+  SkeletonTaskCardProps,
+  SkeletonTaskCardSize,
+  SkeletonTaskCardBreakpoint,
+} from './SkeletonTaskCard';
 
 export {
   SkeletonChat,
