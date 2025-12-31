@@ -113,5 +113,11 @@ export type { SkeletonTaskDetailProps } from './SkeletonTaskDetail';
 export { SkeletonArchiveList } from './SkeletonArchiveList';
 export type { SkeletonArchiveListProps } from './SkeletonArchiveList';
 
-export { EmptyState } from './EmptyState';
-export type { EmptyStateProps } from './EmptyState';
+export {
+  EmptyState,
+  getBaseSize as getEmptyStateBaseSize,
+  getResponsiveSizeClasses as getEmptyStateResponsiveSizeClasses,
+  EMPTY_STATE_BASE_CLASSES,
+  SIZE_STYLES as EMPTY_STATE_SIZE_STYLES,
+} from './EmptyState';
+export type { EmptyStateProps, EmptyStateSize, EmptyStateAction } from './EmptyState';

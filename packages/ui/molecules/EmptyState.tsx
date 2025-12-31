@@ -1,9 +1,13 @@
+import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
+import { forwardRef, useId } from 'react';
 import { Button, type ButtonVariant } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 
-interface EmptyStateAction {
+export type EmptyStateSize = 'sm' | 'md' | 'lg';
+
+export interface EmptyStateAction {
   /** Button label text */
   label: string;
   /** Click handler */
@@ -12,6 +16,8 @@ interface EmptyStateAction {
   variant?: ButtonVariant;
   /** Whether the button is in loading state */
   loading?: boolean;
+  /** Accessible label for the button (defaults to label) */
+  'aria-label'?: string;
 }
 
 export interface EmptyStateProps {
@@ -27,46 +33,116 @@ export interface EmptyStateProps {
   secondaryAction?: EmptyStateAction;
   /** Additional CSS classes */
   className?: string;
-  /** Size variant - 'sm' for inline, 'md' for panels, 'lg' for full page */
-  size?: 'sm' | 'md' | 'lg';
+  /** Size variant - 'sm' for inline, 'md' for panels, 'lg' for full page - supports responsive values */
+  size?: ResponsiveValue<EmptyStateSize>;
+  /** Test ID for automated testing */
+  'data-testid'?: string;
+  /** Accessible label for screen readers (uses title by default) */
+  'aria-label'?: string;
 }
 
-const sizeStyles = {
+/**
+ * Base classes for the EmptyState container
+ */
+export const EMPTY_STATE_BASE_CLASSES = 'flex flex-col items-center justify-center text-center';
+
+/**
+ * Size-specific styles for EmptyState
+ */
+export const SIZE_STYLES = {
   sm: {
     container: 'py-6 px-4',
     iconWrapper: 'mb-2 p-2',
     icon: 'h-5 w-5',
-    title: 'text-sm font-medium',
-    description: 'mt-1 text-xs',
+    headingSize: 'sm' as const,
+    descriptionSize: 'xs' as const,
     actions: 'mt-3 gap-2',
+    buttonSize: 'sm' as const,
   },
   md: {
     container: 'py-8 px-6',
     iconWrapper: 'mb-3 p-3',
     icon: 'h-6 w-6',
-    title: 'text-base font-medium',
-    description: 'mt-1 text-sm',
+    headingSize: 'base' as const,
+    descriptionSize: 'sm' as const,
     actions: 'mt-4 gap-3',
+    buttonSize: 'md' as const,
   },
   lg: {
     container: 'py-12 px-6',
     iconWrapper: 'mb-4 p-4',
     icon: 'h-8 w-8',
-    title: 'text-lg font-semibold',
-    description: 'mt-2 text-sm',
+    headingSize: 'lg' as const,
+    descriptionSize: 'sm' as const,
     actions: 'mt-6 gap-3',
+    buttonSize: 'md' as const,
   },
-};
+} as const;
+
+/**
+ * Breakpoint order for responsive class generation
+ */
+const BREAKPOINT_ORDER = ['base', 'sm', 'md', 'lg', 'xl', '2xl'] as const;
+type Breakpoint = (typeof BREAKPOINT_ORDER)[number];
+
+/**
+ * Get the base size for non-responsive property access
+ */
+export function getBaseSize(size: ResponsiveValue<EmptyStateSize>): EmptyStateSize {
+  if (typeof size === 'string') {
+    return size;
+  }
+  if (typeof size === 'object' && size !== null) {
+    return (size as Partial<Record<Breakpoint, EmptyStateSize>>).base ?? 'md';
+  }
+  return 'md';
+}
+
+/**
+ * Generate responsive container classes for size prop
+ */
+export function getResponsiveSizeClasses(size: ResponsiveValue<EmptyStateSize>): string[] {
+  const classes: string[] = [];
+
+  if (typeof size === 'string') {
+    // Split container classes into individual classes
+    const containerClasses = SIZE_STYLES[size].container.split(' ');
+    classes.push(...containerClasses);
+  } else if (typeof size === 'object' && size !== null) {
+    for (const breakpoint of BREAKPOINT_ORDER) {
+      const breakpointValue = (size as Partial<Record<Breakpoint, EmptyStateSize>>)[breakpoint];
+      if (breakpointValue !== undefined) {
+        const containerClasses = SIZE_STYLES[breakpointValue].container.split(' ');
+        for (const cls of containerClasses) {
+          if (breakpoint === 'base') {
+            classes.push(cls);
+          } else {
+            classes.push(`${breakpoint}:${cls}`);
+          }
+        }
+      }
+    }
+  }
+
+  return classes;
+}
 
 /**
  * EmptyState component for displaying placeholder content when there's no data.
  * Stateless - receives all data via props, emits actions via callbacks.
  *
- * Features:
- * - Configurable icon, title, and description
- * - Primary and secondary action buttons
- * - Three size variants for different contexts
- * - Accessible with semantic HTML
+ * Built on @openflow/primitives for accessibility and responsiveness:
+ * - Uses Heading for proper semantic heading hierarchy
+ * - Uses Text for accessible description content
+ * - Uses VisuallyHidden for screen reader announcements
+ * - Supports responsive sizing via ResponsiveValue
+ *
+ * Accessibility:
+ * - `role="status"` indicates this is a status region
+ * - `aria-label` provides accessible name for screen readers
+ * - Proper heading hierarchy (h3 for contextual placement)
+ * - Description linked via `aria-describedby`
+ * - Screen reader announces empty state context
  *
  * @example
  * // Simple empty state
@@ -93,59 +169,90 @@ const sizeStyles = {
  * />
  *
  * @example
- * // Small inline variant
+ * // Responsive sizing
  * <EmptyState
- *   size="sm"
+ *   size={{ base: 'sm', md: 'md', lg: 'lg' }}
  *   title="No results"
  *   description="Try a different search term."
  * />
  */
-export function EmptyState({
-  icon: IconComponent,
-  title,
-  description,
-  action,
-  secondaryAction,
-  className,
-  size = 'md',
-}: EmptyStateProps) {
-  const styles = sizeStyles[size];
+export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function EmptyState(
+  {
+    icon: IconComponent,
+    title,
+    description,
+    action,
+    secondaryAction,
+    className,
+    size = 'md',
+    'data-testid': testId,
+    'aria-label': ariaLabel,
+  },
+  ref
+) {
+  const baseSize = getBaseSize(size);
+  const styles = SIZE_STYLES[baseSize];
+  const responsiveClasses = getResponsiveSizeClasses(size);
+  const descriptionId = useId();
 
   return (
     <div
-      className={cn(
-        'flex flex-col items-center justify-center text-center',
-        styles.container,
-        className
-      )}
+      ref={ref}
+      className={cn(EMPTY_STATE_BASE_CLASSES, ...responsiveClasses, className)}
       role="status"
-      aria-label={title}
+      aria-label={ariaLabel ?? title}
+      aria-describedby={description ? descriptionId : undefined}
+      data-testid={testId}
+      data-size={baseSize}
     >
+      {/* Screen reader context announcement */}
+      <VisuallyHidden>
+        <Text as="span" aria-live="polite">
+          Empty state: {title}
+        </Text>
+      </VisuallyHidden>
+
       {IconComponent && (
         <div className={cn('rounded-full bg-[rgb(var(--muted))]', styles.iconWrapper)}>
           <Icon
             icon={IconComponent}
             className={cn('text-[rgb(var(--muted-foreground))]', styles.icon)}
+            aria-hidden="true"
           />
         </div>
       )}
 
-      <h3 className={cn('text-[rgb(var(--foreground))]', styles.title)}>{title}</h3>
+      <Heading
+        level={3}
+        size={styles.headingSize}
+        weight="medium"
+        color="foreground"
+        className="text-center"
+      >
+        {title}
+      </Heading>
 
       {description && (
-        <p className={cn('max-w-sm text-[rgb(var(--muted-foreground))]', styles.description)}>
+        <Text
+          id={descriptionId}
+          as="p"
+          size={styles.descriptionSize}
+          color="muted-foreground"
+          className="mt-1 max-w-sm text-center"
+        >
           {description}
-        </p>
+        </Text>
       )}
 
       {(action || secondaryAction) && (
-        <div className={cn('flex items-center', styles.actions)}>
+        <Flex align="center" gap={baseSize === 'sm' ? '2' : '3'} className={styles.actions}>
           {action && (
             <Button
               variant={action.variant ?? 'primary'}
-              size={size === 'sm' ? 'sm' : 'md'}
+              size={styles.buttonSize}
               onClick={action.onClick}
               loading={action.loading}
+              aria-label={action['aria-label']}
             >
               {action.label}
             </Button>
@@ -153,17 +260,18 @@ export function EmptyState({
           {secondaryAction && (
             <Button
               variant={secondaryAction.variant ?? 'secondary'}
-              size={size === 'sm' ? 'sm' : 'md'}
+              size={styles.buttonSize}
               onClick={secondaryAction.onClick}
               loading={secondaryAction.loading}
+              aria-label={secondaryAction['aria-label']}
             >
               {secondaryAction.label}
             </Button>
           )}
-        </div>
+        </Flex>
       )}
     </div>
   );
-}
+});
 
 EmptyState.displayName = 'EmptyState';
