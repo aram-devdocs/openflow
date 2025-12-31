@@ -11,3 +11,7 @@ export {
 } from './KeyboardShortcutsDialogProvider';
 export { NavigationProvider, type NavigationProviderProps } from './NavigationProvider';
 export { ToastProvider, type ToastProviderProps } from './ToastProvider';
+export {
+  GlobalShortcutsProvider,
+  type GlobalShortcutsProviderProps,
+} from './GlobalShortcutsProvider';

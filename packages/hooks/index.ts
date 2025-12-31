@@ -36,3 +36,7 @@ export * from './useNavigation';
 export * from './useToast';
 export * from './useSearch';
 export * from './useGit';
+export * from './useTerminal';
+export * from './useGitHub';
+export * from './useGlobalShortcuts';
+export * from './useSystem';

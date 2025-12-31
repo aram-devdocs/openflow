@@ -105,3 +105,20 @@ pub async fn delete_task(state: State<'_, AppState>, id: String) -> Result<(), S
         .await
         .map_err(|e| e.to_string())
 }
+
+/// Duplicate a task by ID.
+///
+/// Creates a copy of the task with:
+/// - New unique ID
+/// - Title appended with "(copy)"
+/// - Status reset to "todo"
+/// - Associated chats are NOT duplicated (new task starts fresh)
+///
+/// Returns the newly created duplicate task.
+#[tauri::command]
+pub async fn duplicate_task(state: State<'_, AppState>, id: String) -> Result<Task, String> {
+    let pool = state.db.lock().await;
+    TaskService::duplicate(&pool, &id)
+        .await
+        .map_err(|e| e.to_string())
+}

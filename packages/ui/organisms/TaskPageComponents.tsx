@@ -59,6 +59,12 @@ export interface TaskStepsPanelProps {
   onAddStep: () => void;
   autoStart: boolean;
   onAutoStartChange: (value: boolean) => void;
+  /** Callback when a step is marked as complete via the Complete button */
+  onCompleteStep?: (stepIndex: number) => void;
+  /** Callback when a step is skipped via the Skip button */
+  onSkipStep?: (stepIndex: number) => void;
+  /** Callback when View Chat button is clicked */
+  onViewChat?: (chatId: string) => void;
 }
 
 export interface AddStepDialogProps {
@@ -214,6 +220,9 @@ export function TaskStepsPanel({
   onAddStep,
   autoStart,
   onAutoStartChange,
+  onCompleteStep,
+  onSkipStep,
+  onViewChat,
 }: TaskStepsPanelProps) {
   return (
     <StepsPanel
@@ -225,6 +234,9 @@ export function TaskStepsPanel({
       onAddStep={onAddStep}
       autoStart={autoStart}
       onAutoStartChange={onAutoStartChange}
+      onCompleteStep={onCompleteStep}
+      onSkipStep={onSkipStep}
+      onViewChat={onViewChat}
     />
   );
 }

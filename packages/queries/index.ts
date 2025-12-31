@@ -17,3 +17,6 @@ export * from './git';
 export * from './search';
 export * from './workflows';
 export * from './artifacts';
+export * from './terminal';
+export * from './github';
+export * from './system';

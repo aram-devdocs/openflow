@@ -5,8 +5,15 @@
  * from the useDashboardSession hook. They render UI and call callbacks on user interaction.
  */
 
-import type { Chat, Project, SearchResult, Task, TaskStatus } from '@openflow/generated';
-import type { ExecutorProfile } from '@openflow/generated';
+import type {
+  Chat,
+  ExecutorProfile,
+  Project,
+  SearchResult,
+  Task,
+  TaskStatus,
+  WorkflowTemplate,
+} from '@openflow/generated';
 import { SearchResultType } from '@openflow/generated';
 import { Archive, FolderOpen, FolderPlus, Keyboard, Plus, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
@@ -22,6 +29,7 @@ import { CommandPalette } from './CommandPalette';
 import { Header } from './Header';
 import { NewChatDialog } from './NewChatDialog';
 import { Sidebar, type StatusFilter } from './Sidebar';
+import { WorkflowSelector } from './WorkflowSelector';
 
 // ============================================================================
 // Types
@@ -87,6 +95,12 @@ export interface DashboardSidebarProps {
   onStatusFilter: (status: StatusFilter) => void;
   /** Callback when task status changes */
   onTaskStatusChange: (taskId: string, status: TaskStatus) => void;
+  /** Callback when task context menu is triggered */
+  onTaskContextMenu?: (taskId: string, event: React.MouseEvent) => void;
+  /** Callback when chat context menu is triggered */
+  onChatContextMenu?: (chatId: string, event: React.MouseEvent) => void;
+  /** Callback to navigate to all chats page */
+  onViewAllChats?: () => void;
   /** Callback for settings click */
   onSettingsClick: () => void;
   /** Callback for archive click */
@@ -109,6 +123,10 @@ export interface DashboardHeaderProps {
   onNewChat: () => void;
   /** Callback for new terminal action */
   onNewTerminal: () => void;
+  /** Current resolved theme for theme toggle */
+  resolvedTheme?: 'light' | 'dark';
+  /** Callback when theme toggle is clicked */
+  onThemeToggle?: () => void;
 }
 
 /** Props for DashboardEmptyState component */
@@ -181,6 +199,14 @@ export interface CreateTaskDialogProps {
   isPending: boolean;
   /** Error message if any */
   error: string | null;
+  /** Available workflow templates */
+  workflows?: WorkflowTemplate[];
+  /** Whether workflows are loading */
+  isLoadingWorkflows?: boolean;
+  /** Currently selected workflow template */
+  selectedWorkflow?: WorkflowTemplate | null;
+  /** Callback when a workflow is selected */
+  onSelectWorkflow?: (workflow: WorkflowTemplate | null) => void;
 }
 
 /** Props for DashboardCommandPalette component */
@@ -336,6 +362,9 @@ export function DashboardSidebar({
   onNewProject,
   onStatusFilter,
   onTaskStatusChange,
+  onTaskContextMenu,
+  onChatContextMenu,
+  onViewAllChats,
   onSettingsClick,
   onArchiveClick,
   isCollapsed,
@@ -356,6 +385,9 @@ export function DashboardSidebar({
       onNewProject={onNewProject}
       onStatusFilter={onStatusFilter}
       onTaskStatusChange={onTaskStatusChange}
+      onTaskContextMenu={onTaskContextMenu}
+      onChatContextMenu={onChatContextMenu}
+      onViewAllChats={onViewAllChats}
       onSettingsClick={onSettingsClick}
       onArchiveClick={onArchiveClick}
       isCollapsed={isCollapsed}
@@ -373,6 +405,8 @@ export function DashboardHeader({
   onSearch,
   onNewChat,
   onNewTerminal,
+  resolvedTheme,
+  onThemeToggle,
 }: DashboardHeaderProps) {
   return (
     <Header
@@ -381,6 +415,8 @@ export function DashboardHeader({
       onSearch={onSearch}
       onNewChat={onNewChat}
       onNewTerminal={onNewTerminal}
+      resolvedTheme={resolvedTheme}
+      onThemeToggle={onThemeToggle}
     />
   );
 }
@@ -622,6 +658,10 @@ export function CreateTaskDialog({
   onCreate,
   isPending,
   error,
+  workflows = [],
+  isLoadingWorkflows = false,
+  selectedWorkflow = null,
+  onSelectWorkflow,
 }: CreateTaskDialogProps) {
   return (
     <Dialog isOpen={isOpen} onClose={onClose} title="Create New Task">
@@ -646,6 +686,19 @@ export function CreateTaskDialog({
             placeholder="Optional description..."
           />
         </FormField>
+
+        {/* Workflow template selector */}
+        {onSelectWorkflow && (
+          <FormField label="Workflow Template">
+            <WorkflowSelector
+              workflows={workflows}
+              selectedWorkflow={selectedWorkflow}
+              onSelectWorkflow={onSelectWorkflow}
+              loading={isLoadingWorkflows}
+              disabled={isPending}
+            />
+          </FormField>
+        )}
 
         {error && <p className="text-sm text-error">{error}</p>}
 

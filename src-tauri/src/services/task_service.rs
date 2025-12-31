@@ -275,6 +275,57 @@ impl TaskService {
 
         Ok(())
     }
+
+    /// Duplicate a task by ID.
+    ///
+    /// Creates a copy of the task with:
+    /// - New unique ID
+    /// - Title appended with "(copy)"
+    /// - Status reset to "todo"
+    /// - Timestamps reset to now
+    /// - Parent task ID preserved if it exists
+    /// - Associated chats are NOT duplicated (new task starts fresh)
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - ID of the task to duplicate
+    ///
+    /// # Returns
+    /// The newly created duplicate task.
+    pub async fn duplicate(pool: &SqlitePool, id: &str) -> ServiceResult<Task> {
+        // Get the original task
+        let original = Self::get(pool, id).await?.task;
+
+        // Create the duplicate with a new ID and modified title
+        let new_id = Uuid::new_v4().to_string();
+        let new_title = format!("{} (copy)", original.title);
+
+        sqlx::query(
+            r#"
+            INSERT INTO tasks (
+                id, project_id, title, description, status,
+                workflow_template, actions_required_count, parent_task_id,
+                auto_start_next_step, default_executor_profile_id, base_branch
+            )
+            VALUES (?, ?, ?, ?, 'todo', ?, 0, ?, ?, ?, ?)
+            "#,
+        )
+        .bind(&new_id)
+        .bind(&original.project_id)
+        .bind(&new_title)
+        .bind(&original.description)
+        .bind(&original.workflow_template)
+        .bind(&original.parent_task_id)
+        .bind(original.auto_start_next_step)
+        .bind(&original.default_executor_profile_id)
+        .bind(&original.base_branch)
+        .execute(pool)
+        .await?;
+
+        // Fetch and return the created task
+        let task_with_chats = Self::get(pool, &new_id).await?;
+        Ok(task_with_chats.task)
+    }
 }
 
 #[cfg(test)]
@@ -802,5 +853,123 @@ mod tests {
         // Task should be gone
         let result = TaskService::get(&test_db.pool, &task.id).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_duplicate_task() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+
+        // Create original task
+        let request = test_create_request(&project_id, "Original Task");
+        let original = TaskService::create(&test_db.pool, request)
+            .await
+            .expect("Failed to create task");
+
+        // Duplicate it
+        let duplicate = TaskService::duplicate(&test_db.pool, &original.id)
+            .await
+            .expect("Failed to duplicate task");
+
+        // Verify duplicate has new ID but same project
+        assert_ne!(duplicate.id, original.id);
+        assert_eq!(duplicate.project_id, original.project_id);
+
+        // Verify title has "(copy)" appended
+        assert_eq!(duplicate.title, "Original Task (copy)");
+
+        // Verify status is reset to todo
+        assert_eq!(duplicate.status, TaskStatus::Todo);
+
+        // Verify timestamps are different
+        assert_ne!(duplicate.created_at, original.created_at);
+
+        // Verify not archived
+        assert!(duplicate.archived_at.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_duplicate_task_preserves_fields() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+
+        // Create original task with all fields populated
+        let request = CreateTaskRequest {
+            project_id: project_id.clone(),
+            title: "Full Task".to_string(),
+            description: Some("A complete task description".to_string()),
+            workflow_template: Some("feature".to_string()),
+            parent_task_id: None,
+            base_branch: Some("develop".to_string()),
+        };
+        let original = TaskService::create(&test_db.pool, request)
+            .await
+            .expect("Failed to create task");
+
+        // Duplicate it
+        let duplicate = TaskService::duplicate(&test_db.pool, &original.id)
+            .await
+            .expect("Failed to duplicate task");
+
+        // Verify all fields are preserved (except title, status, timestamps)
+        assert_eq!(duplicate.description, original.description);
+        assert_eq!(duplicate.workflow_template, original.workflow_template);
+        assert_eq!(duplicate.base_branch, original.base_branch);
+        assert_eq!(
+            duplicate.auto_start_next_step,
+            original.auto_start_next_step
+        );
+        assert_eq!(
+            duplicate.default_executor_profile_id,
+            original.default_executor_profile_id
+        );
+    }
+
+    #[tokio::test]
+    async fn test_duplicate_task_not_found() {
+        let test_db = setup_test_db().await;
+
+        let result = TaskService::duplicate(&test_db.pool, "non-existent-id").await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::NotFound { entity, .. } => {
+                assert_eq!(entity, "Task");
+            }
+            other => panic!("Expected NotFound error, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_duplicate_task_with_parent() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+
+        // Create parent task
+        let parent_request = test_create_request(&project_id, "Parent Task");
+        let parent = TaskService::create(&test_db.pool, parent_request)
+            .await
+            .expect("Failed to create parent task");
+
+        // Create child task
+        let child_request = CreateTaskRequest {
+            project_id: project_id.clone(),
+            title: "Child Task".to_string(),
+            description: None,
+            workflow_template: None,
+            parent_task_id: Some(parent.id.clone()),
+            base_branch: None,
+        };
+        let child = TaskService::create(&test_db.pool, child_request)
+            .await
+            .expect("Failed to create child task");
+
+        // Duplicate the child task
+        let duplicate = TaskService::duplicate(&test_db.pool, &child.id)
+            .await
+            .expect("Failed to duplicate task");
+
+        // Verify parent_task_id is preserved
+        assert_eq!(duplicate.parent_task_id, Some(parent.id));
     }
 }

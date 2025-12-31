@@ -60,4 +60,10 @@ export const taskQueries = {
    * Permanently delete a task.
    */
   delete: (id: string): Promise<void> => invoke('delete_task', { id }),
+
+  /**
+   * Duplicate an existing task.
+   * Creates a copy with "(copy)" appended to the title and status reset to "todo".
+   */
+  duplicate: (id: string): Promise<Task> => invoke('duplicate_task', { id }),
 };

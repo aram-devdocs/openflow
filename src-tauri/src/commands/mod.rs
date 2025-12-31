@@ -22,12 +22,16 @@
 pub mod chats;
 pub mod executor;
 pub mod git;
+pub mod github;
 pub mod messages;
 pub mod processes;
 pub mod projects;
 pub mod search;
 pub mod settings;
+pub mod system;
 pub mod tasks;
+pub mod terminal;
+pub mod workflows;
 
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -60,9 +64,13 @@ impl AppState {
 pub use chats::*;
 pub use executor::*;
 pub use git::*;
+pub use github::*;
 pub use messages::*;
 pub use processes::*;
 pub use projects::*;
 pub use search::*;
 pub use settings::*;
+pub use system::*;
 pub use tasks::*;
+pub use terminal::*;
+pub use workflows::*;

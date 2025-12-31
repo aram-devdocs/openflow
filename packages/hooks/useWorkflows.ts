@@ -36,20 +36,30 @@ export const workflowKeys = {
 };
 
 /**
+ * Options for useWorkflowTemplates hook.
+ */
+export interface UseWorkflowTemplatesOptions {
+  /** Whether the query should be enabled. Defaults to true. */
+  enabled?: boolean;
+}
+
+/**
  * Hook to fetch workflow templates for a project.
  * Returns both built-in and project-specific templates.
  *
  * @param projectId - Project ID to fetch templates for
+ * @param options - Query options
  * @returns Query result with workflow templates
  *
  * @example
  * const { data: templates, isLoading } = useWorkflowTemplates('project-123');
  */
-export function useWorkflowTemplates(projectId: string) {
+export function useWorkflowTemplates(projectId: string, options: UseWorkflowTemplatesOptions = {}) {
+  const { enabled = true } = options;
   return useQuery({
     queryKey: workflowKeys.list(projectId),
     queryFn: () => workflowQueries.list(projectId),
-    enabled: !!projectId,
+    enabled: enabled && !!projectId,
   });
 }
 

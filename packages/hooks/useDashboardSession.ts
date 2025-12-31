@@ -13,6 +13,7 @@ import type {
   SearchResult,
   Task,
   TaskStatus,
+  WorkflowTemplate,
 } from '@openflow/generated';
 import { ChatRole, SearchResultType } from '@openflow/generated';
 import type {
@@ -22,7 +23,9 @@ import type {
 import { open } from '@tauri-apps/plugin-dialog';
 import { Archive, FolderPlus, Keyboard, Plus, Settings } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useArchiveChat, useDeleteChat } from './useChats';
+import { useGlobalShortcuts } from './useGlobalShortcuts';
 
 // Local type definitions to avoid importing from @openflow/ui (architecture violation)
 // These types are compatible with the UI layer types
@@ -47,13 +50,43 @@ interface RecentItem {
   subtitle?: string;
   icon?: string;
 }
+
+/** Position for context menus */
+interface MenuPosition {
+  x: number;
+  y: number;
+}
+
+/** State for the chat context menu */
+interface ChatContextMenuState {
+  chatId: string;
+  chat: Chat;
+  position: MenuPosition;
+}
+
+/** State for the task context menu */
+interface TaskContextMenuState {
+  taskId: string;
+  task: Task;
+  position: MenuPosition;
+}
 import { useCreateChat, useStandaloneChats } from './useChats';
 import { useExecutorProfiles } from './useExecutorProfiles';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useKeyboardShortcutsDialog } from './useKeyboardShortcutsDialog';
 import { useCreateProject, useProjects } from './useProjects';
 import { useSearch } from './useSearch';
-import { useCreateTask, useTasks, useUpdateTask } from './useTasks';
+import { useOpenInEditor } from './useSystem';
+import {
+  useArchiveTask,
+  useCreateTask,
+  useDeleteTask,
+  useDuplicateTask,
+  useTasks,
+  useUpdateTask,
+} from './useTasks';
+import { useSpawnTerminal } from './useTerminal';
+import { useWorkflowTemplates } from './useWorkflows';
 
 // ============================================================================
 // Types
@@ -118,6 +151,36 @@ export interface DashboardSessionState {
   searchResults: SearchResult[];
   isSearching: boolean;
 
+  // Terminal state
+  terminalOpen: boolean;
+  terminalProcessId: string | null;
+  isSpawningTerminal: boolean;
+  handleCloseTerminal: () => void;
+
+  // Chat context menu state
+  chatContextMenu: ChatContextMenuState | null;
+  isArchivingChat: boolean;
+  isDeletingChat: boolean;
+  handleChatContextMenu: (chatId: string, event: React.MouseEvent) => void;
+  handleCloseChatContextMenu: () => void;
+  handleArchiveChat: () => void;
+  handleDeleteChat: () => void;
+  handleViewChat: () => void;
+
+  // Task context menu state
+  taskContextMenu: TaskContextMenuState | null;
+  isArchivingTask: boolean;
+  isDeletingTask: boolean;
+  isDuplicatingTask: boolean;
+  isOpeningInIDE: boolean;
+  handleTaskContextMenu: (taskId: string, event: React.MouseEvent) => void;
+  handleCloseTaskContextMenu: () => void;
+  handleArchiveTaskFromMenu: () => void;
+  handleDeleteTaskFromMenu: () => void;
+  handleDuplicateTask: () => void;
+  handleOpenInIDE: () => void;
+  handleViewTask: () => void;
+
   // Sidebar actions
   // Note: handleToggleSidebar is now provided by NavigationContext (via toggleSidebar)
   handleSelectProject: (projectId: string) => void;
@@ -128,6 +191,7 @@ export interface DashboardSessionState {
   handleTaskStatusChange: (taskId: string, status: TaskStatus) => void;
   handleSettingsClick: () => void;
   handleArchiveClick: () => void;
+  handleViewAllChats: () => void;
 
   // Header actions
   handleSearch: () => void;
@@ -150,6 +214,12 @@ export interface DashboardSessionState {
   handleCreateTask: () => void;
   setNewTaskTitle: (title: string) => void;
   setNewTaskDescription: (description: string) => void;
+
+  // Workflow selection for Create Task dialog
+  workflowTemplates: WorkflowTemplate[];
+  isLoadingWorkflows: boolean;
+  selectedWorkflow: WorkflowTemplate | null;
+  handleSelectWorkflow: (workflow: WorkflowTemplate | null) => void;
 
   // Dialog actions - New Chat
   handleCloseNewChatDialog: () => void;
@@ -225,6 +295,17 @@ export function useDashboardSession({
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [createError, setCreateError] = useState<string | null>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowTemplate | null>(null);
+
+  // Terminal state
+  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [terminalProcessId, setTerminalProcessId] = useState<string | null>(null);
+
+  // Chat context menu state
+  const [chatContextMenu, setChatContextMenu] = useState<ChatContextMenuState | null>(null);
+
+  // Task context menu state
+  const [taskContextMenu, setTaskContextMenu] = useState<TaskContextMenuState | null>(null);
 
   // Data fetching
   const { data: projects = [], isLoading: isLoadingProjects } = useProjects();
@@ -232,11 +313,24 @@ export function useDashboardSession({
   const { data: standaloneChats = [] } = useStandaloneChats(selectedProjectId ?? '');
   const { data: executorProfiles = [] } = useExecutorProfiles();
 
+  // Workflow templates - only fetch when Create Task dialog is open and project is selected
+  const { data: workflowTemplates = [], isLoading: isLoadingWorkflows } = useWorkflowTemplates(
+    selectedProjectId ?? '',
+    { enabled: isCreateTaskDialogOpen && !!selectedProjectId }
+  );
+
   // Mutations
   const updateTask = useUpdateTask();
   const createProject = useCreateProject();
   const createTask = useCreateTask();
   const createChat = useCreateChat();
+  const spawnTerminal = useSpawnTerminal();
+  const archiveChat = useArchiveChat();
+  const deleteChat = useDeleteChat();
+  const archiveTask = useArchiveTask();
+  const deleteTask = useDeleteTask();
+  const duplicateTask = useDuplicateTask();
+  const openInEditor = useOpenInEditor();
 
   // Auto-select first project if none selected
   const activeProjectId = selectedProjectId ?? projects[0]?.id;
@@ -248,7 +342,7 @@ export function useDashboardSession({
     staleTime: 1000,
   });
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (local to this page)
   useKeyboardShortcuts([
     {
       key: 'k',
@@ -260,6 +354,27 @@ export function useDashboardSession({
       action: () => setCommandPaletteOpen(false),
     },
   ]);
+
+  // Global shortcuts (Cmd+N, Cmd+,) - register handlers for this page
+  const { registerNewTaskHandler, registerSettingsHandler } = useGlobalShortcuts();
+
+  useEffect(() => {
+    const unregisterNewTask = registerNewTaskHandler(() => {
+      setCreateError(null);
+      setNewTaskTitle('');
+      setNewTaskDescription('');
+      setIsCreateTaskDialogOpen(true);
+    });
+
+    const unregisterSettings = registerSettingsHandler(() => {
+      navigate({ to: '/settings' as string });
+    });
+
+    return () => {
+      unregisterNewTask();
+      unregisterSettings();
+    };
+  }, [registerNewTaskHandler, registerSettingsHandler, navigate]);
 
   // ============================================================================
   // Sidebar Actions
@@ -309,6 +424,10 @@ export function useDashboardSession({
     navigate({ to: '/archive' as string });
   }, [navigate]);
 
+  const handleViewAllChats = useCallback(() => {
+    navigate({ to: '/chats' as string });
+  }, [navigate]);
+
   // Note: handleToggleSidebar is now provided by NavigationContext (via toggleSidebar)
 
   // ============================================================================
@@ -324,9 +443,96 @@ export function useDashboardSession({
   }, []);
 
   const handleNewTerminal = useCallback(() => {
-    // TODO: Open new terminal
-    console.log('New terminal clicked');
+    if (!activeProjectId) {
+      onError?.(
+        'No project selected',
+        'Please select or create a project first to open a terminal.'
+      );
+      return;
+    }
+
+    spawnTerminal.mutate(
+      { projectId: activeProjectId },
+      {
+        onSuccess: (process) => {
+          setTerminalProcessId(process.id);
+          setTerminalOpen(true);
+          if (import.meta.env.DEV) {
+            console.log('[Dashboard] Terminal spawned:', process.id);
+          }
+        },
+        onError: (error) => {
+          onError?.('Failed to open terminal', error.message);
+        },
+      }
+    );
+  }, [activeProjectId, spawnTerminal, onError]);
+
+  const handleCloseTerminal = useCallback(() => {
+    setTerminalOpen(false);
+    // Don't clear processId immediately - let the terminal clean up gracefully
   }, []);
+
+  // ============================================================================
+  // Chat Context Menu Actions
+  // ============================================================================
+
+  const handleChatContextMenu = useCallback(
+    (chatId: string, event: React.MouseEvent) => {
+      event.preventDefault();
+      const chat = standaloneChats.find((c) => c.id === chatId);
+      if (!chat) return;
+
+      setChatContextMenu({
+        chatId,
+        chat,
+        position: { x: event.clientX, y: event.clientY },
+      });
+    },
+    [standaloneChats]
+  );
+
+  const handleCloseChatContextMenu = useCallback(() => {
+    setChatContextMenu(null);
+  }, []);
+
+  const handleArchiveChat = useCallback(() => {
+    if (!chatContextMenu) return;
+
+    archiveChat.mutate(chatContextMenu.chatId, {
+      onSuccess: () => {
+        onSuccess?.('Chat archived', 'The chat has been moved to the archive.');
+        setChatContextMenu(null);
+      },
+      onError: (error) => {
+        onError?.('Failed to archive chat', error.message);
+      },
+    });
+  }, [chatContextMenu, archiveChat, onSuccess, onError]);
+
+  const handleDeleteChat = useCallback(() => {
+    if (!chatContextMenu) return;
+
+    const { chat } = chatContextMenu;
+    deleteChat.mutate(
+      { id: chat.id, projectId: chat.projectId, taskId: chat.taskId ?? undefined },
+      {
+        onSuccess: () => {
+          onSuccess?.('Chat deleted', 'The chat has been permanently deleted.');
+          setChatContextMenu(null);
+        },
+        onError: (error) => {
+          onError?.('Failed to delete chat', error.message);
+        },
+      }
+    );
+  }, [chatContextMenu, deleteChat, onSuccess, onError]);
+
+  const handleViewChat = useCallback(() => {
+    if (!chatContextMenu) return;
+    navigate({ to: '/chats/$chatId', params: { chatId: chatContextMenu.chatId } });
+    setChatContextMenu(null);
+  }, [chatContextMenu, navigate]);
 
   // ============================================================================
   // Chat Navigation
@@ -338,6 +544,92 @@ export function useDashboardSession({
     },
     [navigate]
   );
+
+  // ============================================================================
+  // Task Context Menu Actions
+  // ============================================================================
+
+  const handleTaskContextMenu = useCallback(
+    (taskId: string, event: React.MouseEvent) => {
+      event.preventDefault();
+      const task = tasks.find((t) => t.id === taskId);
+      if (!task) return;
+
+      setTaskContextMenu({
+        taskId,
+        task,
+        position: { x: event.clientX, y: event.clientY },
+      });
+    },
+    [tasks]
+  );
+
+  const handleCloseTaskContextMenu = useCallback(() => {
+    setTaskContextMenu(null);
+  }, []);
+
+  const handleArchiveTaskFromMenu = useCallback(() => {
+    if (!taskContextMenu) return;
+
+    archiveTask.mutate(taskContextMenu.taskId, {
+      onSuccess: () => {
+        onSuccess?.('Task archived', 'The task has been moved to the archive.');
+        setTaskContextMenu(null);
+      },
+      onError: (error) => {
+        onError?.('Failed to archive task', error.message);
+      },
+    });
+  }, [taskContextMenu, archiveTask, onSuccess, onError]);
+
+  const handleDeleteTaskFromMenu = useCallback(() => {
+    if (!taskContextMenu) return;
+
+    deleteTask.mutate(taskContextMenu.taskId, {
+      onSuccess: () => {
+        onSuccess?.('Task deleted', 'The task has been permanently deleted.');
+        setTaskContextMenu(null);
+      },
+      onError: (error) => {
+        onError?.('Failed to delete task', error.message);
+      },
+    });
+  }, [taskContextMenu, deleteTask, onSuccess, onError]);
+
+  const handleDuplicateTask = useCallback(() => {
+    if (!taskContextMenu) return;
+
+    duplicateTask.mutate(taskContextMenu.taskId, {
+      onSuccess: (newTask) => {
+        onSuccess?.('Task duplicated', `"${newTask.title}" has been created.`);
+        setTaskContextMenu(null);
+      },
+      onError: (error) => {
+        onError?.('Failed to duplicate task', error.message);
+      },
+    });
+  }, [taskContextMenu, duplicateTask, onSuccess, onError]);
+
+  const handleOpenInIDE = useCallback(() => {
+    if (!taskContextMenu || !activeProject) return;
+
+    // Open the project's git repo path in the system's default editor
+    openInEditor.mutate(activeProject.gitRepoPath, {
+      onSuccess: () => {
+        onSuccess?.('Opened in IDE', `Opening "${activeProject.name}" in your default editor.`);
+        setTaskContextMenu(null);
+      },
+      onError: (error) => {
+        onError?.('Failed to open in IDE', error.message);
+      },
+    });
+  }, [taskContextMenu, activeProject, openInEditor, onSuccess, onError]);
+
+  const handleViewTask = useCallback(() => {
+    if (!taskContextMenu) return;
+    navigate({ to: '/tasks/$taskId', params: { taskId: taskContextMenu.taskId } });
+    setTaskContextMenu(null);
+  }, [taskContextMenu, navigate]);
 
   // ============================================================================
   // Create Project Dialog Actions
@@ -407,6 +699,11 @@ export function useDashboardSession({
 
   const handleCloseCreateTaskDialog = useCallback(() => {
     setIsCreateTaskDialogOpen(false);
+    setSelectedWorkflow(null);
+  }, []);
+
+  const handleSelectWorkflow = useCallback((workflow: WorkflowTemplate | null) => {
+    setSelectedWorkflow(workflow);
   }, []);
 
   const handleCreateTask = useCallback(() => {
@@ -426,6 +723,7 @@ export function useDashboardSession({
       projectId: activeProjectId,
       title: newTaskTitle.trim(),
       description: newTaskDescription.trim() || undefined,
+      workflowTemplate: selectedWorkflow?.id,
     };
 
     createTask.mutate(request, {
@@ -433,31 +731,65 @@ export function useDashboardSession({
         setIsCreateTaskDialogOpen(false);
         setNewTaskTitle('');
         setNewTaskDescription('');
+        setSelectedWorkflow(null);
         onSuccess?.('Task created', `"${task.title}" has been created.`);
 
-        // Auto-create an initial chat/step for the task
+        // Get the default executor profile
         const defaultExecutorProfile =
           executorProfiles.find((p) => p.isDefault) ?? executorProfiles[0];
-        createChat.mutate(
-          {
-            taskId: task.id,
-            projectId: task.projectId,
-            title: 'Step 1',
-            chatRole: ChatRole.Main,
-            executorProfileId: defaultExecutorProfile?.id,
-            initialPrompt: task.description || task.title,
-            workflowStepIndex: 0,
-          },
-          {
-            onSuccess: () => {
-              navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
+
+        // If a workflow is selected, create chats for each step
+        if (selectedWorkflow && selectedWorkflow.steps.length > 0) {
+          // Create chats for each workflow step sequentially
+          const createStepChats = async () => {
+            const steps = selectedWorkflow.steps;
+            for (let i = 0; i < steps.length; i++) {
+              const step = steps[i];
+              if (!step) continue;
+              await new Promise<void>((resolve) => {
+                createChat.mutate(
+                  {
+                    taskId: task.id,
+                    projectId: task.projectId,
+                    title: step.name,
+                    chatRole: ChatRole.Main,
+                    executorProfileId: defaultExecutorProfile?.id,
+                    initialPrompt: step.description || step.name,
+                    workflowStepIndex: i,
+                  },
+                  {
+                    onSuccess: () => resolve(),
+                    onError: () => resolve(), // Continue even if one fails
+                  }
+                );
+              });
+            }
+            navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
+          };
+          createStepChats();
+        } else {
+          // No workflow selected - create a single default step
+          createChat.mutate(
+            {
+              taskId: task.id,
+              projectId: task.projectId,
+              title: 'Step 1',
+              chatRole: ChatRole.Main,
+              executorProfileId: defaultExecutorProfile?.id,
+              initialPrompt: task.description || task.title,
+              workflowStepIndex: 0,
             },
-            onError: () => {
-              // Still navigate even if chat creation fails
-              navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
-            },
-          }
-        );
+            {
+              onSuccess: () => {
+                navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
+              },
+              onError: () => {
+                // Still navigate even if chat creation fails
+                navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
+              },
+            }
+          );
+        }
       },
       onError: (error) => {
         setCreateError(error.message);
@@ -468,6 +800,7 @@ export function useDashboardSession({
     activeProjectId,
     newTaskTitle,
     newTaskDescription,
+    selectedWorkflow,
     createTask,
     createChat,
     executorProfiles,
@@ -681,6 +1014,36 @@ export function useDashboardSession({
     searchResults,
     isSearching,
 
+    // Terminal state
+    terminalOpen,
+    terminalProcessId,
+    isSpawningTerminal: spawnTerminal.isPending,
+    handleCloseTerminal,
+
+    // Chat context menu state
+    chatContextMenu,
+    isArchivingChat: archiveChat.isPending,
+    isDeletingChat: deleteChat.isPending,
+    handleChatContextMenu,
+    handleCloseChatContextMenu,
+    handleArchiveChat,
+    handleDeleteChat,
+    handleViewChat,
+
+    // Task context menu state
+    taskContextMenu,
+    isArchivingTask: archiveTask.isPending,
+    isDeletingTask: deleteTask.isPending,
+    isDuplicatingTask: duplicateTask.isPending,
+    isOpeningInIDE: openInEditor.isPending,
+    handleTaskContextMenu,
+    handleCloseTaskContextMenu,
+    handleArchiveTaskFromMenu,
+    handleDeleteTaskFromMenu,
+    handleDuplicateTask,
+    handleOpenInIDE,
+    handleViewTask,
+
     // Sidebar actions
     // Note: handleToggleSidebar is now provided by NavigationContext (via toggleSidebar)
     handleSelectProject,
@@ -691,6 +1054,7 @@ export function useDashboardSession({
     handleTaskStatusChange,
     handleSettingsClick,
     handleArchiveClick,
+    handleViewAllChats,
 
     // Header actions
     handleSearch,
@@ -712,6 +1076,12 @@ export function useDashboardSession({
     handleCreateTask,
     setNewTaskTitle,
     setNewTaskDescription,
+
+    // Workflow selection for Create Task dialog
+    workflowTemplates,
+    isLoadingWorkflows,
+    selectedWorkflow,
+    handleSelectWorkflow,
 
     // Dialog actions - New Chat
     handleCloseNewChatDialog,

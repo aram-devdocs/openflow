@@ -38,6 +38,7 @@ import {
   AddStepDialog,
   ArtifactPreviewDialog,
   ConfirmDialog,
+  CreatePRDialog,
   TaskArtifactsTab,
   TaskChangesTab,
   TaskCommitsTab,
@@ -117,6 +118,12 @@ export interface TaskPageStepsPanelProps {
   autoStart: boolean;
   /** Callback when auto-start changes */
   onAutoStartChange: (value: boolean) => void;
+  /** Callback when a step is marked as complete via the Complete button */
+  onCompleteStep?: (stepIndex: number) => void;
+  /** Callback when a step is skipped via the Skip button */
+  onSkipStep?: (stepIndex: number) => void;
+  /** Callback when View Chat button is clicked */
+  onViewChat?: (chatId: string) => void;
 }
 
 /** Props for the main panel section */
@@ -249,6 +256,35 @@ export interface TaskPageConfirmDialogProps {
   loading?: boolean;
 }
 
+/** Props for the create PR dialog */
+export interface TaskPageCreatePRDialogProps {
+  /** Whether dialog is open */
+  isOpen: boolean;
+  /** Callback to close dialog */
+  onClose: () => void;
+  /** Callback when a PR is created */
+  onCreate: (data: {
+    title: string;
+    body: string;
+    base?: string;
+    draft?: boolean;
+  }) => void;
+  /** Pre-filled title (usually from task title) */
+  defaultTitle?: string;
+  /** Pre-filled body (optional) */
+  defaultBody?: string;
+  /** Base branch for the PR (e.g., "main", "develop") */
+  defaultBase?: string;
+  /** Whether the dialog is in a loading/submitting state */
+  isSubmitting?: boolean;
+  /** Error message to display */
+  error?: string | null;
+  /** Whether GitHub CLI is installed */
+  ghCliInstalled?: boolean;
+  /** Whether user is authenticated with GitHub */
+  ghAuthenticated?: boolean;
+}
+
 /**
  * Complete props for the TaskPage component.
  *
@@ -302,6 +338,9 @@ export interface TaskPageProps {
 
   /** Confirm dialog props */
   confirmDialog?: TaskPageConfirmDialogProps;
+
+  /** Create PR dialog props */
+  createPRDialog?: TaskPageCreatePRDialogProps;
 }
 
 // ============================================================================
@@ -421,6 +460,7 @@ export function TaskPage({
   artifactPreviewDialog,
   moreMenu,
   confirmDialog,
+  createPRDialog,
 }: TaskPageProps) {
   // Loading state
   if (state === 'loading') {
@@ -503,6 +543,9 @@ export function TaskPage({
             onAddStep={stepsPanel.onAddStep}
             autoStart={stepsPanel.autoStart}
             onAutoStartChange={stepsPanel.onAutoStartChange}
+            onCompleteStep={stepsPanel.onCompleteStep}
+            onSkipStep={stepsPanel.onSkipStep}
+            onViewChat={stepsPanel.onViewChat}
           />
         }
         mainPanel={
@@ -572,6 +615,22 @@ export function TaskPage({
           cancelLabel={confirmDialog.cancelLabel}
           variant={confirmDialog.variant}
           loading={confirmDialog.loading}
+        />
+      )}
+
+      {/* Create PR dialog */}
+      {createPRDialog && (
+        <CreatePRDialog
+          isOpen={createPRDialog.isOpen}
+          onClose={createPRDialog.onClose}
+          onCreate={createPRDialog.onCreate}
+          defaultTitle={createPRDialog.defaultTitle}
+          defaultBody={createPRDialog.defaultBody}
+          defaultBase={createPRDialog.defaultBase}
+          isSubmitting={createPRDialog.isSubmitting}
+          error={createPRDialog.error}
+          ghCliInstalled={createPRDialog.ghCliInstalled}
+          ghAuthenticated={createPRDialog.ghAuthenticated}
         />
       )}
     </>

@@ -11,7 +11,11 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { KeyboardShortcutsDialogProvider, NavigationProvider } from '../providers';
+import {
+  GlobalShortcutsProvider,
+  KeyboardShortcutsDialogProvider,
+  NavigationProvider,
+} from '../providers';
 import type { RouterContext } from '../routerContext';
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -33,15 +37,17 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <KeyboardShortcutsDialogProvider>
         <NavigationProvider>
-          <div className="min-h-screen bg-background text-foreground">
-            <ErrorBoundary
-              fallback={(error) => (
-                <RouteError error={error} onRetry={handleRetry} onGoHome={handleGoHome} />
-              )}
-            >
-              <Outlet />
-            </ErrorBoundary>
-          </div>
+          <GlobalShortcutsProvider>
+            <div className="min-h-screen bg-background text-foreground">
+              <ErrorBoundary
+                fallback={(error) => (
+                  <RouteError error={error} onRetry={handleRetry} onGoHome={handleGoHome} />
+                )}
+              >
+                <Outlet />
+              </ErrorBoundary>
+            </div>
+          </GlobalShortcutsProvider>
         </NavigationProvider>
       </KeyboardShortcutsDialogProvider>
 

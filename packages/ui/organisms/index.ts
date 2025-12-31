@@ -53,6 +53,7 @@ export { WorkflowPreview, type WorkflowPreviewProps } from './WorkflowPreview';
 export { ArtifactsPanel, type ArtifactsPanelProps, type ArtifactFile } from './ArtifactsPanel';
 export { ArtifactPreviewDialog, type ArtifactPreviewDialogProps } from './ArtifactPreviewDialog';
 export { ConfirmDialog, type ConfirmDialogProps } from './ConfirmDialog';
+export { CreatePRDialog, type CreatePRDialogProps } from './CreatePRDialog';
 export {
   UserMessageBubble,
   type UserMessageBubbleProps,
@@ -255,3 +256,12 @@ export {
   TasksListLayout,
   type TasksListLayoutProps,
 } from './TasksListPageComponents';
+export {
+  Terminal,
+  type TerminalProps,
+  type TerminalTheme,
+  type TerminalInstance,
+  defaultDarkTheme,
+  defaultLightTheme,
+} from './Terminal';
+export { TerminalPanel, type TerminalPanelProps } from './TerminalPanel';
