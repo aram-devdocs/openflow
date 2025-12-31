@@ -32,7 +32,7 @@ export type {
   // Base props
   BaseProps,
   PolymorphicProps,
-  // Layout primitives (BoxProps exported from ./Box, FlexProps from ./Flex, GridProps from ./Grid)
+  // Layout primitives (BoxProps exported from ./Box, FlexProps from ./Flex, GridProps from ./Grid, StackProps from ./Stack)
   BoxProps as BoxPropsBase,
   // FlexProps is exported from ./Flex component
   FlexDirection,
@@ -40,7 +40,7 @@ export type {
   JustifyContent,
   AlignItems,
   // GridProps is exported from ./Grid component
-  StackProps,
+  // StackProps is exported from ./Stack component
   StackDirection,
   // Typography primitives
   TextProps,
@@ -85,7 +85,7 @@ export {
   type GridRows,
   type GridFlow,
 } from './Grid';
-// export { Stack } from './Stack';
+export { Stack, type StackProps, type StackElement } from './Stack';
 
 // Typography primitives
 // export { Text } from './Text';
