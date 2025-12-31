@@ -51,7 +51,8 @@ export type {
   HeadingLevel,
   // List primitives
   // ListProps is exported from ./List component
-  ListItemProps,
+  // ListItemProps is exported from ./ListItem component
+  ListItemPropsBase,
   // Interactive primitives
   LinkProps,
   ImageProps,
@@ -94,7 +95,7 @@ export { Paragraph, type ParagraphProps } from './Paragraph';
 
 // List primitives
 export { List, type ListProps, type ListStyleType } from './List';
-// export { ListItem } from './ListItem';
+export { ListItem, type ListItemProps, type ListItemSpacingProps } from './ListItem';
 
 // Interactive primitives
 // export { Link } from './Link';

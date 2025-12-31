@@ -445,9 +445,15 @@ export interface ListProps extends BaseProps {
 }
 
 /**
- * ListItem primitive props
+ * ListItem primitive props (base interface)
+ * The full ListItemProps is exported from ./ListItem.tsx with spacing props
  */
-export interface ListItemProps extends BaseProps {}
+export interface ListItemPropsBase extends BaseProps {
+  /** Value attribute for ordered lists (overrides default number) */
+  value?: number;
+  /** Whether the item is disabled (visual only, use with role="option") */
+  disabled?: boolean;
+}
 
 /**
  * Link primitive props
