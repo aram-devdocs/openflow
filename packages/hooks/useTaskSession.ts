@@ -14,7 +14,7 @@ import { useChat, useCreateChat, useToggleStepComplete } from './useChats';
 import { useClaudeEvents } from './useClaudeEvents';
 import { useConfirmDialog } from './useConfirmDialog';
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
-import { useTaskDiff } from './useGit';
+import { useTaskCommits, useTaskDiff } from './useGit';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useCreateMessage, useMessages } from './useMessages';
 import { useKillProcess } from './useProcesses';
@@ -309,8 +309,10 @@ export function useTaskSession({
     enabled: activeTab === 'changes',
   });
 
-  // Mock data for commits (would come from git queries - Phase 5)
-  const commits: Commit[] = useMemo(() => [], []);
+  // Fetch git commits only when Commits tab is active
+  const { data: commits = [] } = useTaskCommits(taskId, {
+    enabled: activeTab === 'commits',
+  });
 
   // Determine if we have a branch for PR creation
   const hasBranch = chats.some((c) => c.branch);
