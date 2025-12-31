@@ -10,6 +10,7 @@ import type {
   CreateProjectRequest,
   CreateTaskRequest,
   Project,
+  SearchResult,
   Task,
   TaskStatus,
 } from '@openflow/generated';
@@ -51,6 +52,7 @@ import { useExecutorProfiles } from './useExecutorProfiles';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useKeyboardShortcutsDialog } from './useKeyboardShortcutsDialog';
 import { useCreateProject, useProjects } from './useProjects';
+import { useSearch } from './useSearch';
 import { useCreateTask, useTasks, useUpdateTask } from './useTasks';
 
 // ============================================================================
@@ -110,6 +112,11 @@ export interface DashboardSessionState {
   commandActions: CommandAction[];
   recentItems: RecentItem[];
   headerSubtitle: string | undefined;
+
+  // Search state
+  searchQuery: string;
+  searchResults: SearchResult[];
+  isSearching: boolean;
 
   // Sidebar actions
   // Note: handleToggleSidebar is now provided by NavigationContext (via toggleSidebar)
@@ -205,6 +212,7 @@ export function useDashboardSession({
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Dialog state
   const [isCreateProjectDialogOpen, setIsCreateProjectDialogOpen] = useState(false);
@@ -231,6 +239,12 @@ export function useDashboardSession({
   // Auto-select first project if none selected
   const activeProjectId = selectedProjectId ?? projects[0]?.id;
   const activeProject = projects.find((p) => p.id === activeProjectId);
+
+  // Search - scoped to active project if one is selected
+  const { data: searchResults = [], isLoading: isSearching } = useSearch(searchQuery, {
+    projectId: activeProjectId,
+    staleTime: 1000,
+  });
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
@@ -500,8 +514,8 @@ export function useDashboardSession({
   // Command Palette Actions
   // ============================================================================
 
-  const handleCommandSearch = useCallback((_query: string) => {
-    // TODO: Implement search via searchQueries
+  const handleCommandSearch = useCallback((query: string) => {
+    setSearchQuery(query);
   }, []);
 
   const handleCloseCommandPalette = useCallback(() => {
@@ -619,6 +633,11 @@ export function useDashboardSession({
     commandActions,
     recentItems,
     headerSubtitle: getHeaderSubtitle(),
+
+    // Search state
+    searchQuery,
+    searchResults,
+    isSearching,
 
     // Sidebar actions
     // Note: handleToggleSidebar is now provided by NavigationContext (via toggleSidebar)
