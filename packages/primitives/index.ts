@@ -54,7 +54,7 @@ export type {
   // ListItemProps is exported from ./ListItem component
   ListItemPropsBase,
   // Interactive primitives
-  LinkProps,
+  // LinkProps is exported from ./Link component
   ImageProps,
   // Accessibility primitives
   VisuallyHiddenProps,
@@ -98,7 +98,7 @@ export { List, type ListProps, type ListStyleType } from './List';
 export { ListItem, type ListItemProps, type ListItemSpacingProps } from './ListItem';
 
 // Interactive primitives
-// export { Link } from './Link';
+export { Link, type LinkProps, type LinkUnderline } from './Link';
 // export { Image } from './Image';
 
 // Accessibility primitives
