@@ -23,8 +23,13 @@ export {
 } from './Input';
 export type { InputProps, InputSize, InputVariant } from './Input';
 
-export { Textarea } from './Textarea';
-export type { TextareaProps, TextareaResize } from './Textarea';
+export {
+  Textarea,
+  getSizeClasses as getTextareaSizeClasses,
+  getBaseSize as getTextareaBaseSize,
+  TEXTAREA_BASE_CLASSES,
+} from './Textarea';
+export type { TextareaProps, TextareaSize, TextareaResize } from './Textarea';
 
 export { Badge, taskStatusToVariant, taskStatusToLabel } from './Badge';
 export type { BadgeProps, BadgeVariant, BadgeSize } from './Badge';
