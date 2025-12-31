@@ -27,8 +27,28 @@ export type {
   CardPadding,
 } from './Card';
 
-export { Dropdown } from './Dropdown';
-export type { DropdownProps, DropdownOption } from './Dropdown';
+export {
+  Dropdown,
+  getResponsiveSizeClasses as getDropdownResponsiveSizeClasses,
+  getOptionId,
+  DEFAULT_OPENED_LABEL,
+  DEFAULT_CLOSED_LABEL,
+  DEFAULT_EMPTY_LABEL,
+  DEFAULT_PLACEHOLDER,
+  DROPDOWN_SIZE_CLASSES,
+  DROPDOWN_TRIGGER_CLASSES,
+  DROPDOWN_TRIGGER_HOVER_CLASSES,
+  DROPDOWN_TRIGGER_FOCUS_CLASSES,
+  DROPDOWN_TRIGGER_DISABLED_CLASSES,
+  DROPDOWN_TRIGGER_ERROR_CLASSES,
+  DROPDOWN_TRIGGER_OPEN_CLASSES,
+  DROPDOWN_LISTBOX_CLASSES,
+  DROPDOWN_OPTION_BASE_CLASSES,
+  DROPDOWN_OPTION_HIGHLIGHTED_CLASSES,
+  DROPDOWN_OPTION_SELECTED_CLASSES,
+  DROPDOWN_OPTION_DISABLED_CLASSES,
+} from './Dropdown';
+export type { DropdownProps, DropdownOption, DropdownSize } from './Dropdown';
 
 export {
   Dialog,
