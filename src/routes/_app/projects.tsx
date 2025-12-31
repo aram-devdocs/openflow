@@ -21,7 +21,7 @@ import {
 } from '@openflow/ui';
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/projects')({
+export const Route = createFileRoute('/_app/projects')({
   component: ProjectsPage,
 });
 

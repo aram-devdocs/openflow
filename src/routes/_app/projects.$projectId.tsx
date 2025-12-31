@@ -25,7 +25,7 @@ import {
 } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/projects/$projectId')({
+export const Route = createFileRoute('/_app/projects/$projectId')({
   component: ProjectDetailPage,
 });
 
