@@ -57,7 +57,7 @@ export type {
   // LinkProps is exported from ./Link component
   // ImageProps is exported from ./Image component
   // Accessibility primitives
-  VisuallyHiddenProps,
+  // VisuallyHiddenProps is exported from ./VisuallyHidden component
   // Landmark primitives
   SectionProps,
   ArticleProps,
@@ -109,7 +109,12 @@ export {
 } from './Image';
 
 // Accessibility primitives
-// export { VisuallyHidden } from './VisuallyHidden';
+export {
+  VisuallyHidden,
+  type VisuallyHiddenProps,
+  visuallyHiddenStyleObject,
+  visuallyHiddenClassName,
+} from './VisuallyHidden';
 
 // Landmark primitives
 // export { Section } from './Section';
