@@ -425,6 +425,43 @@ export const PRIMITIVES_CONFIG: ValidatorConfig = createValidatorConfig(
   ]
 );
 
+/**
+ * Configuration for the accessibility (a11y) validator
+ * Static analysis for common accessibility issues in JSX
+ */
+export const A11Y_CONFIG: ValidatorConfig = createValidatorConfig(
+  'a11y',
+  'Static accessibility analysis for JSX components',
+  [
+    createRule('a11y/img-alt', 'Images must have alt text for screen readers'),
+    createRule('a11y/button-has-name', 'Buttons must have an accessible name'),
+    createRule('a11y/anchor-has-content', 'Anchors must have content or aria-label'),
+    createRule(
+      'a11y/click-events-have-key-events',
+      'Click handlers on non-interactive elements need keyboard support',
+      'warning'
+    ),
+    createRule(
+      'a11y/no-noninteractive-element-interactions',
+      'Non-interactive elements should not have click handlers without role',
+      'warning'
+    ),
+    createRule(
+      'a11y/no-autofocus',
+      'Avoid autofocus as it can cause accessibility issues',
+      'warning'
+    ),
+    createRule('a11y/no-positive-tabindex', 'Avoid positive tabIndex values', 'warning'),
+    createRule(
+      'a11y/role-has-required-aria-props',
+      'ARIA roles require specific attributes',
+      'warning'
+    ),
+  ],
+  [`${PACKAGE_PATHS.UI}/**/*.tsx`],
+  NON_SOURCE_EXCLUDES
+);
+
 // =============================================================================
 // Validator Registry
 // =============================================================================
@@ -447,6 +484,7 @@ export const VALIDATOR_CONFIGS: Record<string, ValidatorConfig> = {
   'tauri-commands': TAURI_COMMANDS_CONFIG,
   'rust-services': RUST_SERVICES_CONFIG,
   primitives: PRIMITIVES_CONFIG,
+  a11y: A11Y_CONFIG,
 };
 
 /**
@@ -561,6 +599,7 @@ export const NON_BLOCKING_VALIDATORS = [
   'test-coverage', // Test coverage requires writing tests
   'rust-services', // Rust refactoring requires separate work
   'primitives', // Primitives migration in progress
+  'a11y', // A11y issues fixed incrementally during component audit
 ] as const;
 
 /**

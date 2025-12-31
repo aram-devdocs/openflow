@@ -32,8 +32,8 @@ export type {
   // Base props
   BaseProps,
   PolymorphicProps,
-  // Layout primitives
-  BoxProps,
+  // Layout primitives (BoxProps exported from ./Box)
+  BoxProps as BoxPropsBase,
   FlexProps,
   FlexDirection,
   FlexWrap,
@@ -75,7 +75,7 @@ export type {
 // ============================================================================
 
 // Layout primitives
-// export { Box } from './Box';
+export { Box, type BoxProps } from './Box';
 // export { Flex } from './Flex';
 // export { Grid } from './Grid';
 // export { Stack } from './Stack';

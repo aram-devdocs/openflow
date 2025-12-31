@@ -107,6 +107,7 @@ const VALIDATOR_SCRIPTS: Record<string, string> = {
   'tauri-commands': 'validate:tauri',
   'rust-services': 'validate:rust',
   primitives: 'validate:primitives',
+  a11y: 'validate:a11y',
 };
 
 /**
@@ -129,6 +130,7 @@ const EXECUTION_ORDER: string[] = [
   'test-coverage',
   'rust-services',
   'primitives',
+  'a11y',
 ];
 
 // =============================================================================

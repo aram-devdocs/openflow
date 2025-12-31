@@ -34,6 +34,7 @@
     "validate:tauri": "tsx scripts/validate-tauri-commands.ts",
     "validate:rust": "tsx scripts/validate-rust-services.ts",
     "validate:primitives": "tsx scripts/validate-primitives.ts",
+    "validate:a11y": "tsx scripts/validate-a11y.ts",
     "validate:all": "tsx scripts/validate-all.ts",
     "validate:all:report": "tsx scripts/validate-all.ts --report",
     "validate:all:parallel": "tsx scripts/validate-all.ts --parallel",
