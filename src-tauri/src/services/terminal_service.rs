@@ -56,14 +56,14 @@ impl TerminalService {
     ///
     /// On Unix, checks $SHELL environment variable, falling back to /bin/bash.
     /// On Windows, uses cmd.exe.
-    pub fn get_default_shell() -> String {
+    pub fn get_default_shell() -> ServiceResult<String> {
         #[cfg(unix)]
         {
-            std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string())
+            Ok(std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string()))
         }
         #[cfg(windows)]
         {
-            std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".to_string())
+            Ok(std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".to_string()))
         }
     }
 
@@ -84,7 +84,7 @@ impl TerminalService {
     /// Build shell arguments for an interactive session.
     ///
     /// Adds flags to ensure the shell runs interactively.
-    pub fn build_shell_args(shell: &str) -> Vec<String> {
+    pub fn build_shell_args(shell: &str) -> ServiceResult<Vec<String>> {
         // Determine shell type from path
         let shell_name = shell
             .rsplit('/')
@@ -94,7 +94,7 @@ impl TerminalService {
             .next()
             .unwrap_or(shell);
 
-        match shell_name {
+        let args = match shell_name {
             "bash" => vec!["-i".to_string()], // Interactive
             "zsh" => vec!["-i".to_string()],  // Interactive
             "fish" => vec!["-i".to_string()], // Interactive
@@ -104,18 +104,19 @@ impl TerminalService {
                 vec!["-NoLogo".to_string(), "-NoExit".to_string()]
             }
             _ => vec![], // Unknown shell, no special args
-        }
+        };
+        Ok(args)
     }
 
     /// Create the process record request for a terminal.
-    pub fn create_process_request(chat_id: &str) -> CreateProcessRequest {
-        CreateProcessRequest {
+    pub fn create_process_request(chat_id: &str) -> ServiceResult<CreateProcessRequest> {
+        Ok(CreateProcessRequest {
             chat_id: chat_id.to_string(),
             executor_profile_id: None,
             executor_action: "Interactive terminal session".to_string(),
             run_reason: RunReason::Terminal,
             before_head_commit: None,
-        }
+        })
     }
 
     /// Create the start process request with PTY configuration.
@@ -199,16 +200,19 @@ impl TerminalService {
         }
 
         // 4. Determine shell
-        let shell = request.shell.unwrap_or_else(Self::get_default_shell);
+        let shell = match request.shell {
+            Some(s) => s,
+            None => Self::get_default_shell()?,
+        };
 
         // 5. Build shell arguments
-        let args = Self::build_shell_args(&shell);
+        let args = Self::build_shell_args(&shell)?;
 
         // 6. Build environment
         let env = Self::build_environment()?;
 
         // 7. Create process request
-        let create_request = Self::create_process_request(&chat_id);
+        let create_request = Self::create_process_request(&chat_id)?;
 
         // 8. Create start request
         let start_request = Self::create_start_request(
@@ -262,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_get_default_shell() {
-        let shell = TerminalService::get_default_shell();
+        let shell = TerminalService::get_default_shell().unwrap();
         // Shell should not be empty
         assert!(!shell.is_empty());
         // On Unix, should be a path; on Windows, should be cmd or similar
@@ -281,49 +285,50 @@ mod tests {
 
     #[test]
     fn test_build_shell_args_bash() {
-        let args = TerminalService::build_shell_args("/bin/bash");
+        let args = TerminalService::build_shell_args("/bin/bash").unwrap();
         assert_eq!(args, vec!["-i"]);
     }
 
     #[test]
     fn test_build_shell_args_zsh() {
-        let args = TerminalService::build_shell_args("/usr/local/bin/zsh");
+        let args = TerminalService::build_shell_args("/usr/local/bin/zsh").unwrap();
         assert_eq!(args, vec!["-i"]);
     }
 
     #[test]
     fn test_build_shell_args_fish() {
-        let args = TerminalService::build_shell_args("/usr/bin/fish");
+        let args = TerminalService::build_shell_args("/usr/bin/fish").unwrap();
         assert_eq!(args, vec!["-i"]);
     }
 
     #[test]
     fn test_build_shell_args_powershell() {
-        let args = TerminalService::build_shell_args("powershell.exe");
+        let args = TerminalService::build_shell_args("powershell.exe").unwrap();
         assert_eq!(args, vec!["-NoLogo", "-NoExit"]);
     }
 
     #[test]
     fn test_build_shell_args_pwsh() {
-        let args = TerminalService::build_shell_args("C:\\Program Files\\PowerShell\\7\\pwsh.exe");
+        let args = TerminalService::build_shell_args("C:\\Program Files\\PowerShell\\7\\pwsh.exe")
+            .unwrap();
         assert_eq!(args, vec!["-NoLogo", "-NoExit"]);
     }
 
     #[test]
     fn test_build_shell_args_cmd() {
-        let args = TerminalService::build_shell_args("cmd.exe");
+        let args = TerminalService::build_shell_args("cmd.exe").unwrap();
         assert!(args.is_empty());
     }
 
     #[test]
     fn test_build_shell_args_unknown() {
-        let args = TerminalService::build_shell_args("/usr/bin/unknown-shell");
+        let args = TerminalService::build_shell_args("/usr/bin/unknown-shell").unwrap();
         assert!(args.is_empty());
     }
 
     #[test]
     fn test_create_process_request() {
-        let request = TerminalService::create_process_request("chat-123");
+        let request = TerminalService::create_process_request("chat-123").unwrap();
 
         assert_eq!(request.chat_id, "chat-123");
         assert!(request.executor_profile_id.is_none());

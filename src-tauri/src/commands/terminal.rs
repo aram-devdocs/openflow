@@ -91,6 +91,6 @@ pub async fn spawn_terminal(
 /// # Returns
 /// The shell command path (e.g., "/bin/bash", "cmd.exe").
 #[tauri::command]
-pub fn get_default_shell() -> String {
-    TerminalService::get_default_shell()
+pub fn get_default_shell() -> Result<String, String> {
+    TerminalService::get_default_shell().map_err(|e| e.to_string())
 }

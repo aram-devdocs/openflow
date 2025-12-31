@@ -75,8 +75,8 @@ pub async fn create_pull_request(
 /// # Returns
 /// `true` if the `gh` CLI is installed and executable.
 #[tauri::command]
-pub fn check_gh_cli_installed() -> bool {
-    GitHubService::check_gh_cli_installed()
+pub fn check_gh_cli_installed() -> Result<bool, String> {
+    GitHubService::check_gh_cli_installed().map_err(|e| e.to_string())
 }
 
 /// Check if the user is authenticated with GitHub CLI.

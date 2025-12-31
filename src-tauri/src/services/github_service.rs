@@ -18,13 +18,14 @@ impl GitHubService {
     /// Check if the `gh` CLI is installed and available.
     ///
     /// # Returns
-    /// `true` if `gh` is installed and executable, `false` otherwise.
-    pub fn check_gh_cli_installed() -> bool {
-        Command::new("gh")
+    /// `Ok(true)` if `gh` is installed and executable, `Ok(false)` otherwise.
+    pub fn check_gh_cli_installed() -> ServiceResult<bool> {
+        let result = Command::new("gh")
             .arg("--version")
             .output()
             .map(|output| output.status.success())
-            .unwrap_or(false)
+            .unwrap_or(false);
+        Ok(result)
     }
 
     /// Check if the user is authenticated with GitHub CLI.
@@ -32,7 +33,7 @@ impl GitHubService {
     /// # Returns
     /// `Ok(())` if authenticated, `Err` with a descriptive message if not.
     pub fn check_gh_auth_status() -> ServiceResult<()> {
-        if !Self::check_gh_cli_installed() {
+        if !Self::check_gh_cli_installed()? {
             return Err(ServiceError::Validation(
                 "GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/"
                     .to_string(),
@@ -294,14 +295,14 @@ mod tests {
     fn test_check_gh_cli_installed() {
         // This test just verifies the method doesn't panic
         // Result depends on whether gh is installed on the test machine
-        let _result = GitHubService::check_gh_cli_installed();
+        let _result = GitHubService::check_gh_cli_installed().unwrap();
     }
 
     #[test]
     fn test_check_gh_auth_status_when_not_installed() {
         // If gh is not installed, this should return an error
         // We can't easily mock the command, so this test is conditional
-        if !GitHubService::check_gh_cli_installed() {
+        if !GitHubService::check_gh_cli_installed().unwrap_or(false) {
             let result = GitHubService::check_gh_auth_status();
             assert!(result.is_err());
             let err = result.unwrap_err();
