@@ -20,7 +20,7 @@ export type { TextareaProps, TextareaResize } from './Textarea';
 export { Badge, taskStatusToVariant, taskStatusToLabel } from './Badge';
 export type { BadgeProps, BadgeVariant, BadgeSize } from './Badge';
 
-export { Icon } from './Icon';
+export { Icon, getResponsiveSizeClasses } from './Icon';
 export type { IconProps, IconSize } from './Icon';
 
 export { Label } from './Label';
