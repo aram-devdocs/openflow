@@ -114,6 +114,7 @@ pub fn run() {
             commands::delete_chat,
             commands::archive_chat,
             commands::unarchive_chat,
+            commands::toggle_step_complete,
             commands::start_workflow_step,
             // Message commands
             commands::list_messages,

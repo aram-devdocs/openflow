@@ -145,6 +145,24 @@ pub async fn list_archived_chats(state: State<'_, AppState>) -> Result<Vec<Chat>
         .map_err(|e| e.to_string())
 }
 
+/// Toggle the completion status of a workflow step (chat).
+///
+/// If the step is incomplete (setup_completed_at is None), marks it as complete.
+/// If the step is complete, marks it as incomplete.
+///
+/// # Arguments
+/// * `id` - The chat ID to toggle completion for
+///
+/// # Returns
+/// The updated Chat with toggled completion status.
+#[tauri::command]
+pub async fn toggle_step_complete(state: State<'_, AppState>, id: String) -> Result<Chat, String> {
+    let pool = state.db.lock().await;
+    ChatService::toggle_step_complete(&pool, &id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Start a workflow step execution for a chat.
 ///
 /// This triggers the executor to run on the chat's initial prompt.
