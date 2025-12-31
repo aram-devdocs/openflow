@@ -8,8 +8,8 @@
  * All component definitions live in @openflow/ui, all logic in @openflow/hooks.
  */
 
-import { useChatSession, useKeyboardShortcuts } from '@openflow/hooks';
-import { ChatPage, useToast } from '@openflow/ui';
+import { useChatSession, useKeyboardShortcuts, useToast } from '@openflow/hooks';
+import { ChatPage } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_app/chats/$chatId')({

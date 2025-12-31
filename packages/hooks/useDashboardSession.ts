@@ -129,8 +129,7 @@ export interface DashboardSessionState {
 
   // Mobile drawer
   // Note: handleMobileDrawerToggle is now provided by NavigationContext (via setMobileDrawerOpen)
-  handleSelectTaskWithDrawerClose: (taskId: string) => void;
-  handleSelectChatWithDrawerClose: (chatId: string) => void;
+  handleSelectChat: (chatId: string) => void;
 
   // Dialog actions - Create Project
   handleBrowseFolder: () => Promise<void>;
@@ -314,20 +313,10 @@ export function useDashboardSession({
   }, []);
 
   // ============================================================================
-  // Mobile Drawer Actions
+  // Chat Navigation
   // ============================================================================
 
-  // Note: handleMobileDrawerToggle is now provided by NavigationContext (via setMobileDrawerOpen)
-
-  // These handlers navigate only - the caller should close the drawer via NavigationContext
-  const handleSelectTaskWithDrawerClose = useCallback(
-    (taskId: string) => {
-      navigate({ to: '/tasks/$taskId', params: { taskId } });
-    },
-    [navigate]
-  );
-
-  const handleSelectChatWithDrawerClose = useCallback(
+  const handleSelectChat = useCallback(
     (chatId: string) => {
       navigate({ to: '/chats/$chatId', params: { chatId } });
     },
@@ -647,10 +636,8 @@ export function useDashboardSession({
     handleNewChat,
     handleNewTerminal,
 
-    // Mobile drawer
-    // Note: handleMobileDrawerToggle is now provided by NavigationContext (via setMobileDrawerOpen)
-    handleSelectTaskWithDrawerClose,
-    handleSelectChatWithDrawerClose,
+    // Chat navigation
+    handleSelectChat,
 
     // Dialog actions - Create Project
     handleBrowseFolder,

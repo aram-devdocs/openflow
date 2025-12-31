@@ -14,8 +14,8 @@
  * Route is pure composition - all state is in useTaskSession hook.
  */
 
-import { useTaskSession } from '@openflow/hooks';
-import { TaskPage, useToast } from '@openflow/ui';
+import { useTaskSession, useToast } from '@openflow/hooks';
+import { TaskPage } from '@openflow/ui';
 import type { TaskPageTab } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { FileText, GitCommitHorizontal, GitCompare, ListTodo } from 'lucide-react';

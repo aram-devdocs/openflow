@@ -12,8 +12,8 @@
  * All UI components are stateless and imported from @openflow/ui.
  */
 
-import { useDashboardSession, useNavigation } from '@openflow/hooks';
-import { DashboardPage, useToast } from '@openflow/ui';
+import { useDashboardSession, useNavigation, useToast } from '@openflow/hooks';
+import { DashboardPage } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback } from 'react';
 
@@ -36,17 +36,17 @@ function DashboardRoute() {
   const handleSelectTaskWithDrawerClose = useCallback(
     (taskId: string) => {
       navigation.closeMobileDrawer();
-      session.handleSelectTaskWithDrawerClose(taskId);
+      session.handleSelectTask(taskId);
     },
-    [navigation, session]
+    [navigation.closeMobileDrawer, session.handleSelectTask]
   );
 
   const handleSelectChatWithDrawerClose = useCallback(
     (chatId: string) => {
       navigation.closeMobileDrawer();
-      session.handleSelectChatWithDrawerClose(chatId);
+      session.handleSelectChat(chatId);
     },
-    [navigation, session]
+    [navigation.closeMobileDrawer, session.handleSelectChat]
   );
 
   return (
