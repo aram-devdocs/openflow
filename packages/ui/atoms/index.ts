@@ -27,8 +27,8 @@ export type { BadgeProps, BadgeVariant, BadgeSize } from './Badge';
 export { Icon, getResponsiveSizeClasses } from './Icon';
 export type { IconProps, IconSize } from './Icon';
 
-export { Label } from './Label';
-export type { LabelProps } from './Label';
+export { Label, getBaseSize as getLabelBaseSize, convertToTextSize } from './Label';
+export type { LabelProps, LabelSize } from './Label';
 
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
