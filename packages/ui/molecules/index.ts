@@ -115,8 +115,27 @@ export type {
   EntityContextMenuSize,
 } from './EntityContextMenu';
 
-export { SkeletonCard } from './SkeletonCard';
-export type { SkeletonCardProps } from './SkeletonCard';
+export {
+  SkeletonCard,
+  getBaseSize as getSkeletonCardBaseSize,
+  getResponsiveSizeClasses as getSkeletonCardResponsiveSizeClasses,
+  getAvatarDimensions as getSkeletonCardAvatarDimensions,
+  SKELETON_CARD_BASE_CLASSES,
+  SKELETON_CARD_PADDING_CLASSES,
+  SKELETON_CARD_HEADER_GAP_CLASSES,
+  SKELETON_CARD_AVATAR_CLASSES,
+  SKELETON_CARD_TITLE_CLASSES,
+  SKELETON_CARD_DESCRIPTION_CLASSES,
+  SKELETON_CARD_ACTION_CLASSES,
+  SKELETON_CARD_ACTIONS_GAP_CLASSES,
+  SKELETON_CARD_ACTIONS_MARGIN_CLASSES,
+  SKELETON_CARD_CONTENT_GAP_CLASSES,
+} from './SkeletonCard';
+export type {
+  SkeletonCardProps,
+  SkeletonCardSize,
+  SkeletonCardBreakpoint,
+} from './SkeletonCard';
 
 export { SkeletonList } from './SkeletonList';
 export type { SkeletonListProps } from './SkeletonList';
