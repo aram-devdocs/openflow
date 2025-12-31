@@ -19,7 +19,7 @@ import {
 } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/archive')({
+export const Route = createFileRoute('/_app/archive')({
   component: ArchivePage,
 });
 
