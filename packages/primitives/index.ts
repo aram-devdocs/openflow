@@ -43,7 +43,7 @@ export type {
   // StackProps is exported from ./Stack component
   StackDirection,
   // Typography primitives
-  TextProps,
+  // TextProps is exported from ./Text component
   TextSize,
   FontWeight,
   HeadingProps,
@@ -88,7 +88,7 @@ export {
 export { Stack, type StackProps, type StackElement } from './Stack';
 
 // Typography primitives
-// export { Text } from './Text';
+export { Text, type TextProps, type TextElement, getResponsiveClasses } from './Text';
 // export { Heading } from './Heading';
 // export { Paragraph } from './Paragraph';
 
