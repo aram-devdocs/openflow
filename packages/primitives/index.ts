@@ -62,7 +62,7 @@ export type {
   // SectionProps is exported from ./Section component
   // ArticleProps is exported from ./Article component
   // NavProps is exported from ./Nav component
-  MainProps,
+  // MainProps is exported from ./Main component
   AsideProps,
   HeaderProps,
   FooterProps,
@@ -120,7 +120,7 @@ export {
 export { Section, type SectionProps, type SectionSpacingProps } from './Section';
 export { Article, type ArticleProps, type ArticleSpacingProps } from './Article';
 export { Nav, type NavProps, type NavSpacingProps } from './Nav';
-// export { Main } from './Main';
+export { Main, type MainProps, type MainSpacingProps, DEFAULT_MAIN_ID } from './Main';
 // export { Aside } from './Aside';
 // export { Header } from './Header';
 // export { Footer } from './Footer';
