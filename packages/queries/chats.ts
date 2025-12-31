@@ -5,11 +5,13 @@ import type {
   ExecutionProcess,
   UpdateChatRequest,
 } from '@openflow/generated';
+import { createChatSchema, updateChatSchema } from '@openflow/validation';
 import { invoke } from './utils.js';
 
 /**
  * Chat query wrappers for Tauri IPC.
  * Thin wrappers around invoke() calls with type safety.
+ * Input validation is performed using Zod schemas before invoking Tauri commands.
  */
 export const chatQueries = {
   /**
@@ -39,14 +41,21 @@ export const chatQueries = {
 
   /**
    * Create a new chat.
+   * Input is validated against createChatSchema before invoking.
    */
-  create: (request: CreateChatRequest): Promise<Chat> => invoke('create_chat', { request }),
+  create: (request: CreateChatRequest): Promise<Chat> => {
+    const validated = createChatSchema.parse(request);
+    return invoke('create_chat', { request: validated });
+  },
 
   /**
    * Update an existing chat.
+   * Input is validated against updateChatSchema before invoking.
    */
-  update: (id: string, request: UpdateChatRequest): Promise<Chat> =>
-    invoke('update_chat', { id, request }),
+  update: (id: string, request: UpdateChatRequest): Promise<Chat> => {
+    const validated = updateChatSchema.parse(request);
+    return invoke('update_chat', { id, request: validated });
+  },
 
   /**
    * Delete a chat by ID.

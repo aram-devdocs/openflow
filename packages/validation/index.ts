@@ -14,6 +14,7 @@ export {
   runReasonSchema,
   outputTypeSchema,
   searchResultTypeSchema,
+  workflowStepStatusSchema,
   // Project schemas
   createProjectSchema,
   updateProjectSchema,
@@ -22,6 +23,8 @@ export {
   updateTaskSchema,
   // Chat schemas
   createChatSchema,
+  createStandaloneChatSchema,
+  updateChatSchema,
   // Message schemas
   createMessageSchema,
   // Executor profile schemas
@@ -31,7 +34,16 @@ export {
   searchQuerySchema,
   // Settings schemas
   setSettingSchema,
-  // Inferred types
+  // Workflow template schemas
+  createWorkflowTemplateSchema,
+  updateWorkflowTemplateSchema,
+  // Output schemas (API response types)
+  workflowStepSchema,
+  workflowTemplateSchema,
+  commitSchema,
+  diffHunkSchema,
+  fileDiffSchema,
+  // Inferred types - Input types
   type TaskStatusInput,
   type ChatRoleInput,
   type MessageRoleInput,
@@ -39,14 +51,25 @@ export {
   type RunReasonInput,
   type OutputTypeInput,
   type SearchResultTypeInput,
+  type WorkflowStepStatusInput,
   type CreateProjectInput,
   type UpdateProjectInput,
   type CreateTaskInput,
   type UpdateTaskInput,
   type CreateChatInput,
+  type CreateStandaloneChatInput,
+  type UpdateChatInput,
   type CreateMessageInput,
   type CreateExecutorProfileInput,
   type UpdateExecutorProfileInput,
   type SearchQueryInput,
   type SetSettingInput,
+  type CreateWorkflowTemplateInput,
+  type UpdateWorkflowTemplateInput,
+  // Inferred types - Output types
+  type WorkflowStepOutput,
+  type WorkflowTemplateOutput,
+  type CommitOutput,
+  type DiffHunkOutput,
+  type FileDiffOutput,
 } from './schemas';

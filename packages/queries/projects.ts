@@ -1,9 +1,11 @@
 import type { CreateProjectRequest, Project, UpdateProjectRequest } from '@openflow/generated';
+import { createProjectSchema, updateProjectSchema } from '@openflow/validation';
 import { invoke } from './utils.js';
 
 /**
  * Project query wrappers for Tauri IPC.
  * Thin wrappers around invoke() calls with type safety.
+ * Input validation is performed using Zod schemas before invoking Tauri commands.
  */
 export const projectQueries = {
   /**
@@ -18,15 +20,21 @@ export const projectQueries = {
 
   /**
    * Create a new project.
+   * Input is validated against createProjectSchema before invoking.
    */
-  create: (request: CreateProjectRequest): Promise<Project> =>
-    invoke('create_project', { request }),
+  create: (request: CreateProjectRequest): Promise<Project> => {
+    const validated = createProjectSchema.parse(request);
+    return invoke('create_project', { request: validated });
+  },
 
   /**
    * Update an existing project.
+   * Input is validated against updateProjectSchema before invoking.
    */
-  update: (id: string, request: UpdateProjectRequest): Promise<Project> =>
-    invoke('update_project', { id, request }),
+  update: (id: string, request: UpdateProjectRequest): Promise<Project> => {
+    const validated = updateProjectSchema.parse(request);
+    return invoke('update_project', { id, request: validated });
+  },
 
   /**
    * Delete a project by ID.

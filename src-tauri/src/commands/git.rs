@@ -215,9 +215,12 @@ pub async fn list_worktrees(
 ///
 /// # Returns
 /// The generated branch name.
+///
+/// # Errors
+/// Returns an error if the task_id or chat_role is empty.
 #[tauri::command]
-pub fn generate_branch_name(task_id: String, chat_role: String) -> String {
-    GitService::generate_branch_name(&task_id, &chat_role)
+pub fn generate_branch_name(task_id: String, chat_role: String) -> Result<String, String> {
+    GitService::generate_branch_name(&task_id, &chat_role).map_err(|e| e.to_string())
 }
 
 /// Generate a worktree path following OpenFlow conventions.

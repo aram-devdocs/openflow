@@ -11,6 +11,7 @@
 
 pub mod chat_service;
 pub mod executor_profile_service;
+pub mod executor_service;
 pub mod git_service;
 pub mod message_service;
 pub mod process_service;
@@ -22,6 +23,7 @@ pub mod workflow_service;
 
 pub use chat_service::ChatService;
 pub use executor_profile_service::ExecutorProfileService;
+pub use executor_service::ExecutorService;
 pub use git_service::GitService;
 pub use message_service::MessageService;
 pub use process_service::ProcessService;

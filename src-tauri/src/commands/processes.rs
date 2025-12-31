@@ -76,7 +76,7 @@ pub async fn kill_process(
         .map_err(|e| e.to_string())?;
 
     // Emit process status event
-    let event = ProcessService::create_status_event(&process);
+    let event = ProcessService::create_status_event(&process).map_err(|e| e.to_string())?;
     let _ = app_handle.emit(&format!("process-status-{}", id), &event);
 
     Ok(process)
@@ -123,7 +123,11 @@ pub async fn is_process_running(
     state: State<'_, AppState>,
     process_id: String,
 ) -> Result<bool, String> {
-    Ok(state.process_service.is_running(&process_id).await)
+    state
+        .process_service
+        .is_running(&process_id)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 /// Get the count of currently running processes.
@@ -131,5 +135,9 @@ pub async fn is_process_running(
 /// Returns the number of processes being tracked by the ProcessService.
 #[tauri::command]
 pub async fn running_process_count(state: State<'_, AppState>) -> Result<usize, String> {
-    Ok(state.process_service.running_count().await)
+    state
+        .process_service
+        .running_count()
+        .await
+        .map_err(|e| e.to_string())
 }
