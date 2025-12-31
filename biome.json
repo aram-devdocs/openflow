@@ -55,5 +55,17 @@
       "src/routeTree.gen.ts",
       "storybook-static"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "include": ["**/*.stories.tsx", "**/*.stories.ts"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noLabelWithoutControl": "off"
+          }
+        }
+      }
+    }
+  ]
 }

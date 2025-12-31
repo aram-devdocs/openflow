@@ -1,88 +1,257 @@
+import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
-import { Check } from 'lucide-react';
-import { type InputHTMLAttributes, forwardRef } from 'react';
+import { Check, Minus } from 'lucide-react';
+import { type InputHTMLAttributes, forwardRef, useId } from 'react';
 
-export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+export type CheckboxSize = 'sm' | 'md' | 'lg';
+
+export interface CheckboxProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
   /** Whether the checkbox is checked */
   checked?: boolean;
   /** Indeterminate state (partially checked) */
   indeterminate?: boolean;
+  /** Size of the checkbox - supports responsive values */
+  size?: ResponsiveValue<CheckboxSize>;
+  /** Error state for form validation */
+  error?: boolean;
+  /** Message announced to screen readers when state changes (default: automatic) */
+  'aria-describedby'?: string;
+  /** Data test id for testing */
+  'data-testid'?: string;
 }
 
 /**
- * Checkbox component with custom styling.
- * Stateless - receives all data via props, emits actions via callbacks.
- *
- * @example
- * <Checkbox checked={isChecked} onChange={handleChange} />
- *
- * @example
- * <Checkbox checked={isChecked} disabled aria-label="Select item" />
+ * Size to Tailwind classes mapping.
+ * Touch targets: 44px minimum on touch devices for WCAG 2.5.5 compliance.
  */
-export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, checked, indeterminate, disabled, ...props }, ref) => {
-    return (
-      // Touch target wrapper: 44x44px minimum for accessibility
-      <div className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center">
-        <div className="relative inline-flex items-center">
-          <input
-            type="checkbox"
-            ref={(element) => {
-              // Handle both the forwarded ref and indeterminate state
-              if (typeof ref === 'function') {
-                ref(element);
-              } else if (ref) {
-                ref.current = element;
-              }
-              if (element) {
-                element.indeterminate = indeterminate ?? false;
-              }
-            }}
-            checked={checked}
-            disabled={disabled}
-            className={cn(
-              'peer h-4 w-4 shrink-0 cursor-pointer appearance-none rounded',
-              'border border-[rgb(var(--input))]',
-              'bg-[rgb(var(--background))]',
-              'motion-safe:transition-colors motion-safe:duration-150',
-              // Focus state
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
-              // Checked state
-              'checked:border-[rgb(var(--primary))] checked:bg-[rgb(var(--primary))]',
-              // Indeterminate state
-              'indeterminate:border-[rgb(var(--primary))] indeterminate:bg-[rgb(var(--primary))]',
-              // Disabled state
-              disabled && 'cursor-not-allowed opacity-50',
-              className
-            )}
-            {...props}
-          />
-          {/* Custom check icon overlay */}
-          <Check
-            className={cn(
-              'pointer-events-none absolute left-0 h-4 w-4 stroke-[3]',
-              'text-[rgb(var(--primary-foreground))]',
-              'opacity-0 motion-safe:transition-opacity motion-safe:duration-150',
-              'peer-checked:opacity-100',
-              'peer-indeterminate:hidden'
-            )}
-            aria-hidden="true"
-          />
-          {/* Indeterminate dash overlay */}
-          <div
-            className={cn(
-              'pointer-events-none absolute left-1 top-1/2 h-0.5 w-2 -translate-y-1/2',
-              'bg-[rgb(var(--primary-foreground))]',
-              'opacity-0 motion-safe:transition-opacity motion-safe:duration-150',
-              'peer-indeterminate:opacity-100',
-              'peer-checked:hidden'
-            )}
-            aria-hidden="true"
-          />
-        </div>
-      </div>
-    );
+const sizeClasses: Record<CheckboxSize, { wrapper: string; checkbox: string; icon: string }> = {
+  sm: {
+    wrapper: 'min-h-[44px] min-w-[44px] sm:min-h-5 sm:min-w-5',
+    checkbox: 'h-3.5 w-3.5',
+    icon: 'h-3.5 w-3.5 stroke-[3]',
+  },
+  md: {
+    wrapper: 'min-h-[44px] min-w-[44px] sm:min-h-6 sm:min-w-6',
+    checkbox: 'h-4 w-4',
+    icon: 'h-4 w-4 stroke-[3]',
+  },
+  lg: {
+    wrapper: 'min-h-[44px] min-w-[44px]',
+    checkbox: 'h-5 w-5',
+    icon: 'h-5 w-5 stroke-[2.5]',
+  },
+};
+
+/**
+ * Breakpoint order for responsive class generation
+ */
+const BREAKPOINT_ORDER = ['base', 'sm', 'md', 'lg', 'xl', '2xl'] as const;
+type Breakpoint = (typeof BREAKPOINT_ORDER)[number];
+
+/**
+ * Get size classes for the given size prop
+ */
+function getSizeClasses(size: ResponsiveValue<CheckboxSize>): {
+  wrapper: string[];
+  checkbox: string[];
+  icon: string[];
+} {
+  const wrapper: string[] = [];
+  const checkbox: string[] = [];
+  const icon: string[] = [];
+
+  if (typeof size === 'string') {
+    const classes = sizeClasses[size];
+    wrapper.push(classes.wrapper);
+    checkbox.push(classes.checkbox);
+    icon.push(classes.icon);
+  } else if (typeof size === 'object' && size !== null) {
+    for (const breakpoint of BREAKPOINT_ORDER) {
+      const breakpointValue = (size as Partial<Record<Breakpoint, CheckboxSize>>)[breakpoint];
+      if (breakpointValue !== undefined) {
+        const classes = sizeClasses[breakpointValue];
+        if (breakpoint === 'base') {
+          wrapper.push(...classes.wrapper.split(' '));
+          checkbox.push(...classes.checkbox.split(' '));
+          icon.push(...classes.icon.split(' '));
+        } else {
+          wrapper.push(...classes.wrapper.split(' ').map((c) => `${breakpoint}:${c}`));
+          checkbox.push(...classes.checkbox.split(' ').map((c) => `${breakpoint}:${c}`));
+          icon.push(...classes.icon.split(' ').map((c) => `${breakpoint}:${c}`));
+        }
+      }
+    }
   }
-);
+
+  return { wrapper, checkbox, icon };
+}
+
+/**
+ * Checkbox component with accessibility, responsive sizing, and custom styling.
+ *
+ * Built on @openflow/primitives for accessibility and responsiveness:
+ * - Uses VisuallyHidden for screen reader state announcements
+ * - Touch target meets WCAG 2.5.5 (≥44px on touch devices)
+ * - Focus ring visible on all backgrounds
+ * - Indeterminate state support
+ * - Error state styling for form validation
+ *
+ * Accessibility:
+ * - Native `<input type="checkbox">` for full keyboard support
+ * - Focus ring uses ring-offset for visibility on all backgrounds
+ * - Indeterminate state properly conveyed via DOM property
+ * - Error state uses `aria-invalid` for screen readers
+ * - Screen reader announces state changes
+ *
+ * For proper label association, use with a `<label>` element or `aria-label`:
+ *
+ * @example
+ * // With label element (recommended for forms)
+ * <label className="flex items-center gap-2">
+ *   <Checkbox checked={isChecked} onChange={handleChange} />
+ *   <span>I agree to the terms</span>
+ * </label>
+ *
+ * @example
+ * // With aria-label (for icon-only checkboxes)
+ * <Checkbox checked={isChecked} aria-label="Select item" />
+ *
+ * @example
+ * // With htmlFor association
+ * <Checkbox id="terms" checked={isChecked} onChange={handleChange} />
+ * <label htmlFor="terms">I agree to the terms</label>
+ *
+ * @example
+ * // Indeterminate state (for "select all" pattern)
+ * <Checkbox indeterminate aria-label="Select all items" />
+ *
+ * @example
+ * // With error state
+ * <Checkbox error aria-describedby="error-message" />
+ * <span id="error-message">This field is required</span>
+ *
+ * @example
+ * // Responsive sizing
+ * <Checkbox size={{ base: 'md', lg: 'lg' }} />
+ */
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
+  {
+    className,
+    checked,
+    indeterminate,
+    disabled,
+    size = 'md',
+    error = false,
+    'data-testid': dataTestId,
+    'aria-describedby': ariaDescribedBy,
+    ...props
+  },
+  ref
+) {
+  // Generate unique ID for screen reader announcement
+  const uniqueId = useId();
+  const announcementId = `checkbox-state-${uniqueId}`;
+
+  // Get responsive size classes
+  const {
+    wrapper: wrapperClasses,
+    checkbox: checkboxClasses,
+    icon: iconClasses,
+  } = getSizeClasses(size);
+
+  // Determine current state for screen reader announcement
+  const getStateAnnouncement = () => {
+    if (indeterminate) return 'Partially checked';
+    if (checked) return 'Checked';
+    return 'Not checked';
+  };
+
+  return (
+    // Touch target wrapper: 44x44px minimum for accessibility (WCAG 2.5.5)
+    <span
+      className={cn(
+        'relative inline-flex items-center justify-center',
+        ...wrapperClasses,
+        className
+      )}
+      data-testid={dataTestId}
+    >
+      {/* Screen reader state announcement */}
+      <VisuallyHidden>
+        <span id={announcementId} aria-live="polite">
+          {getStateAnnouncement()}
+        </span>
+      </VisuallyHidden>
+
+      <span className="relative inline-flex items-center">
+        <input
+          type="checkbox"
+          ref={(element) => {
+            // Handle both the forwarded ref and indeterminate state
+            if (typeof ref === 'function') {
+              ref(element);
+            } else if (ref) {
+              ref.current = element;
+            }
+            if (element) {
+              element.indeterminate = indeterminate ?? false;
+            }
+          }}
+          checked={checked}
+          disabled={disabled}
+          aria-invalid={error || undefined}
+          aria-describedby={ariaDescribedBy}
+          className={cn(
+            'peer shrink-0 cursor-pointer appearance-none rounded',
+            'border',
+            error ? 'border-[rgb(var(--destructive))]' : 'border-[rgb(var(--input))]',
+            'bg-[rgb(var(--background))]',
+            'motion-safe:transition-colors motion-safe:duration-150',
+            // Focus state with ring-offset for visibility on all backgrounds
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--background))]',
+            // Checked state
+            error
+              ? 'checked:border-[rgb(var(--destructive))] checked:bg-[rgb(var(--destructive))]'
+              : 'checked:border-[rgb(var(--primary))] checked:bg-[rgb(var(--primary))]',
+            // Indeterminate state
+            error
+              ? 'indeterminate:border-[rgb(var(--destructive))] indeterminate:bg-[rgb(var(--destructive))]'
+              : 'indeterminate:border-[rgb(var(--primary))] indeterminate:bg-[rgb(var(--primary))]',
+            // Disabled state
+            disabled && 'cursor-not-allowed opacity-50',
+            // Size classes
+            ...checkboxClasses
+          )}
+          {...props}
+        />
+        {/* Custom check icon overlay */}
+        <Check
+          className={cn(
+            'pointer-events-none absolute left-0',
+            'text-[rgb(var(--primary-foreground))]',
+            'opacity-0 motion-safe:transition-opacity motion-safe:duration-150',
+            'peer-checked:opacity-100',
+            'peer-indeterminate:hidden',
+            ...iconClasses
+          )}
+          aria-hidden="true"
+        />
+        {/* Indeterminate dash overlay using Minus icon for consistency */}
+        <Minus
+          className={cn(
+            'pointer-events-none absolute left-0',
+            'text-[rgb(var(--primary-foreground))]',
+            'opacity-0 motion-safe:transition-opacity motion-safe:duration-150',
+            'peer-indeterminate:opacity-100',
+            'peer-checked:hidden',
+            ...iconClasses
+          )}
+          aria-hidden="true"
+        />
+      </span>
+    </span>
+  );
+});
 
 Checkbox.displayName = 'Checkbox';
