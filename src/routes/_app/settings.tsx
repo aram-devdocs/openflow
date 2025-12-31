@@ -10,14 +10,14 @@
  * Follows the orchestration pattern: connects hooks to UI components.
  */
 
-import { useKeyboardShortcuts } from '@openflow/hooks';
+import { useKeyboardShortcuts, useNavigation } from '@openflow/hooks';
 import { AppLayout, Header, SettingsLayout } from '@openflow/ui';
 import type { SettingsNavItem } from '@openflow/ui';
 import { Outlet, createFileRoute, useMatches, useNavigate } from '@tanstack/react-router';
 import { Bell, FolderGit2, Keyboard, Palette, Settings, User } from 'lucide-react';
 import { useCallback } from 'react';
 
-export const Route = createFileRoute('/settings')({
+export const Route = createFileRoute('/_app/settings')({
   component: SettingsPage,
 });
 
@@ -35,6 +35,7 @@ const settingsNavItems: SettingsNavItem[] = [
 function SettingsPage() {
   const navigate = useNavigate();
   const matches = useMatches();
+  const navigation = useNavigation();
 
   // Determine active nav item from current route
   const getActiveNavId = useCallback(() => {
@@ -89,7 +90,9 @@ function SettingsPage() {
 
   return (
     <AppLayout
-      sidebarCollapsed={true}
+      sidebarCollapsed={navigation.sidebarCollapsed}
+      isMobileDrawerOpen={navigation.isMobileDrawerOpen}
+      onMobileDrawerToggle={navigation.setMobileDrawerOpen}
       sidebar={null}
       header={
         <Header

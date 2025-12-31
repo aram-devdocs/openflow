@@ -10,18 +10,17 @@
  * This route is pure composition - all UI in @openflow/ui, all logic in @openflow/hooks.
  */
 
-import { useProjectsListSession } from '@openflow/hooks';
+import { useProjectsListSession, useToast } from '@openflow/hooks';
 import {
   ProjectsListConfirmDialog,
   ProjectsListContent,
   ProjectsListCreateDialog,
   ProjectsListHeader,
   ProjectsListLayout,
-  useToast,
 } from '@openflow/ui';
 import { Outlet, createFileRoute, useNavigate } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/projects')({
+export const Route = createFileRoute('/_app/projects')({
   component: ProjectsPage,
 });
 

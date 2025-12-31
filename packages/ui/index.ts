@@ -24,3 +24,6 @@ export * from './organisms';
 
 // Templates - Page layout structures
 export * from './templates';
+
+// Pages - Complete page components (stateless, props-only)
+export * from './pages';

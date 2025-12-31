@@ -16,8 +16,10 @@ import {
   useChatsByProject,
   useConfirmDialog,
   useDeleteChat,
+  useNavigation,
   useProjects,
   useTasks,
+  useToast,
 } from '@openflow/hooks';
 import {
   AppLayout,
@@ -26,18 +28,18 @@ import {
   ConfirmDialog,
   EntityContextMenu,
   Header,
-  useToast,
 } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
 
-export const Route = createFileRoute('/chats/')({
+export const Route = createFileRoute('/_app/chats/')({
   component: ChatsIndexPage,
 });
 
 function ChatsIndexPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const navigation = useNavigation();
   const { dialogProps, confirm } = useConfirmDialog();
 
   // UI state
@@ -156,7 +158,9 @@ function ChatsIndexPage() {
 
   return (
     <AppLayout
-      sidebarCollapsed={true}
+      sidebarCollapsed={navigation.sidebarCollapsed}
+      isMobileDrawerOpen={navigation.isMobileDrawerOpen}
+      onMobileDrawerToggle={navigation.setMobileDrawerOpen}
       sidebar={null}
       header={
         <Header

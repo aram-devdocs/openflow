@@ -80,8 +80,7 @@ export interface DashboardSessionState {
   isLoadingTasks: boolean;
 
   // UI state
-  sidebarCollapsed: boolean;
-  isMobileDrawerOpen: boolean;
+  // Note: sidebarCollapsed and isMobileDrawerOpen are now provided by NavigationContext
   commandPaletteOpen: boolean;
   statusFilter: StatusFilter;
 
@@ -113,6 +112,7 @@ export interface DashboardSessionState {
   headerSubtitle: string | undefined;
 
   // Sidebar actions
+  // Note: handleToggleSidebar is now provided by NavigationContext (via toggleSidebar)
   handleSelectProject: (projectId: string) => void;
   handleSelectTask: (taskId: string) => void;
   handleNewTask: () => void;
@@ -121,7 +121,6 @@ export interface DashboardSessionState {
   handleTaskStatusChange: (taskId: string, status: TaskStatus) => void;
   handleSettingsClick: () => void;
   handleArchiveClick: () => void;
-  handleToggleSidebar: () => void;
 
   // Header actions
   handleSearch: () => void;
@@ -129,9 +128,8 @@ export interface DashboardSessionState {
   handleNewTerminal: () => void;
 
   // Mobile drawer
-  handleMobileDrawerToggle: (open: boolean) => void;
-  handleSelectTaskWithDrawerClose: (taskId: string) => void;
-  handleSelectChatWithDrawerClose: (chatId: string) => void;
+  // Note: handleMobileDrawerToggle is now provided by NavigationContext (via setMobileDrawerOpen)
+  handleSelectChat: (chatId: string) => void;
 
   // Dialog actions - Create Project
   handleBrowseFolder: () => Promise<void>;
@@ -203,8 +201,7 @@ export function useDashboardSession({
   const keyboardShortcutsDialog = useKeyboardShortcutsDialog();
 
   // UI state
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isMobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  // Note: sidebarCollapsed and isMobileDrawerOpen are now provided by NavigationContext
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -296,9 +293,7 @@ export function useDashboardSession({
     navigate({ to: '/archive' as string });
   }, [navigate]);
 
-  const handleToggleSidebar = useCallback(() => {
-    setSidebarCollapsed((prev) => !prev);
-  }, []);
+  // Note: handleToggleSidebar is now provided by NavigationContext (via toggleSidebar)
 
   // ============================================================================
   // Header Actions
@@ -318,24 +313,11 @@ export function useDashboardSession({
   }, []);
 
   // ============================================================================
-  // Mobile Drawer Actions
+  // Chat Navigation
   // ============================================================================
 
-  const handleMobileDrawerToggle = useCallback((open: boolean) => {
-    setMobileDrawerOpen(open);
-  }, []);
-
-  const handleSelectTaskWithDrawerClose = useCallback(
-    (taskId: string) => {
-      setMobileDrawerOpen(false);
-      navigate({ to: '/tasks/$taskId', params: { taskId } });
-    },
-    [navigate]
-  );
-
-  const handleSelectChatWithDrawerClose = useCallback(
+  const handleSelectChat = useCallback(
     (chatId: string) => {
-      setMobileDrawerOpen(false);
       navigate({ to: '/chats/$chatId', params: { chatId } });
     },
     [navigate]
@@ -611,8 +593,7 @@ export function useDashboardSession({
     isLoadingTasks,
 
     // UI state
-    sidebarCollapsed,
-    isMobileDrawerOpen,
+    // Note: sidebarCollapsed and isMobileDrawerOpen are now provided by NavigationContext
     commandPaletteOpen,
     statusFilter,
 
@@ -640,6 +621,7 @@ export function useDashboardSession({
     headerSubtitle: getHeaderSubtitle(),
 
     // Sidebar actions
+    // Note: handleToggleSidebar is now provided by NavigationContext (via toggleSidebar)
     handleSelectProject,
     handleSelectTask,
     handleNewTask,
@@ -648,17 +630,14 @@ export function useDashboardSession({
     handleTaskStatusChange,
     handleSettingsClick,
     handleArchiveClick,
-    handleToggleSidebar,
 
     // Header actions
     handleSearch,
     handleNewChat,
     handleNewTerminal,
 
-    // Mobile drawer
-    handleMobileDrawerToggle,
-    handleSelectTaskWithDrawerClose,
-    handleSelectChatWithDrawerClose,
+    // Chat navigation
+    handleSelectChat,
 
     // Dialog actions - Create Project
     handleBrowseFolder,

@@ -24,6 +24,10 @@
     "./templates": {
       "import": "./templates/index.ts",
       "types": "./templates/index.ts"
+    },
+    "./pages": {
+      "import": "./pages/index.ts",
+      "types": "./pages/index.ts"
     }
   },
   "dependencies": {
