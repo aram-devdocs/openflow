@@ -137,8 +137,28 @@ export type {
   SkeletonCardBreakpoint,
 } from './SkeletonCard';
 
-export { SkeletonList } from './SkeletonList';
-export type { SkeletonListProps } from './SkeletonList';
+export {
+  SkeletonList,
+  getBaseSize as getSkeletonListBaseSize,
+  getResponsiveSizeClasses as getSkeletonListResponsiveSizeClasses,
+  getAvatarDimensions as getSkeletonListAvatarDimensions,
+  DEFAULT_SKELETON_COUNT as SKELETON_LIST_DEFAULT_COUNT,
+  DEFAULT_SKELETON_LINES as SKELETON_LIST_DEFAULT_LINES,
+  SKELETON_LIST_BASE_CLASSES,
+  SKELETON_LIST_GAP_CLASSES,
+  SKELETON_ITEM_PADDING_CLASSES,
+  SKELETON_ITEM_GAP_CLASSES,
+  SKELETON_AVATAR_DIMENSIONS as SKELETON_LIST_AVATAR_DIMENSIONS,
+  SKELETON_PRIMARY_TEXT_CLASSES,
+  SKELETON_SECONDARY_TEXT_CLASSES,
+  SKELETON_TERTIARY_TEXT_CLASSES,
+  SKELETON_TEXT_GAP_CLASSES,
+} from './SkeletonList';
+export type {
+  SkeletonListProps,
+  SkeletonListSize,
+  SkeletonListBreakpoint,
+} from './SkeletonList';
 
 export { SkeletonTaskCard } from './SkeletonTaskCard';
 export type { SkeletonTaskCardProps } from './SkeletonTaskCard';
