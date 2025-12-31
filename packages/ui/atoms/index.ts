@@ -54,7 +54,12 @@ export type {
   ResponsiveSkeletonDimension,
 } from './Skeleton';
 
-export { SkipLink } from './SkipLink';
+export {
+  SkipLink,
+  getSkipLinkClasses,
+  SKIP_LINK_BASE_CLASSES,
+  DEFAULT_SKIP_LINK_TEXT,
+} from './SkipLink';
 export type { SkipLinkProps } from './SkipLink';
 
 export { HamburgerButton } from './HamburgerButton';
