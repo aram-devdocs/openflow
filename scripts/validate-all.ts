@@ -106,6 +106,7 @@ const VALIDATOR_SCRIPTS: Record<string, string> = {
   'test-coverage': 'validate:coverage',
   'tauri-commands': 'validate:tauri',
   'rust-services': 'validate:rust',
+  primitives: 'validate:primitives',
 };
 
 /**
@@ -127,6 +128,7 @@ const EXECUTION_ORDER: string[] = [
   'storybook',
   'test-coverage',
   'rust-services',
+  'primitives',
 ];
 
 // =============================================================================

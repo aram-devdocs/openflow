@@ -77,6 +77,7 @@ export const PACKAGE_PATHS = {
   GENERATED: 'packages/generated',
   UTILS: 'packages/utils',
   MCP_SERVER: 'packages/mcp-server',
+  PRIMITIVES: 'packages/primitives',
 } as const;
 
 /**
@@ -90,6 +91,7 @@ export const PACKAGE_NAMES = {
   GENERATED: '@openflow/generated',
   UTILS: '@openflow/utils',
   MCP_SERVER: '@openflow/mcp-server',
+  PRIMITIVES: '@openflow/primitives',
 } as const;
 
 // =============================================================================
@@ -402,6 +404,27 @@ export const RUST_SERVICES_CONFIG: ValidatorConfig = createValidatorConfig(
   [`${RELATIVE_PATHS.TAURI_COMMANDS}/**/*.rs`, `${RELATIVE_PATHS.TAURI_SERVICES}/**/*.rs`]
 );
 
+/**
+ * Configuration for the primitives validator
+ * Ensures only the primitives package uses raw HTML tags
+ */
+export const PRIMITIVES_CONFIG: ValidatorConfig = createValidatorConfig(
+  'primitives',
+  'Ensures only @openflow/primitives uses raw HTML tags in JSX',
+  [
+    createRule(
+      'primitives/no-raw-html',
+      'Use primitives from @openflow/primitives instead of raw HTML tags'
+    ),
+  ],
+  [`${PACKAGE_PATHS.UI}/**/*.tsx`],
+  [
+    ...NON_SOURCE_EXCLUDES,
+    `${PACKAGE_PATHS.PRIMITIVES}/**`, // Primitives package can use raw HTML
+    `${PACKAGE_PATHS.UI}/hooks/**`, // Hooks don't render JSX
+  ]
+);
+
 // =============================================================================
 // Validator Registry
 // =============================================================================
@@ -423,6 +446,7 @@ export const VALIDATOR_CONFIGS: Record<string, ValidatorConfig> = {
   'test-coverage': TEST_COVERAGE_CONFIG,
   'tauri-commands': TAURI_COMMANDS_CONFIG,
   'rust-services': RUST_SERVICES_CONFIG,
+  primitives: PRIMITIVES_CONFIG,
 };
 
 /**
@@ -536,6 +560,7 @@ export const NON_BLOCKING_VALIDATORS = [
   'storybook', // New components need stories added separately
   'test-coverage', // Test coverage requires writing tests
   'rust-services', // Rust refactoring requires separate work
+  'primitives', // Primitives migration in progress
 ] as const;
 
 /**
