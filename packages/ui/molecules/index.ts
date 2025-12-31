@@ -80,11 +80,32 @@ export type { TabsProps, TabPanelProps, Tab } from './Tabs';
 export { Tooltip } from './Tooltip';
 export type { TooltipProps, TooltipPosition } from './Tooltip';
 
-export { Menu } from './Menu';
+export {
+  Menu,
+  getPositionStyles as getMenuPositionStyles,
+  getItemAnnouncement,
+  MENU_BASE_CLASSES,
+  MENU_ANIMATION_CLASSES,
+  MENU_ITEM_BASE_CLASSES,
+  MENU_DIVIDER_CLASSES,
+} from './Menu';
 export type { MenuProps, MenuItem, MenuPosition } from './Menu';
 
-export { EntityContextMenu } from './EntityContextMenu';
-export type { EntityContextMenuProps, EntityType } from './EntityContextMenu';
+export {
+  EntityContextMenu,
+  getEntityLabel,
+  getScreenReaderAnnouncement,
+  buildMenuItems,
+  ENTITY_CONTEXT_MENU_BASE_CLASSES,
+  ENTITY_TYPE_LABELS,
+  MENU_ITEM_IDS,
+  DEFAULT_ARIA_LABEL_TEMPLATE,
+} from './EntityContextMenu';
+export type {
+  EntityContextMenuProps,
+  EntityType,
+  EntityContextMenuSize,
+} from './EntityContextMenu';
 
 export { SkeletonCard } from './SkeletonCard';
 export type { SkeletonCardProps } from './SkeletonCard';

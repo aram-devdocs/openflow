@@ -1,6 +1,17 @@
+import { VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+  type ForwardedRef,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Icon } from '../atoms/Icon';
 
 export interface MenuItem {
@@ -42,6 +53,73 @@ export interface MenuProps {
   className?: string;
   /** Accessible label for the menu */
   'aria-label'?: string;
+  /** Test ID for automated testing */
+  'data-testid'?: string;
+  /** Entity type (passed from EntityContextMenu) */
+  'data-entity-type'?: string;
+  /** Archived state (passed from EntityContextMenu) */
+  'data-archived'?: boolean;
+}
+
+// --- Exported Constants for Testing ---
+
+/** Base classes applied to all Menu instances */
+export const MENU_BASE_CLASSES =
+  'z-50 min-w-[160px] overflow-hidden rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--popover))] py-1 shadow-md focus:outline-none';
+
+/** Animation classes (respects reduced motion) */
+export const MENU_ANIMATION_CLASSES =
+  'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150';
+
+/** Menu item base classes */
+export const MENU_ITEM_BASE_CLASSES =
+  'flex w-full items-center gap-2 px-3 py-3 text-sm min-h-[44px] text-left motion-safe:transition-colors motion-safe:duration-75';
+
+/** Divider classes */
+export const MENU_DIVIDER_CLASSES = 'my-1 h-px bg-[rgb(var(--border))]';
+
+// --- Utility Functions ---
+
+/**
+ * Gets position styles from MenuPosition
+ * @param position - The menu position configuration
+ * @returns CSS styles object
+ */
+export function getPositionStyles(position: MenuPosition): React.CSSProperties {
+  const styles: React.CSSProperties = {
+    position: 'fixed',
+  };
+
+  if (typeof position.x === 'number') {
+    styles.left = position.x;
+  } else if (position.x === 'left') {
+    styles.left = 0;
+  } else if (position.x === 'right') {
+    styles.right = 0;
+  }
+
+  if (typeof position.y === 'number') {
+    styles.top = position.y;
+  } else if (position.y === 'top') {
+    styles.top = 0;
+  } else if (position.y === 'bottom') {
+    styles.bottom = 0;
+  }
+
+  return styles;
+}
+
+/**
+ * Gets screen reader announcement when item is selected
+ * @param label - The menu item label
+ * @param destructive - Whether it's a destructive action
+ * @returns Announcement string
+ */
+export function getItemAnnouncement(label: string, destructive?: boolean): string {
+  if (destructive) {
+    return `${label} (destructive action)`;
+  }
+  return label;
 }
 
 /**
@@ -54,6 +132,7 @@ export interface MenuProps {
  * - Dividers and disabled items
  * - Optional icons and keyboard shortcut hints
  * - Destructive action styling
+ * - Screen reader announcements for highlighted items
  *
  * @example
  * <Menu
@@ -76,21 +155,39 @@ export interface MenuProps {
  *   aria-label="Actions menu"
  * />
  */
-export function Menu({
-  items,
-  isOpen,
-  onClose,
-  position = { x: 0, y: 0 },
-  className,
-  'aria-label': ariaLabel,
-}: MenuProps) {
+export const Menu = forwardRef(function Menu(
+  {
+    items,
+    isOpen,
+    onClose,
+    position = { x: 0, y: 0 },
+    className,
+    'aria-label': ariaLabel,
+    'data-testid': dataTestId,
+    'data-entity-type': dataEntityType,
+    'data-archived': dataArchived,
+  }: MenuProps,
+  ref: ForwardedRef<HTMLDivElement>
+) {
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const menuRef = useRef<HTMLDivElement>(null);
   const id = useId();
   const menuId = `${id}-menu`;
 
+  // Expose the menu ref via forwardRef
+  useImperativeHandle(ref, () => menuRef.current as HTMLDivElement);
+
   // Get enabled (non-divider, non-disabled) items for keyboard navigation
-  const enabledItems = items.filter((item) => !item.divider && !item.disabled);
+  const enabledItems = useMemo(
+    () => items.filter((item) => !item.divider && !item.disabled),
+    [items]
+  );
+
+  // Get the currently highlighted item for screen reader announcement
+  const highlightedItem = useMemo(
+    () => (highlightedIndex >= 0 ? enabledItems[highlightedIndex] : null),
+    [enabledItems, highlightedIndex]
+  );
 
   // Reset highlighted index when menu opens
   useEffect(() => {
@@ -188,126 +285,114 @@ export function Menu({
     }
   };
 
-  // Calculate position styles
-  const getPositionStyles = (): React.CSSProperties => {
-    const styles: React.CSSProperties = {
-      position: 'fixed',
-    };
-
-    if (typeof position.x === 'number') {
-      styles.left = position.x;
-    } else if (position.x === 'left') {
-      styles.left = 0;
-    } else if (position.x === 'right') {
-      styles.right = 0;
-    }
-
-    if (typeof position.y === 'number') {
-      styles.top = position.y;
-    } else if (position.y === 'top') {
-      styles.top = 0;
-    } else if (position.y === 'bottom') {
-      styles.bottom = 0;
-    }
-
-    return styles;
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div
-      ref={menuRef}
-      id={menuId}
-      role="menu"
-      aria-label={ariaLabel}
-      tabIndex={-1}
-      onKeyDown={handleKeyDown}
-      style={getPositionStyles()}
-      className={cn(
-        'z-50 min-w-[160px] overflow-hidden',
-        'rounded-md border border-[rgb(var(--border))] bg-[rgb(var(--popover))]',
-        'py-1 shadow-md',
-        // Animation - respects reduced motion
-        'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-150',
-        'focus:outline-none',
-        className
+    <>
+      {/* Screen reader announcement for highlighted item */}
+      {highlightedItem && (
+        <VisuallyHidden>
+          <span role="status" aria-live="polite" aria-atomic="true">
+            {getItemAnnouncement(highlightedItem.label, highlightedItem.destructive)}
+          </span>
+        </VisuallyHidden>
       )}
-    >
-      {items.map((item) => {
-        // Handle divider
-        if (item.divider) {
-          return (
-            // biome-ignore lint/a11y/useFocusableInteractive: Separator is not interactive
-            <div key={item.id} role="separator" className="my-1 h-px bg-[rgb(var(--border))]" />
-          );
+      <div
+        ref={menuRef}
+        id={menuId}
+        role="menu"
+        aria-label={ariaLabel}
+        aria-activedescendant={
+          highlightedIndex >= 0 ? `${menuId}-item-${enabledItems[highlightedIndex]?.id}` : undefined
         }
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        style={getPositionStyles(position)}
+        className={cn(MENU_BASE_CLASSES, MENU_ANIMATION_CLASSES, className)}
+        data-testid={dataTestId}
+        data-entity-type={dataEntityType}
+        data-archived={dataArchived}
+        data-state={isOpen ? 'open' : 'closed'}
+      >
+        {items.map((item) => {
+          // Handle divider
+          if (item.divider) {
+            return (
+              // biome-ignore lint/a11y/useFocusableInteractive: Separator is not interactive
+              <div key={item.id} role="separator" className={MENU_DIVIDER_CLASSES} />
+            );
+          }
 
-        const enabledIndex = enabledItems.findIndex((i) => i.id === item.id);
-        const isHighlighted = enabledIndex === highlightedIndex;
+          const enabledIndex = enabledItems.findIndex((i) => i.id === item.id);
+          const isHighlighted = enabledIndex === highlightedIndex;
 
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="menuitem"
-            tabIndex={-1}
-            disabled={item.disabled}
-            onClick={() => selectItem(item)}
-            onMouseEnter={() => {
-              if (!item.disabled) {
-                setHighlightedIndex(enabledIndex);
-              }
-            }}
-            onMouseLeave={() => {
-              setHighlightedIndex(-1);
-            }}
-            className={cn(
-              // Touch target: min-height 44px for accessibility
-              'flex w-full items-center gap-2 px-3 py-3 text-sm min-h-[44px]',
-              'text-left motion-safe:transition-colors motion-safe:duration-75',
-              // Default text color
-              !item.destructive && 'text-[rgb(var(--popover-foreground))]',
-              // Destructive text color
-              item.destructive && 'text-[rgb(var(--destructive))]',
-              // Highlighted state
-              isHighlighted &&
-                !item.disabled &&
-                'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]',
-              // Highlighted destructive
-              isHighlighted &&
-                item.destructive &&
-                !item.disabled &&
-                'bg-[rgb(var(--destructive))] text-[rgb(var(--destructive-foreground))]',
-              // Disabled state
-              item.disabled && 'cursor-not-allowed text-[rgb(var(--muted-foreground))] opacity-50'
-            )}
-          >
-            {item.icon && (
-              <Icon
-                icon={item.icon}
-                size="sm"
-                className={cn(
-                  item.destructive && !isHighlighted && 'text-[rgb(var(--destructive))]'
-                )}
-              />
-            )}
-            <span className="flex-1">{item.label}</span>
-            {item.shortcut && (
-              <span
-                className={cn(
-                  'ml-auto text-xs',
-                  isHighlighted ? 'text-inherit opacity-70' : 'text-[rgb(var(--muted-foreground))]'
-                )}
-              >
-                {item.shortcut}
-              </span>
-            )}
-          </button>
-        );
-      })}
-    </div>
+          return (
+            <button
+              key={item.id}
+              id={`${menuId}-item-${item.id}`}
+              type="button"
+              role="menuitem"
+              tabIndex={-1}
+              disabled={item.disabled}
+              aria-disabled={item.disabled}
+              onClick={() => selectItem(item)}
+              onMouseEnter={() => {
+                if (!item.disabled) {
+                  setHighlightedIndex(enabledIndex);
+                }
+              }}
+              onMouseLeave={() => {
+                setHighlightedIndex(-1);
+              }}
+              className={cn(
+                MENU_ITEM_BASE_CLASSES,
+                // Default text color
+                !item.destructive && 'text-[rgb(var(--popover-foreground))]',
+                // Destructive text color
+                item.destructive && 'text-[rgb(var(--destructive))]',
+                // Highlighted state
+                isHighlighted &&
+                  !item.disabled &&
+                  'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]',
+                // Highlighted destructive
+                isHighlighted &&
+                  item.destructive &&
+                  !item.disabled &&
+                  'bg-[rgb(var(--destructive))] text-[rgb(var(--destructive-foreground))]',
+                // Disabled state
+                item.disabled && 'cursor-not-allowed text-[rgb(var(--muted-foreground))] opacity-50'
+              )}
+              data-highlighted={isHighlighted}
+              data-destructive={item.destructive}
+            >
+              {item.icon && (
+                <Icon
+                  icon={item.icon}
+                  size="sm"
+                  className={cn(
+                    item.destructive && !isHighlighted && 'text-[rgb(var(--destructive))]'
+                  )}
+                />
+              )}
+              <span className="flex-1">{item.label}</span>
+              {item.shortcut && (
+                <span
+                  className={cn(
+                    'ml-auto text-xs',
+                    isHighlighted
+                      ? 'text-inherit opacity-70'
+                      : 'text-[rgb(var(--muted-foreground))]'
+                  )}
+                >
+                  {item.shortcut}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
-}
+});
 
 Menu.displayName = 'Menu';
