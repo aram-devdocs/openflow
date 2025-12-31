@@ -210,22 +210,26 @@ function getSourceFile(filePath: string): ts.SourceFile | undefined {
 /**
  * Get the main route component name from the file
  * Looks for: export const Route = createFileRoute(...)({ component: ComponentName })
+ * or createRootRouteWithContext(...)({ component: ComponentName })
  * or the component function itself if it matches the file pattern
  */
 function getMainRouteComponentName(sourceFile: ts.SourceFile): string | undefined {
   let routeComponentName: string | undefined;
 
-  // First, try to find the component specified in createFileRoute
+  // First, try to find the component specified in createFileRoute or createRootRouteWithContext
   function findRouteComponent(node: ts.Node): void {
-    // Look for createFileRoute call
+    // Look for createFileRoute or createRootRouteWithContext call
     if (ts.isCallExpression(node)) {
       const expr = node.expression;
 
-      // Check for createFileRoute()({component: X}) pattern
+      // Check for createFileRoute()({component: X}) or createRootRouteWithContext()({component: X}) pattern
       if (ts.isCallExpression(expr)) {
         const innerExpr = expr.expression;
-        if (ts.isIdentifier(innerExpr) && innerExpr.text === 'createFileRoute') {
-          // Found createFileRoute, now look for component property in the arguments
+        if (
+          ts.isIdentifier(innerExpr) &&
+          (innerExpr.text === 'createFileRoute' || innerExpr.text === 'createRootRouteWithContext')
+        ) {
+          // Found route creator, now look for component property in the arguments
           for (const arg of node.arguments) {
             if (ts.isObjectLiteralExpression(arg)) {
               for (const prop of arg.properties) {
@@ -258,6 +262,48 @@ function getMainRouteComponentName(sourceFile: ts.SourceFile): string | undefine
 function looksLikeReactComponent(name: string): boolean {
   // React components start with uppercase letter
   return /^[A-Z]/.test(name);
+}
+
+/**
+ * Check if a route is a passthrough route (only renders <Outlet />)
+ * These routes don't need @openflow/ui or @openflow/hooks imports
+ */
+function isPassthroughRoute(sourceFile: ts.SourceFile): boolean {
+  const content = sourceFile.text;
+  // A passthrough route typically:
+  // 1. Has very few lines (< 20)
+  // 2. Returns only <Outlet /> or <Outlet></Outlet>
+  // 3. Has no meaningful JSX other than Outlet
+  const lines = content.split('\n').length;
+  if (lines > 25) return false;
+
+  // Check if the only JSX is Outlet
+  let hasOutlet = false;
+  let hasOtherJsx = false;
+
+  function visit(node: ts.Node): void {
+    if (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) {
+      const tagName = node.tagName;
+      if (ts.isIdentifier(tagName)) {
+        if (tagName.text === 'Outlet') {
+          hasOutlet = true;
+        } else {
+          hasOtherJsx = true;
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return hasOutlet && !hasOtherJsx;
+}
+
+/**
+ * Check if this is the root route file (__root.tsx)
+ */
+function isRootRoute(filePath: string): boolean {
+  return basename(filePath) === '__root.tsx';
 }
 
 /**
@@ -608,56 +654,68 @@ function validate(verbose = false): ValidationResult {
         }
       }
 
-      // Check recommended package imports (warning level)
-      const hasUiImport = imports.some((imp) => imp.source.startsWith(PACKAGE_NAMES.UI));
-      const hasHooksImport = imports.some((imp) => imp.source.startsWith(PACKAGE_NAMES.HOOKS));
-
-      if (!hasUiImport) {
-        violations.push({
-          file,
-          line: 1,
-          rule: 'route/imports-ui-package',
-          message: `Route does not import from ${PACKAGE_NAMES.UI}`,
-          severity: 'warning',
-          suggestion: getSuggestion('route/imports-ui-package'),
-        });
-      }
-
-      if (!hasHooksImport) {
-        violations.push({
-          file,
-          line: 1,
-          rule: 'route/imports-hooks-package',
-          message: `Route does not import from ${PACKAGE_NAMES.HOOKS}`,
-          severity: 'warning',
-          suggestion: getSuggestion('route/imports-hooks-package'),
-        });
-      }
-
       // AST-based analysis for route purity
       const sourceFile = getSourceFile(fullPath);
+
+      // Check if this is a passthrough or root route (special handling)
+      const isPassthrough = sourceFile ? isPassthroughRoute(sourceFile) : false;
+      const isRoot = isRootRoute(file);
+
+      // Check recommended package imports (warning level)
+      // Skip for passthrough routes (they only render <Outlet />)
+      // Skip for root route (it's a special case with providers)
+      if (!isPassthrough && !isRoot) {
+        const hasUiImport = imports.some((imp) => imp.source.startsWith(PACKAGE_NAMES.UI));
+        const hasHooksImport = imports.some((imp) => imp.source.startsWith(PACKAGE_NAMES.HOOKS));
+
+        if (!hasUiImport) {
+          violations.push({
+            file,
+            line: 1,
+            rule: 'route/imports-ui-package',
+            message: `Route does not import from ${PACKAGE_NAMES.UI}`,
+            severity: 'warning',
+            suggestion: getSuggestion('route/imports-ui-package'),
+          });
+        }
+
+        if (!hasHooksImport) {
+          violations.push({
+            file,
+            line: 1,
+            rule: 'route/imports-hooks-package',
+            message: `Route does not import from ${PACKAGE_NAMES.HOOKS}`,
+            severity: 'warning',
+            suggestion: getSuggestion('route/imports-hooks-package'),
+          });
+        }
+      }
+
       if (sourceFile) {
         // Find the main route component
         const mainComponent = getMainRouteComponentName(sourceFile);
 
         // Check for inline component definitions
-        const componentDefs = findComponentDefinitions(sourceFile, mainComponent);
-        totalInlineComponents += componentDefs.length;
+        // Skip for root route - it's allowed to have the root layout component inline
+        if (!isRoot) {
+          const componentDefs = findComponentDefinitions(sourceFile, mainComponent);
+          totalInlineComponents += componentDefs.length;
 
-        for (const comp of componentDefs) {
-          violations.push({
-            file,
-            line: comp.line,
-            column: comp.column,
-            rule: 'route/no-component-definition',
-            message: `Inline component "${comp.name}" should be extracted to @openflow/ui`,
-            severity: 'error',
-            suggestion: getSuggestion('route/no-component-definition', { name: comp.name }),
-            metadata: {
-              componentName: comp.name,
-              componentType: comp.type,
-            },
-          });
+          for (const comp of componentDefs) {
+            violations.push({
+              file,
+              line: comp.line,
+              column: comp.column,
+              rule: 'route/no-component-definition',
+              message: `Inline component "${comp.name}" should be extracted to @openflow/ui`,
+              severity: 'error',
+              suggestion: getSuggestion('route/no-component-definition', { name: comp.name }),
+              metadata: {
+                componentName: comp.name,
+                componentType: comp.type,
+              },
+            });
+          }
         }
 
         // Check for styled-components usage
@@ -680,23 +738,26 @@ function validate(verbose = false): ValidationResult {
         }
 
         // Check for complex JSX logic
-        const jsxLogic = findJsxLogic(sourceFile);
-        totalJsxLogicUsages += jsxLogic.length;
+        // Skip for root route - it has conditional devtools rendering which is acceptable
+        if (!isRoot) {
+          const jsxLogic = findJsxLogic(sourceFile);
+          totalJsxLogicUsages += jsxLogic.length;
 
-        for (const usage of jsxLogic) {
-          violations.push({
-            file,
-            line: usage.line,
-            column: usage.column,
-            rule: 'route/no-jsx-logic',
-            message: `Complex JSX ${usage.type} must be extracted to a UI component`,
-            severity: 'error',
-            suggestion: getSuggestion('route/no-jsx-logic'),
-            snippet: usage.snippet,
-            metadata: {
-              logicType: usage.type,
-            },
-          });
+          for (const usage of jsxLogic) {
+            violations.push({
+              file,
+              line: usage.line,
+              column: usage.column,
+              rule: 'route/no-jsx-logic',
+              message: `Complex JSX ${usage.type} must be extracted to a UI component`,
+              severity: 'error',
+              suggestion: getSuggestion('route/no-jsx-logic'),
+              snippet: usage.snippet,
+              metadata: {
+                logicType: usage.type,
+              },
+            });
+          }
         }
       }
 

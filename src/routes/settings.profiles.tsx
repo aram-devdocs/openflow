@@ -16,8 +16,7 @@ import { useProfilesSession } from '@openflow/hooks';
 import {
   ProfileFormDialog,
   ProfilesConfirmDialog,
-  ProfilesEmptyState,
-  ProfilesList,
+  ProfilesContent,
   ProfilesLoadingSkeleton,
   ProfilesPageLayout,
 } from '@openflow/ui';
@@ -47,17 +46,13 @@ function ExecutorProfilesPage() {
       description="Executor profiles define which AI CLI tools to use for tasks."
       onCreateClick={session.handleOpenCreateDialog}
     >
-      {/* Empty state or profiles list */}
-      {session.profiles.length === 0 ? (
-        <ProfilesEmptyState onCreateClick={session.handleOpenCreateDialog} />
-      ) : (
-        <ProfilesList
-          profiles={session.profiles}
-          onEdit={session.handleOpenEditDialog}
-          onDelete={session.handleDelete}
-          onSetDefault={session.handleSetDefault}
-        />
-      )}
+      <ProfilesContent
+        profiles={session.profiles}
+        onCreateClick={session.handleOpenCreateDialog}
+        onEdit={session.handleOpenEditDialog}
+        onDelete={session.handleDelete}
+        onSetDefault={session.handleSetDefault}
+      />
 
       {/* Create/Edit Dialog */}
       <ProfileFormDialog

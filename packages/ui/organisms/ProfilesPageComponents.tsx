@@ -365,3 +365,45 @@ export function ProfileFormDialog({
 export function ProfilesConfirmDialog(props: ProfilesConfirmDialogProps) {
   return <ConfirmDialog {...props} />;
 }
+
+// ============================================================================
+// Profiles Content (handles empty vs list state)
+// ============================================================================
+
+/** Props for ProfilesContent component */
+export interface ProfilesContentProps {
+  /** Profiles to display */
+  profiles: ExecutorProfile[];
+  /** Callback for create button click (in empty state) */
+  onCreateClick: () => void;
+  /** Callback when edit is clicked */
+  onEdit: (profile: ExecutorProfile) => void;
+  /** Callback when delete is clicked */
+  onDelete: (profile: ExecutorProfile) => void;
+  /** Callback when set default is clicked */
+  onSetDefault: (profile: ExecutorProfile) => void;
+}
+
+/**
+ * ProfilesContent - Handles empty vs list state switching
+ */
+export function ProfilesContent({
+  profiles,
+  onCreateClick,
+  onEdit,
+  onDelete,
+  onSetDefault,
+}: ProfilesContentProps) {
+  if (profiles.length === 0) {
+    return <ProfilesEmptyState onCreateClick={onCreateClick} />;
+  }
+
+  return (
+    <ProfilesList
+      profiles={profiles}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onSetDefault={onSetDefault}
+    />
+  );
+}

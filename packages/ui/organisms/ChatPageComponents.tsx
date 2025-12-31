@@ -481,3 +481,66 @@ export function ChatPermissionDialog({ request, onApprove, onDeny }: ChatPermiss
 }
 
 ChatPermissionDialog.displayName = 'ChatPermissionDialog';
+
+// ============================================================================
+// Chat Content (handles empty vs messages state)
+// ============================================================================
+
+export interface ChatContentProps {
+  /** Whether there is content to display */
+  hasContent: boolean;
+  /** Whether processing is in progress */
+  isProcessing: boolean;
+  /** Array of persisted messages */
+  messages: ChatMessageData[];
+  /** Display items for streaming response */
+  displayItems: DisplayItem[];
+  /** Active process ID (for streaming) */
+  activeProcessId: string | null;
+  /** Whether Claude is currently responding */
+  isRunning: boolean;
+  /** Whether to show raw output */
+  showRawOutput: boolean;
+  /** Raw output lines */
+  rawOutput: string[];
+  /** Ref for scroll anchor */
+  scrollRef?: React.RefObject<HTMLDivElement>;
+  /** Additional CSS classes */
+  className?: string;
+}
+
+/**
+ * ChatContent handles the empty vs content state switching.
+ * Shows empty state when no content, otherwise shows message list.
+ */
+export function ChatContent({
+  hasContent,
+  isProcessing,
+  messages,
+  displayItems,
+  activeProcessId,
+  isRunning,
+  showRawOutput,
+  rawOutput,
+  scrollRef,
+  className,
+}: ChatContentProps) {
+  if (!hasContent && !isProcessing) {
+    return <ChatEmptyState className={className} />;
+  }
+
+  return (
+    <ChatMessageList
+      messages={messages}
+      displayItems={displayItems}
+      activeProcessId={activeProcessId}
+      isRunning={isRunning}
+      showRawOutput={showRawOutput}
+      rawOutput={rawOutput}
+      scrollRef={scrollRef}
+      className={className}
+    />
+  );
+}
+
+ChatContent.displayName = 'ChatContent';

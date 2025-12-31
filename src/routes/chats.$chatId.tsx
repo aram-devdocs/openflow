@@ -10,11 +10,10 @@
 
 import { useChatSession, useKeyboardShortcuts } from '@openflow/hooks';
 import {
-  ChatEmptyState,
+  ChatContent,
   ChatHeader,
   ChatInputArea,
   ChatLoadingSkeleton,
-  ChatMessageList,
   ChatNotFound,
   ChatPageLayout,
   ChatPermissionDialog,
@@ -79,19 +78,17 @@ function StandaloneChatPage() {
         />
       }
     >
-      {!session.hasContent && !session.isProcessing ? (
-        <ChatEmptyState />
-      ) : (
-        <ChatMessageList
-          messages={session.messages}
-          displayItems={session.displayItems}
-          activeProcessId={session.activeProcessId}
-          isRunning={session.isRunning}
-          showRawOutput={session.showRawOutput}
-          rawOutput={session.rawOutput}
-          scrollRef={session.messagesEndRef}
-        />
-      )}
+      <ChatContent
+        hasContent={session.hasContent}
+        isProcessing={session.isProcessing}
+        messages={session.messages}
+        displayItems={session.displayItems}
+        activeProcessId={session.activeProcessId}
+        isRunning={session.isRunning}
+        showRawOutput={session.showRawOutput}
+        rawOutput={session.rawOutput}
+        scrollRef={session.messagesEndRef}
+      />
     </ChatPageLayout>
   );
 }

@@ -86,6 +86,8 @@ export {
   type ChatInputAreaProps,
   ChatPermissionDialog,
   type ChatPermissionDialogProps,
+  ChatContent,
+  type ChatContentProps,
 } from './ChatPageComponents';
 export {
   TaskNotFound,
@@ -171,6 +173,8 @@ export {
   type ProfileFormDialogProps,
   ProfilesConfirmDialog,
   type ProfilesConfirmDialogProps,
+  ProfilesContent,
+  type ProfilesContentProps,
 } from './ProfilesPageComponents';
 export {
   type ProjectSettingsFormData,
@@ -237,3 +241,17 @@ export {
   ProjectsListConfirmDialog,
   type ProjectsListConfirmDialogProps,
 } from './ProjectsListPageComponents';
+export {
+  type StatusFilter as TasksStatusFilter,
+  type StatusFilterOption as TasksStatusFilterOption,
+  TasksFilterBar,
+  type TasksFilterBarProps,
+  TasksListLoading,
+  type TasksListLoadingProps,
+  TasksListEmpty,
+  type TasksListEmptyProps,
+  TasksListContent,
+  type TasksListContentProps,
+  TasksListLayout,
+  type TasksListLayoutProps,
+} from './TasksListPageComponents';
