@@ -31,7 +31,7 @@ import {
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
 
-export const Route = createFileRoute('/chats/')({
+export const Route = createFileRoute('/_app/chats/')({
   component: ChatsIndexPage,
 });
 
