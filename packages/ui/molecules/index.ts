@@ -143,8 +143,31 @@ export type { SkeletonListProps } from './SkeletonList';
 export { SkeletonTaskCard } from './SkeletonTaskCard';
 export type { SkeletonTaskCardProps } from './SkeletonTaskCard';
 
-export { SkeletonChat } from './SkeletonChat';
-export type { SkeletonChatProps } from './SkeletonChat';
+export {
+  SkeletonChat,
+  getBaseSize as getSkeletonChatBaseSize,
+  getResponsiveSizeClasses as getSkeletonChatResponsiveSizeClasses,
+  getAvatarDimensions as getSkeletonChatAvatarDimensions,
+  DEFAULT_MESSAGE_COUNT,
+  SKELETON_CHAT_BASE_CLASSES,
+  SKELETON_CHAT_PADDING_CLASSES,
+  SKELETON_CHAT_GAP_CLASSES,
+  SKELETON_BUBBLE_GAP_CLASSES,
+  SKELETON_AVATAR_DIMENSIONS,
+  SKELETON_BUBBLE_CLASSES,
+  SKELETON_BUBBLE_SPACING_CLASSES,
+  SKELETON_TEXT_HEIGHT_CLASSES,
+  SKELETON_USER_PRIMARY_WIDTH_CLASSES,
+  SKELETON_USER_SECONDARY_WIDTH_CLASSES,
+  SKELETON_ASSISTANT_PRIMARY_WIDTH_CLASSES,
+  SKELETON_ASSISTANT_SECONDARY_WIDTH_CLASSES,
+  SKELETON_ASSISTANT_TERTIARY_WIDTH_CLASSES,
+} from './SkeletonChat';
+export type {
+  SkeletonChatProps,
+  SkeletonChatSize,
+  SkeletonChatBreakpoint,
+} from './SkeletonChat';
 
 export { SkeletonStats } from './SkeletonStats';
 export type { SkeletonStatsProps } from './SkeletonStats';
