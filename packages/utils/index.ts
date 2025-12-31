@@ -7,6 +7,18 @@
 export { cn } from './cn';
 
 export {
+  createLogger,
+  setLoggerConfig,
+  getLoggerConfig,
+  resetLoggerConfig,
+  parseLogLevel,
+  LogLevel,
+  type Logger,
+  type LoggerConfig,
+  type LogEntry,
+} from './logger';
+
+export {
   formatDate,
   formatRelativeTime,
   parseDate,
