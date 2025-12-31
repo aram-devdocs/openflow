@@ -192,8 +192,31 @@ export type {
 export { SkeletonStats } from './SkeletonStats';
 export type { SkeletonStatsProps } from './SkeletonStats';
 
-export { SkeletonSettings } from './SkeletonSettings';
-export type { SkeletonSettingsProps } from './SkeletonSettings';
+export {
+  SkeletonSettings,
+  getBaseSize as getSkeletonSettingsBaseSize,
+  getResponsiveSizeClasses as getSkeletonSettingsResponsiveSizeClasses,
+  getIconDimensions as getSkeletonSettingsIconDimensions,
+  DEFAULT_SECTION_COUNT,
+  DEFAULT_FIELDS_PER_SECTION,
+  SKELETON_SETTINGS_BASE_CLASSES,
+  SKELETON_SETTINGS_GAP_CLASSES,
+  SKELETON_SECTION_CARD_CLASSES,
+  SKELETON_SECTION_HEADER_PADDING_CLASSES,
+  SKELETON_SECTION_HEADER_ICON_CLASSES,
+  SKELETON_SECTION_HEADER_TITLE_CLASSES,
+  SKELETON_SECTION_HEADER_DESCRIPTION_CLASSES,
+  SKELETON_SECTION_CONTENT_PADDING_CLASSES,
+  SKELETON_SECTION_CONTENT_GAP_CLASSES,
+  SKELETON_FIELD_LABEL_CLASSES,
+  SKELETON_FIELD_INPUT_CLASSES,
+  SKELETON_FIELD_GAP_CLASSES,
+} from './SkeletonSettings';
+export type {
+  SkeletonSettingsProps,
+  SkeletonSettingsSize,
+  SkeletonSettingsBreakpoint,
+} from './SkeletonSettings';
 
 export {
   SkeletonProjectCard,
