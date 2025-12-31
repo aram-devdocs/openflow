@@ -11,8 +11,12 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
 
-export { Input } from './Input';
-export type { InputProps } from './Input';
+export {
+  Input,
+  getSizeClasses as getInputSizeClasses,
+  getBaseSize as getInputBaseSize,
+} from './Input';
+export type { InputProps, InputSize, InputVariant } from './Input';
 
 export { Textarea } from './Textarea';
 export type { TextareaProps, TextareaResize } from './Textarea';
