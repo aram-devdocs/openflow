@@ -30,12 +30,28 @@ export type {
 export { Dropdown } from './Dropdown';
 export type { DropdownProps, DropdownOption } from './Dropdown';
 
-export { Dialog, DialogHeader, DialogContent, DialogFooter } from './Dialog';
+export {
+  Dialog,
+  DialogHeader,
+  DialogContent,
+  DialogFooter,
+  getResponsiveSizeClasses as getDialogResponsiveSizeClasses,
+  getDialogPaddingClasses,
+  DEFAULT_CLOSE_LABEL,
+  DIALOG_SIZE_CLASSES,
+  DIALOG_PANEL_CLASSES,
+  DIALOG_BACKDROP_CLASSES,
+  DIALOG_HEADER_CLASSES,
+  DIALOG_CONTENT_CLASSES,
+  DIALOG_FOOTER_CLASSES,
+} from './Dialog';
 export type {
   DialogProps,
   DialogHeaderProps,
   DialogContentProps,
   DialogFooterProps,
+  DialogSize,
+  DialogPadding,
 } from './Dialog';
 
 export { Tabs, TabPanel } from './Tabs';
