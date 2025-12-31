@@ -24,6 +24,8 @@
     "paths": {
       "@openflow/generated": ["packages/generated/index.ts"],
       "@openflow/generated/*": ["packages/generated/*"],
+      "@openflow/primitives": ["packages/primitives/index.ts"],
+      "@openflow/primitives/*": ["packages/primitives/*"],
       "@openflow/utils": ["packages/utils/index.ts"],
       "@openflow/utils/*": ["packages/utils/*"],
       "@openflow/validation": ["packages/validation/index.ts"],
