@@ -60,7 +60,7 @@ export type {
   // VisuallyHiddenProps is exported from ./VisuallyHidden component
   // Landmark primitives
   // SectionProps is exported from ./Section component
-  ArticleProps,
+  // ArticleProps is exported from ./Article component
   NavProps,
   MainProps,
   AsideProps,
@@ -118,7 +118,7 @@ export {
 
 // Landmark primitives
 export { Section, type SectionProps, type SectionSpacingProps } from './Section';
-// export { Article } from './Article';
+export { Article, type ArticleProps, type ArticleSpacingProps } from './Article';
 // export { Nav } from './Nav';
 // export { Main } from './Main';
 // export { Aside } from './Aside';
