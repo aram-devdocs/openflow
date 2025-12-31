@@ -16,6 +16,7 @@ import { useConfirmDialog } from './useConfirmDialog';
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useCreateMessage, useMessages } from './useMessages';
+import { useKillProcess } from './useProcesses';
 import { useArchiveTask, useDeleteTask, useTask, useUpdateTask } from './useTasks';
 
 // ============================================================================
@@ -246,6 +247,7 @@ export function useTaskSession({
   const openArtifact = useOpenArtifact();
   const archiveTask = useArchiveTask();
   const deleteTask = useDeleteTask();
+  const killProcess = useKillProcess();
 
   // Claude events for streaming output
   const {
@@ -518,9 +520,18 @@ export function useTaskSession({
   );
 
   const handleStopProcess = useCallback(() => {
-    // TODO: Implement process stopping
-    console.log('Stop process clicked');
-  }, []);
+    if (!activeProcessId) return;
+    killProcess.mutate(activeProcessId, {
+      onSuccess: () => {
+        setActiveProcessId(null);
+        onSuccess?.('Process stopped', 'The executor process has been stopped');
+      },
+      onError: (error) => {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        onError?.('Failed to stop process', message);
+      },
+    });
+  }, [activeProcessId, killProcess, onSuccess, onError]);
 
   // =========================================================================
   // Callbacks - Navigation
