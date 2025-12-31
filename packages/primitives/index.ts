@@ -50,7 +50,7 @@ export type {
   FontWeight,
   HeadingLevel,
   // List primitives
-  ListProps,
+  // ListProps is exported from ./List component
   ListItemProps,
   // Interactive primitives
   LinkProps,
@@ -93,7 +93,7 @@ export { Heading, type HeadingProps } from './Heading';
 export { Paragraph, type ParagraphProps } from './Paragraph';
 
 // List primitives
-// export { List } from './List';
+export { List, type ListProps, type ListStyleType } from './List';
 // export { ListItem } from './ListItem';
 
 // Interactive primitives
