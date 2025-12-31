@@ -21,7 +21,7 @@ import {
 } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/settings/projects')({
+export const Route = createFileRoute('/_app/settings/projects')({
   component: ProjectSettingsPage,
 });
 

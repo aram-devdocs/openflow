@@ -14,7 +14,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { HardDrive, Moon, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-export const Route = createFileRoute('/settings/')({
+export const Route = createFileRoute('/_app/settings/')({
   component: GeneralSettingsPage,
 });
 

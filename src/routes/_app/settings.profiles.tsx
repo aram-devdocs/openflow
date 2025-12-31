@@ -22,7 +22,7 @@ import {
 } from '@openflow/ui';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/settings/profiles')({
+export const Route = createFileRoute('/_app/settings/profiles')({
   component: ExecutorProfilesPage,
 });
 
