@@ -49,8 +49,12 @@ export type { ToastProps, ToastVariant, ToastAction } from './Toast';
 export { ToastProvider, useToast } from './ToastProvider';
 export type { ToastProviderProps, ToastOptions, ToastData } from './ToastProvider';
 
-export { ThemeToggle } from './ThemeToggle';
-export type { ThemeToggleProps, Theme } from './ThemeToggle';
+export {
+  ThemeToggle,
+  getSizeClasses as getThemeToggleSizeClasses,
+  THEME_TOGGLE_BASE_CLASSES,
+} from './ThemeToggle';
+export type { ThemeToggleProps, Theme, ThemeToggleSize } from './ThemeToggle';
 
 export { ThemeToggleCompact } from './ThemeToggleCompact';
 export type { ThemeToggleCompactProps, ResolvedTheme } from './ThemeToggleCompact';
