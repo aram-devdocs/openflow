@@ -8,8 +8,13 @@
 export { Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 
-export { Spinner } from './Spinner';
-export type { SpinnerProps } from './Spinner';
+export {
+  Spinner,
+  getResponsiveSizeClasses as getSpinnerSizeClasses,
+  SPINNER_BASE_CLASSES,
+  DEFAULT_SPINNER_LABEL,
+} from './Spinner';
+export type { SpinnerProps, SpinnerSize } from './Spinner';
 
 export {
   Input,
