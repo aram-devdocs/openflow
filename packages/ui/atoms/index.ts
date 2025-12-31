@@ -58,8 +58,20 @@ export {
 } from './Toast';
 export type { ToastProps, ToastVariant, ToastAction, ToastSize } from './Toast';
 
-export { ToastProvider, useToast } from './ToastProvider';
-export type { ToastProviderProps, ToastOptions, ToastData } from './ToastProvider';
+export {
+  ToastProvider,
+  useToast,
+  getPositionClasses as getToastPositionClasses,
+  resetToastIdCounter,
+  POSITION_CLASSES as TOAST_POSITION_CLASSES,
+  TOAST_CONTAINER_BASE_CLASSES,
+  DEFAULT_DURATION as DEFAULT_TOAST_DURATION,
+  DEFAULT_ERROR_DURATION as DEFAULT_TOAST_ERROR_DURATION,
+  DEFAULT_MAX_TOASTS,
+  DEFAULT_POSITION as DEFAULT_TOAST_POSITION,
+  DEFAULT_REGION_LABEL as DEFAULT_TOAST_REGION_LABEL,
+} from './ToastProvider';
+export type { ToastProviderProps, ToastOptions, ToastData, ToastPosition } from './ToastProvider';
 
 export {
   ThemeToggle,
