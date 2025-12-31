@@ -1,0 +1,20 @@
+{
+  "name": "@openflow/mcp-server",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "import": "./index.ts"
+    }
+  },
+  "bin": {
+    "openflow-mcp": "./index.ts"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.1",
+    "@types/node": "^22.0.0"
+  }
+}
