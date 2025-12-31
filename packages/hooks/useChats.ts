@@ -261,3 +261,29 @@ export function useUnarchiveChat(): UseMutationResult<Chat, Error, string> {
     },
   });
 }
+
+/**
+ * Toggle the completion status of a workflow step (chat).
+ * If the step is incomplete, it will be marked as complete.
+ * If the step is complete, it will be marked as incomplete.
+ *
+ * @returns Mutation for toggling step completion
+ */
+export function useToggleStepComplete(): UseMutationResult<Chat, Error, string> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (chatId: string) => chatQueries.toggleStepComplete(chatId),
+    onSuccess: (data) => {
+      // Invalidate the chat detail cache
+      queryClient.invalidateQueries({ queryKey: chatKeys.detail(data.id) });
+      // Invalidate task-related caches to update the steps panel
+      if (data.taskId) {
+        queryClient.invalidateQueries({ queryKey: chatKeys.list(data.taskId) });
+        queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.taskId) });
+      }
+      // Invalidate project-level caches
+      queryClient.invalidateQueries({ queryKey: chatKeys.byProject(data.projectId) });
+    },
+  });
+}
