@@ -5,8 +5,16 @@
  * Examples: FormField, Card, Dropdown, Dialog, Tabs, Tooltip, Menu
  */
 
-export { FormField } from './FormField';
-export type { FormFieldProps } from './FormField';
+export {
+  FormField,
+  getBaseSpacing as getFormFieldBaseSpacing,
+  getResponsiveSpacingClasses as getFormFieldResponsiveSpacingClasses,
+  FORM_FIELD_BASE_CLASSES,
+  FORM_FIELD_SPACING_CLASSES,
+  HELPER_TEXT_CLASSES,
+  ERROR_TEXT_CLASSES,
+} from './FormField';
+export type { FormFieldProps, FormFieldSpacing } from './FormField';
 
 export {
   Card,
