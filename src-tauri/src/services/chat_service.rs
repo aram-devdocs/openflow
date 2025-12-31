@@ -317,6 +317,54 @@ impl ChatService {
 
         Ok(())
     }
+
+    /// Toggle the completion status of a workflow step (chat).
+    ///
+    /// If `setup_completed_at` is None, sets it to the current timestamp.
+    /// If `setup_completed_at` is Some, clears it to None.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Chat ID to toggle
+    ///
+    /// # Returns
+    /// The updated Chat with toggled completion status.
+    pub async fn toggle_step_complete(pool: &SqlitePool, id: &str) -> ServiceResult<Chat> {
+        // Get the current chat to check completion status
+        let existing = Self::get(pool, id).await?.chat;
+
+        // Toggle: if completed, clear it; if not completed, set to now
+        if existing.setup_completed_at.is_some() {
+            // Clear completion
+            sqlx::query(
+                r#"
+                UPDATE chats
+                SET setup_completed_at = NULL,
+                    updated_at = datetime('now', 'subsec')
+                WHERE id = ?
+                "#,
+            )
+            .bind(id)
+            .execute(pool)
+            .await?;
+        } else {
+            // Mark as completed
+            sqlx::query(
+                r#"
+                UPDATE chats
+                SET setup_completed_at = datetime('now', 'subsec'),
+                    updated_at = datetime('now', 'subsec')
+                WHERE id = ?
+                "#,
+            )
+            .bind(id)
+            .execute(pool)
+            .await?;
+        }
+
+        let chat_with_messages = Self::get(pool, id).await?;
+        Ok(chat_with_messages.chat)
+    }
 }
 
 #[cfg(test)]
@@ -1063,5 +1111,151 @@ mod tests {
         assert_eq!(chats.len(), 2);
         assert_eq!(chats[0].title, Some("No Index".to_string()));
         assert_eq!(chats[1].title, Some("Index 1".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_toggle_step_complete_mark_complete() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+        let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
+
+        // Create a chat without completion
+        let request = CreateChatRequest {
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
+            title: Some("Step to Complete".to_string()),
+            chat_role: None,
+            executor_profile_id: None,
+            base_branch: None,
+            initial_prompt: None,
+            hidden_prompt: None,
+            is_plan_container: None,
+            main_chat_id: None,
+            workflow_step_index: Some(1),
+        };
+        let chat = ChatService::create(&test_db.pool, request)
+            .await
+            .expect("Failed to create chat");
+
+        // Verify not completed initially
+        assert!(chat.setup_completed_at.is_none());
+
+        // Toggle to complete
+        let completed = ChatService::toggle_step_complete(&test_db.pool, &chat.id)
+            .await
+            .expect("Failed to toggle step complete");
+
+        assert!(completed.setup_completed_at.is_some());
+        assert_eq!(completed.id, chat.id);
+    }
+
+    #[tokio::test]
+    async fn test_toggle_step_complete_mark_incomplete() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+        let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
+
+        // Create a chat and mark it complete via update
+        let request = CreateChatRequest {
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
+            title: Some("Completed Step".to_string()),
+            chat_role: None,
+            executor_profile_id: None,
+            base_branch: None,
+            initial_prompt: None,
+            hidden_prompt: None,
+            is_plan_container: None,
+            main_chat_id: None,
+            workflow_step_index: Some(1),
+        };
+        let chat = ChatService::create(&test_db.pool, request)
+            .await
+            .expect("Failed to create chat");
+
+        // Mark as complete first
+        let update_request = UpdateChatRequest {
+            title: None,
+            executor_profile_id: None,
+            branch: None,
+            worktree_path: None,
+            worktree_deleted: None,
+            setup_completed_at: Some("2024-01-15T10:00:00Z".to_string()),
+            initial_prompt: None,
+            hidden_prompt: None,
+            claude_session_id: None,
+        };
+        let completed = ChatService::update(&test_db.pool, &chat.id, update_request)
+            .await
+            .expect("Failed to update chat");
+        assert!(completed.setup_completed_at.is_some());
+
+        // Toggle to incomplete
+        let toggled = ChatService::toggle_step_complete(&test_db.pool, &chat.id)
+            .await
+            .expect("Failed to toggle step complete");
+
+        assert!(toggled.setup_completed_at.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_toggle_step_complete_double_toggle() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+        let task_id = create_test_task(&test_db.pool, &project_id, "Test Task").await;
+
+        let request = CreateChatRequest {
+            task_id: Some(task_id.clone()),
+            project_id: project_id.clone(),
+            title: Some("Double Toggle Step".to_string()),
+            chat_role: None,
+            executor_profile_id: None,
+            base_branch: None,
+            initial_prompt: None,
+            hidden_prompt: None,
+            is_plan_container: None,
+            main_chat_id: None,
+            workflow_step_index: Some(1),
+        };
+        let chat = ChatService::create(&test_db.pool, request)
+            .await
+            .expect("Failed to create chat");
+
+        // Start incomplete
+        assert!(chat.setup_completed_at.is_none());
+
+        // Toggle to complete
+        let toggled1 = ChatService::toggle_step_complete(&test_db.pool, &chat.id)
+            .await
+            .expect("Failed to toggle step complete");
+        assert!(toggled1.setup_completed_at.is_some());
+
+        // Toggle back to incomplete
+        let toggled2 = ChatService::toggle_step_complete(&test_db.pool, &chat.id)
+            .await
+            .expect("Failed to toggle step complete");
+        assert!(toggled2.setup_completed_at.is_none());
+
+        // Toggle to complete again
+        let toggled3 = ChatService::toggle_step_complete(&test_db.pool, &chat.id)
+            .await
+            .expect("Failed to toggle step complete");
+        assert!(toggled3.setup_completed_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_toggle_step_complete_not_found() {
+        let test_db = setup_test_db().await;
+
+        let result = ChatService::toggle_step_complete(&test_db.pool, "non-existent-id").await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::NotFound { entity, id } => {
+                assert_eq!(entity, "Chat");
+                assert_eq!(id, "non-existent-id");
+            }
+            other => panic!("Expected NotFound error, got: {:?}", other),
+        }
     }
 }
