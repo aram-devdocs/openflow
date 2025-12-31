@@ -8,12 +8,23 @@
 export { FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
 
-export { Card, CardHeader, CardContent, CardFooter } from './Card';
+export {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+  getResponsivePaddingClasses,
+  CARD_BASE_CLASSES,
+  CARD_CLICKABLE_CLASSES,
+  CARD_SELECTED_CLASSES,
+  DEFAULT_SELECTED_LABEL,
+} from './Card';
 export type {
   CardProps,
   CardHeaderProps,
   CardContentProps,
   CardFooterProps,
+  CardPadding,
 } from './Card';
 
 export { Dropdown } from './Dropdown';
