@@ -10,12 +10,16 @@ import { ChatRole, MessageRole, WorkflowStepStatus } from '@openflow/generated';
 import type { ArtifactFile } from '@openflow/queries';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useArtifactContent, useArtifacts, useOpenArtifact } from './useArtifacts';
-import { useChat, useCreateChat } from './useChats';
+import { useChat, useCreateChat, useToggleStepComplete } from './useChats';
 import { useClaudeEvents } from './useClaudeEvents';
 import { useConfirmDialog } from './useConfirmDialog';
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
+import { useTaskCommits, useTaskDiff } from './useGit';
+import { useCreatePullRequest, useGhAuthStatus, useGhCliInstalled } from './useGitHub';
+import { useGlobalShortcuts } from './useGlobalShortcuts';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useCreateMessage, useMessages } from './useMessages';
+import { useKillProcess } from './useProcesses';
 import { useArchiveTask, useDeleteTask, useTask, useUpdateTask } from './useTasks';
 
 // ============================================================================
@@ -41,6 +45,14 @@ export interface AddStepDialogState {
   isOpen: boolean;
   title: string;
   description: string;
+}
+
+export interface CreatePRDialogState {
+  isOpen: boolean;
+  title: string;
+  body: string;
+  base: string;
+  error: string | null;
 }
 
 export interface TaskSessionState {
@@ -79,7 +91,13 @@ export interface TaskSessionState {
 
   // Dialog state
   addStepDialog: AddStepDialogState;
+  createPRDialog: CreatePRDialogState;
   confirmDialogProps: ReturnType<typeof useConfirmDialog>['dialogProps'];
+
+  // GitHub CLI state
+  ghCliInstalled: boolean;
+  ghAuthenticated: boolean;
+  isCreatingPR: boolean;
 
   // Executor profiles
   executorProfiles: ReturnType<typeof useExecutorProfiles>['data'];
@@ -100,6 +118,9 @@ export interface TaskSessionState {
   handleSelectStep: (stepIndex: number) => void;
   handleToggleStep: (stepIndex: number, completed: boolean) => void;
   handleStartStep: (stepIndex: number) => Promise<void>;
+  handleCompleteStep: (stepIndex: number) => void;
+  handleSkipStep: (stepIndex: number) => void;
+  handleViewStepChat: (chatId: string) => void;
 
   // Actions - Title editing
   handleTitleEditToggle: () => void;
@@ -113,6 +134,13 @@ export interface TaskSessionState {
   // Actions - Navigation
   handleBack: () => void;
   handleCreatePR: () => void;
+
+  // Actions - Create PR Dialog
+  handleClosePRDialog: () => void;
+  handlePRTitleChange: (value: string) => void;
+  handlePRBodyChange: (value: string) => void;
+  handlePRBaseChange: (value: string) => void;
+  handleSubmitPR: (data: { title: string; body: string; base?: string; draft?: boolean }) => void;
 
   // Actions - More menu
   handleMoreActions: (event?: React.MouseEvent) => void;
@@ -212,6 +240,15 @@ export function useTaskSession({
     description: '',
   });
 
+  // Create PR dialog state
+  const [createPRDialog, setCreatePRDialog] = useState<CreatePRDialogState>({
+    isOpen: false,
+    title: '',
+    body: '',
+    base: '',
+    error: null,
+  });
+
   // Artifact preview state
   const [previewArtifact, setPreviewArtifact] = useState<ArtifactFile | null>(null);
 
@@ -246,6 +283,14 @@ export function useTaskSession({
   const openArtifact = useOpenArtifact();
   const archiveTask = useArchiveTask();
   const deleteTask = useDeleteTask();
+  const killProcess = useKillProcess();
+  const toggleStepComplete = useToggleStepComplete();
+  const createPullRequest = useCreatePullRequest();
+
+  // GitHub CLI status
+  const { data: ghCliInstalled = false } = useGhCliInstalled();
+  const { isError: ghAuthError } = useGhAuthStatus();
+  const ghAuthenticated = ghCliInstalled && !ghAuthError;
 
   // Claude events for streaming output
   const {
@@ -272,7 +317,7 @@ export function useTaskSession({
   const { data: messages = [] } = useMessages(activeChatId);
 
   // =========================================================================
-  // Keyboard Shortcuts
+  // Keyboard Shortcuts (local to this page)
   // =========================================================================
   useKeyboardShortcuts([
     { key: '1', meta: true, action: () => setActiveTab('steps') },
@@ -280,6 +325,19 @@ export function useTaskSession({
     { key: '3', meta: true, action: () => setActiveTab('changes') },
     { key: '4', meta: true, action: () => setActiveTab('commits') },
   ]);
+
+  // Global shortcuts (Cmd+,) - just settings for task page
+  const { registerSettingsHandler } = useGlobalShortcuts();
+
+  useEffect(() => {
+    const unregisterSettings = registerSettingsHandler(() => {
+      onNavigate?.('/settings');
+    });
+
+    return () => {
+      unregisterSettings();
+    };
+  }, [registerSettingsHandler, onNavigate]);
 
   // =========================================================================
   // Derived State
@@ -300,9 +358,15 @@ export function useTaskSession({
     }));
   }, [chats, activeChat?.id, isRunning]);
 
-  // Mock data for changes and commits (would come from git queries in real app)
-  const diffs: FileDiff[] = useMemo(() => [], []);
-  const commits: Commit[] = useMemo(() => [], []);
+  // Fetch git diffs only when Changes tab is active
+  const { data: diffs = [] } = useTaskDiff(taskId, {
+    enabled: activeTab === 'changes',
+  });
+
+  // Fetch git commits only when Commits tab is active
+  const { data: commits = [] } = useTaskCommits(taskId, {
+    enabled: activeTab === 'commits',
+  });
 
   // Determine if we have a branch for PR creation
   const hasBranch = chats.some((c) => c.branch);
@@ -400,13 +464,83 @@ export function useTaskSession({
     [chats, runExecutor, onSuccess, onError]
   );
 
-  const handleToggleStep = useCallback((_stepIndex: number, _completed: boolean) => {
-    // TODO: Implement step completion toggle
-  }, []);
+  const handleToggleStep = useCallback(
+    (stepIndex: number, _completed: boolean) => {
+      const chat = chats[stepIndex];
+      if (!chat) return;
+
+      toggleStepComplete.mutate(chat.id, {
+        onSuccess: (updatedChat) => {
+          const action = updatedChat.setupCompletedAt ? 'completed' : 'reopened';
+          onSuccess?.('Step updated', `"${chat.title}" has been ${action}`);
+        },
+        onError: (error) => {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          onError?.('Failed to update step', message);
+        },
+      });
+    },
+    [chats, toggleStepComplete, onSuccess, onError]
+  );
 
   const handleSelectStep = useCallback((stepIndex: number) => {
     setActiveStepIndex(stepIndex);
   }, []);
+
+  const handleCompleteStep = useCallback(
+    (stepIndex: number) => {
+      const chat = chats[stepIndex];
+      if (!chat) return;
+
+      // If already completed, do nothing
+      if (chat.setupCompletedAt) {
+        onSuccess?.('Step already completed', `"${chat.title}" is already marked as complete`);
+        return;
+      }
+
+      toggleStepComplete.mutate(chat.id, {
+        onSuccess: () => {
+          onSuccess?.('Step completed', `"${chat.title}" has been marked as complete`);
+        },
+        onError: (error) => {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          onError?.('Failed to complete step', message);
+        },
+      });
+    },
+    [chats, toggleStepComplete, onSuccess, onError]
+  );
+
+  const handleSkipStep = useCallback(
+    (stepIndex: number) => {
+      const chat = chats[stepIndex];
+      if (!chat) return;
+
+      // Skip is essentially marking as complete without running
+      if (chat.setupCompletedAt) {
+        onSuccess?.('Step already skipped/completed', `"${chat.title}" is already done`);
+        return;
+      }
+
+      toggleStepComplete.mutate(chat.id, {
+        onSuccess: () => {
+          onSuccess?.('Step skipped', `"${chat.title}" has been skipped`);
+        },
+        onError: (error) => {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          onError?.('Failed to skip step', message);
+        },
+      });
+    },
+    [chats, toggleStepComplete, onSuccess, onError]
+  );
+
+  const handleViewStepChat = useCallback(
+    (chatId: string) => {
+      onNavigate?.('/chats/$chatId', { chatId });
+    },
+    [onNavigate]
+  );
 
   // =========================================================================
   // Callbacks - Add Step Dialog
@@ -518,9 +652,18 @@ export function useTaskSession({
   );
 
   const handleStopProcess = useCallback(() => {
-    // TODO: Implement process stopping
-    console.log('Stop process clicked');
-  }, []);
+    if (!activeProcessId) return;
+    killProcess.mutate(activeProcessId, {
+      onSuccess: () => {
+        setActiveProcessId(null);
+        onSuccess?.('Process stopped', 'The executor process has been stopped');
+      },
+      onError: (error) => {
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        onError?.('Failed to stop process', message);
+      },
+    });
+  }, [activeProcessId, killProcess, onSuccess, onError]);
 
   // =========================================================================
   // Callbacks - Navigation
@@ -534,9 +677,66 @@ export function useTaskSession({
   }, [task?.projectId, onNavigate]);
 
   const handleCreatePR = useCallback(() => {
-    // TODO: Implement PR creation
-    console.log('Create PR clicked');
+    if (!task) return;
+    setCreatePRDialog({
+      isOpen: true,
+      title: task.title,
+      body: task.description || '',
+      base: '',
+      error: null,
+    });
+  }, [task]);
+
+  // =========================================================================
+  // Callbacks - Create PR Dialog
+  // =========================================================================
+  const handleClosePRDialog = useCallback(() => {
+    setCreatePRDialog((prev) => ({ ...prev, isOpen: false, error: null }));
   }, []);
+
+  const handlePRTitleChange = useCallback((value: string) => {
+    setCreatePRDialog((prev) => ({ ...prev, title: value }));
+  }, []);
+
+  const handlePRBodyChange = useCallback((value: string) => {
+    setCreatePRDialog((prev) => ({ ...prev, body: value }));
+  }, []);
+
+  const handlePRBaseChange = useCallback((value: string) => {
+    setCreatePRDialog((prev) => ({ ...prev, base: value }));
+  }, []);
+
+  const handleSubmitPR = useCallback(
+    (data: { title: string; body: string; base?: string; draft?: boolean }) => {
+      if (!task) return;
+
+      createPullRequest.mutate(
+        {
+          taskId: task.id,
+          title: data.title,
+          body: data.body,
+          base: data.base,
+          draft: data.draft,
+        },
+        {
+          onSuccess: (result) => {
+            onSuccess?.('Pull Request Created', `View at ${result.url}`);
+            handleClosePRDialog();
+            // Optionally open the PR URL in browser
+            if (typeof window !== 'undefined') {
+              window.open(result.url, '_blank');
+            }
+          },
+          onError: (error) => {
+            const message = error instanceof Error ? error.message : 'Failed to create PR';
+            setCreatePRDialog((prev) => ({ ...prev, error: message }));
+            onError?.('Failed to create PR', message);
+          },
+        }
+      );
+    },
+    [task, createPullRequest, onSuccess, onError, handleClosePRDialog]
+  );
 
   // =========================================================================
   // Callbacks - More Actions Menu
@@ -686,7 +886,13 @@ export function useTaskSession({
 
     // Dialog state
     addStepDialog,
+    createPRDialog,
     confirmDialogProps,
+
+    // GitHub CLI state
+    ghCliInstalled,
+    ghAuthenticated,
+    isCreatingPR: createPullRequest.isPending,
 
     // Executor profiles
     executorProfiles,
@@ -707,6 +913,9 @@ export function useTaskSession({
     handleSelectStep,
     handleToggleStep,
     handleStartStep,
+    handleCompleteStep,
+    handleSkipStep,
+    handleViewStepChat,
 
     // Actions - Title editing
     handleTitleEditToggle,
@@ -720,6 +929,13 @@ export function useTaskSession({
     // Actions - Navigation
     handleBack,
     handleCreatePR,
+
+    // Actions - Create PR Dialog
+    handleClosePRDialog,
+    handlePRTitleChange,
+    handlePRBodyChange,
+    handlePRBaseChange,
+    handleSubmitPR,
 
     // Actions - More menu
     handleMoreActions,

@@ -893,6 +893,62 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_kill_running_process() {
+        let test_db = setup_test_db().await;
+        let (_, _, chat_id) = create_test_task(&test_db.pool).await;
+
+        let service = ProcessService::new();
+
+        let request = test_create_request(&chat_id);
+        let process = ProcessService::create(&test_db.pool, request)
+            .await
+            .expect("Failed to create process");
+
+        // Verify process is running
+        assert_eq!(process.status, ProcessStatus::Running);
+
+        // Kill the process
+        let killed = service
+            .kill(&test_db.pool, &process.id)
+            .await
+            .expect("Failed to kill process");
+
+        // Verify process is now killed
+        assert_eq!(killed.status, ProcessStatus::Killed);
+        assert!(killed.completed_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_kill_non_running_process_fails() {
+        let test_db = setup_test_db().await;
+        let (_, _, chat_id) = create_test_task(&test_db.pool).await;
+
+        let service = ProcessService::new();
+
+        let request = test_create_request(&chat_id);
+        let process = ProcessService::create(&test_db.pool, request)
+            .await
+            .expect("Failed to create process");
+
+        // Complete the process first
+        ProcessService::complete(&test_db.pool, &process.id, 0)
+            .await
+            .expect("Failed to complete process");
+
+        // Attempt to kill already-completed process should fail
+        let result = service.kill(&test_db.pool, &process.id).await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::Validation(msg) => {
+                assert!(msg.contains("Cannot kill process"));
+                assert!(msg.contains("completed"));
+            }
+            other => panic!("Expected Validation error, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
     async fn test_create_status_event() {
         let test_db = setup_test_db().await;
         let (_, _, chat_id) = create_test_task(&test_db.pool).await;

@@ -244,3 +244,47 @@ pub fn generate_worktree_path(
 ) -> String {
     GitService::generate_worktree_path(&base_path, &project_id, &task_id, &chat_role)
 }
+
+/// Get the diff for uncommitted changes in a task's worktree.
+///
+/// Resolves the task's worktree path from its associated chats.
+/// Falls back to the project's main git repository if no worktree exists.
+///
+/// # Arguments
+/// * `task_id` - The task identifier
+///
+/// # Returns
+/// A vector of file diffs showing all uncommitted changes.
+#[tauri::command]
+pub async fn get_task_diff(
+    state: State<'_, AppState>,
+    task_id: String,
+) -> Result<Vec<FileDiff>, String> {
+    let pool = state.db.lock().await;
+    GitService::get_task_diff(&pool, &task_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Get commits for a task's worktree/branch.
+///
+/// Resolves the task's worktree path from its associated chats.
+/// Falls back to the project's main git repository if no worktree exists.
+///
+/// # Arguments
+/// * `task_id` - The task identifier
+/// * `limit` - Maximum number of commits to return (default: 50)
+///
+/// # Returns
+/// A vector of commits, most recent first.
+#[tauri::command]
+pub async fn get_task_commits(
+    state: State<'_, AppState>,
+    task_id: String,
+    limit: Option<usize>,
+) -> Result<Vec<Commit>, String> {
+    let pool = state.db.lock().await;
+    GitService::get_task_commits(&pool, &task_id, limit)
+        .await
+        .map_err(|e| e.to_string())
+}

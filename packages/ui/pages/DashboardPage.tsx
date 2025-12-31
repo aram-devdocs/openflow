@@ -16,7 +16,16 @@
  * - DashboardNewChatDialog (create new chat)
  */
 
-import type { Chat, ExecutorProfile, Project, Task, TaskStatus } from '@openflow/generated';
+import type {
+  Chat,
+  ExecutorProfile,
+  Project,
+  SearchResult,
+  Task,
+  TaskStatus,
+  WorkflowTemplate,
+} from '@openflow/generated';
+import { EntityContextMenu } from '../molecules/EntityContextMenu';
 import type { CommandAction, RecentItem } from '../organisms/CommandPalette';
 import {
   CreateProjectDialog,
@@ -29,6 +38,7 @@ import {
   DashboardSidebar,
 } from '../organisms/DashboardPageComponents';
 import type { StatusFilter } from '../organisms/Sidebar';
+import { TerminalPanel } from '../organisms/TerminalPanel';
 
 // ============================================================================
 // Types
@@ -62,6 +72,12 @@ export interface DashboardPageSidebarProps {
   onStatusFilter: (status: StatusFilter) => void;
   /** Callback when task status changes */
   onTaskStatusChange: (taskId: string, status: TaskStatus) => void;
+  /** Callback when task context menu is triggered */
+  onTaskContextMenu?: (taskId: string, event: React.MouseEvent) => void;
+  /** Callback when chat context menu is triggered */
+  onChatContextMenu?: (chatId: string, event: React.MouseEvent) => void;
+  /** Callback to navigate to all chats page */
+  onViewAllChats?: () => void;
   /** Callback for settings click */
   onSettingsClick: () => void;
   /** Callback for archive click */
@@ -84,6 +100,10 @@ export interface DashboardPageHeaderProps {
   onNewChat: () => void;
   /** Callback for new terminal action */
   onNewTerminal: () => void;
+  /** Current resolved theme for theme toggle */
+  resolvedTheme?: 'light' | 'dark';
+  /** Callback when theme toggle is clicked */
+  onThemeToggle?: () => void;
 }
 
 /** Props for the main content section */
@@ -114,6 +134,16 @@ export interface DashboardPageCommandPaletteProps {
   actions: CommandAction[];
   /** Recent items */
   recentItems: RecentItem[];
+  /** Current search query */
+  query?: string;
+  /** Search results to display */
+  searchResults?: SearchResult[];
+  /** Whether search is loading */
+  isSearching?: boolean;
+  /** Callback when a search result is selected */
+  onSelectResult?: (result: SearchResult) => void;
+  /** Callback when a recent item is selected */
+  onSelectRecent?: (item: RecentItem) => void;
 }
 
 /** Props for the create project dialog */
@@ -160,6 +190,14 @@ export interface DashboardPageCreateTaskDialogProps {
   isPending: boolean;
   /** Error message if any */
   error: string | null;
+  /** Available workflow templates */
+  workflows?: WorkflowTemplate[];
+  /** Whether workflows are loading */
+  isLoadingWorkflows?: boolean;
+  /** Currently selected workflow template */
+  selectedWorkflow?: WorkflowTemplate | null;
+  /** Callback when a workflow is selected */
+  onSelectWorkflow?: (workflow: WorkflowTemplate | null) => void;
 }
 
 /** Props for the new chat dialog */
@@ -180,6 +218,62 @@ export interface DashboardPageNewChatDialogProps {
   onCreate: (data: { projectId: string; executorProfileId?: string; title?: string }) => void;
   /** Callback for new project action */
   onNewProject: () => void;
+}
+
+/** Props for the terminal panel */
+export interface DashboardPageTerminalProps {
+  /** Whether the terminal panel is open */
+  isOpen: boolean;
+  /** Callback when terminal should be closed */
+  onClose: () => void;
+  /** Process ID for the terminal session */
+  processId: string | null;
+  /** Raw output to write to the terminal */
+  rawOutput: string;
+  /** Callback when user types input in the terminal */
+  onInput: (data: string) => void;
+  /** Callback when terminal is resized (cols, rows) */
+  onResize?: (cols: number, rows: number) => void;
+  /** Whether the process is currently running */
+  isRunning?: boolean;
+  /** Whether the terminal is loading */
+  isLoading?: boolean;
+}
+
+/** Props for the chat context menu */
+export interface DashboardPageChatContextMenuProps {
+  /** Whether the menu is open */
+  isOpen: boolean;
+  /** Position of the menu */
+  position: { x: number; y: number };
+  /** Callback when menu should close */
+  onClose: () => void;
+  /** Callback when view is clicked */
+  onViewDetails: () => void;
+  /** Callback when archive is clicked */
+  onArchive: () => void;
+  /** Callback when delete is clicked */
+  onDelete: () => void;
+}
+
+/** Props for the task context menu */
+export interface DashboardPageTaskContextMenuProps {
+  /** Whether the menu is open */
+  isOpen: boolean;
+  /** Position of the menu */
+  position: { x: number; y: number };
+  /** Callback when menu should close */
+  onClose: () => void;
+  /** Callback when view is clicked */
+  onViewDetails: () => void;
+  /** Callback when duplicate is clicked */
+  onDuplicate: () => void;
+  /** Callback when open in IDE is clicked */
+  onOpenInIDE?: () => void;
+  /** Callback when archive is clicked */
+  onArchive: () => void;
+  /** Callback when delete is clicked */
+  onDelete: () => void;
 }
 
 /**
@@ -217,6 +311,15 @@ export interface DashboardPageProps {
 
   // New chat dialog props
   newChatDialog: DashboardPageNewChatDialogProps;
+
+  // Terminal panel props (optional - only needed if terminal feature is used)
+  terminal?: DashboardPageTerminalProps;
+
+  // Chat context menu props (optional - only needed if chat context menu feature is used)
+  chatContextMenu?: DashboardPageChatContextMenuProps;
+
+  // Task context menu props (optional - only needed if task context menu feature is used)
+  taskContextMenu?: DashboardPageTaskContextMenuProps;
 }
 
 // ============================================================================
@@ -286,6 +389,9 @@ export function DashboardPage({
   createProjectDialog,
   createTaskDialog,
   newChatDialog,
+  terminal,
+  chatContextMenu,
+  taskContextMenu,
 }: DashboardPageProps) {
   return (
     <DashboardLayout
@@ -307,6 +413,9 @@ export function DashboardPage({
           onNewProject={sidebar.onNewProject}
           onStatusFilter={sidebar.onStatusFilter}
           onTaskStatusChange={sidebar.onTaskStatusChange}
+          onTaskContextMenu={sidebar.onTaskContextMenu}
+          onChatContextMenu={sidebar.onChatContextMenu}
+          onViewAllChats={sidebar.onViewAllChats}
           onSettingsClick={sidebar.onSettingsClick}
           onArchiveClick={sidebar.onArchiveClick}
           isCollapsed={sidebar.isCollapsed}
@@ -320,6 +429,8 @@ export function DashboardPage({
           onSearch={header.onSearch}
           onNewChat={header.onNewChat}
           onNewTerminal={header.onNewTerminal}
+          resolvedTheme={header.resolvedTheme}
+          onThemeToggle={header.onThemeToggle}
         />
       }
     >
@@ -342,6 +453,11 @@ export function DashboardPage({
         onSearch={commandPalette.onSearch}
         actions={commandPalette.actions}
         recentItems={commandPalette.recentItems}
+        query={commandPalette.query}
+        searchResults={commandPalette.searchResults}
+        isSearching={commandPalette.isSearching}
+        onSelectResult={commandPalette.onSelectResult}
+        onSelectRecent={commandPalette.onSelectRecent}
       />
 
       {/* Create project dialog */}
@@ -369,6 +485,10 @@ export function DashboardPage({
         onCreate={createTaskDialog.onCreate}
         isPending={createTaskDialog.isPending}
         error={createTaskDialog.error}
+        workflows={createTaskDialog.workflows}
+        isLoadingWorkflows={createTaskDialog.isLoadingWorkflows}
+        selectedWorkflow={createTaskDialog.selectedWorkflow}
+        onSelectWorkflow={createTaskDialog.onSelectWorkflow}
       />
 
       {/* New Chat dialog */}
@@ -382,6 +502,48 @@ export function DashboardPage({
         onCreate={newChatDialog.onCreate}
         onNewProject={newChatDialog.onNewProject}
       />
+
+      {/* Terminal panel - optional, only render if terminal props provided */}
+      {terminal && (
+        <TerminalPanel
+          isOpen={terminal.isOpen}
+          onClose={terminal.onClose}
+          processId={terminal.processId}
+          rawOutput={terminal.rawOutput}
+          onInput={terminal.onInput}
+          onResize={terminal.onResize}
+          isRunning={terminal.isRunning}
+          isLoading={terminal.isLoading}
+        />
+      )}
+
+      {/* Chat context menu - optional, only render if chatContextMenu props provided */}
+      {chatContextMenu && (
+        <EntityContextMenu
+          entityType="chat"
+          isOpen={chatContextMenu.isOpen}
+          position={chatContextMenu.position}
+          onClose={chatContextMenu.onClose}
+          onViewDetails={chatContextMenu.onViewDetails}
+          onArchive={chatContextMenu.onArchive}
+          onDelete={chatContextMenu.onDelete}
+        />
+      )}
+
+      {/* Task context menu - optional, only render if taskContextMenu props provided */}
+      {taskContextMenu && (
+        <EntityContextMenu
+          entityType="task"
+          isOpen={taskContextMenu.isOpen}
+          position={taskContextMenu.position}
+          onClose={taskContextMenu.onClose}
+          onViewDetails={taskContextMenu.onViewDetails}
+          onDuplicate={taskContextMenu.onDuplicate}
+          onOpenInIDE={taskContextMenu.onOpenInIDE}
+          onArchive={taskContextMenu.onArchive}
+          onDelete={taskContextMenu.onDelete}
+        />
+      )}
     </DashboardLayout>
   );
 }

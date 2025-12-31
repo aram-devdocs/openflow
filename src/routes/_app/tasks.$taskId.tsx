@@ -106,6 +106,9 @@ function TaskDetailRoute() {
         onAddStep: session.handleAddStep,
         autoStart: session.autoStart,
         onAutoStartChange: session.setAutoStart,
+        onCompleteStep: session.handleCompleteStep,
+        onSkipStep: session.handleSkipStep,
+        onViewChat: session.handleViewStepChat,
       }}
       mainPanel={{
         claudeEvents: session.claudeEvents,
@@ -162,6 +165,18 @@ function TaskDetailRoute() {
         onDelete: session.handleDeleteTask,
       }}
       confirmDialog={session.confirmDialogProps}
+      createPRDialog={{
+        isOpen: session.createPRDialog.isOpen,
+        onClose: session.handleClosePRDialog,
+        onCreate: session.handleSubmitPR,
+        defaultTitle: session.createPRDialog.title,
+        defaultBody: session.createPRDialog.body,
+        defaultBase: session.createPRDialog.base,
+        isSubmitting: session.isCreatingPR,
+        error: session.createPRDialog.error,
+        ghCliInstalled: session.ghCliInstalled,
+        ghAuthenticated: session.ghAuthenticated,
+      }}
     />
   );
 }

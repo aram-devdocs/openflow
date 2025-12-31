@@ -156,3 +156,21 @@ export function useRestoreTask(): UseMutationResult<Task, Error, { id: string }>
     },
   });
 }
+
+/**
+ * Duplicate an existing task.
+ * Creates a copy with "(copy)" appended to the title and status reset to "todo".
+ *
+ * @returns Mutation for duplicating a task
+ */
+export function useDuplicateTask(): UseMutationResult<Task, Error, string> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => taskQueries.duplicate(id),
+    onSuccess: () => {
+      // Invalidate task lists to show the new duplicate
+      queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    },
+  });
+}

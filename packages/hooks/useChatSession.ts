@@ -12,7 +12,7 @@ import { useChat, useUpdateChat } from './useChats';
 import { type PermissionRequest, useClaudeEvents } from './useClaudeEvents';
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
 import { useCreateMessage, useMessages } from './useMessages';
-import { useSendInput } from './useProcesses';
+import { useKillProcess, useSendInput } from './useProcesses';
 import { useProject } from './useProjects';
 
 // ============================================================================
@@ -338,6 +338,7 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   const createMessage = useCreateMessage();
   const sendInput = useSendInput();
   const updateChat = useUpdateChat();
+  const killProcess = useKillProcess();
 
   // Claude events for streaming output
   const {
@@ -450,8 +451,16 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   );
 
   const handleStopProcess = useCallback(() => {
-    // TODO: Implement process stopping
-  }, []);
+    if (!activeProcessId) return;
+    killProcess.mutate(activeProcessId, {
+      onSuccess: () => {
+        setActiveProcessId(null);
+      },
+      onError: (err) => {
+        onError?.('Failed to stop process', err.message);
+      },
+    });
+  }, [activeProcessId, killProcess, onError]);
 
   // Permission handlers
   const handleApprovePermission = useCallback(() => {

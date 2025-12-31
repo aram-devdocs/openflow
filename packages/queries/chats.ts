@@ -87,4 +87,12 @@ export const chatQueries = {
    */
   startWorkflowStep: (chatId: string): Promise<ExecutionProcess> =>
     invoke('start_workflow_step', { chatId }),
+
+  /**
+   * Toggle the completion status of a workflow step (chat).
+   * If the step is incomplete, it will be marked as complete.
+   * If the step is complete, it will be marked as incomplete.
+   * @param chatId - The chat ID to toggle completion for
+   */
+  toggleStepComplete: (chatId: string): Promise<Chat> => invoke('toggle_step_complete', { chatId }),
 };

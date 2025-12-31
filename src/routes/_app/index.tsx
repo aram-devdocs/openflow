@@ -12,7 +12,15 @@
  * All UI components are stateless and imported from @openflow/ui.
  */
 
-import { useDashboardSession, useNavigation, useToast } from '@openflow/hooks';
+import {
+  useDashboardSession,
+  useNavigation,
+  useProcessOutput,
+  useResizeTerminal,
+  useSendInput,
+  useTheme,
+  useToast,
+} from '@openflow/hooks';
 import { DashboardPage } from '@openflow/ui';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback } from 'react';
@@ -25,12 +33,44 @@ function DashboardRoute() {
   const navigate = useNavigate();
   const toast = useToast();
   const navigation = useNavigation();
+  const { resolvedTheme, setTheme } = useTheme();
+
+  const handleThemeToggle = useCallback(() => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  }, [resolvedTheme, setTheme]);
 
   const session = useDashboardSession({
     navigate,
     onSuccess: (title, message) => toast.success(title, message),
     onError: (title, message) => toast.error(title, message),
   });
+
+  // Terminal hooks - only subscribe to output when terminal is open and has a process
+  const { rawOutput, isRunning } = useProcessOutput(
+    session.terminalOpen && session.terminalProcessId ? session.terminalProcessId : ''
+  );
+  const sendInput = useSendInput();
+  const resizeTerminal = useResizeTerminal();
+
+  // Terminal input handler
+  const handleTerminalInput = useCallback(
+    (data: string) => {
+      if (session.terminalProcessId) {
+        sendInput.mutate({ processId: session.terminalProcessId, input: data });
+      }
+    },
+    [session.terminalProcessId, sendInput]
+  );
+
+  // Terminal resize handler
+  const handleTerminalResize = useCallback(
+    (cols: number, rows: number) => {
+      if (session.terminalProcessId) {
+        resizeTerminal.mutate({ processId: session.terminalProcessId, cols, rows });
+      }
+    },
+    [session.terminalProcessId, resizeTerminal]
+  );
 
   // Combine navigation context drawer close with session handlers
   const handleSelectTaskWithDrawerClose = useCallback(
@@ -68,6 +108,9 @@ function DashboardRoute() {
         onNewProject: session.handleNewProject,
         onStatusFilter: session.handleStatusFilter,
         onTaskStatusChange: session.handleTaskStatusChange,
+        onTaskContextMenu: session.handleTaskContextMenu,
+        onChatContextMenu: session.handleChatContextMenu,
+        onViewAllChats: session.handleViewAllChats,
         onSettingsClick: session.handleSettingsClick,
         onArchiveClick: session.handleArchiveClick,
         isCollapsed: navigation.sidebarCollapsed,
@@ -79,6 +122,8 @@ function DashboardRoute() {
         onSearch: session.handleSearch,
         onNewChat: session.handleNewChat,
         onNewTerminal: session.handleNewTerminal,
+        resolvedTheme,
+        onThemeToggle: handleThemeToggle,
       }}
       content={{
         isLoadingProjects: session.isLoadingProjects,
@@ -94,6 +139,11 @@ function DashboardRoute() {
         onSearch: session.handleCommandSearch,
         actions: session.commandActions,
         recentItems: session.recentItems,
+        query: session.searchQuery,
+        searchResults: session.searchResults,
+        isSearching: session.isSearching,
+        onSelectResult: session.handleSelectSearchResult,
+        onSelectRecent: session.handleSelectRecent,
       }}
       createProjectDialog={{
         isOpen: session.isCreateProjectDialogOpen,
@@ -117,6 +167,10 @@ function DashboardRoute() {
         onCreate: session.handleCreateTask,
         isPending: session.isCreatingTask,
         error: session.createError,
+        workflows: session.workflowTemplates,
+        isLoadingWorkflows: session.isLoadingWorkflows,
+        selectedWorkflow: session.selectedWorkflow,
+        onSelectWorkflow: session.handleSelectWorkflow,
       }}
       newChatDialog={{
         isOpen: session.isNewChatDialogOpen,
@@ -128,6 +182,42 @@ function DashboardRoute() {
         onCreate: session.handleCreateChatFromDialog,
         onNewProject: session.handleNewProject,
       }}
+      terminal={{
+        isOpen: session.terminalOpen,
+        onClose: session.handleCloseTerminal,
+        processId: session.terminalProcessId,
+        rawOutput,
+        onInput: handleTerminalInput,
+        onResize: handleTerminalResize,
+        isRunning,
+        isLoading: session.isSpawningTerminal,
+      }}
+      chatContextMenu={
+        session.chatContextMenu
+          ? {
+              isOpen: true,
+              position: session.chatContextMenu.position,
+              onClose: session.handleCloseChatContextMenu,
+              onViewDetails: session.handleViewChat,
+              onArchive: session.handleArchiveChat,
+              onDelete: session.handleDeleteChat,
+            }
+          : undefined
+      }
+      taskContextMenu={
+        session.taskContextMenu
+          ? {
+              isOpen: true,
+              position: session.taskContextMenu.position,
+              onClose: session.handleCloseTaskContextMenu,
+              onViewDetails: session.handleViewTask,
+              onDuplicate: session.handleDuplicateTask,
+              onOpenInIDE: session.handleOpenInIDE,
+              onArchive: session.handleArchiveTaskFromMenu,
+              onDelete: session.handleDeleteTaskFromMenu,
+            }
+          : undefined
+      }
     />
   );
 }

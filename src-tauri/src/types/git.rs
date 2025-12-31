@@ -100,3 +100,16 @@ pub struct SearchResult {
     /// Relevance score from FTS5 (higher is more relevant)
     pub score: f64,
 }
+
+/// Result of a pull request creation operation.
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PullRequestResult {
+    /// The URL of the created pull request.
+    pub url: String,
+    /// The PR number.
+    pub number: u32,
+    /// The branch name that was used for the PR.
+    pub branch: String,
+}

@@ -47,7 +47,8 @@ pub fn run() {
 
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_dialog::init());
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init());
 
     // Add MCP GUI plugin when feature is enabled (for AI agent interaction)
     #[cfg(feature = "mcp-gui")]
@@ -103,6 +104,7 @@ pub fn run() {
             commands::archive_task,
             commands::unarchive_task,
             commands::delete_task,
+            commands::duplicate_task,
             // Chat commands
             commands::list_chats,
             commands::list_standalone_chats,
@@ -114,6 +116,7 @@ pub fn run() {
             commands::delete_chat,
             commands::archive_chat,
             commands::unarchive_chat,
+            commands::toggle_step_complete,
             commands::start_workflow_step,
             // Message commands
             commands::list_messages,
@@ -154,6 +157,8 @@ pub fn run() {
             commands::delete_worktree,
             commands::get_diff,
             commands::get_commits,
+            commands::get_task_diff,
+            commands::get_task_commits,
             commands::push_branch,
             commands::get_current_branch,
             commands::get_head_commit,
@@ -161,6 +166,21 @@ pub fn run() {
             commands::list_worktrees,
             commands::generate_branch_name,
             commands::generate_worktree_path,
+            // Terminal commands
+            commands::spawn_terminal,
+            commands::get_default_shell,
+            // GitHub commands
+            commands::create_pull_request,
+            commands::check_gh_cli_installed,
+            commands::check_gh_auth_status,
+            // Workflow commands
+            commands::list_workflow_templates,
+            commands::get_builtin_workflow_templates,
+            commands::get_workflow_template,
+            commands::parse_workflow_content,
+            // System commands
+            commands::open_in_editor,
+            commands::reveal_in_explorer,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

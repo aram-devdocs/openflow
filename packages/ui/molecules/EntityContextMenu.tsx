@@ -1,4 +1,4 @@
-import { Archive, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Archive, Code, Copy, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo } from 'react';
 import { Menu, type MenuItem, type MenuPosition } from './Menu';
 
@@ -19,6 +19,10 @@ export interface EntityContextMenuProps {
   onViewDetails?: () => void;
   /** Callback when edit is clicked */
   onEdit?: () => void;
+  /** Callback when duplicate is clicked */
+  onDuplicate?: () => void;
+  /** Callback when open in IDE is clicked */
+  onOpenInIDE?: () => void;
   /** Callback when archive is clicked */
   onArchive?: () => void;
   /** Callback when restore is clicked (for archived items) */
@@ -56,6 +60,8 @@ export function EntityContextMenu({
   isArchived = false,
   onViewDetails,
   onEdit,
+  onDuplicate,
+  onOpenInIDE,
   onArchive,
   onRestore,
   onDelete,
@@ -87,8 +93,32 @@ export function EntityContextMenu({
       });
     }
 
-    // Add divider if we have view/edit actions and archive/delete actions
-    const hasViewEdit = onViewDetails || (onEdit && !isArchived);
+    // Duplicate action (if handler provided and not archived)
+    if (onDuplicate && !isArchived) {
+      items.push({
+        id: 'duplicate',
+        label: `Duplicate ${entityLabel}`,
+        icon: Copy,
+        onClick: onDuplicate,
+      });
+    }
+
+    // Open in IDE action (if handler provided and not archived)
+    if (onOpenInIDE && !isArchived) {
+      items.push({
+        id: 'open-in-ide',
+        label: 'Open in IDE',
+        icon: Code,
+        onClick: onOpenInIDE,
+      });
+    }
+
+    // Add divider if we have view/edit/duplicate/openInIDE actions and archive/delete actions
+    const hasViewEdit =
+      onViewDetails ||
+      (onEdit && !isArchived) ||
+      (onDuplicate && !isArchived) ||
+      (onOpenInIDE && !isArchived);
     const hasArchiveDelete = onArchive || onRestore || onDelete;
     if (hasViewEdit && hasArchiveDelete) {
       items.push({
@@ -127,7 +157,17 @@ export function EntityContextMenu({
     }
 
     return items;
-  }, [entityType, isArchived, onViewDetails, onEdit, onArchive, onRestore, onDelete]);
+  }, [
+    entityType,
+    isArchived,
+    onViewDetails,
+    onEdit,
+    onDuplicate,
+    onOpenInIDE,
+    onArchive,
+    onRestore,
+    onDelete,
+  ]);
 
   // Don't render if no items
   if (menuItems.length === 0) return null;

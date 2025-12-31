@@ -325,3 +325,17 @@ export const fileDiffSchema = z.object({
   isRenamed: z.boolean(),
 });
 export type FileDiffOutput = z.infer<typeof fileDiffSchema>;
+
+/**
+ * Schema for GitHub pull request result.
+ * Contains the result of creating a pull request via the GitHub CLI.
+ */
+export const pullRequestResultSchema = z.object({
+  /** URL of the created pull request */
+  url: z.string().url(),
+  /** Pull request number */
+  number: z.number().int().positive(),
+  /** Branch name used for the pull request */
+  branch: z.string().min(1),
+});
+export type PullRequestResultOutput = z.infer<typeof pullRequestResultSchema>;
