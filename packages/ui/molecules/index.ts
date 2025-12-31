@@ -189,8 +189,30 @@ export type {
   SkeletonChatBreakpoint,
 } from './SkeletonChat';
 
-export { SkeletonStats } from './SkeletonStats';
-export type { SkeletonStatsProps } from './SkeletonStats';
+export {
+  SkeletonStats,
+  getBaseSize as getSkeletonStatsBaseSize,
+  getResponsiveSizeClasses as getSkeletonStatsResponsiveSizeClasses,
+  getIconDimensions as getSkeletonStatsIconDimensions,
+  DEFAULT_STAT_COUNT,
+  SKELETON_STATS_BASE_CLASSES,
+  SKELETON_STATS_GAP_CLASSES,
+  SKELETON_STATS_GRID_CLASSES,
+  SKELETON_STAT_CARD_CLASSES,
+  SKELETON_STAT_CARD_PADDING_CLASSES,
+  SKELETON_STAT_LABEL_CLASSES,
+  SKELETON_STAT_VALUE_CLASSES,
+  SKELETON_STAT_GAP_CLASSES,
+  SKELETON_STAT_TREND_CLASSES,
+  SKELETON_STAT_ICON_CLASSES,
+  SKELETON_STAT_ICON_MARGIN_CLASSES,
+  SKELETON_STAT_TREND_MARGIN_CLASSES,
+} from './SkeletonStats';
+export type {
+  SkeletonStatsProps,
+  SkeletonStatsSize,
+  SkeletonStatsBreakpoint,
+} from './SkeletonStats';
 
 export {
   SkeletonSettings,
