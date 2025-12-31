@@ -14,6 +14,7 @@ import { useChat, useCreateChat, useToggleStepComplete } from './useChats';
 import { useClaudeEvents } from './useClaudeEvents';
 import { useConfirmDialog } from './useConfirmDialog';
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
+import { useTaskDiff } from './useGit';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useCreateMessage, useMessages } from './useMessages';
 import { useKillProcess } from './useProcesses';
@@ -303,8 +304,12 @@ export function useTaskSession({
     }));
   }, [chats, activeChat?.id, isRunning]);
 
-  // Mock data for changes and commits (would come from git queries in real app)
-  const diffs: FileDiff[] = useMemo(() => [], []);
+  // Fetch git diffs only when Changes tab is active
+  const { data: diffs = [] } = useTaskDiff(taskId, {
+    enabled: activeTab === 'changes',
+  });
+
+  // Mock data for commits (would come from git queries - Phase 5)
   const commits: Commit[] = useMemo(() => [], []);
 
   // Determine if we have a branch for PR creation
