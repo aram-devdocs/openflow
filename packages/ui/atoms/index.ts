@@ -56,8 +56,18 @@ export {
 } from './ThemeToggle';
 export type { ThemeToggleProps, Theme, ThemeToggleSize } from './ThemeToggle';
 
-export { ThemeToggleCompact } from './ThemeToggleCompact';
-export type { ThemeToggleCompactProps, ResolvedTheme } from './ThemeToggleCompact';
+export {
+  ThemeToggleCompact,
+  getSizeClasses as getThemeToggleCompactSizeClasses,
+  THEME_TOGGLE_COMPACT_BASE_CLASSES,
+  DEFAULT_LIGHT_LABEL,
+  DEFAULT_DARK_LABEL,
+} from './ThemeToggleCompact';
+export type {
+  ThemeToggleCompactProps,
+  ResolvedTheme,
+  ThemeToggleCompactSize,
+} from './ThemeToggleCompact';
 
 export { Skeleton, getVariantClasses, SKELETON_BASE_CLASSES } from './Skeleton';
 export type {
