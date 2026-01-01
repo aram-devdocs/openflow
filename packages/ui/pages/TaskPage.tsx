@@ -696,7 +696,7 @@ export const TaskPageError = forwardRef<HTMLDivElement, TaskPageErrorProps>(
 
         <Icon
           icon={AlertTriangle}
-          aria-hidden="true"
+          aria-hidden={true}
           className={cn(
             'text-destructive',
             getResponsiveSizeClasses(size, TASK_PAGE_ERROR_ICON_CLASSES)
@@ -741,7 +741,7 @@ export const TaskPageError = forwardRef<HTMLDivElement, TaskPageErrorProps>(
             <Button
               variant="primary"
               onClick={onRetry}
-              icon={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+              icon={<RefreshCw className="h-4 w-4" aria-hidden={true} />}
               className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
             >
               {DEFAULT_RETRY_LABEL}

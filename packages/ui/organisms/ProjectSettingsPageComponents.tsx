@@ -804,7 +804,7 @@ export const ProjectSettingsLoadingSkeleton = forwardRef<
       ref={ref}
       role="status"
       aria-label={SR_LOADING}
-      aria-busy="true"
+      aria-busy={true}
       data-testid={dataTestId}
       data-size={baseSize}
       data-section-count={sectionCount}
@@ -856,7 +856,7 @@ export const ProjectSettingsEmptyState = forwardRef<HTMLDivElement, ProjectSetti
         </VisuallyHidden>
         <FolderGit2
           className={EMPTY_STATE_ICON_CLASSES}
-          aria-hidden="true"
+          aria-hidden={true}
           data-testid={dataTestId ? `${dataTestId}-icon` : undefined}
         />
         <Heading level={3} size="lg" className="mb-1">
@@ -901,7 +901,7 @@ export const ProjectSettingsErrorState = forwardRef<HTMLDivElement, ProjectSetti
         </VisuallyHidden>
         <Box
           className={ERROR_STATE_ICON_CLASSES}
-          aria-hidden="true"
+          aria-hidden={true}
           data-testid={dataTestId ? `${dataTestId}-icon` : undefined}
         >
           <Icon icon={AlertCircle} size="lg" className="text-[rgb(var(--destructive))]" />
@@ -1085,7 +1085,7 @@ export const SettingsSection = forwardRef<HTMLElement, SettingsSectionProps>(
                 icon={IconComponent}
                 size={iconSize}
                 className="text-[rgb(var(--primary))]"
-                aria-hidden="true"
+                aria-hidden={true}
               />
               <Heading
                 id={headerId}
@@ -1484,7 +1484,7 @@ export const SaveFooter = forwardRef<HTMLDivElement, SaveFooterProps>(function S
         loadingText={DEFAULT_SAVING_TEXT}
         disabled={!hasChanges}
         size={buttonSize}
-        icon={<Icon icon={Save} size={ICON_SIZE_MAP[baseSize]} aria-hidden="true" />}
+        icon={<Icon icon={Save} size={ICON_SIZE_MAP[baseSize]} aria-hidden={true} />}
         className="min-h-[44px] sm:min-h-0"
         data-testid={dataTestId ? `${dataTestId}-save-button` : undefined}
       >

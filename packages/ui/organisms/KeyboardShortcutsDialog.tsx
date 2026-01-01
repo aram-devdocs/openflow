@@ -529,7 +529,7 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
             className={HINT_CONTAINER_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-hint` : undefined}
           >
-            <Icon icon={Keyboard} size={ICON_SIZE_MAP[baseSize]} aria-hidden="true" />
+            <Icon icon={Keyboard} size={ICON_SIZE_MAP[baseSize]} aria-hidden={true} />
             <Text size="sm" color="muted-foreground">
               Press{' '}
               <Box as="kbd" className={cn(HINT_KEY_CLASSES, HINT_KEY_SIZE_CLASSES[baseSize])}>
@@ -553,7 +553,7 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
                 data-testid={dataTestId ? `${dataTestId}-group-${groupIndex}` : undefined}
               >
                 <Heading
-                  as="h3"
+                  level={3}
                   id={groupTitleId}
                   className={cn(GROUP_TITLE_CLASSES, GROUP_SPACING_CLASSES[baseSize])}
                 >
@@ -595,7 +595,7 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
                               as="kbd"
                               key={keyIndex}
                               className={cn(KEY_BASE_CLASSES, KEY_SIZE_CLASSES[baseSize])}
-                              aria-hidden="true"
+                              aria-hidden={true}
                             >
                               {key}
                             </Box>
@@ -619,11 +619,11 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
             data-testid={dataTestId ? `${dataTestId}-footer-note` : undefined}
           >
             <Text as="strong">Note:</Text> On Windows/Linux, use{' '}
-            <Box as="kbd" className={FOOTER_KEY_CLASSES} aria-hidden="true">
+            <Box as="kbd" className={FOOTER_KEY_CLASSES} aria-hidden={true}>
               Ctrl
             </Box>{' '}
             instead of{' '}
-            <Box as="kbd" className={FOOTER_KEY_CLASSES} aria-hidden="true">
+            <Box as="kbd" className={FOOTER_KEY_CLASSES} aria-hidden={true}>
               ⌘
             </Box>
             <VisuallyHidden>{SR_PLATFORM_NOTE}</VisuallyHidden>

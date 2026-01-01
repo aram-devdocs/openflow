@@ -131,7 +131,7 @@ export function getResponsiveSizeClasses(size: ResponsiveValue<SpinnerSize>): st
  *
  * @example
  * // In a button (use aria-label on button instead)
- * <button disabled aria-busy="true" aria-label="Loading, please wait">
+ * <button disabled aria-busy={true} aria-label="Loading, please wait">
  *   <Spinner size="sm" announce={false} />
  * </button>
  *
@@ -170,7 +170,7 @@ export const Spinner = forwardRef<SVGSVGElement, SpinnerProps>(function Spinner(
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
-        aria-hidden="true"
+        aria-hidden={true}
         focusable="false"
         data-testid={dataTestId}
       >

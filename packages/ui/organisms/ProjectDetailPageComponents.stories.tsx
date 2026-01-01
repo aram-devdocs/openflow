@@ -408,10 +408,10 @@ export const LoadingAccessibility: StoryObj<typeof ProjectDetailLoadingSkeleton>
       <h2 className="text-lg font-semibold">Accessibility Features</h2>
       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
         <li>role="status" announces loading state</li>
-        <li>aria-busy="true" indicates ongoing operation</li>
+        <li>aria-busy={true} indicates ongoing operation</li>
         <li>aria-label provides loading message</li>
         <li>VisuallyHidden provides screen reader announcement</li>
-        <li>aria-hidden="true" on visual skeleton elements</li>
+        <li>aria-hidden={true} on visual skeleton elements</li>
       </ul>
       <div className="text-sm">
         <strong>Screen reader announcement:</strong>
@@ -500,7 +500,7 @@ export const NotFoundAccessibility: StoryObj<typeof ProjectNotFound> = {
         <li>VisuallyHidden announcement for screen readers</li>
         <li>Button has minimum 44px touch target</li>
         <li>aria-label on back button</li>
-        <li>Icon is aria-hidden="true"</li>
+        <li>Icon is aria-hidden={true}</li>
       </ul>
       <div className="text-sm">
         <strong>Default text:</strong>
@@ -644,7 +644,7 @@ export const ErrorStateAccessibility: StoryObj<typeof ProjectDetailErrorState> =
         <li>aria-live="assertive" for high-priority announcement</li>
         <li>VisuallyHidden provides error announcement</li>
         <li>Retry button has aria-label</li>
-        <li>Icon is aria-hidden="true"</li>
+        <li>Icon is aria-hidden={true}</li>
         <li>Minimum 44px touch targets on mobile</li>
       </ul>
       <div className="text-sm">
@@ -783,7 +783,7 @@ export const InfoBarAccessibility: StoryObj<typeof ProjectDetailInfoBar> = {
       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
         <li>nav element with aria-label="Breadcrumb navigation"</li>
         <li>aria-current="page" on current location</li>
-        <li>Breadcrumb separator is aria-hidden="true"</li>
+        <li>Breadcrumb separator is aria-hidden={true}</li>
         <li>Back button has descriptive aria-label</li>
         <li>Settings button has aria-label</li>
         <li>Minimum 44px touch targets on mobile</li>
@@ -1023,7 +1023,7 @@ export const ContentAccessibility: StoryObj<typeof ProjectDetailContent> = {
         <li>role="region" with aria-labelledby for task list</li>
         <li>VisuallyHidden heading for screen readers</li>
         <li>Task count announcement via aria-live="polite"</li>
-        <li>Loading state uses role="status" aria-busy="true"</li>
+        <li>Loading state uses role="status" aria-busy={true}</li>
         <li>Error state uses role="alert" aria-live="assertive"</li>
         <li>Empty state has screen reader announcement</li>
       </ul>
@@ -1449,7 +1449,7 @@ export const AccessibilityOverview: StoryObj = {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="border rounded p-3">
             <strong className="block mb-1">Loading States</strong>
-            <code className="text-xs">role="status" aria-busy="true"</code>
+            <code className="text-xs">role="status" aria-busy={true}</code>
           </div>
           <div className="border rounded p-3">
             <strong className="block mb-1">Error States</strong>

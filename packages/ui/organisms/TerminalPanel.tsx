@@ -499,7 +499,7 @@ export const TerminalPanelError = forwardRef<HTMLDivElement, TerminalPanelErrorP
         <Box className={TERMINAL_PANEL_ERROR_BASE_CLASSES}>
           <Icon
             icon={AlertTriangle}
-            aria-hidden="true"
+            aria-hidden={true}
             className={TERMINAL_PANEL_ERROR_ICON_CLASSES}
           />
           <Heading level={3} id={errorId} className={TERMINAL_PANEL_ERROR_TITLE_CLASSES}>
@@ -514,7 +514,7 @@ export const TerminalPanelError = forwardRef<HTMLDivElement, TerminalPanelErrorP
               onClick={onRetry}
               className={TERMINAL_PANEL_ERROR_BUTTON_CLASSES}
             >
-              <Icon icon={RefreshCw} size="sm" aria-hidden="true" className="mr-2" />
+              <Icon icon={RefreshCw} size="sm" aria-hidden={true} className="mr-2" />
               {retryLabel}
             </Button>
           )}
@@ -687,14 +687,16 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
 
   return (
     <Box
-      ref={(node) => {
+      ref={(node: HTMLElement | null) => {
         // Handle both refs
         if (typeof ref === 'function') {
-          ref(node);
+          ref(node as HTMLDivElement | null);
         } else if (ref) {
-          ref.current = node;
+          (ref as React.MutableRefObject<HTMLDivElement | null>).current =
+            node as HTMLDivElement | null;
         }
-        (panelRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        (panelRef as React.MutableRefObject<HTMLDivElement | null>).current =
+          node as HTMLDivElement | null;
       }}
       role="dialog"
       aria-modal="true"
@@ -748,7 +750,7 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
           className={TERMINAL_PANEL_CLOSE_BUTTON_CLASSES}
           aria-label={closeLabel}
         >
-          <Icon icon={X} size="sm" aria-hidden="true" />
+          <Icon icon={X} size="sm" aria-hidden={true} />
         </Button>
       </Box>
 
@@ -758,7 +760,7 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
           <Box className={TERMINAL_PANEL_ERROR_BASE_CLASSES}>
             <Icon
               icon={AlertTriangle}
-              aria-hidden="true"
+              aria-hidden={true}
               className={TERMINAL_PANEL_ERROR_ICON_CLASSES}
             />
             <Heading level={3} className={TERMINAL_PANEL_ERROR_TITLE_CLASSES}>
@@ -773,7 +775,7 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
                 onClick={onRetry}
                 className={TERMINAL_PANEL_ERROR_BUTTON_CLASSES}
               >
-                <Icon icon={RefreshCw} size="sm" aria-hidden="true" className="mr-2" />
+                <Icon icon={RefreshCw} size="sm" aria-hidden={true} className="mr-2" />
                 {DEFAULT_RETRY_LABEL}
               </Button>
             )}

@@ -77,6 +77,18 @@ export interface BoxProps
   type?: 'button' | 'submit' | 'reset';
   /** Label htmlFor attribute (only used when as="label") */
   htmlFor?: string;
+  /** DateTime attribute (only used when as="time") */
+  dateTime?: string;
+  /** Textarea value (only used when as="textarea") */
+  value?: string;
+  /** Textarea placeholder (only used when as="textarea") */
+  placeholder?: string;
+  /** Textarea rows (only used when as="textarea") */
+  rows?: number;
+  /** Textarea disabled state */
+  disabled?: boolean;
+  /** Textarea readonly state */
+  readOnly?: boolean;
 }
 
 /**

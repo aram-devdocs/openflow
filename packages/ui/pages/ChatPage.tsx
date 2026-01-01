@@ -446,7 +446,7 @@ export const ChatPageSkeleton = forwardRef<HTMLDivElement, ChatPageSkeletonProps
       <Box
         ref={ref}
         className={CHAT_PAGE_SKELETON_CLASSES}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         data-testid={testId ?? 'chat-page-skeleton'}
       >
@@ -533,7 +533,7 @@ export const ChatPageError = forwardRef<HTMLDivElement, ChatPageErrorStateProps>
           icon={AlertTriangle}
           size="xl"
           className="text-[rgb(var(--destructive))]"
-          aria-hidden="true"
+          aria-hidden={true}
         />
 
         <Heading id={headingId} level={1} size="lg" className="text-[rgb(var(--foreground))]">
@@ -546,7 +546,7 @@ export const ChatPageError = forwardRef<HTMLDivElement, ChatPageErrorStateProps>
 
         <Button
           onClick={onRetry}
-          icon={<Icon icon={RefreshCw} size="sm" aria-hidden="true" />}
+          icon={<Icon icon={RefreshCw} size="sm" aria-hidden={true} />}
           className="min-h-[44px] min-w-[44px]"
         >
           {DEFAULT_RETRY_LABEL}
@@ -586,7 +586,7 @@ export const ChatPageNotFound = forwardRef<
         icon={MessageSquare}
         size="xl"
         className="text-[rgb(var(--muted-foreground))]"
-        aria-hidden="true"
+        aria-hidden={true}
       />
 
       <Heading id={headingId} level={1} size="lg" className="text-[rgb(var(--foreground))]">
@@ -743,7 +743,7 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
         ref={ref}
         className={CHAT_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
-        aria-busy="true"
+        aria-busy={true}
         data-testid={testId ?? 'chat-page'}
         data-state="loading"
       >

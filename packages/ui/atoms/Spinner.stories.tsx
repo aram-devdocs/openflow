@@ -20,7 +20,7 @@ Spinner component for loading states with full accessibility support.
 
 ## Accessibility
 - \`role="status"\` and \`aria-live="polite"\` announce loading to screen readers
-- SVG is \`aria-hidden="true"\` (decorative, label provides meaning)
+- SVG is \`aria-hidden={true}\` (decorative, label provides meaning)
 - Animation disabled via \`motion-safe:\` for users with motion sensitivity
 - \`focusable="false"\` prevents SVG from receiving keyboard focus
 
@@ -273,7 +273,7 @@ export const InButtonContext: Story = {
       type="button"
       className="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-[rgb(var(--primary))] px-4 py-2 text-sm font-medium text-[rgb(var(--primary-foreground))]"
       disabled
-      aria-busy="true"
+      aria-busy={true}
       aria-label="Loading, please wait"
     >
       <Spinner size="sm" announce={false} />
@@ -284,7 +284,7 @@ export const InButtonContext: Story = {
     docs: {
       description: {
         story:
-          'When inside a button, set `announce={false}` and use `aria-busy="true"` on the button. The button provides the accessible context.',
+          'When inside a button, set `announce={false}` and use `aria-busy={true}` on the button. The button provides the accessible context.',
       },
     },
   },
@@ -497,7 +497,7 @@ export const FormSubmission: Story = {
         type="button"
         className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-[rgb(var(--primary))] px-4 py-2 text-sm font-medium text-[rgb(var(--primary-foreground))]"
         disabled
-        aria-busy="true"
+        aria-busy={true}
       >
         <Spinner size="sm" announce={false} />
         Subscribing...

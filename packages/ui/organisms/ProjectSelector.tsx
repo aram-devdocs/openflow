@@ -269,7 +269,7 @@ export const ProjectSelectorSkeleton = forwardRef<HTMLDivElement, ProjectSelecto
       <Box
         ref={ref}
         className={cn(SKELETON_CONTAINER_CLASSES, sizeClasses, paddingClasses, className)}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         data-testid={testId ?? 'project-selector-skeleton'}
         data-size={baseSize}
@@ -559,7 +559,7 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                   icon={getProjectIcon(selectedProject.icon)}
                   size={iconSize}
                   className="shrink-0 text-[rgb(var(--primary))]"
-                  aria-hidden="true"
+                  aria-hidden={true}
                 />
                 <Text as="span" className="truncate">
                   {selectedProject.name}
@@ -571,7 +571,7 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                   icon={Folder}
                   size={iconSize}
                   className="shrink-0 text-[rgb(var(--muted-foreground))]"
-                  aria-hidden="true"
+                  aria-hidden={true}
                 />
                 <Text as="span">{placeholder}</Text>
               </>
@@ -584,7 +584,7 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
               'shrink-0 text-[rgb(var(--muted-foreground))] motion-safe:transition-transform motion-safe:duration-200',
               isOpen && 'rotate-180'
             )}
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </Box>
 
@@ -642,7 +642,7 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                           ? 'text-[rgb(var(--primary))]'
                           : 'text-[rgb(var(--muted-foreground))]'
                       )}
-                      aria-hidden="true"
+                      aria-hidden={true}
                     />
                     <Text as="span" className="flex-1 truncate">
                       {project.name}
@@ -652,7 +652,7 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                         icon={Check}
                         size={iconSize}
                         className="text-[rgb(var(--primary))]"
-                        aria-hidden="true"
+                        aria-hidden={true}
                       />
                     )}
                   </Box>
@@ -662,7 +662,7 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
 
             {/* Divider */}
             {projects.length > 0 && (
-              <Box as="li" role="separator" className={DIVIDER_CLASSES} aria-hidden="true" />
+              <Box as="li" role="separator" className={DIVIDER_CLASSES} aria-hidden={true} />
             )}
 
             {/* New Project button */}
@@ -687,7 +687,7 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                 icon={Plus}
                 size={iconSize}
                 className="shrink-0 text-[rgb(var(--primary))]"
-                aria-hidden="true"
+                aria-hidden={true}
               />
               <Text as="span" className="flex-1">
                 {DEFAULT_NEW_PROJECT_LABEL}

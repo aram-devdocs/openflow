@@ -34,12 +34,12 @@ SkeletonStats provides loading placeholders for dashboard stat cards.
 - Uses Skeleton atom for consistent loading animation
 - Responsive grid layout (1 column on mobile, 2 on tablet, 4 on desktop)
 - Configurable count, size, and optional icon/trend indicators
-- Properly hidden from screen readers (aria-hidden="true")
+- Properly hidden from screen readers (aria-hidden={true})
 - forwardRef support for ref forwarding
 - data-testid support for automated testing
 
 ## Accessibility
-- \`aria-hidden="true"\` hides the skeleton from screen readers
+- \`aria-hidden={true}\` hides the skeleton from screen readers
 - \`role="presentation"\` indicates decorative purpose
 - The actual stats should be announced when loaded
 
@@ -314,7 +314,7 @@ export const AccessibilityDemo: Story = {
           Accessibility Features
         </h3>
         <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
-          <li>aria-hidden="true" - Hidden from screen readers</li>
+          <li>aria-hidden={true} - Hidden from screen readers</li>
           <li>role="presentation" - Indicates decorative purpose</li>
           <li>motion-safe:animate-pulse - Respects reduced motion preference</li>
           <li>Skeleton provides visual loading feedback for sighted users</li>

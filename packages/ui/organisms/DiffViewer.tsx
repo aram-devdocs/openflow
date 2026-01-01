@@ -700,7 +700,7 @@ const FileHeader = forwardRef<HTMLButtonElement, FileHeaderProps>(function FileH
           icon={isExpanded ? ChevronDown : ChevronRight}
           size={iconSize}
           className="text-[rgb(var(--muted-foreground))] flex-shrink-0"
-          aria-hidden="true"
+          aria-hidden={true}
         />
 
         {/* File icon */}
@@ -708,7 +708,7 @@ const FileHeader = forwardRef<HTMLButtonElement, FileHeaderProps>(function FileH
           icon={FileIconComponent}
           size={iconSize}
           className={cn('flex-shrink-0', iconColor)}
-          aria-hidden="true"
+          aria-hidden={true}
         />
 
         {/* File path */}
@@ -722,7 +722,7 @@ const FileHeader = forwardRef<HTMLButtonElement, FileHeaderProps>(function FileH
                 icon={ArrowRight}
                 size={iconSize}
                 className="inline mx-1 text-[rgb(var(--muted-foreground))]"
-                aria-hidden="true"
+                aria-hidden={true}
               />
               {diff.path}
             </>
@@ -862,7 +862,7 @@ export const DiffViewerError = forwardRef<HTMLDivElement, DiffViewerErrorProps>(
             icon={AlertCircle}
             size="lg"
             className="text-[rgb(var(--destructive))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </Box>
         <Text size="lg" weight="medium" color="foreground" className="mb-1">

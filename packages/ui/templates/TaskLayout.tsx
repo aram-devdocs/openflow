@@ -563,7 +563,7 @@ export const TaskLayoutSkeleton = forwardRef<HTMLDivElement, TaskLayoutSkeletonP
         direction="column"
         className={cn(TASK_LAYOUT_CONTAINER_CLASSES, className)}
         role="status"
-        aria-busy="true"
+        aria-busy={true}
         aria-label={loadingLabel}
         data-testid={dataTestId}
         data-size={baseSize}
@@ -852,7 +852,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                   aria-label={DEFAULT_BACK_LABEL}
                   data-testid={dataTestId ? `${dataTestId}-back-button` : undefined}
                 >
-                  <Icon icon={ArrowLeft} size="sm" aria-hidden="true" />
+                  <Icon icon={ArrowLeft} size="sm" aria-hidden={true} />
                 </Button>
               </Tooltip>
             )}
@@ -896,7 +896,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                     aria-label={DEFAULT_EDIT_TITLE_LABEL}
                     data-testid={dataTestId ? `${dataTestId}-edit-title-button` : undefined}
                   >
-                    <Icon icon={Pencil} size="sm" aria-hidden="true" />
+                    <Icon icon={Pencil} size="sm" aria-hidden={true} />
                   </Button>
                 )}
               </Flex>
@@ -950,7 +950,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                   <Icon
                     icon={GitBranch}
                     size="sm"
-                    aria-hidden="true"
+                    aria-hidden={true}
                     className="text-[rgb(var(--muted-foreground))]"
                   />
                   <Text
@@ -974,7 +974,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                   aria-label={DEFAULT_CREATE_PR_LABEL}
                   data-testid={dataTestId ? `${dataTestId}-create-pr-button` : undefined}
                 >
-                  <Icon icon={ExternalLink} size="sm" aria-hidden="true" />
+                  <Icon icon={ExternalLink} size="sm" aria-hidden={true} />
                   <Text as="span" className="hidden sm:inline">
                     Create PR
                   </Text>
@@ -993,7 +993,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                   aria-label={DEFAULT_MORE_ACTIONS_LABEL}
                   data-testid={dataTestId ? `${dataTestId}-more-actions-button` : undefined}
                 >
-                  <Icon icon={MoreHorizontal} size="sm" aria-hidden="true" />
+                  <Icon icon={MoreHorizontal} size="sm" aria-hidden={true} />
                 </Button>
               </Tooltip>
             )}
@@ -1039,7 +1039,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                 <Icon
                   icon={isStepsPanelCollapsed ? ChevronDown : ChevronUp}
                   size="sm"
-                  aria-hidden="true"
+                  aria-hidden={true}
                   className="text-[rgb(var(--muted-foreground))]"
                 />
               </Button>
@@ -1103,7 +1103,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
           data-testid={dataTestId ? `${dataTestId}-loading-overlay` : undefined}
         >
           <Flex className="items-center gap-2 text-[rgb(var(--muted-foreground))]">
-            <Box className={TASK_LAYOUT_LOADING_SPINNER_CLASSES} aria-hidden="true" />
+            <Box className={TASK_LAYOUT_LOADING_SPINNER_CLASSES} aria-hidden={true} />
             <Text as="span">Loading task...</Text>
           </Flex>
           {/* Screen reader announcement */}

@@ -51,7 +51,7 @@ const meta: Meta<typeof Icon> = {
 Icon component for displaying Lucide React icons with standardized sizing and accessibility.
 
 ## Features
-- **Decorative by default**: Icons are hidden from screen readers with \`aria-hidden="true"\`
+- **Decorative by default**: Icons are hidden from screen readers with \`aria-hidden={true}\`
 - **Meaningful icons**: Use \`aria-label\` prop to make icons announced by screen readers
 - **Responsive sizing**: Supports ResponsiveValue for breakpoint-aware sizing
 - **forwardRef support**: Full ref forwarding to the SVG element
@@ -207,7 +207,7 @@ export const ResponsiveSizing: Story = {
 // =============================================================================
 
 /**
- * Decorative icons are hidden from screen readers (aria-hidden="true").
+ * Decorative icons are hidden from screen readers (aria-hidden={true}).
  * Use when the icon is next to text that conveys the same meaning.
  */
 export const DecorativeIcons: Story = {

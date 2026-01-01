@@ -390,7 +390,7 @@ const StepItem = forwardRef<HTMLLIElement, StepItemProps>(function StepItem(
           getResponsiveSizeClasses(size, 'iconWrapper')
         )}
       >
-        <Icon icon={StepIcon} size="sm" className={iconClass} aria-hidden="true" />
+        <Icon icon={StepIcon} size="sm" className={iconClass} aria-hidden={true} />
       </Box>
 
       {/* Step content */}
@@ -451,7 +451,7 @@ export const WorkflowPreviewSkeleton = forwardRef<HTMLDivElement, WorkflowPrevie
           className
         )}
         role="presentation"
-        aria-hidden="true"
+        aria-hidden={true}
         data-testid={testId ?? 'workflow-preview-skeleton'}
         data-step-count={stepCount}
         {...props}
@@ -513,7 +513,7 @@ export const WorkflowPreviewError = forwardRef<HTMLDivElement, WorkflowPreviewEr
           icon={AlertTriangle}
           size={iconSize}
           className={ERROR_ICON_CLASSES}
-          aria-hidden="true"
+          aria-hidden={true}
         />
         <Text as="p" className={ERROR_MESSAGE_CLASSES}>
           {message}
@@ -526,7 +526,7 @@ export const WorkflowPreviewError = forwardRef<HTMLDivElement, WorkflowPreviewEr
             disabled={retrying}
             loading={retrying}
             loadingText="Retrying"
-            icon={<Icon icon={RefreshCw} size="sm" aria-hidden="true" />}
+            icon={<Icon icon={RefreshCw} size="sm" aria-hidden={true} />}
             aria-label={retrying ? 'Retrying' : DEFAULT_RETRY_LABEL}
             className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
           >
@@ -666,7 +666,7 @@ export const WorkflowPreview = forwardRef<HTMLDivElement, WorkflowPreviewProps>(
 
         {/* Steps list */}
         <List
-          as="ol"
+          ordered
           id={listId}
           className={getResponsiveSizeClasses(size, 'stepGap')}
           aria-label={`Steps in ${workflow.name}`}

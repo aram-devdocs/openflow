@@ -293,7 +293,7 @@ export const WorkflowSelectorSkeleton = forwardRef<HTMLDivElement, WorkflowSelec
       <Box
         ref={ref}
         className={cn(WORKFLOW_SELECTOR_BASE_CLASSES, className)}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         aria-label={DEFAULT_LOADING_LABEL}
         data-testid={testId ?? 'workflow-selector-skeleton'}
@@ -343,7 +343,7 @@ export const WorkflowSelectorError = forwardRef<HTMLDivElement, WorkflowSelector
           icon={AlertCircle}
           size={WORKFLOW_ICON_SIZE_MAP[baseSize]}
           className="text-[rgb(var(--destructive))]"
-          aria-hidden="true"
+          aria-hidden={true}
         />
         <Text as="p" className="text-sm text-[rgb(var(--destructive))]">
           {message}
@@ -468,7 +468,7 @@ const WorkflowOption = forwardRef<HTMLButtonElement, WorkflowOptionProps>(functi
           icon={IconComponent}
           size={iconSize}
           className="shrink-0 text-[rgb(var(--muted-foreground))]"
-          aria-hidden="true"
+          aria-hidden={true}
         />
       )}
 
@@ -488,14 +488,14 @@ const WorkflowOption = forwardRef<HTMLButtonElement, WorkflowOptionProps>(functi
           icon={Check}
           size={iconSize}
           className="shrink-0 text-[rgb(var(--primary))]"
-          aria-hidden="true"
+          aria-hidden={true}
         />
       ) : (
         <Icon
           icon={ChevronRight}
           size={iconSize}
           className="shrink-0 text-[rgb(var(--muted-foreground))]"
-          aria-hidden="true"
+          aria-hidden={true}
         />
       )}
     </Box>

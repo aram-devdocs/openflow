@@ -478,7 +478,7 @@ export const Drawer = forwardRef<HTMLDivElement, DrawerProps>(function Drawer(
             aria-label={closeLabel}
             data-testid={dataTestId ? `${dataTestId}-close-button` : undefined}
           >
-            <Icon icon={X} size="md" aria-hidden="true" />
+            <Icon icon={X} size="md" aria-hidden={true} />
           </Button>
         </Box>
 

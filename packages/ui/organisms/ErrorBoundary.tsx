@@ -313,7 +313,7 @@ export const DefaultFallback = forwardRef<HTMLDivElement, DefaultFallbackProps>(
         {/* Error icon */}
         <Box
           className={cn(ERROR_ICON_CONTAINER_BASE_CLASSES, iconContainerClasses)}
-          aria-hidden="true"
+          aria-hidden={true}
         >
           <Icon icon={AlertTriangle} size={iconSize} className="text-[rgb(var(--destructive))]" />
         </Box>

@@ -658,7 +658,7 @@ export const DataAttributes: Story = {
       <div>
         <h3 className="text-sm font-medium mb-2">Loading State</h3>
         <p className="text-xs text-[rgb(var(--muted-foreground))] mb-2">
-          data-state="loading", aria-busy="true"
+          data-state="loading", aria-busy={true}
         </p>
         <ProfilesSettingsPage
           {...createDefaultProps({ isLoading: true })}

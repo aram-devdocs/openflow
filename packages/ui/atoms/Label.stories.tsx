@@ -260,7 +260,7 @@ export const CustomRequiredIndicator: Story = {
     requiredIndicator: (
       <Asterisk
         className="ml-0.5 inline h-3 w-3 text-[rgb(var(--destructive))]"
-        aria-hidden="true"
+        aria-hidden={true}
       />
     ),
   },
@@ -275,7 +275,7 @@ export const AlertRequiredIndicator: Story = {
     requiredIndicator: (
       <AlertCircle
         className="ml-1 inline h-3.5 w-3.5 text-[rgb(var(--destructive))]"
-        aria-hidden="true"
+        aria-hidden={true}
       />
     ),
   },
@@ -288,7 +288,7 @@ export const TextRequiredIndicator: Story = {
     htmlFor: 'text-required',
     required: true,
     requiredIndicator: (
-      <span className="ml-1 text-xs text-[rgb(var(--muted-foreground))]" aria-hidden="true">
+      <span className="ml-1 text-xs text-[rgb(var(--muted-foreground))]" aria-hidden={true}>
         (required)
       </span>
     ),

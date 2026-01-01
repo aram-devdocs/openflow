@@ -198,9 +198,9 @@ export const ThemeToggleCompact = forwardRef<HTMLButtonElement, ThemeToggleCompa
         </VisuallyHidden>
 
         {resolvedTheme === 'dark' ? (
-          <Sun className={cn(...iconClasses)} aria-hidden="true" focusable="false" />
+          <Sun className={cn(...iconClasses)} aria-hidden={true} focusable="false" />
         ) : (
-          <Moon className={cn(...iconClasses)} aria-hidden="true" focusable="false" />
+          <Moon className={cn(...iconClasses)} aria-hidden={true} focusable="false" />
         )}
       </button>
     );

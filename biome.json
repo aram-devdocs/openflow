@@ -73,6 +73,7 @@
       "build",
       ".cache",
       "target",
+      "coverage",
       "src-tauri/gen",
       "src-tauri/target",
       "packages/generated/types.ts",

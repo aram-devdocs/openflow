@@ -340,7 +340,7 @@ export const ChatsListSkeleton = forwardRef<HTMLDivElement, ChatsListSkeletonPro
         ref={ref}
         role="status"
         aria-label={SR_LOADING}
-        aria-busy="true"
+        aria-busy={true}
         className={cn(
           CHATS_LIST_BASE_CLASSES,
           getResponsiveSizeClasses(size, CHATS_LIST_GAP_CLASSES),
@@ -354,16 +354,16 @@ export const ChatsListSkeleton = forwardRef<HTMLDivElement, ChatsListSkeletonPro
 
         {/* Filter tabs skeleton */}
         {showFilterSkeleton && (
-          <Box aria-hidden="true" className="flex gap-1 rounded-lg bg-[rgb(var(--muted))] p-1">
+          <Box aria-hidden={true} className="flex gap-1 rounded-lg bg-[rgb(var(--muted))] p-1">
             {FILTER_OPTIONS.map((option) => (
-              <Skeleton key={option.value} className="h-9 flex-1 rounded-md" aria-hidden="true" />
+              <Skeleton key={option.value} className="h-9 flex-1 rounded-md" aria-hidden={true} />
             ))}
           </Box>
         )}
 
         {/* Chat cards skeleton */}
         <Box
-          aria-hidden="true"
+          aria-hidden={true}
           className={cn(
             LIST_CONTAINER_CLASSES,
             getResponsiveSizeClasses(size, CHATS_LIST_ITEMS_GAP_CLASSES)
@@ -379,11 +379,11 @@ export const ChatsListSkeleton = forwardRef<HTMLDivElement, ChatsListSkeletonPro
             >
               <Box className="flex items-start gap-3">
                 {/* Icon skeleton */}
-                <Skeleton className="h-10 w-10 shrink-0 rounded-lg" aria-hidden="true" />
+                <Skeleton className="h-10 w-10 shrink-0 rounded-lg" aria-hidden={true} />
                 {/* Content skeleton */}
                 <Box className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-2/3" aria-hidden="true" />
-                  <Skeleton className="h-3 w-1/2" aria-hidden="true" />
+                  <Skeleton className="h-4 w-2/3" aria-hidden={true} />
+                  <Skeleton className="h-3 w-1/2" aria-hidden={true} />
                 </Box>
               </Box>
             </Box>
@@ -430,7 +430,7 @@ export const ChatsListError = forwardRef<HTMLDivElement, ChatsListErrorProps>(
         {...props}
       >
         <Box className={ERROR_ICON_CONTAINER_CLASSES}>
-          <Icon icon={AlertCircle} size="lg" aria-hidden="true" />
+          <Icon icon={AlertCircle} size="lg" aria-hidden={true} />
         </Box>
         <Text size="base" weight="semibold" color="foreground" className="text-center">
           {errorTitle}
@@ -531,7 +531,7 @@ export const ChatsList = forwardRef<HTMLDivElement, ChatsListProps>(
 
     // Keyboard navigation for tabs
     const handleTabKeyDown = useCallback(
-      (event: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+      (event: KeyboardEvent<HTMLElement>, currentIndex: number) => {
         if (!onFilterChange) return;
 
         let newIndex = currentIndex;

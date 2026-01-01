@@ -550,7 +550,7 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                   icon={AlertCircle}
                   size="sm"
                   className="mt-0.5 shrink-0 text-[rgb(var(--warning))]"
-                  aria-hidden="true"
+                  aria-hidden={true}
                 />
                 <Box className="text-sm">
                   {!ghCliInstalled ? (
@@ -718,7 +718,7 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                   icon={AlertCircle}
                   size="sm"
                   className="mt-0.5 shrink-0 text-[rgb(var(--destructive))]"
-                  aria-hidden="true"
+                  aria-hidden={true}
                 />
                 <Text id={errorId} size="sm" color="destructive" as="p">
                   {error}
@@ -776,7 +776,7 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
             aria-label={createAriaLabel}
             data-testid={dataTestId ? `${dataTestId}-submit` : undefined}
           >
-            <Icon icon={GitPullRequest} size="sm" className="mr-2" aria-hidden="true" />
+            <Icon icon={GitPullRequest} size="sm" className="mr-2" aria-hidden={true} />
             {DEFAULT_CREATE_LABEL}
           </Button>
         </DialogFooter>

@@ -260,7 +260,7 @@ export const RichContent: Story = {
         aria-label="Save keyboard shortcut: Command + S"
       >
         <Button>
-          <Icon icon={Save} size="sm" aria-hidden="true" />
+          <Icon icon={Save} size="sm" aria-hidden={true} />
           Save
         </Button>
       </Tooltip>
@@ -275,40 +275,40 @@ export const IconContent: Story = {
       <Tooltip
         content={
           <span className="flex items-center gap-1.5">
-            <Icon icon={Check} size="xs" className="text-green-500" aria-hidden="true" />
+            <Icon icon={Check} size="xs" className="text-green-500" aria-hidden={true} />
             Saved successfully
           </span>
         }
         aria-label="Saved successfully"
       >
         <Button variant="ghost" size="sm">
-          <Icon icon={Check} size="sm" className="text-green-500" aria-hidden="true" />
+          <Icon icon={Check} size="sm" className="text-green-500" aria-hidden={true} />
         </Button>
       </Tooltip>
       <Tooltip
         content={
           <span className="flex items-center gap-1.5">
-            <Icon icon={AlertTriangle} size="xs" className="text-yellow-500" aria-hidden="true" />
+            <Icon icon={AlertTriangle} size="xs" className="text-yellow-500" aria-hidden={true} />
             Unsaved changes
           </span>
         }
         aria-label="Unsaved changes warning"
       >
         <Button variant="ghost" size="sm">
-          <Icon icon={AlertTriangle} size="sm" className="text-yellow-500" aria-hidden="true" />
+          <Icon icon={AlertTriangle} size="sm" className="text-yellow-500" aria-hidden={true} />
         </Button>
       </Tooltip>
       <Tooltip
         content={
           <span className="flex items-center gap-1.5">
-            <Icon icon={X} size="xs" className="text-red-500" aria-hidden="true" />
+            <Icon icon={X} size="xs" className="text-red-500" aria-hidden={true} />
             Error occurred
           </span>
         }
         aria-label="Error occurred"
       >
         <Button variant="ghost" size="sm">
-          <Icon icon={X} size="sm" className="text-red-500" aria-hidden="true" />
+          <Icon icon={X} size="sm" className="text-red-500" aria-hidden={true} />
         </Button>
       </Tooltip>
     </div>
@@ -398,7 +398,7 @@ export const WithIconButton: Story = {
             icon={Info}
             size="md"
             className="text-[rgb(var(--muted-foreground))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </button>
       </Tooltip>
@@ -412,7 +412,7 @@ export const WithIconButton: Story = {
             icon={HelpCircle}
             size="md"
             className="text-[rgb(var(--muted-foreground))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </button>
       </Tooltip>
@@ -426,7 +426,7 @@ export const WithIconButton: Story = {
             icon={Settings}
             size="md"
             className="text-[rgb(var(--muted-foreground))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </button>
       </Tooltip>
@@ -449,7 +449,7 @@ export const ToolbarExample: Story = {
             className="rounded p-2 hover:bg-[rgb(var(--muted))] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]"
             aria-label="Add new item"
           >
-            <Icon icon={Plus} size="sm" aria-hidden="true" />
+            <Icon icon={Plus} size="sm" aria-hidden={true} />
           </button>
         </Tooltip>
         <Tooltip content="Save changes (Cmd+S)" position="bottom">
@@ -458,7 +458,7 @@ export const ToolbarExample: Story = {
             className="rounded p-2 hover:bg-[rgb(var(--muted))] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]"
             aria-label="Save changes"
           >
-            <Icon icon={Save} size="sm" aria-hidden="true" />
+            <Icon icon={Save} size="sm" aria-hidden={true} />
           </button>
         </Tooltip>
         <Tooltip content="Settings (Cmd+,)" position="bottom">
@@ -467,7 +467,7 @@ export const ToolbarExample: Story = {
             className="rounded p-2 hover:bg-[rgb(var(--muted))] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]"
             aria-label="Settings"
           >
-            <Icon icon={Settings} size="sm" aria-hidden="true" />
+            <Icon icon={Settings} size="sm" aria-hidden={true} />
           </button>
         </Tooltip>
         <div className="mx-1 h-4 w-px bg-[rgb(var(--border))]" role="separator" />
@@ -477,7 +477,7 @@ export const ToolbarExample: Story = {
             className="rounded p-2 hover:bg-[rgb(var(--destructive))]/10 text-[rgb(var(--destructive))] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]"
             aria-label="Delete item"
           >
-            <Icon icon={Trash2} size="sm" aria-hidden="true" />
+            <Icon icon={Trash2} size="sm" aria-hidden={true} />
           </button>
         </Tooltip>
       </div>
@@ -517,7 +517,7 @@ export const ExternalLinkExample: Story = {
           className="inline-flex items-center gap-1 text-[rgb(var(--primary))] hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))]"
         >
           External link
-          <Icon icon={ExternalLink} size="xs" aria-hidden="true" />
+          <Icon icon={ExternalLink} size="xs" aria-hidden={true} />
         </a>
       </Tooltip>
     </div>
@@ -547,7 +547,7 @@ export const CopyButtonExample: Story = {
               icon={copied ? Check : Copy}
               size="sm"
               className={copied ? 'text-green-500' : ''}
-              aria-hidden="true"
+              aria-hidden={true}
             />
           </button>
         </Tooltip>
@@ -597,7 +597,7 @@ export const ScreenReaderAccessibility: Story = {
         <Tooltip
           content={
             <div className="flex items-center gap-2">
-              <Icon icon={Info} size="xs" aria-hidden="true" />
+              <Icon icon={Info} size="xs" aria-hidden={true} />
               <span>Rich content with icon</span>
             </div>
           }
@@ -627,7 +627,7 @@ export const FocusRingVisibility: Story = {
             className="rounded-full p-2 hover:bg-[rgb(var(--muted))] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2"
             aria-label="Help"
           >
-            <Icon icon={HelpCircle} size="md" aria-hidden="true" />
+            <Icon icon={HelpCircle} size="md" aria-hidden={true} />
           </button>
         </Tooltip>
       </div>

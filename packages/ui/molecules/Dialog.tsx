@@ -406,7 +406,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
           Keyboard users close the dialog via Escape key (handled at document level) */}
       <Box
         className={DIALOG_BACKDROP_CLASSES}
-        aria-hidden="true"
+        aria-hidden={true}
         onClick={handleBackdropClick}
         onKeyDown={undefined}
         data-testid={dataTestId ? `${dataTestId}-backdrop` : undefined}

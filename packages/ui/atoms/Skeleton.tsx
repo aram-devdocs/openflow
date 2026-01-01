@@ -8,7 +8,7 @@
  * - Three variants: text, circular, rectangular
  * - Responsive width and height support
  * - Respects prefers-reduced-motion via motion-safe:
- * - Properly hidden from screen readers (aria-hidden="true")
+ * - Properly hidden from screen readers (aria-hidden={true})
  * - forwardRef support for ref forwarding
  * - data-testid support for testing
  */

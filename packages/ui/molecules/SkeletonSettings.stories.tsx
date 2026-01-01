@@ -34,14 +34,14 @@ SkeletonSettings provides loading placeholders for settings page layouts.
 ## Features
 - Uses Skeleton atom for consistent loading placeholders
 - Responsive sizing support via ResponsiveValue (sm, md, lg)
-- Properly hidden from screen readers (aria-hidden="true", role="presentation")
+- Properly hidden from screen readers (aria-hidden={true}, role="presentation")
 - forwardRef support for ref forwarding
 - data-testid support for testing
 - Configurable section and field counts
 - Optional section descriptions
 
 ## Accessibility
-- Container has \`aria-hidden="true"\` and \`role="presentation"\`
+- Container has \`aria-hidden={true}\` and \`role="presentation"\`
 - Uses motion-safe:animate-pulse for respecting prefers-reduced-motion
 - Not focusable or announced by screen readers
 

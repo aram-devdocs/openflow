@@ -885,7 +885,7 @@ export const SkeletonDemo: Story = {
     <div className="p-6">
       <h2 className="mb-4 text-xl font-bold">Loading Skeleton</h2>
       <p className="mb-4 text-sm text-[rgb(var(--muted-foreground))]">
-        This skeleton is shown during page loading. It has aria-hidden="true" and
+        This skeleton is shown during page loading. It has aria-hidden={true} and
         role="presentation" to hide from screen readers. A separate VisuallyHidden component
         announces "Loading dashboard. Please wait." to screen readers.
       </p>

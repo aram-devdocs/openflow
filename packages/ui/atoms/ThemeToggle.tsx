@@ -280,7 +280,7 @@ export const ThemeToggle = forwardRef<HTMLDivElement, ThemeToggleProps>(function
             data-state={isSelected ? 'selected' : 'unselected'}
             data-testid={dataTestId ? `${dataTestId}-${value}` : undefined}
           >
-            <Icon className={cn(...iconClasses)} aria-hidden="true" />
+            <Icon className={cn(...iconClasses)} aria-hidden={true} />
             <Text as="span" className="sr-only sm:not-sr-only">
               {label}
             </Text>

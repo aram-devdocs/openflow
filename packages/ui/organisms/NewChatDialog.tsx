@@ -593,7 +593,7 @@ export const NewChatDialog = forwardRef<HTMLDivElement, NewChatDialogProps>(func
                   icon={Bot}
                   size="sm"
                   className="shrink-0 text-[rgb(var(--muted-foreground))]"
-                  aria-hidden="true"
+                  aria-hidden={true}
                 />
                 <Text as="span" className="truncate">
                   {selectedProject?.name ?? 'Unknown Project'}
@@ -632,7 +632,7 @@ export const NewChatDialog = forwardRef<HTMLDivElement, NewChatDialogProps>(func
                 role="status"
                 aria-label={DEFAULT_NO_AGENTS_MESSAGE}
               >
-                <Icon icon={Bot} size="sm" className="shrink-0" aria-hidden="true" />
+                <Icon icon={Bot} size="sm" className="shrink-0" aria-hidden={true} />
                 <Text as="span">{DEFAULT_NO_AGENTS_MESSAGE}</Text>
               </Box>
             )}
@@ -692,7 +692,7 @@ export const NewChatDialog = forwardRef<HTMLDivElement, NewChatDialogProps>(func
           loading={isSubmitting}
           loadingText={DEFAULT_LOADING_TEXT}
           className={BUTTON_RESPONSIVE_CLASSES}
-          icon={<Icon icon={MessageSquarePlus} size="sm" aria-hidden="true" />}
+          icon={<Icon icon={MessageSquarePlus} size="sm" aria-hidden={true} />}
           data-testid={dataTestId ? `${dataTestId}-create` : undefined}
         >
           {DEFAULT_CREATE_LABEL}

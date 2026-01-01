@@ -243,7 +243,7 @@ export const PreviewSkeleton = forwardRef<HTMLDivElement, PreviewSkeletonProps>(
         ref={ref}
         className={ARTIFACT_PREVIEW_SKELETON_CLASSES}
         role="presentation"
-        aria-hidden="true"
+        aria-hidden={true}
         data-testid={dataTestId}
         data-lines={lines}
       >

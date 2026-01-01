@@ -270,13 +270,13 @@ export const ChatLoadingSkeleton = forwardRef<HTMLDivElement, ChatLoadingSkeleto
         className={cn(CHAT_PAGE_LAYOUT_CLASSES, className)}
         role="status"
         aria-label={SR_LOADING}
-        aria-busy="true"
+        aria-busy={true}
         data-testid={testId}
       >
         <VisuallyHidden>{SR_LOADING}</VisuallyHidden>
 
         {/* Skeleton Header */}
-        <Box className={SKELETON_HEADER_CLASSES} aria-hidden="true">
+        <Box className={SKELETON_HEADER_CLASSES} aria-hidden={true}>
           <Skeleton variant="circular" width={32} height={32} />
           <Box className="flex items-center gap-2.5">
             <Skeleton variant="circular" width={32} height={32} />
@@ -288,14 +288,14 @@ export const ChatLoadingSkeleton = forwardRef<HTMLDivElement, ChatLoadingSkeleto
         </Box>
 
         {/* Skeleton Chat Messages */}
-        <Box className={SKELETON_CONTENT_WRAPPER_CLASSES} aria-hidden="true">
+        <Box className={SKELETON_CONTENT_WRAPPER_CLASSES} aria-hidden={true}>
           <Box className={SKELETON_CONTENT_CONTAINER_CLASSES}>
             <SkeletonChat messageCount={4} />
           </Box>
         </Box>
 
         {/* Skeleton Input Area */}
-        <Box className={SKELETON_INPUT_WRAPPER_CLASSES} aria-hidden="true">
+        <Box className={SKELETON_INPUT_WRAPPER_CLASSES} aria-hidden={true}>
           <Box className={SKELETON_INPUT_CONTAINER_CLASSES}>
             <Box className="flex gap-3">
               <Skeleton className="flex-1 h-12 rounded-xl" />
@@ -350,7 +350,7 @@ export const ChatNotFound = forwardRef<HTMLDivElement, ChatNotFoundProps>(functi
       data-testid={testId}
     >
       <VisuallyHidden aria-live="polite">{SR_NOT_FOUND}</VisuallyHidden>
-      <AlertCircle className={NOT_FOUND_ICON_CLASSES} aria-hidden="true" />
+      <AlertCircle className={NOT_FOUND_ICON_CLASSES} aria-hidden={true} />
       <Heading level={2} size="lg" weight="semibold">
         {title}
       </Heading>
@@ -409,7 +409,7 @@ export const ChatErrorState = forwardRef<HTMLDivElement, ChatErrorStateProps>(
         data-testid={testId}
       >
         <VisuallyHidden>{errorAnnouncement}</VisuallyHidden>
-        <AlertCircle className={ERROR_ICON_CLASSES} aria-hidden="true" />
+        <AlertCircle className={ERROR_ICON_CLASSES} aria-hidden={true} />
         <Heading level={2} size="lg" weight="semibold">
           {title}
         </Heading>
@@ -490,7 +490,7 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
         className={HEADER_BACK_BUTTON_CLASSES}
         aria-label={backLabel}
       >
-        <Icon icon={ArrowLeft} size="sm" aria-hidden="true" />
+        <Icon icon={ArrowLeft} size="sm" aria-hidden={true} />
       </Button>
 
       <Flex align="center" gap="2" className={HEADER_CONTENT_WRAPPER_CLASSES}>
@@ -499,7 +499,7 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
             icon={MessageSquare}
             size="sm"
             className="text-[rgb(var(--primary))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </Box>
         <Box className={HEADER_TEXT_WRAPPER_CLASSES}>
@@ -523,7 +523,7 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
         aria-label={toggleLabel}
         aria-pressed={showRawOutput}
       >
-        <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
+        <Terminal className="h-3.5 w-3.5" aria-hidden={true} />
         <Text as="span" className="hidden sm:inline">
           {showRawOutput ? 'Formatted' : 'Raw'}
         </Text>
@@ -570,7 +570,7 @@ export const ChatEmptyState = forwardRef<HTMLDivElement, ChatEmptyStateProps>(
       >
         <VisuallyHidden aria-live="polite">{SR_EMPTY}</VisuallyHidden>
         <Box className={EMPTY_STATE_ICON_CONTAINER_CLASSES}>
-          <Bot className="h-8 w-8 text-[rgb(var(--primary))]" aria-hidden="true" />
+          <Bot className="h-8 w-8 text-[rgb(var(--primary))]" aria-hidden={true} />
         </Box>
         <Heading level={2} size="lg" weight="semibold">
           {title}
@@ -687,7 +687,7 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
         )}
 
         {/* Scroll anchor */}
-        {scrollRef && <Box ref={scrollRef} className="h-4" aria-hidden="true" />}
+        {scrollRef && <Box ref={scrollRef} className="h-4" aria-hidden={true} />}
       </Box>
     );
   }
@@ -765,7 +765,7 @@ export const ChatInputArea = forwardRef<HTMLDivElement, ChatInputAreaProps>(func
               id={textareaId}
               ref={textareaRef}
               value={inputValue}
-              onChange={(e) => onInputChange(e.target.value)}
+              onChange={(e) => onInputChange((e.target as HTMLTextAreaElement).value)}
               onKeyDown={onKeyDown}
               placeholder={placeholder}
               disabled={isProcessing}
@@ -794,7 +794,7 @@ export const ChatInputArea = forwardRef<HTMLDivElement, ChatInputAreaProps>(func
               className={INPUT_BUTTON_CLASSES}
               aria-label={stopLabel}
             >
-              <StopCircle className="h-5 w-5" aria-hidden="true" />
+              <StopCircle className="h-5 w-5" aria-hidden={true} />
             </Button>
           ) : (
             <Button
@@ -805,7 +805,7 @@ export const ChatInputArea = forwardRef<HTMLDivElement, ChatInputAreaProps>(func
               className={INPUT_BUTTON_CLASSES}
               aria-label={sendLabel}
             >
-              <Send className="h-5 w-5" aria-hidden="true" />
+              <Send className="h-5 w-5" aria-hidden={true} />
             </Button>
           )}
         </Flex>

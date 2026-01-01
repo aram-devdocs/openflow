@@ -7,7 +7,7 @@
  * Features:
  * - Uses Skeleton atom for consistent loading placeholders
  * - Responsive sizing support via ResponsiveValue
- * - Properly hidden from screen readers (aria-hidden="true")
+ * - Properly hidden from screen readers (aria-hidden={true})
  * - forwardRef support for ref forwarding
  * - data-testid support for testing
  */

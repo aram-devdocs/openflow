@@ -25,7 +25,7 @@ It matches the TaskCard component layout and provides consistent loading states.
 ## Features
 - **Responsive sizing**: Supports sm, md, lg sizes with responsive breakpoints
 - **Configurable content**: Show/hide description and footer sections
-- **Accessibility**: Uses aria-hidden="true" and role="presentation"
+- **Accessibility**: Uses aria-hidden={true} and role="presentation"
 - **forwardRef support**: For programmatic control
 - **Testing support**: data-testid attributes for all skeleton elements
 
@@ -338,7 +338,7 @@ export const AccessibilityDemo: Story = {
     docs: {
       description: {
         story:
-          'The skeleton has `aria-hidden="true"` and `role="presentation"` to hide it from screen readers. Inspect the DOM to verify.',
+          'The skeleton has `aria-hidden={true}` and `role="presentation"` to hide it from screen readers. Inspect the DOM to verify.',
       },
     },
   },
@@ -347,7 +347,7 @@ export const AccessibilityDemo: Story = {
       <div className="p-4 bg-[rgb(var(--muted))] rounded-lg">
         <p className="text-sm mb-2">
           This skeleton is hidden from screen readers with{' '}
-          <code className="px-1 py-0.5 bg-[rgb(var(--accent))] rounded">aria-hidden="true"</code>{' '}
+          <code className="px-1 py-0.5 bg-[rgb(var(--accent))] rounded">aria-hidden={true}</code>{' '}
           and{' '}
           <code className="px-1 py-0.5 bg-[rgb(var(--accent))] rounded">role="presentation"</code>
         </p>

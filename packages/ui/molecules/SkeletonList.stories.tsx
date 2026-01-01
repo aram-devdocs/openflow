@@ -30,12 +30,12 @@ SkeletonList provides a loading placeholder for generic list content.
 - Responsive sizing support via ResponsiveValue (sm, md, lg)
 - Optional avatar/icon placeholders
 - Configurable text lines (1, 2, or 3)
-- Properly hidden from screen readers (aria-hidden="true", role="presentation")
+- Properly hidden from screen readers (aria-hidden={true}, role="presentation")
 - forwardRef support for ref forwarding
 - data-testid support for testing
 
 ## Accessibility
-- \`aria-hidden="true"\` - Decorative loading content hidden from screen readers
+- \`aria-hidden={true}\` - Decorative loading content hidden from screen readers
 - \`role="presentation"\` - Indicates no semantic meaning
 - \`motion-safe:animate-pulse\` - Animation respects prefers-reduced-motion
 

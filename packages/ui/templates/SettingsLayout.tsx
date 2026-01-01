@@ -642,7 +642,7 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
                     <Icon
                       icon={item.icon}
                       size="sm"
-                      aria-hidden="true"
+                      aria-hidden={true}
                       className={cn(
                         isActive
                           ? 'text-[rgb(var(--accent-foreground))]'
@@ -673,7 +673,7 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
                     <ListItem
                       key={item.id}
                       className={SETTINGS_SECTION_HEADER_CLASSES}
-                      aria-hidden="true"
+                      aria-hidden={true}
                       data-testid={dataTestId ? `${dataTestId}-section-${item.id}` : undefined}
                     >
                       <Text as="span">{item.label}</Text>
@@ -715,7 +715,7 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
                         <Icon
                           icon={item.icon}
                           size="sm"
-                          aria-hidden="true"
+                          aria-hidden={true}
                           className={cn(
                             isActive
                               ? 'text-[rgb(var(--accent-foreground))]'

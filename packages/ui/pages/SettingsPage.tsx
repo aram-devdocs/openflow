@@ -429,7 +429,7 @@ export const SettingsPageSkeleton = forwardRef<HTMLDivElement, SettingsPageSkele
       <Box
         ref={ref}
         className={SETTINGS_PAGE_SKELETON_CLASSES}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         data-testid={testId ?? 'settings-page-skeleton'}
       >
@@ -468,7 +468,7 @@ export const SettingsPageError = forwardRef<HTMLDivElement, SettingsPageErrorSta
         data-testid={testId ?? 'settings-page-error'}
       >
         {/* Error icon */}
-        <Icon icon={AlertCircle} className={SETTINGS_PAGE_ERROR_ICON_CLASSES} aria-hidden="true" />
+        <Icon icon={AlertCircle} className={SETTINGS_PAGE_ERROR_ICON_CLASSES} aria-hidden={true} />
 
         {/* Error content */}
         <Box className="flex flex-col items-center gap-2">
@@ -611,7 +611,7 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
         ref={ref}
         className={SETTINGS_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
-        aria-busy="true"
+        aria-busy={true}
         data-testid={testId ?? 'settings-page'}
         data-state="loading"
         data-size={baseSize}
@@ -692,7 +692,7 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
         <Card className="overflow-hidden" role="region" aria-labelledby={appearanceSectionId}>
           <CardHeader className={SETTINGS_PAGE_CARD_HEADER_CLASSES}>
             <Box className={SETTINGS_PAGE_HEADER_TITLE_CONTAINER_CLASSES}>
-              <Icon icon={Moon} className={SETTINGS_PAGE_HEADER_ICON_CLASSES} aria-hidden="true" />
+              <Icon icon={Moon} className={SETTINGS_PAGE_HEADER_ICON_CLASSES} aria-hidden={true} />
               <Heading
                 id={appearanceSectionId}
                 level={2}
@@ -722,7 +722,7 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
               <Icon
                 icon={HardDrive}
                 className={SETTINGS_PAGE_HEADER_ICON_CLASSES}
-                aria-hidden="true"
+                aria-hidden={true}
               />
               <Heading
                 id={behaviorSectionId}
@@ -768,7 +768,7 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
         <Card className="overflow-hidden" role="region" aria-labelledby={aboutSectionId}>
           <CardHeader className={SETTINGS_PAGE_CARD_HEADER_CLASSES}>
             <Box className={SETTINGS_PAGE_HEADER_TITLE_CONTAINER_CLASSES}>
-              <Icon icon={Info} className={SETTINGS_PAGE_HEADER_ICON_CLASSES} aria-hidden="true" />
+              <Icon icon={Info} className={SETTINGS_PAGE_HEADER_ICON_CLASSES} aria-hidden={true} />
               <Heading id={aboutSectionId} level={2} className={SETTINGS_PAGE_HEADER_TITLE_CLASSES}>
                 About
               </Heading>
@@ -803,7 +803,7 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
             onClick={save.onSave}
             loading={save.isSaving}
             disabled={!save.hasChanges}
-            icon={<Save aria-hidden="true" />}
+            icon={<Save aria-hidden={true} />}
             className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
             aria-describedby={save.hasChanges ? undefined : 'save-disabled-hint'}
           >

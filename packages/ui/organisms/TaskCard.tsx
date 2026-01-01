@@ -525,17 +525,17 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
               <Badge
                 variant="warning"
                 size={badgeSize}
-                icon={<Icon icon={AlertCircle} size={iconSize} aria-hidden="true" />}
+                icon={<Icon icon={AlertCircle} size={iconSize} aria-hidden={true} />}
                 aria-label={buildActionsAnnouncement(task.actionsRequiredCount)}
                 data-testid={testId ? `${testId}-actions-badge` : undefined}
               >
-                <Text as="span" aria-hidden="true">
+                <Text as="span" aria-hidden={true}>
                   {task.actionsRequiredCount}{' '}
                   {task.actionsRequiredCount === 1 ? 'action' : 'actions'} required
                 </Text>
               </Badge>
             ) : (
-              <Text as="span" aria-hidden="true" />
+              <Text as="span" aria-hidden={true} />
             )}
 
             {/* Context menu button - visible on hover */}
@@ -547,7 +547,7 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
               aria-label={DEFAULT_MORE_OPTIONS_LABEL}
               data-testid={testId ? `${testId}-more-button` : undefined}
             >
-              <Icon icon={MoreVertical} size={iconSize} aria-hidden="true" />
+              <Icon icon={MoreVertical} size={iconSize} aria-hidden={true} />
             </Box>
           </Box>
         </CardContent>

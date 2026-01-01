@@ -777,7 +777,7 @@ export const MobileHeaderExample: Story = {
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              aria-hidden="true"
+              aria-hidden={true}
             >
               <path
                 strokeLinecap="round"
@@ -838,7 +838,7 @@ export const SidebarToggleExample: Story = {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                aria-hidden="true"
+                aria-hidden={true}
               >
                 <path
                   strokeLinecap="round"
@@ -883,7 +883,7 @@ export const FilterPanelExample: Story = {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Products</h2>
           <Button variant="secondary" size="sm" onClick={() => setIsOpen(true)}>
-            <Icon icon={Settings} size="sm" className="mr-2" aria-hidden="true" />
+            <Icon icon={Settings} size="sm" className="mr-2" aria-hidden={true} />
             Filters
           </Button>
         </div>

@@ -320,7 +320,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
       {/* Status icon - decorative, status conveyed via text and role */}
       <Icon
         className={cn('shrink-0', sizeClasses.icon, VARIANT_ICON_COLORS[variant])}
-        aria-hidden="true"
+        aria-hidden={true}
       />
 
       {/* Screen reader announcement for variant */}
@@ -386,7 +386,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
             'flex items-center justify-center'
           )}
         >
-          <X className="h-4 w-4" aria-hidden="true" />
+          <X className="h-4 w-4" aria-hidden={true} />
         </button>
       )}
     </Box>

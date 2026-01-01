@@ -308,7 +308,7 @@ export const AccessibilityDemo: Story = {
         <h3 className="mb-4 text-lg font-semibold">Accessibility Features</h3>
         <ul className="list-inside list-disc space-y-2 text-sm text-[rgb(var(--muted-foreground))]">
           <li>
-            <code>aria-hidden="true"</code> - Hidden from screen readers (decorative)
+            <code>aria-hidden={true}</code> - Hidden from screen readers (decorative)
           </li>
           <li>
             <code>role="presentation"</code> - Indicates decorative purpose

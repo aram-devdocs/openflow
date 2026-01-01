@@ -335,7 +335,7 @@ export const ChatPanelSkeleton = forwardRef<HTMLDivElement, ChatPanelSkeletonPro
       <Box
         ref={ref}
         className={cn(CHAT_PANEL_BASE_CLASSES, className)}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         data-testid={testId}
         data-message-count={messageCount}
@@ -416,7 +416,7 @@ export const ChatPanelError = forwardRef<HTMLDivElement, ChatPanelErrorProps>(
       >
         <Box className="flex flex-col items-center text-center">
           <Box className={ERROR_ICON_CONTAINER_CLASSES}>
-            <Icon icon={AlertCircle} className={ERROR_ICON_CLASSES} aria-hidden="true" />
+            <Icon icon={AlertCircle} className={ERROR_ICON_CLASSES} aria-hidden={true} />
           </Box>
           <Text as="strong" size="base" weight="medium" color="foreground" className="mb-1">
             {errorTitle}
@@ -677,7 +677,7 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
           )}
 
           {/* Scroll anchor */}
-          <Box ref={messagesEndRef} aria-hidden="true" />
+          <Box ref={messagesEndRef} aria-hidden={true} />
         </Box>
       </Box>
 
@@ -691,7 +691,7 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
             className={SCROLL_BUTTON_CLASSES}
             aria-label={scrollLabel}
           >
-            <Icon icon={ChevronDown} size="sm" aria-hidden="true" />
+            <Icon icon={ChevronDown} size="sm" aria-hidden={true} />
             <Text as="span">New messages</Text>
           </Button>
         </Box>
@@ -746,7 +746,7 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
                 aria-label={stopLabel}
                 data-testid={testId ? `${testId}-stop-button` : undefined}
               >
-                <Icon icon={StopCircle} size="md" aria-hidden="true" />
+                <Icon icon={StopCircle} size="md" aria-hidden={true} />
               </Button>
             ) : (
               <Button
@@ -758,7 +758,7 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
                 aria-label={sendLabel}
                 data-testid={testId ? `${testId}-send-button` : undefined}
               >
-                <Icon icon={Send} size="md" aria-hidden="true" />
+                <Icon icon={Send} size="md" aria-hidden={true} />
               </Button>
             )}
           </Flex>

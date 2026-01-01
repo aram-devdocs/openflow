@@ -485,7 +485,7 @@ export const TaskListSkeleton = forwardRef<HTMLDivElement, TaskListSkeletonProps
         <Box
           ref={ref}
           className={cn(TASK_LIST_KANBAN_BASE_CLASSES, gapClasses, className)}
-          aria-hidden="true"
+          aria-hidden={true}
           role="presentation"
           data-testid={testId}
           data-size={baseSize}
@@ -524,7 +524,7 @@ export const TaskListSkeleton = forwardRef<HTMLDivElement, TaskListSkeletonProps
       <Box
         ref={ref}
         className={cn(TASK_LIST_BASE_CLASSES, gapClasses, className)}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         data-testid={testId}
         data-count={count}
@@ -590,7 +590,7 @@ export const TaskListError = forwardRef<HTMLDivElement, TaskListErrorProps>(func
         icon={AlertTriangle}
         size={iconSize}
         className="text-[rgb(var(--destructive))]"
-        aria-hidden="true"
+        aria-hidden={true}
       />
       <Text as="span" size={textSize} weight="medium" className="text-[rgb(var(--foreground))]">
         {DEFAULT_ERROR_TITLE}
@@ -607,7 +607,7 @@ export const TaskListError = forwardRef<HTMLDivElement, TaskListErrorProps>(func
           variant="secondary"
           size={baseSize}
           onClick={onRetry}
-          icon={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+          icon={<RefreshCw className="h-4 w-4" aria-hidden={true} />}
           data-testid={testId ? `${testId}-retry` : undefined}
         >
           {DEFAULT_RETRY_LABEL}
@@ -835,14 +835,16 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
 
   return (
     <Box
-      ref={(node) => {
+      ref={(node: HTMLElement | null) => {
         // Handle both refs
         if (typeof ref === 'function') {
-          ref(node);
+          ref(node as HTMLDivElement | null);
         } else if (ref) {
-          ref.current = node;
+          (ref as React.MutableRefObject<HTMLDivElement | null>).current =
+            node as HTMLDivElement | null;
         }
-        (listRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+        (listRef as React.MutableRefObject<HTMLDivElement | null>).current =
+          node as HTMLDivElement | null;
       }}
       className={cn(TASK_LIST_BASE_CLASSES, listGapClasses, className)}
       role="list"

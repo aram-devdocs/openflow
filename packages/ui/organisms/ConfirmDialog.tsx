@@ -427,7 +427,7 @@ export const ConfirmDialog = forwardRef<HTMLDivElement, ConfirmDialogProps>(func
           {/* Icon */}
           <Box
             className={cn(ICON_CONTAINER_BASE_CLASSES, iconContainerClasses, config.iconClass)}
-            aria-hidden="true"
+            aria-hidden={true}
             data-testid={dataTestId ? `${dataTestId}-icon` : undefined}
           >
             <Icon icon={IconComponent} size={ICON_SIZE_MAP[baseSize]} />

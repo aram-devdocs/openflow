@@ -450,7 +450,7 @@ export const TasksFilterBar = forwardRef<HTMLDivElement, TasksFilterBarProps>(
 
     // Handle keyboard navigation
     const handleKeyDown = useCallback(
-      (e: KeyboardEvent<HTMLButtonElement>, index: number) => {
+      (e: KeyboardEvent<HTMLElement>, index: number) => {
         let newIndex: number | null = null;
 
         switch (e.key) {
@@ -534,8 +534,8 @@ export const TasksFilterBar = forwardRef<HTMLDivElement, TasksFilterBarProps>(
             <Box
               as="button"
               key={filter.value}
-              ref={(el) => {
-                tabsRef.current[index] = el;
+              ref={(el: HTMLElement | null) => {
+                tabsRef.current[index] = el as HTMLButtonElement | null;
               }}
               id={tabId}
               type="button"
@@ -562,7 +562,7 @@ export const TasksFilterBar = forwardRef<HTMLDivElement, TasksFilterBarProps>(
                     FILTER_COUNT_BADGE_CLASSES,
                     isSelected && 'bg-[rgb(var(--primary-foreground))]/20'
                   )}
-                  aria-hidden="true"
+                  aria-hidden={true}
                 >
                   {filter.count}
                 </Text>
@@ -600,7 +600,7 @@ export const TasksListLoading = forwardRef<HTMLDivElement, TasksListLoadingProps
         ref={ref}
         className={cn(LOADING_BASE_CLASSES, gapClasses, className)}
         role="status"
-        aria-busy="true"
+        aria-busy={true}
         aria-label={DEFAULT_LOADING_LABEL}
         data-testid={testId}
         data-count={count}
@@ -612,7 +612,7 @@ export const TasksListLoading = forwardRef<HTMLDivElement, TasksListLoadingProps
             {SR_LOADING}
           </Text>
         </VisuallyHidden>
-        <Box aria-hidden="true">
+        <Box aria-hidden={true}>
           {Array.from({ length: count }).map((_, i) => (
             <SkeletonTaskCard
               key={`skeleton-task-${i}`}
@@ -729,7 +729,7 @@ export const TasksListError = forwardRef<HTMLDivElement, TasksListErrorProps>(
           icon={AlertTriangle}
           size={iconSize}
           className="text-[rgb(var(--destructive))]"
-          aria-hidden="true"
+          aria-hidden={true}
         />
         <Text as="span" size={textSize} weight="medium" className="text-[rgb(var(--foreground))]">
           {DEFAULT_ERROR_TITLE}
@@ -746,7 +746,7 @@ export const TasksListError = forwardRef<HTMLDivElement, TasksListErrorProps>(
             variant="secondary"
             size={baseSize}
             onClick={onRetry}
-            icon={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+            icon={<RefreshCw className="h-4 w-4" aria-hidden={true} />}
             data-testid={testId ? `${testId}-retry` : undefined}
           >
             {DEFAULT_RETRY_LABEL}

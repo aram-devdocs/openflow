@@ -686,7 +686,7 @@ export const DataAttributesDemo: Story = {
       <div className="border rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-2">Loading State</h3>
         <code className="text-sm bg-muted p-2 rounded block mb-4">
-          data-state="loading" aria-busy="true"
+          data-state="loading" aria-busy={true}
         </code>
         <div className="h-[200px] border rounded overflow-hidden">
           <ProjectsListPage state="loading" data-testid="loading-demo" />

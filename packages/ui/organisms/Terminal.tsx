@@ -357,7 +357,7 @@ export const TerminalSkeleton = forwardRef<HTMLDivElement, TerminalSkeletonProps
       <Box
         ref={ref}
         role="presentation"
-        aria-hidden="true"
+        aria-hidden={true}
         className={cn(TERMINAL_SKELETON_BASE_CLASSES, paddingClasses, className)}
         data-testid={testId}
         data-size={typeof size === 'string' ? size : undefined}
@@ -428,10 +428,10 @@ export const TerminalError = forwardRef<HTMLDivElement, TerminalErrorProps>(func
         icon={AlertTriangle}
         size={iconSize}
         className={TERMINAL_ERROR_ICON_CLASSES}
-        aria-hidden="true"
+        aria-hidden={true}
       />
       <Box>
-        <Heading as="h3" className={TERMINAL_ERROR_TITLE_CLASSES}>
+        <Heading level={3} className={TERMINAL_ERROR_TITLE_CLASSES}>
           {title}
         </Heading>
         <Paragraph className={TERMINAL_ERROR_DESCRIPTION_CLASSES}>{description}</Paragraph>
@@ -446,7 +446,7 @@ export const TerminalError = forwardRef<HTMLDivElement, TerminalErrorProps>(func
           className={TERMINAL_ERROR_BUTTON_CLASSES}
           aria-label={isRetrying ? 'Retrying terminal initialization' : DEFAULT_RETRY_LABEL}
         >
-          <Icon icon={RefreshCw} size="sm" className="mr-2" aria-hidden="true" />
+          <Icon icon={RefreshCw} size="sm" className="mr-2" aria-hidden={true} />
           {DEFAULT_RETRY_LABEL}
         </Button>
       )}
@@ -801,14 +801,14 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(function Termi
         style={{
           minHeight: '100px',
         }}
-        aria-hidden="true"
+        aria-hidden={true}
       />
 
       {/* Loading indicator (overlay when not ready) */}
       {!isReady && (
         <Box
           className="absolute inset-0 flex items-center justify-center bg-muted/80"
-          aria-hidden="true"
+          aria-hidden={true}
         >
           <Box className="flex items-center gap-2 text-muted-foreground">
             <Icon

@@ -28,7 +28,7 @@ SkeletonArchiveList is a loading placeholder component that matches the layout o
 
 - **Uses Skeleton atom**: Built on top of the Skeleton atom for consistent loading placeholders
 - **Responsive sizing**: Supports sm, md, lg sizes with responsive breakpoint support
-- **Accessibility**: Properly hidden from screen readers with \`aria-hidden="true"\`
+- **Accessibility**: Properly hidden from screen readers with \`aria-hidden={true}\`
 - **forwardRef support**: Allows ref forwarding for programmatic access
 - **data-testid support**: Enables automated testing
 
@@ -265,7 +265,7 @@ export const AccessibilityDemo: Story = {
           Screen Reader Behavior
         </h3>
         <p className="mb-4 text-sm text-[rgb(var(--muted-foreground))]">
-          The skeleton list has <code>aria-hidden="true"</code> and <code>role="presentation"</code>
+          The skeleton list has <code>aria-hidden={true}</code> and <code>role="presentation"</code>
           , making it invisible to screen readers. This prevents confusion during loading states.
         </p>
         <SkeletonArchiveList count={2} data-testid="a11y-demo-skeleton" />
@@ -438,7 +438,7 @@ export const LoadingTransition: Story = {
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              aria-hidden="true"
+              aria-hidden={true}
             >
               <path
                 strokeLinecap="round"

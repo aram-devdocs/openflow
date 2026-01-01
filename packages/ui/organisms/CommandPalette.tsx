@@ -313,7 +313,7 @@ export function CommandPaletteSkeleton({
   'data-testid': testId,
 }: CommandPaletteSkeletonProps) {
   return (
-    <Box aria-hidden="true" role="presentation" data-testid={testId}>
+    <Box aria-hidden={true} role="presentation" data-testid={testId}>
       {Array.from({ length: count }).map((_, index) => (
         <Box key={`skeleton-${index}`} className={COMMAND_PALETTE_SKELETON_CLASSES}>
           <Skeleton variant="circular" width={24} height={24} />
@@ -598,7 +598,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
       data-state={isOpen ? 'open' : 'closed'}
     >
       {/* Backdrop */}
-      <Box className={COMMAND_PALETTE_OVERLAY_CLASSES} aria-hidden="true" />
+      <Box className={COMMAND_PALETTE_OVERLAY_CLASSES} aria-hidden={true} />
 
       {/* Screen reader announcements */}
       <VisuallyHidden>
@@ -632,7 +632,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
             icon={Search}
             size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
             className="text-[rgb(var(--muted-foreground))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
           <Input
             ref={inputRef}
@@ -662,7 +662,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
             />
           )}
           <Box className="flex items-center gap-1 text-xs text-[rgb(var(--muted-foreground))]">
-            <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES} aria-hidden="true">
+            <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES} aria-hidden={true}>
               esc
             </Box>
             <Text as="span" size="xs" color="muted-foreground">
@@ -677,7 +677,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
             aria-label={DEFAULT_CLOSE_LABEL}
             data-testid={testId ? `${testId}-close` : undefined}
           >
-            <Icon icon={X} size="sm" aria-hidden="true" />
+            <Icon icon={X} size="sm" aria-hidden={true} />
           </Button>
         </Box>
 
@@ -711,7 +711,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
           {showRecent && (
             <Box className="mb-2" role="group" aria-label={DEFAULT_RECENT_LABEL}>
               <Box className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
-                <Clock className="h-3 w-3" aria-hidden="true" />
+                <Clock className="h-3 w-3" aria-hidden={true} />
                 <Text as="span" size="xs" weight="medium">
                   Recent
                 </Text>
@@ -745,7 +745,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
                       icon={ItemIcon}
                       size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
                       className="text-[rgb(var(--muted-foreground))]"
-                      aria-hidden="true"
+                      aria-hidden={true}
                     />
                     <Box className="flex-1 truncate">
                       <Text as="span" size="sm" weight="medium" truncate className="block">
@@ -776,7 +776,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
           {showActions && (
             <Box className="mb-2" role="group" aria-label={DEFAULT_ACTIONS_LABEL}>
               <Box className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
-                <Command className="h-3 w-3" aria-hidden="true" />
+                <Command className="h-3 w-3" aria-hidden={true} />
                 <Text as="span" size="xs" weight="medium">
                   Actions
                 </Text>
@@ -811,7 +811,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
                       icon={ActionIcon}
                       size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
                       className="text-[rgb(var(--muted-foreground))]"
-                      aria-hidden="true"
+                      aria-hidden={true}
                     />
                     <Text as="span" size="sm" className="flex-1">
                       {action.label}
@@ -835,7 +835,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
           {showResults && (
             <Box role="group" aria-label={DEFAULT_RESULTS_LABEL}>
               <Box className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
-                <Search className="h-3 w-3" aria-hidden="true" />
+                <Search className="h-3 w-3" aria-hidden={true} />
                 <Text as="span" size="xs" weight="medium">
                   Results
                 </Text>
@@ -872,7 +872,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
                       icon={ResultIcon}
                       size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
                       className="text-[rgb(var(--muted-foreground))]"
-                      aria-hidden="true"
+                      aria-hidden={true}
                     />
                     <Box className="flex-1 truncate">
                       <Text as="span" size="sm" weight="medium" truncate className="block">
@@ -912,7 +912,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
         </Box>
 
         {/* Footer with keyboard hints */}
-        <Box className={COMMAND_PALETTE_FOOTER_CLASSES} aria-hidden="true">
+        <Box className={COMMAND_PALETTE_FOOTER_CLASSES} aria-hidden={true}>
           <Box className="flex items-center gap-1">
             <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES}>
               ↑

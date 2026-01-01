@@ -15,7 +15,7 @@ export interface IconProps extends Omit<LucideProps, 'size' | 'ref'> {
   /**
    * Accessible label for meaningful icons.
    * When provided, the icon is considered meaningful and announced by screen readers.
-   * When omitted, aria-hidden="true" is applied (decorative icon).
+   * When omitted, aria-hidden={true} is applied (decorative icon).
    */
   'aria-label'?: string;
   /** Data attribute for testing */
@@ -74,11 +74,11 @@ export function getResponsiveSizeClasses(size: ResponsiveValue<IconSize>): strin
  * Built on @openflow/primitives for accessibility and responsiveness:
  * - Uses VisuallyHidden for screen reader labels when icon is meaningful
  * - Supports responsive sizing via ResponsiveValue
- * - Default aria-hidden="true" for decorative icons
+ * - Default aria-hidden={true} for decorative icons
  * - aria-label prop for meaningful icons (removes aria-hidden)
  *
  * Accessibility:
- * - **Decorative icons** (no aria-label): Hidden from screen readers with aria-hidden="true"
+ * - **Decorative icons** (no aria-label): Hidden from screen readers with aria-hidden={true}
  * - **Meaningful icons** (with aria-label): Announced by screen readers, aria-hidden removed
  * - When inside a button/link with visible text, icons should remain decorative
  * - When icon-only buttons are used, provide aria-label on the button instead

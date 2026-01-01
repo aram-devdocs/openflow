@@ -182,7 +182,7 @@ export const HamburgerButton = forwardRef<HTMLButtonElement, HamburgerButtonProp
             {isOpen ? 'Menu open' : 'Menu closed'}
           </Text>
         </VisuallyHidden>
-        <Icon className={cn(...iconClasses)} aria-hidden="true" />
+        <Icon className={cn(...iconClasses)} aria-hidden={true} />
       </button>
     );
   }

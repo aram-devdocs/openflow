@@ -519,10 +519,10 @@ export const LoadingAccessibility: StoryObj<typeof DashboardLoadingSkeleton> = {
       <h2 className="text-lg font-semibold">Accessibility Features</h2>
       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
         <li>role="status" announces loading state</li>
-        <li>aria-busy="true" indicates ongoing operation</li>
+        <li>aria-busy={true} indicates ongoing operation</li>
         <li>aria-label provides loading message</li>
         <li>VisuallyHidden provides screen reader announcement</li>
-        <li>aria-hidden="true" on visual skeleton elements</li>
+        <li>aria-hidden={true} on visual skeleton elements</li>
       </ul>
       <DashboardLoadingSkeleton data-testid="loading-a11y" />
     </div>
@@ -606,7 +606,7 @@ export const ErrorStateAccessibility: StoryObj<typeof DashboardErrorState> = {
         <li>aria-live="assertive" for high-priority announcement</li>
         <li>VisuallyHidden provides error announcement</li>
         <li>Retry button has aria-label</li>
-        <li>Icon is aria-hidden="true"</li>
+        <li>Icon is aria-hidden={true}</li>
       </ul>
       <div className="text-sm">
         <strong>Default labels:</strong>
@@ -1131,7 +1131,7 @@ export const AccessibilityOverview: StoryObj = {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="border rounded p-3">
             <strong className="block mb-1">Loading States</strong>
-            <code className="text-xs">role="status" aria-busy="true"</code>
+            <code className="text-xs">role="status" aria-busy={true}</code>
           </div>
           <div className="border rounded p-3">
             <strong className="block mb-1">Error States</strong>

@@ -444,7 +444,7 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
           AVATAR_SIZE_CLASSES[baseSize],
           ICON_BG_STYLES[role]
         )}
-        aria-hidden="true"
+        aria-hidden={true}
       >
         <Icon icon={config.icon} size={AVATAR_ICON_SIZE_MAP[baseSize]} />
       </Box>
@@ -511,7 +511,7 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
               gap="1.5"
               className={TOOL_CALLS_HEADER_CLASSES}
             >
-              <Icon icon={Wrench} size="xs" aria-hidden="true" />
+              <Icon icon={Wrench} size="xs" aria-hidden={true} />
               <Text as="span" size="xs" weight="medium">
                 {toolCallsLabel}
               </Text>

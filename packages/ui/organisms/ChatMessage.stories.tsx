@@ -585,7 +585,7 @@ export const ScreenReaderAccessibility: Story = {
           <li>Timestamps have verbose aria-label (e.g., "Monday, January 15, 2024 at 3:30 PM")</li>
           <li>Tool calls section announces count (e.g., "Tool Calls, 3 tools used")</li>
           <li>Streaming state uses aria-live="polite" for announcements</li>
-          <li>Avatars are decorative (aria-hidden="true")</li>
+          <li>Avatars are decorative (aria-hidden={true})</li>
         </ul>
       </div>
       <div className="space-y-4">

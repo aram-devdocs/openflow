@@ -604,7 +604,7 @@ export const TaskNotFound = forwardRef<HTMLDivElement, TaskNotFoundProps>(
 
         <Icon
           icon={AlertCircle}
-          aria-hidden="true"
+          aria-hidden={true}
           className={cn(
             'text-muted-foreground',
             getResponsiveSizeClasses(size, NOT_FOUND_ICON_CLASSES)
@@ -686,7 +686,7 @@ export const TaskPageError = forwardRef<HTMLDivElement, TaskPageErrorProps>(
 
         <Icon
           icon={AlertTriangle}
-          aria-hidden="true"
+          aria-hidden={true}
           className={cn('text-destructive', getResponsiveSizeClasses(size, ERROR_ICON_CLASSES))}
         />
 
@@ -715,7 +715,7 @@ export const TaskPageError = forwardRef<HTMLDivElement, TaskPageErrorProps>(
           <Button
             variant="primary"
             onClick={onRetry}
-            icon={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+            icon={<RefreshCw className="h-4 w-4" aria-hidden={true} />}
             className={cn(
               'min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0',
               getResponsiveSizeClasses(size, ERROR_BUTTON_MARGIN_CLASSES)
@@ -861,7 +861,7 @@ export const TaskOutputPanel = forwardRef<HTMLDivElement, TaskOutputPanelProps>(
             aria-label={SR_OUTPUT_TOGGLE_TEMPLATE(showRawOutput)}
             className="h-7 gap-1.5 px-2 text-xs min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
           >
-            <Icon icon={Terminal} size="sm" aria-hidden="true" />
+            <Icon icon={Terminal} size="sm" aria-hidden={true} />
             {showRawOutput ? TOGGLE_FORMATTED_LABEL : TOGGLE_RAW_LABEL}
           </Button>
         </Flex>

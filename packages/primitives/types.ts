@@ -7,6 +7,12 @@
 import type { CSSProperties, ReactNode } from 'react';
 
 /**
+ * Booleanish type to match React's ARIA attribute typing
+ * Allows both boolean values and string literals 'true'/'false' for HTML compatibility
+ */
+type Booleanish = boolean | 'true' | 'false';
+
+/**
  * Tailwind CSS breakpoints
  */
 export type Breakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -180,6 +186,7 @@ export type AriaRole =
 
 /**
  * Accessibility props for ARIA attributes
+ * Uses Booleanish type for boolean attributes to match React's HTMLAttributes typing
  */
 export interface A11yProps {
   /** Accessible label (use when visible label is not available) */
@@ -189,25 +196,25 @@ export interface A11yProps {
   /** ID of element that describes this element */
   'aria-describedby'?: string;
   /** Whether element is hidden from assistive technology */
-  'aria-hidden'?: boolean;
+  'aria-hidden'?: Booleanish;
   /** Live region politeness level */
   'aria-live'?: AriaLive;
   /** Whether element is busy/loading */
-  'aria-busy'?: boolean;
+  'aria-busy'?: Booleanish;
   /** Whether element is expanded (for disclosure widgets) */
-  'aria-expanded'?: boolean;
+  'aria-expanded'?: Booleanish;
   /** Whether element is pressed (for toggle buttons) */
-  'aria-pressed'?: boolean | 'mixed';
+  'aria-pressed'?: Booleanish | 'mixed';
   /** Whether element is selected */
-  'aria-selected'?: boolean;
+  'aria-selected'?: Booleanish;
   /** Whether element is checked */
-  'aria-checked'?: boolean | 'mixed';
+  'aria-checked'?: Booleanish | 'mixed';
   /** Whether element is disabled */
-  'aria-disabled'?: boolean;
+  'aria-disabled'?: Booleanish;
   /** Whether element is required */
-  'aria-required'?: boolean;
+  'aria-required'?: Booleanish;
   /** Whether element has invalid input */
-  'aria-invalid'?: boolean | 'grammar' | 'spelling';
+  'aria-invalid'?: Booleanish | 'grammar' | 'spelling';
   /** ARIA role */
   role?: AriaRole | (string & {});
   /** ID of the element that controls this element */
@@ -215,11 +222,11 @@ export interface A11yProps {
   /** ID of the element that owns this element */
   'aria-owns'?: string;
   /** Whether element has a popup */
-  'aria-haspopup'?: boolean | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
+  'aria-haspopup'?: Booleanish | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
   /** ID of the active descendant */
   'aria-activedescendant'?: string;
   /** Current item in a set (e.g., current page in navigation) */
-  'aria-current'?: boolean | 'page' | 'step' | 'location' | 'date' | 'time' | 'true' | 'false';
+  'aria-current'?: Booleanish | 'page' | 'step' | 'location' | 'date' | 'time';
   /** Number of items in the current set */
   'aria-setsize'?: number;
   /** Position in the current set */

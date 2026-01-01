@@ -527,7 +527,7 @@ export const ProjectDetailLoadingSkeleton = forwardRef<
         data-size={baseSize}
         data-skeleton-count={skeletonCount}
         role="status"
-        aria-busy="true"
+        aria-busy={true}
         aria-label={SR_LOADING}
         {...props}
       >
@@ -582,7 +582,7 @@ export const ProjectNotFound = forwardRef<HTMLDivElement, ProjectNotFoundProps>(
               icon={FolderGit2}
               size="xl"
               className="text-[rgb(var(--muted-foreground))]"
-              aria-hidden="true"
+              aria-hidden={true}
             />
           </Box>
           <Heading level={2} size="lg" weight="semibold" className="mb-2">
@@ -596,7 +596,7 @@ export const ProjectNotFound = forwardRef<HTMLDivElement, ProjectNotFoundProps>(
             className="mt-6 min-h-[44px] sm:min-h-0"
             onClick={onBack}
             size={BUTTON_SIZE_MAP[baseSize]}
-            icon={<Icon icon={ChevronLeft} size={iconSize} aria-hidden="true" />}
+            icon={<Icon icon={ChevronLeft} size={iconSize} aria-hidden={true} />}
             aria-label={DEFAULT_BACK_LABEL}
           >
             {DEFAULT_BACK_LABEL}
@@ -649,7 +649,7 @@ export const ProjectDetailErrorState = forwardRef<HTMLDivElement, ProjectDetailE
             </Text>
           </VisuallyHidden>
           <Box className={ERROR_ICON_CONTAINER_CLASSES}>
-            <Icon icon={AlertCircle} size="lg" aria-hidden="true" />
+            <Icon icon={AlertCircle} size="lg" aria-hidden={true} />
           </Box>
           <Heading level={2} size="lg" weight="semibold" className="mb-2">
             {errorTitle}
@@ -666,7 +666,7 @@ export const ProjectDetailErrorState = forwardRef<HTMLDivElement, ProjectDetailE
                 onClick={onBack}
                 size={BUTTON_SIZE_MAP[baseSize]}
                 className="min-h-[44px] sm:min-h-0"
-                icon={<Icon icon={ChevronLeft} size={ICON_SIZE_MAP[baseSize]} aria-hidden="true" />}
+                icon={<Icon icon={ChevronLeft} size={ICON_SIZE_MAP[baseSize]} aria-hidden={true} />}
               >
                 Back
               </Button>
@@ -677,7 +677,7 @@ export const ProjectDetailErrorState = forwardRef<HTMLDivElement, ProjectDetailE
                 onClick={onRetry}
                 size={BUTTON_SIZE_MAP[baseSize]}
                 className="min-h-[44px] sm:min-h-0"
-                icon={<Icon icon={RefreshCw} size={ICON_SIZE_MAP[baseSize]} aria-hidden="true" />}
+                icon={<Icon icon={RefreshCw} size={ICON_SIZE_MAP[baseSize]} aria-hidden={true} />}
                 aria-label={retryLabel}
               >
                 {retryLabel}
@@ -730,7 +730,7 @@ export const ProjectDetailInfoBar = forwardRef<HTMLDivElement, ProjectDetailInfo
             className={BREADCRUMB_BUTTON_CLASSES}
             aria-label={buildBreadcrumbAccessibleLabel(project.name)}
           >
-            <Icon icon={ChevronLeft} size="sm" aria-hidden="true" />
+            <Icon icon={ChevronLeft} size="sm" aria-hidden={true} />
             <Text
               size="sm"
               color="muted-foreground"
@@ -755,14 +755,14 @@ export const ProjectDetailInfoBar = forwardRef<HTMLDivElement, ProjectDetailInfo
             aria-label={DEFAULT_SETTINGS_LABEL}
             data-testid={testId ? `${testId}-settings` : undefined}
           >
-            <Icon icon={Settings} size={iconSize} aria-hidden="true" />
+            <Icon icon={Settings} size={iconSize} aria-hidden={true} />
           </Button>
           <Button
             variant="primary"
             size={buttonSize}
             onClick={onNewTask}
             className="min-h-[44px] sm:min-h-0"
-            icon={<Icon icon={Plus} size={iconSize} aria-hidden="true" />}
+            icon={<Icon icon={Plus} size={iconSize} aria-hidden={true} />}
             data-testid={testId ? `${testId}-new-task` : undefined}
           >
             {DEFAULT_NEW_TASK_LABEL}
@@ -816,7 +816,7 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
             </Text>
           </VisuallyHidden>
           <Box className={ERROR_ICON_CONTAINER_CLASSES}>
-            <Icon icon={AlertCircle} size="lg" aria-hidden="true" />
+            <Icon icon={AlertCircle} size="lg" aria-hidden={true} />
           </Box>
           <Heading level={2} size="lg" weight="semibold" className="mb-2">
             {DEFAULT_ERROR_TITLE}
@@ -829,7 +829,7 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
               variant="primary"
               onClick={onRetry}
               className="min-h-[44px] sm:min-h-0"
-              icon={<Icon icon={RefreshCw} size={ICON_SIZE_MAP[baseSize]} aria-hidden="true" />}
+              icon={<Icon icon={RefreshCw} size={ICON_SIZE_MAP[baseSize]} aria-hidden={true} />}
             >
               {DEFAULT_ERROR_RETRY_LABEL}
             </Button>
@@ -847,7 +847,7 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
           data-testid={testId ? `${testId}-loading` : undefined}
           data-size={baseSize}
           role="status"
-          aria-busy="true"
+          aria-busy={true}
           aria-label={SR_LOADING}
           {...props}
         >

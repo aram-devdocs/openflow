@@ -320,7 +320,7 @@ export const ProfilesSettingsPageSkeleton = forwardRef<
     <Box
       ref={ref}
       className={PROFILES_SETTINGS_PAGE_SKELETON_CLASSES}
-      aria-hidden="true"
+      aria-hidden={true}
       role="presentation"
       data-testid={testId ?? 'profiles-settings-page-skeleton'}
     >
@@ -492,7 +492,7 @@ export const ProfilesSettingsPage = forwardRef<HTMLDivElement, ProfilesSettingsP
           ref={ref}
           className={PROFILES_SETTINGS_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
-          aria-busy="true"
+          aria-busy={true}
           data-testid={testId ?? 'profiles-settings-page'}
           data-state="loading"
         >

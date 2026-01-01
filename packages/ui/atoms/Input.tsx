@@ -295,7 +295,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
               )}
               aria-label="Clear input"
             >
-              <X className={cn(...iconClasses)} aria-hidden="true" />
+              <X className={cn(...iconClasses)} aria-hidden={true} />
             </button>
           ) : trailingIcon ? (
             <Box

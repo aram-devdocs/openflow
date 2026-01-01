@@ -17,12 +17,12 @@ Built on the Box primitive for consistent spacing and accessibility.
 - **Three variants**: text, circular, rectangular
 - **Responsive dimensions**: width/height support responsive objects
 - **Motion-safe**: Animation respects prefers-reduced-motion
-- **Screen reader hidden**: aria-hidden="true" prevents announcement
+- **Screen reader hidden**: aria-hidden={true} prevents announcement
 - **forwardRef**: Supports ref forwarding for DOM access
 - **data-testid**: Supports test automation
 
 ## Accessibility
-- \`aria-hidden="true"\` - Hidden from screen readers
+- \`aria-hidden={true}\` - Hidden from screen readers
 - \`motion-safe:animate-pulse\` - Animation disabled for reduced motion
 - Decorative element - provides visual indication only
 
@@ -380,7 +380,7 @@ export const AccessibilityDemo: Story = {
     docs: {
       description: {
         story: `
-Skeleton is properly hidden from screen readers using \`aria-hidden="true"\`.
+Skeleton is properly hidden from screen readers using \`aria-hidden={true}\`.
 Screen readers will not announce this content.
 
 For accessible loading states, combine Skeleton with a live region:
@@ -404,7 +404,7 @@ For accessible loading states, combine Skeleton with a live region:
     <div className="space-y-4">
       <div className="p-4 bg-[rgb(var(--muted))] rounded-lg">
         <p className="text-sm mb-2">
-          Skeleton has <code className="bg-black/10 px-1 rounded">aria-hidden="true"</code>
+          Skeleton has <code className="bg-black/10 px-1 rounded">aria-hidden={true}</code>
         </p>
         <p className="text-xs text-[rgb(var(--muted-foreground))]">
           Use a screen reader to verify - this skeleton won't be announced

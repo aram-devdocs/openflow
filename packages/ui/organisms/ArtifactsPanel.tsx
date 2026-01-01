@@ -320,7 +320,7 @@ export const ArtifactsPanelSkeleton = forwardRef(function ArtifactsPanelSkeleton
     <Box
       ref={ref}
       role="presentation"
-      aria-hidden="true"
+      aria-hidden={true}
       className={cn(ARTIFACTS_PANEL_BASE_CLASSES, containerClasses, className)}
       data-testid={testId}
       data-size={baseSize}
@@ -394,7 +394,7 @@ export const ArtifactsPanelError = forwardRef(function ArtifactsPanelError(
         icon={AlertCircle}
         size={iconSize === 'xs' ? 'sm' : iconSize === 'sm' ? 'md' : 'lg'}
         className="text-[rgb(var(--destructive))]"
-        aria-hidden="true"
+        aria-hidden={true}
       />
       <Box className="space-y-1">
         <Text weight="medium" className="text-[rgb(var(--foreground))]">
@@ -410,7 +410,7 @@ export const ArtifactsPanelError = forwardRef(function ArtifactsPanelError(
           size={ARTIFACTS_BUTTON_SIZE_MAP[baseSize]}
           onClick={onRetry}
           icon={
-            <Icon icon={RefreshCw} size={ARTIFACTS_ICON_SIZE_MAP[baseSize]} aria-hidden="true" />
+            <Icon icon={RefreshCw} size={ARTIFACTS_ICON_SIZE_MAP[baseSize]} aria-hidden={true} />
           }
           aria-label={`${DEFAULT_RETRY_LABEL}: ${error}`}
         >
@@ -593,7 +593,7 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
                 icon={FileIcon}
                 size={iconSize}
                 className="flex-shrink-0 text-[rgb(var(--muted-foreground))]"
-                aria-hidden="true"
+                aria-hidden={true}
               />
 
               {/* File info */}
@@ -625,7 +625,7 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
                       className={cn('p-0', buttonDimensionClasses)}
                       data-testid={testId ? `${testId}-preview-button` : undefined}
                     >
-                      <Icon icon={Eye} size={iconSize} aria-hidden="true" />
+                      <Icon icon={Eye} size={iconSize} aria-hidden={true} />
                     </Button>
                   </Tooltip>
                 )}
@@ -638,7 +638,7 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
                     className={cn('p-0', buttonDimensionClasses)}
                     data-testid={testId ? `${testId}-open-button` : undefined}
                   >
-                    <Icon icon={ExternalLink} size={iconSize} aria-hidden="true" />
+                    <Icon icon={ExternalLink} size={iconSize} aria-hidden={true} />
                   </Button>
                 </Tooltip>
               </Box>

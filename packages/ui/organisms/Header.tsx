@@ -431,7 +431,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
       <Box className={HEADER_TITLE_CONTAINER_CLASSES}>
         {title ? (
           <Heading
-            as="h1"
+            level={1}
             id={titleId}
             className={cn(HEADER_TITLE_CLASSES, titleSizeClasses)}
             data-testid={testId ? `${testId}-title` : undefined}
@@ -474,7 +474,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
               data-state={isMenuOpen ? 'open' : 'closed'}
               className="min-h-[44px] min-w-[44px]"
             >
-              <Icon icon={isMenuOpen ? X : Menu} size={iconSize} aria-hidden="true" />
+              <Icon icon={isMenuOpen ? X : Menu} size={iconSize} aria-hidden={true} />
             </Button>
           </Box>
         )}
@@ -496,11 +496,11 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
               aria-label={DEFAULT_SEARCH_LABEL}
               data-testid={testId ? `${testId}-search-button` : undefined}
             >
-              <Icon icon={Search} size={iconSize} aria-hidden="true" />
+              <Icon icon={Search} size={iconSize} aria-hidden={true} />
               <Text as="span" className="hidden sm:inline">
                 Search
               </Text>
-              <Box as="kbd" className={HEADER_KBD_CLASSES} aria-hidden="true">
+              <Box as="kbd" className={HEADER_KBD_CLASSES} aria-hidden={true}>
                 <Text as="span" className="text-xs">
                   {KEYBOARD_SHORTCUT_TEXT.charAt(0)}
                 </Text>
@@ -519,7 +519,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
               aria-label={DEFAULT_NEW_CHAT_LABEL}
               data-testid={testId ? `${testId}-new-chat-button` : undefined}
             >
-              <Icon icon={MessageSquarePlus} size={iconSize} aria-hidden="true" />
+              <Icon icon={MessageSquarePlus} size={iconSize} aria-hidden={true} />
               <Text as="span" className="hidden sm:inline">
                 New Chat
               </Text>
@@ -535,7 +535,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
               aria-label={DEFAULT_NEW_TERMINAL_LABEL}
               data-testid={testId ? `${testId}-new-terminal-button` : undefined}
             >
-              <Icon icon={TerminalSquare} size={iconSize} aria-hidden="true" />
+              <Icon icon={TerminalSquare} size={iconSize} aria-hidden={true} />
               <Text as="span" className="hidden sm:inline">
                 Terminal
               </Text>

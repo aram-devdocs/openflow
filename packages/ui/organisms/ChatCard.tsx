@@ -414,7 +414,7 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
           <Box className={CHAT_CARD_CONTENT_WRAPPER_CLASSES}>
             <Box
               className={cn(CHAT_CARD_ICON_CONTAINER_BASE_CLASSES, iconContainerClasses)}
-              aria-hidden="true"
+              aria-hidden={true}
             >
               <Icon
                 icon={MessageSquare}
@@ -463,7 +463,7 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
               aria-label={DEFAULT_MORE_OPTIONS_LABEL}
               data-testid={dataTestId ? `${dataTestId}-more-button` : undefined}
             >
-              <Icon icon={MoreVertical} size={baseSize === 'lg' ? 'sm' : 'xs'} aria-hidden="true" />
+              <Icon icon={MoreVertical} size={baseSize === 'lg' ? 'sm' : 'xs'} aria-hidden={true} />
             </Box>
           )}
         </Box>

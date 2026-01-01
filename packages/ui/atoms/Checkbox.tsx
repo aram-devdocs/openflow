@@ -273,7 +273,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
             'peer-indeterminate:hidden',
             ...iconClasses
           )}
-          aria-hidden="true"
+          aria-hidden={true}
         />
         {/* Indeterminate dash overlay using Minus icon for consistency */}
         <Minus
@@ -285,7 +285,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
             'peer-checked:hidden',
             ...iconClasses
           )}
-          aria-hidden="true"
+          aria-hidden={true}
         />
       </Box>
     </Box>

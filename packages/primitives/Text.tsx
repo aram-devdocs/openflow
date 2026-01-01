@@ -48,7 +48,15 @@ export type TextElement =
   | 'sup'
   | 'time'
   | 'var'
-  | 'label';
+  | 'label'
+  | 'dt'
+  | 'dd'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6';
 
 /**
  * Text component props
@@ -86,6 +94,8 @@ export interface TextProps extends A11yProps, Omit<HTMLAttributes<HTMLElement>, 
   whiteSpace?: 'normal' | 'nowrap' | 'pre' | 'pre-line' | 'pre-wrap' | 'break-spaces';
   /** Word break */
   wordBreak?: 'normal' | 'words' | 'all' | 'keep';
+  /** Label htmlFor attribute (only used when as="label") */
+  htmlFor?: string;
 }
 
 /**

@@ -386,7 +386,7 @@ const CommitStats = forwardRef<HTMLDivElement, CommitStatsProps>(function Commit
 
       <Box
         className="flex items-center gap-1 text-[rgb(var(--muted-foreground))]"
-        aria-hidden="true"
+        aria-hidden={true}
       >
         <Icon icon={FileDiff} size={iconSize} />
         <Text size={size === 'sm' ? 'xs' : 'sm'}>
@@ -395,14 +395,14 @@ const CommitStats = forwardRef<HTMLDivElement, CommitStatsProps>(function Commit
       </Box>
 
       {additions > 0 && (
-        <Box className="flex items-center gap-0.5 text-addition" aria-hidden="true">
+        <Box className="flex items-center gap-0.5 text-addition" aria-hidden={true}>
           <Icon icon={Plus} size={iconSize} />
           <Text size={size === 'sm' ? 'xs' : 'sm'}>{additions}</Text>
         </Box>
       )}
 
       {deletions > 0 && (
-        <Box className="flex items-center gap-0.5 text-deletion" aria-hidden="true">
+        <Box className="flex items-center gap-0.5 text-deletion" aria-hidden={true}>
           <Icon icon={Minus} size={iconSize} />
           <Text size={size === 'sm' ? 'xs' : 'sm'}>{deletions}</Text>
         </Box>
@@ -435,7 +435,7 @@ const CommitDetails = forwardRef<HTMLDivElement, CommitDetailsProps>(function Co
       <Flex direction="column" gap={size === 'sm' ? '1' : '2'}>
         {/* Author info */}
         <Flex align="center" gap="2" className="text-[rgb(var(--muted-foreground))]">
-          <Icon icon={User} size={iconSize} aria-hidden="true" />
+          <Icon icon={User} size={iconSize} aria-hidden={true} />
           <Text size={size === 'sm' ? 'xs' : 'sm'}>
             {commit.author} {'<'}
             {commit.authorEmail}
@@ -445,7 +445,7 @@ const CommitDetails = forwardRef<HTMLDivElement, CommitDetailsProps>(function Co
 
         {/* Full commit hash */}
         <Flex align="center" gap="2" className="text-[rgb(var(--muted-foreground))]">
-          <Icon icon={GitCommit} size={iconSize} aria-hidden="true" />
+          <Icon icon={GitCommit} size={iconSize} aria-hidden={true} />
           <Box
             as="code"
             className={cn(COMMIT_HASH_CLASSES, size === 'sm' ? 'text-[10px]' : 'text-xs')}
@@ -456,7 +456,7 @@ const CommitDetails = forwardRef<HTMLDivElement, CommitDetailsProps>(function Co
 
         {/* Date */}
         <Flex align="center" gap="2" className="text-[rgb(var(--muted-foreground))]">
-          <Icon icon={Clock} size={iconSize} aria-hidden="true" />
+          <Icon icon={Clock} size={iconSize} aria-hidden={true} />
           <Box
             as="time"
             dateTime={getISODateTime(commit.date)}
@@ -551,7 +551,7 @@ const CommitRow = forwardRef<HTMLDivElement, CommitRowProps>(function CommitRow(
           icon={isExpanded ? ChevronDown : ChevronRight}
           size={iconSize}
           className="text-[rgb(var(--muted-foreground))] flex-shrink-0 mt-0.5"
-          aria-hidden="true"
+          aria-hidden={true}
         />
 
         {/* Commit icon and hash */}
@@ -560,7 +560,7 @@ const CommitRow = forwardRef<HTMLDivElement, CommitRowProps>(function CommitRow(
             icon={GitCommit}
             size={iconSize}
             className="text-[rgb(var(--primary))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
           <Box
             as="code"
@@ -643,7 +643,7 @@ export const CommitListSkeleton = forwardRef<HTMLDivElement, CommitListSkeletonP
       <Box
         ref={ref}
         className={cn(COMMIT_LIST_BASE_CLASSES, className)}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         data-testid={testId}
       >
@@ -713,7 +713,7 @@ export const CommitListError = forwardRef<HTMLDivElement, CommitListErrorProps>(
             icon={GitCommit}
             size="lg"
             className="text-[rgb(var(--destructive))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </Box>
         <Text size="lg" weight="medium" color="foreground" className="mb-1">
@@ -877,7 +877,7 @@ export const CommitList = forwardRef<HTMLDivElement, CommitListProps>(function C
         <Text size={baseSize === 'sm' ? 'xs' : 'sm'} color="foreground">
           {commits.length} {commits.length === 1 ? 'commit' : 'commits'}
         </Text>
-        <Box className="flex items-center gap-3" aria-hidden="true">
+        <Box className="flex items-center gap-3" aria-hidden={true}>
           <Text size="xs" color="muted-foreground">
             {totals.filesChanged} {totals.filesChanged === 1 ? 'file' : 'files'}
           </Text>

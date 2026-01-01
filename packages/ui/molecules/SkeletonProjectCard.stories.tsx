@@ -37,7 +37,7 @@ SkeletonProjectCard provides a loading placeholder that matches the ProjectCard 
 
 ## Features
 - **Responsive sizing**: Supports \`sm\`, \`md\`, \`lg\` sizes with breakpoint support
-- **Accessibility**: Uses \`aria-hidden="true"\` and \`role="presentation"\` to hide from screen readers
+- **Accessibility**: Uses \`aria-hidden={true}\` and \`role="presentation"\` to hide from screen readers
 - **forwardRef**: Supports ref forwarding for DOM access
 - **data-testid**: Built-in testing support
 
@@ -328,14 +328,14 @@ export const AccessibilityDemo: Story = {
       <div className="p-4 bg-[rgb(var(--muted))] rounded-lg">
         <h3 className="font-medium text-[rgb(var(--foreground))] mb-2">Accessibility Features</h3>
         <ul className="text-sm text-[rgb(var(--muted-foreground))] space-y-1 list-disc list-inside">
-          <li>aria-hidden="true" - Hidden from screen readers</li>
+          <li>aria-hidden={true} - Hidden from screen readers</li>
           <li>role="presentation" - Semantic non-content role</li>
           <li>motion-safe: prefix - Respects reduced motion</li>
         </ul>
       </div>
       <SkeletonProjectCard data-testid="accessible-skeleton" />
       <p className="text-xs text-[rgb(var(--muted-foreground))]">
-        Inspect the DOM to see aria-hidden="true" and role="presentation" attributes.
+        Inspect the DOM to see aria-hidden={true} and role="presentation" attributes.
       </p>
     </div>
   ),

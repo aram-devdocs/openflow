@@ -327,7 +327,7 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip
             {/* Arrow indicator */}
             <Box
               className={cn(TOOLTIP_ARROW_BASE_CLASSES, TOOLTIP_ARROW_CLASSES[position])}
-              aria-hidden="true"
+              aria-hidden={true}
             />
           </Box>
         </Box>

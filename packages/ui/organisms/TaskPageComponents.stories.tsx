@@ -638,7 +638,7 @@ export const AccessibilityDemo: StoryObj = {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold mb-4">Loading Skeleton (aria-busy="true")</h2>
+        <h2 className="text-lg font-semibold mb-4">Loading Skeleton (aria-busy={true})</h2>
         <div className="h-64 border border-border">
           <TaskPageSkeleton data-testid="skeleton-demo" />
         </div>

@@ -342,7 +342,7 @@ export const WithIcon: Story = {
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
-        aria-hidden="true"
+        aria-hidden={true}
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
       </svg>
@@ -360,7 +360,7 @@ export const WithIconAfter: Story = {
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
-        aria-hidden="true"
+        aria-hidden={true}
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
       </svg>
@@ -378,7 +378,7 @@ export const WithBothIcons: Story = {
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
-        aria-hidden="true"
+        aria-hidden={true}
       >
         <path
           strokeLinecap="round"
@@ -400,7 +400,7 @@ export const WithBothIcons: Story = {
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
-        aria-hidden="true"
+        aria-hidden={true}
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
       </svg>
@@ -417,7 +417,7 @@ export const IconButtonSizes: Story = {
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
-        aria-hidden="true"
+        aria-hidden={true}
       >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
       </svg>
@@ -563,7 +563,7 @@ export const ScreenReaderDemo: Story = {
       </div>
       <div className="text-xs font-mono text-muted-foreground">
         <p>Normal: role="button"</p>
-        <p>Loading: aria-busy="true" aria-disabled="true"</p>
+        <p>Loading: aria-busy={true} aria-disabled="true"</p>
         <p>Disabled: disabled aria-disabled="true"</p>
       </div>
     </div>

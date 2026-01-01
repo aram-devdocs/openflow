@@ -660,7 +660,7 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           aria-expanded={false}
           data-testid={testId ? `${testId}-expand-button` : undefined}
         >
-          <Icon icon={ChevronRight} size={iconSize} aria-hidden="true" />
+          <Icon icon={ChevronRight} size={iconSize} aria-hidden={true} />
         </Box>
       </Box>
 
@@ -680,7 +680,7 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           aria-label={DEFAULT_NEW_TASK_LABEL}
           data-testid={testId ? `${testId}-new-task-button` : undefined}
         >
-          <Icon icon={Plus} size={iconSize} aria-hidden="true" />
+          <Icon icon={Plus} size={iconSize} aria-hidden={true} />
         </Box>
         {/* New chat button */}
         <Box
@@ -691,7 +691,7 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           aria-label={DEFAULT_NEW_CHAT_LABEL}
           data-testid={testId ? `${testId}-new-chat-button` : undefined}
         >
-          <Icon icon={MessageSquare} size={iconSize} aria-hidden="true" />
+          <Icon icon={MessageSquare} size={iconSize} aria-hidden={true} />
         </Box>
       </Box>
 
@@ -710,7 +710,7 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           aria-label={DEFAULT_ARCHIVE_LABEL}
           data-testid={testId ? `${testId}-archive-button` : undefined}
         >
-          <Icon icon={Archive} size={iconSize} aria-hidden="true" />
+          <Icon icon={Archive} size={iconSize} aria-hidden={true} />
         </Box>
         <Box
           as="button"
@@ -720,7 +720,7 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           aria-label={DEFAULT_SETTINGS_LABEL}
           data-testid={testId ? `${testId}-settings-button` : undefined}
         >
-          <Icon icon={Settings} size={iconSize} aria-hidden="true" />
+          <Icon icon={Settings} size={iconSize} aria-hidden={true} />
         </Box>
       </Box>
     </Box>
@@ -1109,7 +1109,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           aria-expanded={true}
           data-testid={testId ? `${testId}-collapse-button` : undefined}
         >
-          <Icon icon={ChevronLeft} size={iconSize} aria-hidden="true" />
+          <Icon icon={ChevronLeft} size={iconSize} aria-hidden={true} />
         </Box>
       </Box>
 
@@ -1123,7 +1123,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           aria-label={DEFAULT_NEW_TASK_LABEL}
           data-testid={testId ? `${testId}-new-task-button` : undefined}
         >
-          <Icon icon={Plus} size="sm" aria-hidden="true" />
+          <Icon icon={Plus} size="sm" aria-hidden={true} />
           New Task
         </Button>
       </Box>
@@ -1131,7 +1131,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       {/* Status filter with tablist pattern */}
       <Box className={cn('border-b border-[rgb(var(--border))]', paddingClasses)}>
         <Box className="mb-2 flex items-center gap-2 text-xs font-medium text-[rgb(var(--muted-foreground))]">
-          <Icon icon={ListFilter} size="xs" aria-hidden="true" />
+          <Icon icon={ListFilter} size="xs" aria-hidden={true} />
           <Text as="span" id={filterTablistId}>
             {DEFAULT_FILTER_LABEL}
           </Text>
@@ -1228,9 +1228,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 icon={ChevronDown}
                 size="xs"
                 className={cn('motion-safe:transition-transform', !isChatsExpanded && '-rotate-90')}
-                aria-hidden="true"
+                aria-hidden={true}
               />
-              <Icon icon={MessageSquare} size="xs" aria-hidden="true" />
+              <Icon icon={MessageSquare} size="xs" aria-hidden={true} />
               <Text as="span">Chats</Text>
               <Text
                 as="span"
@@ -1311,7 +1311,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             icon={MessageSquare}
                             size="xs"
                             className="shrink-0"
-                            aria-hidden="true"
+                            aria-hidden={true}
                           />
                           <Text as="span" className="truncate">
                             {chatTitle}
@@ -1330,7 +1330,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             aria-label={`More actions for ${chatTitle}`}
                             data-testid={testId ? `${testId}-chat-${chat.id}-more` : undefined}
                           >
-                            <Icon icon={MoreVertical} size="xs" aria-hidden="true" />
+                            <Icon icon={MoreVertical} size="xs" aria-hidden={true} />
                           </Box>
                         )}
                       </Box>
@@ -1358,7 +1358,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 aria-label={DEFAULT_NEW_CHAT_LABEL}
                 data-testid={testId ? `${testId}-new-chat-button` : undefined}
               >
-                <Icon icon={Plus} size="xs" aria-hidden="true" />
+                <Icon icon={Plus} size="xs" aria-hidden={true} />
                 <Text as="span">New Chat</Text>
               </Box>
             </Box>
@@ -1376,7 +1376,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           aria-label={DEFAULT_ARCHIVE_LABEL}
           data-testid={testId ? `${testId}-archive-button` : undefined}
         >
-          <Icon icon={Archive} size={iconSize} aria-hidden="true" />
+          <Icon icon={Archive} size={iconSize} aria-hidden={true} />
           <Text as="span">Archive</Text>
         </Box>
         <Box
@@ -1387,7 +1387,7 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           aria-label={DEFAULT_SETTINGS_LABEL}
           data-testid={testId ? `${testId}-settings-button` : undefined}
         >
-          <Icon icon={Settings} size={iconSize} aria-hidden="true" />
+          <Icon icon={Settings} size={iconSize} aria-hidden={true} />
           <Text as="span">Settings</Text>
         </Box>
       </Box>

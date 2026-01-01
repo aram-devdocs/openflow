@@ -469,7 +469,7 @@ export const RouteError = forwardRef<HTMLDivElement, RouteErrorProps>(function R
       {/* Error icon */}
       <Box
         className={cn(ROUTE_ERROR_ICON_CONTAINER_BASE_CLASSES, iconContainerClasses)}
-        aria-hidden="true"
+        aria-hidden={true}
       >
         <Icon
           icon={AlertCircle}
@@ -517,7 +517,7 @@ export const RouteError = forwardRef<HTMLDivElement, RouteErrorProps>(function R
               disabled={isRetrying || isNavigating}
               loading={isRetrying}
               loadingText="Retrying..."
-              icon={<RefreshCw aria-hidden="true" />}
+              icon={<RefreshCw aria-hidden={true} />}
               aria-label={buildRetryButtonAriaLabel(retryLabel, isRetrying)}
               className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
               data-testid="route-error-retry-button"
@@ -533,7 +533,7 @@ export const RouteError = forwardRef<HTMLDivElement, RouteErrorProps>(function R
               disabled={isRetrying || isNavigating}
               loading={isNavigating}
               loadingText="Navigating..."
-              icon={<Home aria-hidden="true" />}
+              icon={<Home aria-hidden={true} />}
               aria-label={buildHomeButtonAriaLabel(homeLabel, isNavigating)}
               className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
               data-testid="route-error-home-button"

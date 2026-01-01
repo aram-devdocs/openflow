@@ -872,7 +872,7 @@ export const SizeResponsive: Story = {
  *
  * @accessibility
  * - Uses role="status" with aria-label for screen readers
- * - aria-busy="true" indicates loading state
+ * - aria-busy={true} indicates loading state
  */
 export const SkeletonDefault: StoryObj<typeof TaskPageSkeleton> = {
   render: () => (

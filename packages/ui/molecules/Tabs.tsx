@@ -354,7 +354,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
                       : 'text-[rgb(var(--foreground))]'
                     : 'text-[rgb(var(--muted-foreground))]'
                 )}
-                aria-hidden="true"
+                aria-hidden={true}
               />
             )}
             <Text as="span">{tab.label}</Text>

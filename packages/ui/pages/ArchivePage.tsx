@@ -422,7 +422,7 @@ export const ArchivePageSkeleton = forwardRef<HTMLDivElement, ArchivePageSkeleto
       <Box
         ref={ref}
         className={ARCHIVE_PAGE_SKELETON_CLASSES}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         data-testid={testId ?? 'archive-page-skeleton'}
       >
@@ -495,7 +495,7 @@ export const ArchivePageError = forwardRef<HTMLDivElement, ArchivePageErrorState
           icon={AlertTriangle}
           size="xl"
           className="text-[rgb(var(--destructive))]"
-          aria-hidden="true"
+          aria-hidden={true}
         />
 
         <Heading id={headingId} level={2} size="lg" className="text-[rgb(var(--foreground))]">
@@ -508,7 +508,7 @@ export const ArchivePageError = forwardRef<HTMLDivElement, ArchivePageErrorState
 
         <Button
           onClick={onRetry}
-          icon={<Icon icon={RefreshCw} size="sm" aria-hidden="true" />}
+          icon={<Icon icon={RefreshCw} size="sm" aria-hidden={true} />}
           className="min-h-[44px] min-w-[44px]"
         >
           {DEFAULT_RETRY_LABEL}
@@ -642,7 +642,7 @@ export const ArchivePage = forwardRef<HTMLDivElement, ArchivePageProps>(function
         ref={ref}
         className={ARCHIVE_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
-        aria-busy="true"
+        aria-busy={true}
         data-testid={testId ?? 'archive-page'}
         data-state="loading"
       >

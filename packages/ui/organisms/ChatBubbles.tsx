@@ -397,11 +397,11 @@ export const AssistantMessageBubble = forwardRef<HTMLElement, AssistantMessageBu
           </Text>
         </VisuallyHidden>
 
-        <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden="true">
+        <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden={true}>
           <Bot className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-white')} />
         </Box>
 
-        <Box className="min-w-0 flex-1 space-y-3" aria-hidden="true">
+        <Box className="min-w-0 flex-1 space-y-3" aria-hidden={true}>
           {/* Text content */}
           {content && (
             <Box className={ASSISTANT_BUBBLE_CLASSES}>
@@ -512,11 +512,11 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
           </Box>
         </VisuallyHidden>
 
-        <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden="true">
+        <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden={true}>
           <Bot className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-white')} />
         </Box>
 
-        <Box className="min-w-0 flex-1 space-y-3" aria-hidden="true">
+        <Box className="min-w-0 flex-1 space-y-3" aria-hidden={true}>
           {/* Render display items */}
           {displayItems.map((item, index) => {
             if (item.type === 'text') {
@@ -556,7 +556,7 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
                   role="status"
                 >
                   <VisuallyHidden>{getResultAnnouncement(item.subtype)}</VisuallyHidden>
-                  <Text as="span" aria-hidden="true">
+                  <Text as="span" aria-hidden={true}>
                     {isSuccess ? '✓ Completed successfully' : `Result: ${item.subtype}`}
                   </Text>
                 </Box>
@@ -569,7 +569,7 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
           {/* Streaming indicator */}
           {isStreaming && (
             <Box className={STREAMING_INDICATOR_CLASSES} role="status">
-              <Spinner size="sm" announce={false} aria-hidden="true" />
+              <Spinner size="sm" announce={false} aria-hidden={true} />
               <Text as="span">{streamingLabel}</Text>
             </Box>
           )}
@@ -666,7 +666,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
               isInProgress && TOOL_ICON_RUNNING_CLASSES,
               !tool.isError && !isInProgress && TOOL_ICON_DEFAULT_CLASSES
             )}
-            aria-hidden="true"
+            aria-hidden={true}
           >
             {isInProgress ? (
               <Spinner size="sm" announce={false} />
@@ -684,7 +684,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
                 <Text
                   as="span"
                   className={cn(STATUS_BADGE_CLASSES, STATUS_BADGE_ERROR_CLASSES)}
-                  aria-hidden="true"
+                  aria-hidden={true}
                 >
                   {DEFAULT_TOOL_ERROR_LABEL}
                 </Text>
@@ -693,7 +693,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
                 <Text
                   as="span"
                   className={cn(STATUS_BADGE_CLASSES, STATUS_BADGE_RUNNING_CLASSES)}
-                  aria-hidden="true"
+                  aria-hidden={true}
                 >
                   {DEFAULT_TOOL_RUNNING_LABEL}
                 </Text>
@@ -705,7 +705,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
             icon={expanded ? ChevronDown : ChevronRight}
             size="sm"
             className="text-[rgb(var(--muted-foreground))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </Box>
 
@@ -795,7 +795,7 @@ export const RawOutputSection = forwardRef<HTMLDivElement, RawOutputSectionProps
           aria-controls={contentId}
           aria-label={`${label}, ${lineCount} line${lineCount === 1 ? '' : 's'}. ${expanded ? 'Collapse' : 'Expand'}`}
         >
-          <Code2 className="h-4 w-4 text-[rgb(var(--muted-foreground))]" aria-hidden="true" />
+          <Code2 className="h-4 w-4 text-[rgb(var(--muted-foreground))]" aria-hidden={true} />
           <Text as="span" size="xs" weight="medium" className="text-[rgb(var(--muted-foreground))]">
             {label} ({lineCount} {lineCount === 1 ? 'line' : 'lines'})
           </Text>
@@ -803,7 +803,7 @@ export const RawOutputSection = forwardRef<HTMLDivElement, RawOutputSectionProps
             icon={expanded ? ChevronDown : ChevronRight}
             size="sm"
             className="ml-auto text-[rgb(var(--muted-foreground))]"
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </Box>
 

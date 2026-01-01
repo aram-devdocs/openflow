@@ -224,7 +224,7 @@ export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function E
           <Icon
             icon={IconComponent}
             className={cn('text-[rgb(var(--muted-foreground))]', styles.icon)}
-            aria-hidden="true"
+            aria-hidden={true}
           />
         </Box>
       )}

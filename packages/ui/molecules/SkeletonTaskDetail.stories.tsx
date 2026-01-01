@@ -51,14 +51,14 @@ SkeletonTaskDetail is a loading placeholder for the task detail page layout.
 ## Features
 - Matches the TaskLayout structure with header, tabs, chat messages, input, and steps panel
 - Responsive sizing support via ResponsiveValue (sm, md, lg)
-- Properly hidden from screen readers (aria-hidden="true", role="presentation")
+- Properly hidden from screen readers (aria-hidden={true}, role="presentation")
 - forwardRef support for ref forwarding
 - Configurable sections (showTabs, showStepsPanel, showInput)
 - Configurable counts (messageCount, stepCount, tabCount)
 - data-testid support for testing
 
 ## Accessibility
-- Hidden from screen readers with \`aria-hidden="true"\`
+- Hidden from screen readers with \`aria-hidden={true}\`
 - \`role="presentation"\` for explicit non-semantic purpose
 - Skeleton placeholders use \`motion-safe:animate-pulse\` for reduced motion support
 
@@ -361,7 +361,7 @@ export const AccessibilityDemo: Story = {
         <h3 className="font-semibold mb-2">Accessibility Features</h3>
         <ul className="text-sm space-y-1 list-disc list-inside">
           <li>
-            <code>aria-hidden="true"</code> - Hidden from screen readers
+            <code>aria-hidden={true}</code> - Hidden from screen readers
           </li>
           <li>
             <code>role="presentation"</code> - Explicitly non-semantic

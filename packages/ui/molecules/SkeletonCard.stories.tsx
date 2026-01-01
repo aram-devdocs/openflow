@@ -30,14 +30,14 @@ SkeletonCard provides a loading placeholder that matches the general Card compon
 
 - **Responsive Sizing**: Supports sm, md, lg sizes with responsive breakpoint values
 - **Flexible Content**: Configure avatar, text lines, and action buttons
-- **Accessibility**: Uses aria-hidden="true" and role="presentation" for screen readers
+- **Accessibility**: Uses aria-hidden={true} and role="presentation" for screen readers
 - **forwardRef Support**: Full ref forwarding for integration with animations or measurements
 - **data-testid Support**: Test-friendly with comprehensive data attributes
 
 ## Accessibility
 
 The SkeletonCard is purely decorative and is hidden from assistive technology:
-- \`aria-hidden="true"\` - Hidden from screen readers
+- \`aria-hidden={true}\` - Hidden from screen readers
 - \`role="presentation"\` - Indicates decorative content
 - Animation uses \`motion-safe:animate-pulse\` for reduced motion preference support
 
@@ -351,7 +351,7 @@ export const AccessibilityDemo: Story = {
       description: {
         story: `
 This skeleton is hidden from screen readers:
-- \`aria-hidden="true"\` prevents announcement
+- \`aria-hidden={true}\` prevents announcement
 - \`role="presentation"\` indicates decorative content
 - Animation respects \`prefers-reduced-motion\` via \`motion-safe:animate-pulse\`
         `,

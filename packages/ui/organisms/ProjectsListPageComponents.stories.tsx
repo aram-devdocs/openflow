@@ -288,7 +288,7 @@ export const HeaderAccessibility: StoryObj<typeof ProjectsListHeader> = {
       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
         <li>h1 heading for page title using Heading primitive</li>
         <li>Button has aria-label for screen readers</li>
-        <li>Icon is aria-hidden="true"</li>
+        <li>Icon is aria-hidden={true}</li>
         <li>data-testid and data-size for testing</li>
       </ul>
       <div className="text-sm">
@@ -396,10 +396,10 @@ export const LoadingAccessibility: StoryObj<typeof ProjectsListLoadingSkeleton> 
       <h2 className="text-lg font-semibold">Accessibility Features</h2>
       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
         <li>role="status" announces loading state</li>
-        <li>aria-busy="true" indicates ongoing operation</li>
+        <li>aria-busy={true} indicates ongoing operation</li>
         <li>aria-label provides loading message</li>
         <li>VisuallyHidden provides screen reader announcement</li>
-        <li>aria-hidden="true" on visual skeleton elements</li>
+        <li>aria-hidden={true} on visual skeleton elements</li>
       </ul>
       <div className="text-sm">
         <strong>Screen reader announcement:</strong>
@@ -625,7 +625,7 @@ export const ErrorStateAccessibility: StoryObj<typeof ProjectsListErrorState> = 
         <li>aria-live="assertive" for high-priority announcement</li>
         <li>VisuallyHidden provides error announcement</li>
         <li>Retry button has aria-label</li>
-        <li>Icon is aria-hidden="true"</li>
+        <li>Icon is aria-hidden={true}</li>
       </ul>
       <div className="text-sm">
         <strong>Default labels:</strong>
@@ -825,7 +825,7 @@ export const CardAccessibility: StoryObj<typeof ProjectCard> = {
         <li>Settings button has descriptive aria-label</li>
         <li>Minimum 44px touch targets (WCAG 2.5.5)</li>
         <li>Focus ring with ring-offset for visibility</li>
-        <li>Icons are aria-hidden="true"</li>
+        <li>Icons are aria-hidden={true}</li>
       </ul>
       <div className="text-sm">
         <strong>Screen reader labels:</strong>
@@ -1363,7 +1363,7 @@ export const AccessibilityOverview: StoryObj = {
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="border rounded p-3">
             <strong className="block mb-1">Loading States</strong>
-            <code className="text-xs">role="status" aria-busy="true"</code>
+            <code className="text-xs">role="status" aria-busy={true}</code>
           </div>
           <div className="border rounded p-3">
             <strong className="block mb-1">Error States</strong>

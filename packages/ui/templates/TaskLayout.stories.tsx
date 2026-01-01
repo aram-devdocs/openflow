@@ -323,7 +323,7 @@ function SimpleChatInput({ onSend }: { onSend?: (message: string) => void }) {
         onClick={() => onSend?.('message')}
         aria-label="Send message"
       >
-        <Icon icon={Send} size="sm" aria-hidden="true" />
+        <Icon icon={Send} size="sm" aria-hidden={true} />
       </Button>
     </div>
   );

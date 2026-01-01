@@ -530,7 +530,7 @@ export const StepsPanelSkeleton = forwardRef<HTMLDivElement, StepsPanelSkeletonP
         ref={ref}
         role="status"
         aria-label={DEFAULT_LOADING_LABEL}
-        aria-busy="true"
+        aria-busy={true}
         className={cn(STEPS_PANEL_BASE_CLASSES, className)}
         data-testid={testId}
         data-step-count={stepCount}
@@ -546,7 +546,7 @@ export const StepsPanelSkeleton = forwardRef<HTMLDivElement, StepsPanelSkeletonP
 
         {/* Steps list skeleton */}
         <Box className={STEPS_PANEL_LIST_CONTAINER_CLASSES}>
-          <Box as="ul" className={STEPS_PANEL_LIST_CLASSES} role="list" aria-hidden="true">
+          <Box as="ul" className={STEPS_PANEL_LIST_CLASSES} role="list" aria-hidden={true}>
             {Array.from({ length: stepCount }, (_, i) => (
               <Box as="li" key={i} className="px-4 py-3">
                 <Box className="flex items-start gap-3">
@@ -898,7 +898,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                 data-active={isActive || undefined}
               >
                 {/* Current step indicator bar */}
-                {isActive && <Box className={STEP_INDICATOR_BAR_CLASSES} aria-hidden="true" />}
+                {isActive && <Box className={STEP_INDICATOR_BAR_CLASSES} aria-hidden={true} />}
 
                 {/* Step header row */}
                 <Box
@@ -937,7 +937,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                       <Icon
                         icon={StepIcon}
                         size="sm"
-                        aria-hidden="true"
+                        aria-hidden={true}
                         className={cn(
                           isCompleted && 'text-[rgb(var(--success))]',
                           isInProgress && 'text-[rgb(var(--primary))] motion-safe:animate-spin',
@@ -977,7 +977,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                         role="status"
                         aria-label="Step in progress"
                       >
-                        <Text as="span" className="relative flex h-2 w-2" aria-hidden="true">
+                        <Text as="span" className="relative flex h-2 w-2" aria-hidden={true}>
                           <Text
                             as="span"
                             className="absolute inline-flex h-full w-full motion-safe:animate-ping rounded-full bg-[rgb(var(--primary))] opacity-75"
@@ -1009,7 +1009,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                             className={STEP_QUICK_ACTION_CLASSES}
                             aria-label={`${DEFAULT_START_STEP_LABEL}: ${step.name}`}
                           >
-                            <Icon icon={Play} size="sm" aria-hidden="true" />
+                            <Icon icon={Play} size="sm" aria-hidden={true} />
                           </Button>
                         </Tooltip>
                       )}
@@ -1033,7 +1033,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                           icon={isExpanded ? ChevronDown : ChevronRight}
                           size="sm"
                           className="text-[rgb(var(--muted-foreground))]"
-                          aria-hidden="true"
+                          aria-hidden={true}
                         />
                       </Button>
                     )}
@@ -1064,7 +1064,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                           disabled={disabled}
                           aria-label={`${DEFAULT_START_STEP_LABEL}: ${step.name}`}
                         >
-                          <Icon icon={Play} size="sm" className="mr-1" aria-hidden="true" />
+                          <Icon icon={Play} size="sm" className="mr-1" aria-hidden={true} />
                           Start
                         </Button>
                       )}
@@ -1080,7 +1080,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                           disabled={disabled}
                           aria-label={`${DEFAULT_COMPLETE_STEP_LABEL}: ${step.name}`}
                         >
-                          <Icon icon={Check} size="sm" className="mr-1" aria-hidden="true" />
+                          <Icon icon={Check} size="sm" className="mr-1" aria-hidden={true} />
                           Complete
                         </Button>
                       )}
@@ -1096,7 +1096,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                           disabled={disabled}
                           aria-label={`${DEFAULT_SKIP_STEP_LABEL}: ${step.name}`}
                         >
-                          <Icon icon={SkipForward} size="sm" className="mr-1" aria-hidden="true" />
+                          <Icon icon={SkipForward} size="sm" className="mr-1" aria-hidden={true} />
                           Skip
                         </Button>
                       )}
@@ -1117,7 +1117,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                             icon={MessageSquare}
                             size="sm"
                             className="mr-1"
-                            aria-hidden="true"
+                            aria-hidden={true}
                           />
                           View Chat
                         </Button>
@@ -1170,7 +1170,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
             className="w-full"
             aria-label={DEFAULT_ADD_STEP_LABEL}
           >
-            <Icon icon={Plus} size="sm" aria-hidden="true" />
+            <Icon icon={Plus} size="sm" aria-hidden={true} />
             <Text as="span">Add Step</Text>
           </Button>
         )}

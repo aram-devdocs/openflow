@@ -600,7 +600,7 @@ export const ProfilesPageLayout = forwardRef<HTMLDivElement, ProfilesPageLayoutP
             variant="primary"
             size={ACTION_BUTTON_SIZE_MAP[baseSize]}
             onClick={onCreateClick}
-            icon={<Plus aria-hidden="true" />}
+            icon={<Plus aria-hidden={true} />}
             data-testid={dataTestId ? `${dataTestId}-create` : undefined}
           >
             {DEFAULT_CREATE_LABEL}
@@ -855,7 +855,7 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
                 icon={ProfileIcon}
                 size={iconSize}
                 className="text-[rgb(var(--primary))] shrink-0"
-                aria-hidden="true"
+                aria-hidden={true}
               />
               <Text
                 as="span"
@@ -868,7 +868,7 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
                 <Badge
                   variant="success"
                   size="sm"
-                  icon={<Star aria-hidden="true" />}
+                  icon={<Star aria-hidden={true} />}
                   aria-label={SR_DEFAULT_BADGE}
                 >
                   Default
