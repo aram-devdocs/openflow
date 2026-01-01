@@ -3,10 +3,16 @@
  *
  * This hook encapsulates all the state management and effects for the
  * standalone chat page, keeping the route component pure.
+ *
+ * Features:
+ * - Full logging at DEBUG/INFO/ERROR levels
+ * - Toast notifications for user feedback on actions
+ * - Proper error handling with try/catch patterns
  */
 
 import type { Chat, Message, Project } from '@openflow/generated';
 import { MessageRole } from '@openflow/generated';
+import { createLogger } from '@openflow/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useChat, useUpdateChat } from './useChats';
 import { type PermissionRequest, useClaudeEvents } from './useClaudeEvents';
@@ -14,6 +20,13 @@ import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
 import { useCreateMessage, useMessages } from './useMessages';
 import { useKillProcess, useSendInput } from './useProcesses';
 import { useProject } from './useProjects';
+import { useToast } from './useToast';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+const logger = createLogger('useChatSession');
 
 // ============================================================================
 // Types
@@ -69,7 +82,7 @@ export type DisplayItem =
 export interface UseChatSessionOptions {
   /** Chat ID to load */
   chatId: string;
-  /** Callback for showing toast messages */
+  /** @deprecated Use toast hook integration instead - errors are now shown via toast */
   onError?: (title: string, message: string) => void;
 }
 
@@ -291,16 +304,13 @@ function processEventsToDisplayItems(events: ClaudeEvent[]): DisplayItem[] {
  * - Session ID management for resumption
  * - Permission request handling
  * - Input state management
+ * - Full logging and toast notifications
  *
  * @example
  * ```tsx
  * function ChatPage() {
  *   const { chatId } = Route.useParams();
- *   const toast = useToast();
- *   const session = useChatSession({
- *     chatId,
- *     onError: (title, message) => toast.error(title, message),
- *   });
+ *   const session = useChatSession({ chatId });
  *
  *   if (session.isLoadingChat) return <SkeletonChat />;
  *   if (!session.chat) return <ChatNotFound />;
@@ -316,6 +326,11 @@ function processEventsToDisplayItems(events: ClaudeEvent[]): DisplayItem[] {
  * ```
  */
 export function useChatSession({ chatId, onError }: UseChatSessionOptions): ChatSessionState {
+  logger.debug('Initializing useChatSession hook', { chatId });
+
+  // Toast notifications
+  const toast = useToast();
+
   // UI state
   const [activeProcessId, setActiveProcessId] = useState<string | null>(null);
   const [showRawOutput, setShowRawOutput] = useState(false);
@@ -332,6 +347,19 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   const chat = chatData?.chat;
   const projectId = chat?.projectId ?? '';
   const { data: project } = useProject(projectId);
+
+  // Log data fetching results
+  useEffect(() => {
+    if (chat) {
+      logger.debug('Chat loaded', {
+        chatId: chat.id,
+        chatTitle: chat.title,
+        projectId: chat.projectId,
+        taskId: chat.taskId,
+        messageCount: messages.length,
+      });
+    }
+  }, [chat, messages.length]);
 
   // Mutations
   const runExecutor = useRunExecutor();
@@ -350,6 +378,22 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
     clearPermissionRequest,
     sessionId,
   } = useClaudeEvents(activeProcessId);
+
+  // Log streaming state changes
+  useEffect(() => {
+    if (isRunning) {
+      logger.debug('Claude process started running', { processId: activeProcessId });
+    }
+  }, [isRunning, activeProcessId]);
+
+  useEffect(() => {
+    if (isComplete && activeProcessId) {
+      logger.debug('Claude process completed', {
+        processId: activeProcessId,
+        eventCount: claudeEvents.length,
+      });
+    }
+  }, [isComplete, activeProcessId, claudeEvents.length]);
 
   // Get selected executor profile
   const selectedExecutorProfileId = chat?.executorProfileId ?? executorProfiles[0]?.id ?? '';
@@ -381,28 +425,82 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
 
     if (textContent || toolCalls.length > 0) {
       savedProcessRef.current = activeProcessId;
-
-      createMessage.mutate({
+      logger.debug('Persisting assistant response', {
         chatId,
-        role: MessageRole.Assistant,
-        content: textContent,
-        toolCalls: toolCalls.length > 0 ? JSON.stringify(toolCalls) : undefined,
-        toolResults: toolResults.length > 0 ? JSON.stringify(toolResults) : undefined,
+        processId: activeProcessId,
+        textLength: textContent.length,
+        toolCallCount: toolCalls.length,
+        toolResultCount: toolResults.length,
       });
 
+      createMessage.mutate(
+        {
+          chatId,
+          role: MessageRole.Assistant,
+          content: textContent,
+          toolCalls: toolCalls.length > 0 ? JSON.stringify(toolCalls) : undefined,
+          toolResults: toolResults.length > 0 ? JSON.stringify(toolResults) : undefined,
+        },
+        {
+          onSuccess: () => {
+            logger.info('Assistant response persisted successfully', {
+              chatId,
+              processId: activeProcessId,
+            });
+            setActiveProcessId(null);
+          },
+          onError: (error) => {
+            logger.error('Failed to persist assistant response', {
+              chatId,
+              processId: activeProcessId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            toast.error(
+              'Failed to Save Response',
+              'The assistant response could not be saved. Please try again.'
+            );
+            setActiveProcessId(null);
+          },
+        }
+      );
+    } else {
       setActiveProcessId(null);
     }
-  }, [isComplete, claudeEvents, chatId, activeProcessId, createMessage, persistedAssistantCount]);
+  }, [
+    isComplete,
+    claudeEvents,
+    chatId,
+    activeProcessId,
+    createMessage,
+    persistedAssistantCount,
+    toast,
+  ]);
 
   // Save Claude session ID to chat for session resumption
   useEffect(() => {
     if (!sessionId || !chatId || !chat) return;
     if (chat.claudeSessionId) return;
 
-    updateChat.mutate({
-      id: chatId,
-      request: { claudeSessionId: sessionId },
-    });
+    logger.debug('Saving Claude session ID to chat', { chatId, sessionId });
+    updateChat.mutate(
+      {
+        id: chatId,
+        request: { claudeSessionId: sessionId },
+      },
+      {
+        onSuccess: () => {
+          logger.info('Claude session ID saved successfully', { chatId, sessionId });
+        },
+        onError: (error) => {
+          logger.error('Failed to save Claude session ID', {
+            chatId,
+            sessionId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          // Don't show toast for this - it's not user-facing critical
+        },
+      }
+    );
   }, [sessionId, chatId, chat, updateChat]);
 
   // Auto-scroll to bottom when new content arrives
@@ -414,15 +512,42 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   // Handle send message
   const handleSend = useCallback(async () => {
     const trimmedValue = inputValue.trim();
-    if (!trimmedValue || !chatId) return;
+    if (!trimmedValue || !chatId) {
+      logger.debug('Send aborted: empty input or no chatId', { chatId, hasInput: !!trimmedValue });
+      return;
+    }
+
+    logger.debug('Sending message', {
+      chatId,
+      messageLength: trimmedValue.length,
+      executorProfileId: selectedExecutorProfileId,
+    });
 
     setInputValue('');
 
-    createMessage.mutate({
-      chatId,
-      role: MessageRole.User,
-      content: trimmedValue,
-    });
+    // Create user message
+    createMessage.mutate(
+      {
+        chatId,
+        role: MessageRole.User,
+        content: trimmedValue,
+      },
+      {
+        onSuccess: () => {
+          logger.debug('User message created successfully', { chatId });
+        },
+        onError: (error) => {
+          logger.error('Failed to create user message', {
+            chatId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          toast.error(
+            'Failed to Send Message',
+            'Your message could not be sent. Please try again.'
+          );
+        },
+      }
+    );
 
     try {
       const process = await runExecutor.mutateAsync({
@@ -430,20 +555,33 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
         prompt: trimmedValue,
         executorProfileId: selectedExecutorProfileId,
       });
+      logger.info('Executor started successfully', {
+        chatId,
+        processId: process.id,
+        executorProfileId: selectedExecutorProfileId,
+      });
       setActiveProcessId(process.id);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Failed to run executor', {
+        chatId,
+        executorProfileId: selectedExecutorProfileId,
+        error: message,
+      });
+      toast.error('Failed to Run Executor', message);
+      // Also call legacy onError for backward compatibility
       onError?.('Failed to run executor', message);
     }
 
     textareaRef.current?.focus();
-  }, [inputValue, chatId, createMessage, runExecutor, selectedExecutorProfileId, onError]);
+  }, [inputValue, chatId, createMessage, runExecutor, selectedExecutorProfileId, toast, onError]);
 
   // Handle keyboard shortcuts in textarea
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
+        logger.debug('Enter key pressed, triggering send');
         handleSend();
       }
     },
@@ -451,32 +589,101 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   );
 
   const handleStopProcess = useCallback(() => {
-    if (!activeProcessId) return;
+    if (!activeProcessId) {
+      logger.debug('Stop process aborted: no active process');
+      return;
+    }
+
+    logger.debug('Stopping process', { processId: activeProcessId });
     killProcess.mutate(activeProcessId, {
       onSuccess: () => {
+        logger.info('Process stopped successfully', { processId: activeProcessId });
+        toast.success('Process Stopped', 'The executor has been stopped.');
         setActiveProcessId(null);
       },
       onError: (err) => {
+        logger.error('Failed to stop process', {
+          processId: activeProcessId,
+          error: err.message,
+        });
+        toast.error('Failed to Stop Process', err.message);
+        // Also call legacy onError for backward compatibility
         onError?.('Failed to stop process', err.message);
       },
     });
-  }, [activeProcessId, killProcess, onError]);
+  }, [activeProcessId, killProcess, toast, onError]);
 
   // Permission handlers
   const handleApprovePermission = useCallback(() => {
-    if (!activeProcessId) return;
-    sendInput.mutate({ processId: activeProcessId, input: 'y\n' });
+    if (!activeProcessId) {
+      logger.debug('Approve permission aborted: no active process');
+      return;
+    }
+
+    logger.debug('Approving permission request', {
+      processId: activeProcessId,
+      permissionType: permissionRequest?.toolName,
+    });
+
+    sendInput.mutate(
+      { processId: activeProcessId, input: 'y\n' },
+      {
+        onSuccess: () => {
+          logger.info('Permission approved successfully', {
+            processId: activeProcessId,
+            permissionType: permissionRequest?.toolName,
+          });
+        },
+        onError: (error) => {
+          logger.error('Failed to send permission approval', {
+            processId: activeProcessId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          toast.error('Permission Error', 'Failed to send permission response.');
+        },
+      }
+    );
     clearPermissionRequest();
-  }, [activeProcessId, sendInput, clearPermissionRequest]);
+  }, [activeProcessId, sendInput, clearPermissionRequest, permissionRequest, toast]);
 
   const handleDenyPermission = useCallback(() => {
-    if (!activeProcessId) return;
-    sendInput.mutate({ processId: activeProcessId, input: 'n\n' });
+    if (!activeProcessId) {
+      logger.debug('Deny permission aborted: no active process');
+      return;
+    }
+
+    logger.debug('Denying permission request', {
+      processId: activeProcessId,
+      permissionType: permissionRequest?.toolName,
+    });
+
+    sendInput.mutate(
+      { processId: activeProcessId, input: 'n\n' },
+      {
+        onSuccess: () => {
+          logger.info('Permission denied successfully', {
+            processId: activeProcessId,
+            permissionType: permissionRequest?.toolName,
+          });
+        },
+        onError: (error) => {
+          logger.error('Failed to send permission denial', {
+            processId: activeProcessId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          toast.error('Permission Error', 'Failed to send permission response.');
+        },
+      }
+    );
     clearPermissionRequest();
-  }, [activeProcessId, sendInput, clearPermissionRequest]);
+  }, [activeProcessId, sendInput, clearPermissionRequest, permissionRequest, toast]);
 
   const toggleRawOutput = useCallback(() => {
-    setShowRawOutput((prev) => !prev);
+    setShowRawOutput((prev) => {
+      const newValue = !prev;
+      logger.debug('Toggling raw output', { showRawOutput: newValue });
+      return newValue;
+    });
   }, []);
 
   const isProcessing = runExecutor.isPending || isRunning;

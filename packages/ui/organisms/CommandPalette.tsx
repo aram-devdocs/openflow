@@ -1,4 +1,5 @@
 import type { SearchResult, SearchResultType } from '@openflow/generated';
+import { Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -11,12 +12,25 @@ import {
   Search,
   X,
 } from 'lucide-react';
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import {
+  type ForwardedRef,
+  type KeyboardEvent,
+  forwardRef,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from '../atoms/Button';
 import { Icon } from '../atoms/Icon';
 import { Input } from '../atoms/Input';
+import { Skeleton } from '../atoms/Skeleton';
 import { Spinner } from '../atoms/Spinner';
 import { EmptyState } from '../molecules/EmptyState';
+
+// =============================================================================
+// Types
+// =============================================================================
 
 /** An action item that can be executed from the command palette */
 export interface CommandAction {
@@ -35,6 +49,15 @@ export interface RecentItem {
   subtitle?: string;
   icon?: string;
 }
+
+/** Size variants for the command palette */
+export type CommandPaletteSize = 'sm' | 'md' | 'lg';
+
+/** Breakpoints for responsive sizing */
+export type CommandPaletteBreakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+/** Responsive value type */
+export type ResponsiveValue<T> = T | Partial<Record<CommandPaletteBreakpoint, T>>;
 
 export interface CommandPaletteProps {
   /** Whether the command palette is open */
@@ -59,33 +82,268 @@ export interface CommandPaletteProps {
   onSelectRecent?: (item: RecentItem) => void;
   /** Placeholder text for the search input */
   placeholder?: string;
+  /** Responsive size variant */
+  size?: ResponsiveValue<CommandPaletteSize>;
   /** Additional class name */
   className?: string;
+  /** Custom aria-label for the dialog */
+  'aria-label'?: string;
+  /** Test ID for automated testing */
+  'data-testid'?: string;
 }
 
-const resultTypeIcons: Record<SearchResultType, LucideIcon> = {
+/** Props for the skeleton loading state */
+export interface CommandPaletteSkeletonProps {
+  /** Number of skeleton items to show */
+  count?: number;
+  /** Test ID for automated testing */
+  'data-testid'?: string;
+}
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+// Default values
+export const DEFAULT_PLACEHOLDER = 'Search tasks, projects, or type a command...';
+export const DEFAULT_SKELETON_COUNT = 5;
+
+// Default labels for accessibility
+export const DEFAULT_DIALOG_LABEL = 'Command palette';
+export const DEFAULT_SEARCH_LABEL = 'Search commands and items';
+export const DEFAULT_CLOSE_LABEL = 'Close command palette';
+export const DEFAULT_RECENT_LABEL = 'Recent items';
+export const DEFAULT_ACTIONS_LABEL = 'Available actions';
+export const DEFAULT_RESULTS_LABEL = 'Search results';
+export const DEFAULT_NO_RESULTS_TITLE = 'No results found';
+export const DEFAULT_EMPTY_TITLE = 'Start typing to search';
+export const DEFAULT_EMPTY_DESCRIPTION = 'Find tasks, projects, and more';
+
+// Screen reader announcements
+export const SR_PALETTE_OPENED =
+  'Command palette opened. Type to search or use arrow keys to navigate.';
+export const SR_RESULTS_COUNT = (count: number) => `${count} result${count !== 1 ? 's' : ''} found`;
+export const SR_NO_RESULTS = 'No results found for your search';
+export const SR_SEARCHING = 'Searching...';
+export const SR_ITEM_SELECTED = (label: string, type: string) => `${type}: ${label}`;
+
+// Result type configuration
+export const RESULT_TYPE_ICONS: Record<SearchResultType, LucideIcon> = {
   task: CheckSquare,
   project: Folder,
   chat: MessageSquare,
   message: MessageSquare,
 };
 
-const resultTypeLabels: Record<SearchResultType, string> = {
+export const RESULT_TYPE_LABELS: Record<SearchResultType, string> = {
   task: 'Task',
   project: 'Project',
   chat: 'Chat',
   message: 'Message',
 };
 
+// Size class mappings
+export const COMMAND_PALETTE_SIZE_CLASSES: Record<CommandPaletteSize, string> = {
+  sm: 'max-w-md',
+  md: 'max-w-xl',
+  lg: 'max-w-2xl',
+};
+
+export const COMMAND_PALETTE_INPUT_SIZE_CLASSES: Record<CommandPaletteSize, string> = {
+  sm: 'py-2',
+  md: 'py-3',
+  lg: 'py-4',
+};
+
+export const COMMAND_PALETTE_ITEM_SIZE_CLASSES: Record<CommandPaletteSize, string> = {
+  sm: 'py-1.5 px-2 gap-2',
+  md: 'py-2 px-3 gap-3',
+  lg: 'py-3 px-4 gap-4',
+};
+
+export const COMMAND_PALETTE_ICON_SIZE_MAP: Record<CommandPaletteSize, 'xs' | 'sm' | 'md'> = {
+  sm: 'xs',
+  md: 'sm',
+  lg: 'md',
+};
+
+// Base classes
+export const COMMAND_PALETTE_BACKDROP_CLASSES =
+  'fixed inset-0 z-50 flex items-start justify-center pt-[15vh]';
+
+export const COMMAND_PALETTE_OVERLAY_CLASSES =
+  'fixed inset-0 bg-black/50 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in-0';
+
+export const COMMAND_PALETTE_PANEL_CLASSES =
+  'relative z-50 flex w-full flex-col rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] shadow-2xl mx-4 max-h-[60vh] motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:slide-in-from-top-2';
+
+export const COMMAND_PALETTE_INPUT_CONTAINER_CLASSES =
+  'flex items-center gap-2 border-b border-[rgb(var(--border))] px-3';
+
+export const COMMAND_PALETTE_INPUT_CLASSES =
+  'flex-1 border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0';
+
+export const COMMAND_PALETTE_LIST_CLASSES = 'flex-1 overflow-y-auto scrollbar-thin p-2';
+
+export const COMMAND_PALETTE_SECTION_HEADER_CLASSES =
+  'mb-1 flex items-center gap-1 px-2 text-xs font-medium text-[rgb(var(--muted-foreground))]';
+
+export const COMMAND_PALETTE_ITEM_BASE_CLASSES =
+  'flex w-full items-center rounded-md text-left motion-safe:transition-colors motion-safe:duration-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))] min-h-[44px]';
+
+export const COMMAND_PALETTE_ITEM_SELECTED_CLASSES =
+  'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]';
+
+export const COMMAND_PALETTE_ITEM_UNSELECTED_CLASSES =
+  'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]';
+
+export const COMMAND_PALETTE_KBD_CLASSES =
+  'shrink-0 rounded bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px] text-[rgb(var(--muted-foreground))]';
+
+export const COMMAND_PALETTE_FOOTER_CLASSES =
+  'flex items-center gap-4 border-t border-[rgb(var(--border))] px-3 py-2 text-xs text-[rgb(var(--muted-foreground))]';
+
+export const COMMAND_PALETTE_CLOSE_BUTTON_CLASSES =
+  'h-8 w-8 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 p-0';
+
+export const COMMAND_PALETTE_SKELETON_CLASSES = 'flex items-center gap-3 px-3 py-2';
+
+// =============================================================================
+// Utility Functions
+// =============================================================================
+
+/**
+ * Get the base size value from a responsive value
+ */
+export function getBaseSize(size: ResponsiveValue<CommandPaletteSize>): CommandPaletteSize {
+  if (typeof size === 'string') {
+    return size;
+  }
+  return size.base ?? 'md';
+}
+
+/**
+ * Get responsive size classes from a responsive value
+ */
+export function getResponsiveSizeClasses(
+  size: ResponsiveValue<CommandPaletteSize>,
+  classMap: Record<CommandPaletteSize, string>
+): string {
+  if (typeof size === 'string') {
+    return classMap[size];
+  }
+
+  const classes: string[] = [];
+  const breakpointOrder: CommandPaletteBreakpoint[] = ['base', 'sm', 'md', 'lg', 'xl', '2xl'];
+
+  for (const breakpoint of breakpointOrder) {
+    const sizeValue = size[breakpoint];
+    if (sizeValue) {
+      const sizeClass = classMap[sizeValue];
+      if (breakpoint === 'base') {
+        classes.push(sizeClass);
+      } else {
+        // Add breakpoint prefix to each class
+        const prefixedClasses = sizeClass.split(' ').map((c) => `${breakpoint}:${c}`);
+        classes.push(...prefixedClasses);
+      }
+    }
+  }
+
+  return classes.join(' ');
+}
+
+/**
+ * Get the icon for a search result type
+ */
+export function getItemIcon(type: SearchResultType): LucideIcon {
+  return RESULT_TYPE_ICONS[type] || CheckSquare;
+}
+
+/**
+ * Get the label for a search result type
+ */
+export function getItemTypeLabel(type: SearchResultType): string {
+  return RESULT_TYPE_LABELS[type] || 'Item';
+}
+
+/**
+ * Generate a unique option ID for aria-activedescendant
+ */
+export function getOptionId(baseId: string, section: string, index: number): string {
+  return `${baseId}-${section}-${index}`;
+}
+
+/**
+ * Get screen reader announcement for current selection
+ */
+export function getSelectionAnnouncement(label: string, type: string, shortcut?: string): string {
+  let announcement = `${type}: ${label}`;
+  if (shortcut) {
+    announcement += `. Keyboard shortcut: ${shortcut}`;
+  }
+  return announcement;
+}
+
+/**
+ * Get screen reader announcement for results count
+ */
+export function getResultsAnnouncement(count: number, isSearching: boolean, query: string): string {
+  if (isSearching) {
+    return SR_SEARCHING;
+  }
+  if (query && count === 0) {
+    return SR_NO_RESULTS;
+  }
+  if (count > 0) {
+    return SR_RESULTS_COUNT(count);
+  }
+  return '';
+}
+
+// =============================================================================
+// Skeleton Component
+// =============================================================================
+
+/**
+ * Loading skeleton for the command palette
+ */
+export function CommandPaletteSkeleton({
+  count = DEFAULT_SKELETON_COUNT,
+  'data-testid': testId,
+}: CommandPaletteSkeletonProps) {
+  return (
+    <div aria-hidden="true" role="presentation" data-testid={testId}>
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={`skeleton-${index}`} className={COMMAND_PALETTE_SKELETON_CLASSES}>
+          <Skeleton variant="circular" width={24} height={24} />
+          <div className="flex-1 space-y-1">
+            <Skeleton variant="text" width="60%" height={16} />
+            <Skeleton variant="text" width="40%" height={12} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+CommandPaletteSkeleton.displayName = 'CommandPaletteSkeleton';
+
+// =============================================================================
+// Main Component
+// =============================================================================
+
 /**
  * CommandPalette component for quick search and navigation (Cmd+K).
  * Stateless - receives all data via props, emits actions via callbacks.
  *
  * Features:
- * - Search input with keyboard navigation
- * - Result groups (tasks, projects, actions)
- * - Recent items section
- * - Accessible with ARIA attributes
+ * - ARIA combobox pattern with listbox results
+ * - Full keyboard navigation (Up/Down/Home/End/Enter/Escape)
+ * - aria-activedescendant for highlighted item tracking
+ * - Screen reader announcements for state changes
+ * - Focus trap within dialog
+ * - Responsive sizing with touch targets
  *
  * @example
  * <CommandPalette
@@ -97,25 +355,39 @@ const resultTypeLabels: Record<SearchResultType, string> = {
  *   onSelectResult={handleSelectResult}
  * />
  */
-export function CommandPalette({
-  isOpen,
-  onClose,
-  onSearch,
-  query = '',
-  searchResults = [],
-  isSearching = false,
-  recentItems = [],
-  actions = [],
-  onSelectResult,
-  onSelectRecent,
-  placeholder = 'Search tasks, projects, or type a command...',
-  className,
-}: CommandPaletteProps) {
+export const CommandPalette = forwardRef(function CommandPalette(
+  {
+    isOpen,
+    onClose,
+    onSearch,
+    query = '',
+    searchResults = [],
+    isSearching = false,
+    recentItems = [],
+    actions = [],
+    onSelectResult,
+    onSelectRecent,
+    placeholder = DEFAULT_PLACEHOLDER,
+    size = 'md',
+    className,
+    'aria-label': ariaLabel = DEFAULT_DIALOG_LABEL,
+    'data-testid': testId,
+  }: CommandPaletteProps,
+  ref: ForwardedRef<HTMLDivElement>
+) {
+  const uniqueId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [announcement, setAnnouncement] = useState('');
 
-  // Calculate total selectable items
+  // IDs for ARIA
+  const inputId = `${uniqueId}-input`;
+  const listboxId = `${uniqueId}-listbox`;
+  const labelId = `${uniqueId}-label`;
+
+  // Calculate total selectable items and sections
   const showRecent = !query && recentItems.length > 0;
   const showActions = !query && actions.length > 0;
   const showResults = query && searchResults.length > 0;
@@ -128,40 +400,145 @@ export function CommandPalette({
         ? searchResults.length
         : 0;
 
+  // Size calculations
+  const baseSize = getBaseSize(size);
+
+  // Get active descendant ID
+  const getActiveDescendantId = (): string | undefined => {
+    if (totalItems === 0) return undefined;
+
+    if (showRecent && selectedIndex < recentItems.length) {
+      return getOptionId(uniqueId, 'recent', selectedIndex);
+    }
+    if (showRecent && selectedIndex >= recentItems.length) {
+      return getOptionId(uniqueId, 'action', selectedIndex - recentItems.length);
+    }
+    if (showActions && selectedIndex < actions.length) {
+      return getOptionId(uniqueId, 'action', selectedIndex);
+    }
+    if (showResults) {
+      return getOptionId(uniqueId, 'result', selectedIndex);
+    }
+    return undefined;
+  };
+
   // Reset selection when results change
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Intentionally reset selection when result counts change
   useEffect(() => {
     setSelectedIndex(0);
-  }, []);
+  }, [query, searchResults.length, recentItems.length, actions.length]);
 
-  // Focus input when opened
+  // Store previous active element and focus input when opened
   useEffect(() => {
     if (isOpen) {
+      previousActiveElement.current = document.activeElement as HTMLElement;
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 0);
+      setAnnouncement(SR_PALETTE_OPENED);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
+
+  // Return focus on close
+  useEffect(() => {
+    if (!isOpen && previousActiveElement.current) {
+      previousActiveElement.current.focus();
+    }
+  }, [isOpen]);
+
+  // Announce results count changes
+  useEffect(() => {
+    const message = getResultsAnnouncement(searchResults.length, isSearching, query);
+    if (message) {
+      setAnnouncement(message);
+    }
+  }, [searchResults.length, isSearching, query]);
 
   // Handle keyboard navigation
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     switch (event.key) {
       case 'Escape':
         event.preventDefault();
+        event.stopPropagation();
         onClose();
         break;
       case 'ArrowDown':
         event.preventDefault();
-        setSelectedIndex((prev) => Math.min(prev + 1, totalItems - 1));
+        setSelectedIndex((prev) => {
+          const next = Math.min(prev + 1, totalItems - 1);
+          announceCurrentItem(next);
+          return next;
+        });
         break;
       case 'ArrowUp':
         event.preventDefault();
-        setSelectedIndex((prev) => Math.max(prev - 1, 0));
+        setSelectedIndex((prev) => {
+          const next = Math.max(prev - 1, 0);
+          announceCurrentItem(next);
+          return next;
+        });
+        break;
+      case 'Home':
+        event.preventDefault();
+        setSelectedIndex(0);
+        announceCurrentItem(0);
+        break;
+      case 'End':
+        event.preventDefault();
+        if (totalItems > 0) {
+          setSelectedIndex(totalItems - 1);
+          announceCurrentItem(totalItems - 1);
+        }
         break;
       case 'Enter':
         event.preventDefault();
         handleSelect(selectedIndex);
         break;
+      case 'Tab':
+        // Prevent focus from leaving the dialog
+        event.preventDefault();
+        break;
+    }
+  };
+
+  // Announce current item for screen readers
+  const announceCurrentItem = (index: number) => {
+    let label = '';
+    let type = '';
+    let shortcut: string | undefined;
+
+    if (showRecent && index < recentItems.length) {
+      const item = recentItems[index];
+      if (item) {
+        label = item.title;
+        type = getItemTypeLabel(item.type);
+      }
+    } else if (showRecent && index >= recentItems.length) {
+      const actionIndex = index - recentItems.length;
+      const action = actions[actionIndex];
+      if (action) {
+        label = action.label;
+        type = 'Action';
+        shortcut = action.shortcut;
+      }
+    } else if (showActions && index < actions.length) {
+      const action = actions[index];
+      if (action) {
+        label = action.label;
+        type = 'Action';
+        shortcut = action.shortcut;
+      }
+    } else if (showResults && index < searchResults.length) {
+      const result = searchResults[index];
+      if (result) {
+        label = result.title;
+        type = getItemTypeLabel(result.resultType);
+      }
+    }
+
+    if (label) {
+      setAnnouncement(getSelectionAnnouncement(label, type, shortcut));
     }
   };
 
@@ -210,124 +587,182 @@ export function CommandPalette({
 
   if (!isOpen) return null;
 
-  const getItemIcon = (type: SearchResultType) => {
-    return resultTypeIcons[type] || CheckSquare;
-  };
-
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handling is done on the inner dialog
     <div
+      ref={ref}
       role="presentation"
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]"
+      className={COMMAND_PALETTE_BACKDROP_CLASSES}
       onClick={handleBackdropClick}
+      data-testid={testId}
+      data-state={isOpen ? 'open' : 'closed'}
     >
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
+      <div className={COMMAND_PALETTE_OVERLAY_CLASSES} aria-hidden="true" />
+
+      {/* Screen reader announcements */}
+      <VisuallyHidden>
+        <div role="status" aria-live="polite" aria-atomic="true">
+          {announcement}
+        </div>
+      </VisuallyHidden>
 
       {/* Command palette panel */}
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Command palette"
+        aria-labelledby={labelId}
         onKeyDown={handleKeyDown}
         className={cn(
-          'relative z-50 flex w-full max-w-xl flex-col',
-          'rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]',
-          'shadow-2xl',
-          'mx-4',
-          'max-h-[60vh]',
-          // Animation - respects reduced motion
-          'motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:slide-in-from-top-2',
+          COMMAND_PALETTE_PANEL_CLASSES,
+          getResponsiveSizeClasses(size, COMMAND_PALETTE_SIZE_CLASSES),
           className
         )}
       >
+        {/* Hidden label for the dialog */}
+        <VisuallyHidden>
+          <span id={labelId}>{ariaLabel}</span>
+        </VisuallyHidden>
+
         {/* Search input */}
-        <div className="flex items-center gap-2 border-b border-[rgb(var(--border))] px-3">
-          <Icon icon={Search} size="sm" className="text-[rgb(var(--muted-foreground))]" />
+        <div className={COMMAND_PALETTE_INPUT_CONTAINER_CLASSES}>
+          <Icon
+            icon={Search}
+            size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
+            className="text-[rgb(var(--muted-foreground))]"
+            aria-hidden="true"
+          />
           <Input
             ref={inputRef}
+            id={inputId}
             type="text"
+            role="combobox"
+            aria-expanded={totalItems > 0}
+            aria-controls={listboxId}
+            aria-activedescendant={getActiveDescendantId()}
+            aria-autocomplete="list"
+            aria-label={DEFAULT_SEARCH_LABEL}
             value={query}
             onChange={(e) => onSearch(e.target.value)}
             placeholder={placeholder}
-            className="flex-1 border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-            aria-label="Search"
+            className={cn(
+              COMMAND_PALETTE_INPUT_CLASSES,
+              COMMAND_PALETTE_INPUT_SIZE_CLASSES[baseSize]
+            )}
             autoComplete="off"
+            data-testid={testId ? `${testId}-input` : undefined}
           />
-          {isSearching && <Spinner size="sm" />}
+          {isSearching && (
+            <Spinner
+              size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
+              announce={false}
+              aria-label={SR_SEARCHING}
+            />
+          )}
           <div className="flex items-center gap-1 text-xs text-[rgb(var(--muted-foreground))]">
-            <kbd className="rounded bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]">
+            <kbd className={COMMAND_PALETTE_KBD_CLASSES} aria-hidden="true">
               esc
             </kbd>
-            <span>to close</span>
+            <Text as="span" size="xs" color="muted-foreground">
+              to close
+            </Text>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-6 w-6 p-0"
-            aria-label="Close"
+            className={COMMAND_PALETTE_CLOSE_BUTTON_CLASSES}
+            aria-label={DEFAULT_CLOSE_LABEL}
+            data-testid={testId ? `${testId}-close` : undefined}
           >
-            <Icon icon={X} size="sm" />
+            <Icon icon={X} size="sm" aria-hidden="true" />
           </Button>
         </div>
 
         {/* Results list */}
-        <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-thin p-2">
+        <div
+          ref={listRef}
+          id={listboxId}
+          role="listbox"
+          aria-label={
+            query
+              ? DEFAULT_RESULTS_LABEL
+              : showRecent
+                ? DEFAULT_RECENT_LABEL
+                : DEFAULT_ACTIONS_LABEL
+          }
+          className={COMMAND_PALETTE_LIST_CLASSES}
+          data-testid={testId ? `${testId}-list` : undefined}
+        >
           {/* Empty state when searching */}
           {query && !isSearching && searchResults.length === 0 && (
             <EmptyState
               icon={Search}
-              title={`No results found for "${query}"`}
+              title={`${DEFAULT_NO_RESULTS_TITLE} for "${query}"`}
               description="Try searching for something else"
               size="md"
+              data-testid={testId ? `${testId}-empty-search` : undefined}
             />
           )}
 
           {/* Recent items section */}
           {showRecent && (
-            <div className="mb-2">
-              <div className="mb-1 flex items-center gap-1 px-2 text-xs font-medium text-[rgb(var(--muted-foreground))]">
-                <Clock className="h-3 w-3" />
-                <span>Recent</span>
+            <div className="mb-2" role="group" aria-label={DEFAULT_RECENT_LABEL}>
+              <div className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
+                <Clock className="h-3 w-3" aria-hidden="true" />
+                <Text as="span" size="xs" weight="medium">
+                  Recent
+                </Text>
               </div>
               {recentItems.map((item, index) => {
                 const ItemIcon = getItemIcon(item.type);
                 const isSelected = index === selectedIndex;
+                const optionId = getOptionId(uniqueId, 'recent', index);
                 return (
                   <button
                     key={item.id}
+                    id={optionId}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     data-selected={isSelected}
                     onClick={() => {
                       onSelectRecent?.(item);
                       onClose();
                     }}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'motion-safe:transition-colors motion-safe:duration-75',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
+                      COMMAND_PALETTE_ITEM_BASE_CLASSES,
+                      COMMAND_PALETTE_ITEM_SIZE_CLASSES[baseSize],
                       isSelected
-                        ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
-                        : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
+                        ? COMMAND_PALETTE_ITEM_SELECTED_CLASSES
+                        : COMMAND_PALETTE_ITEM_UNSELECTED_CLASSES
                     )}
                   >
                     <Icon
                       icon={ItemIcon}
-                      size="sm"
+                      size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
                       className="text-[rgb(var(--muted-foreground))]"
+                      aria-hidden="true"
                     />
                     <div className="flex-1 truncate">
-                      <div className="truncate text-sm font-medium">{item.title}</div>
+                      <Text as="span" size="sm" weight="medium" truncate className="block">
+                        {item.title}
+                      </Text>
                       {item.subtitle && (
-                        <div className="truncate text-xs text-[rgb(var(--muted-foreground))]">
+                        <Text
+                          as="span"
+                          size="xs"
+                          color="muted-foreground"
+                          truncate
+                          className="block"
+                        >
                           {item.subtitle}
-                        </div>
+                        </Text>
                       )}
                     </div>
-                    <span className="shrink-0 text-xs text-[rgb(var(--muted-foreground))]">
-                      {resultTypeLabels[item.type]}
-                    </span>
+                    <Text as="span" size="xs" color="muted-foreground" className="shrink-0">
+                      {getItemTypeLabel(item.type)}
+                    </Text>
                   </button>
                 );
               })}
@@ -336,41 +771,52 @@ export function CommandPalette({
 
           {/* Actions section */}
           {showActions && (
-            <div className="mb-2">
-              <div className="mb-1 flex items-center gap-1 px-2 text-xs font-medium text-[rgb(var(--muted-foreground))]">
-                <Command className="h-3 w-3" />
-                <span>Actions</span>
+            <div className="mb-2" role="group" aria-label={DEFAULT_ACTIONS_LABEL}>
+              <div className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
+                <Command className="h-3 w-3" aria-hidden="true" />
+                <Text as="span" size="xs" weight="medium">
+                  Actions
+                </Text>
               </div>
               {actions.map((action, index) => {
                 const actualIndex = showRecent ? recentItems.length + index : index;
                 const isSelected = actualIndex === selectedIndex;
                 const ActionIcon = action.icon || ArrowRight;
+                const optionId = getOptionId(uniqueId, 'action', index);
                 return (
                   <button
                     key={action.id}
+                    id={optionId}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     data-selected={isSelected}
                     onClick={() => {
                       action.onSelect();
                       onClose();
                     }}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'motion-safe:transition-colors motion-safe:duration-75',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
+                      COMMAND_PALETTE_ITEM_BASE_CLASSES,
+                      COMMAND_PALETTE_ITEM_SIZE_CLASSES[baseSize],
                       isSelected
-                        ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
-                        : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
+                        ? COMMAND_PALETTE_ITEM_SELECTED_CLASSES
+                        : COMMAND_PALETTE_ITEM_UNSELECTED_CLASSES
                     )}
                   >
                     <Icon
                       icon={ActionIcon}
-                      size="sm"
+                      size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
                       className="text-[rgb(var(--muted-foreground))]"
+                      aria-hidden="true"
                     />
-                    <span className="flex-1 text-sm">{action.label}</span>
+                    <Text as="span" size="sm" className="flex-1">
+                      {action.label}
+                    </Text>
                     {action.shortcut && (
-                      <kbd className="shrink-0 rounded bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px] text-[rgb(var(--muted-foreground))]">
+                      <kbd
+                        className={COMMAND_PALETTE_KBD_CLASSES}
+                        aria-label={`Keyboard shortcut: ${action.shortcut}`}
+                      >
                         {action.shortcut}
                       </kbd>
                     )}
@@ -382,49 +828,65 @@ export function CommandPalette({
 
           {/* Search results */}
           {showResults && (
-            <div>
-              <div className="mb-1 flex items-center gap-1 px-2 text-xs font-medium text-[rgb(var(--muted-foreground))]">
-                <Search className="h-3 w-3" />
-                <span>Results</span>
-                <span className="ml-auto">{searchResults.length} found</span>
+            <div role="group" aria-label={DEFAULT_RESULTS_LABEL}>
+              <div className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
+                <Search className="h-3 w-3" aria-hidden="true" />
+                <Text as="span" size="xs" weight="medium">
+                  Results
+                </Text>
+                <Text as="span" size="xs" color="muted-foreground" className="ml-auto">
+                  {searchResults.length} found
+                </Text>
               </div>
               {searchResults.map((result, index) => {
                 const ResultIcon = getItemIcon(result.resultType);
                 const isSelected = index === selectedIndex;
+                const optionId = getOptionId(uniqueId, 'result', index);
                 return (
                   <button
                     key={result.id}
+                    id={optionId}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     data-selected={isSelected}
                     onClick={() => {
                       onSelectResult?.(result);
                       onClose();
                     }}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left',
-                      'motion-safe:transition-colors motion-safe:duration-75',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgb(var(--ring))]',
+                      COMMAND_PALETTE_ITEM_BASE_CLASSES,
+                      COMMAND_PALETTE_ITEM_SIZE_CLASSES[baseSize],
                       isSelected
-                        ? 'bg-[rgb(var(--accent))] text-[rgb(var(--accent-foreground))]'
-                        : 'text-[rgb(var(--foreground))] hover:bg-[rgb(var(--accent))]'
+                        ? COMMAND_PALETTE_ITEM_SELECTED_CLASSES
+                        : COMMAND_PALETTE_ITEM_UNSELECTED_CLASSES
                     )}
                   >
                     <Icon
                       icon={ResultIcon}
-                      size="sm"
+                      size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
                       className="text-[rgb(var(--muted-foreground))]"
+                      aria-hidden="true"
                     />
                     <div className="flex-1 truncate">
-                      <div className="truncate text-sm font-medium">{result.title}</div>
+                      <Text as="span" size="sm" weight="medium" truncate className="block">
+                        {result.title}
+                      </Text>
                       {result.subtitle && (
-                        <div className="truncate text-xs text-[rgb(var(--muted-foreground))]">
+                        <Text
+                          as="span"
+                          size="xs"
+                          color="muted-foreground"
+                          truncate
+                          className="block"
+                        >
                           {result.subtitle}
-                        </div>
+                        </Text>
                       )}
                     </div>
-                    <span className="shrink-0 text-xs text-[rgb(var(--muted-foreground))]">
-                      {resultTypeLabels[result.resultType]}
-                    </span>
+                    <Text as="span" size="xs" color="muted-foreground" className="shrink-0">
+                      {getItemTypeLabel(result.resultType)}
+                    </Text>
                   </button>
                 );
               })}
@@ -435,34 +897,40 @@ export function CommandPalette({
           {!query && recentItems.length === 0 && actions.length === 0 && (
             <EmptyState
               icon={Command}
-              title="Start typing to search"
-              description="Find tasks, projects, and more"
+              title={DEFAULT_EMPTY_TITLE}
+              description={DEFAULT_EMPTY_DESCRIPTION}
               size="md"
+              data-testid={testId ? `${testId}-empty` : undefined}
             />
           )}
         </div>
 
         {/* Footer with keyboard hints */}
-        <div className="flex items-center gap-4 border-t border-[rgb(var(--border))] px-3 py-2 text-xs text-[rgb(var(--muted-foreground))]">
+        <div className={COMMAND_PALETTE_FOOTER_CLASSES} aria-hidden="true">
           <div className="flex items-center gap-1">
-            <kbd className="rounded bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]">
-              ↑
-            </kbd>
-            <kbd className="rounded bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]">
-              ↓
-            </kbd>
-            <span>to navigate</span>
+            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>↑</kbd>
+            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>↓</kbd>
+            <Text as="span" size="xs" color="muted-foreground">
+              to navigate
+            </Text>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className="rounded bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]">
-              ↵
-            </kbd>
-            <span>to select</span>
+            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>↵</kbd>
+            <Text as="span" size="xs" color="muted-foreground">
+              to select
+            </Text>
+          </div>
+          <div className="flex items-center gap-1">
+            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>Home</kbd>
+            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>End</kbd>
+            <Text as="span" size="xs" color="muted-foreground">
+              to jump
+            </Text>
           </div>
         </div>
       </div>
     </div>
   );
-}
+});
 
 CommandPalette.displayName = 'CommandPalette';

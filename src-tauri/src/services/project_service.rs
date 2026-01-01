@@ -1,7 +1,22 @@
 //! Project management service.
 //!
 //! Handles CRUD operations for projects.
+//!
+//! # Logging
+//!
+//! This module uses structured logging at the following levels:
+//! - `debug`: Query parameters, database operations, field updates
+//! - `info`: Successful CRUD operations, list results with counts
+//! - `warn`: Validation issues, unexpected states
+//! - `error`: Database failures, not found errors
+//!
+//! # Error Handling
+//!
+//! All functions return `ServiceResult<T>` and use structured error types:
+//! - `ServiceError::NotFound` for missing projects
+//! - `ServiceError::Database` for database constraint violations
 
+use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -15,6 +30,8 @@ pub struct ProjectService;
 impl ProjectService {
     /// List all non-archived projects ordered by name.
     pub async fn list(pool: &SqlitePool) -> ServiceResult<Vec<Project>> {
+        debug!("Listing all non-archived projects");
+
         let projects = sqlx::query_as::<_, Project>(
             r#"
             SELECT
@@ -40,13 +57,26 @@ impl ProjectService {
             "#,
         )
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to list projects: {}", e);
+            ServiceError::Database(e)
+        })?;
+
+        let project_names: Vec<&str> = projects.iter().map(|p| p.name.as_str()).collect();
+        info!(
+            "Listed {} non-archived projects: {:?}",
+            projects.len(),
+            project_names
+        );
 
         Ok(projects)
     }
 
     /// List all archived projects ordered by archived_at DESC.
     pub async fn list_archived(pool: &SqlitePool) -> ServiceResult<Vec<Project>> {
+        debug!("Listing all archived projects");
+
         let projects = sqlx::query_as::<_, Project>(
             r#"
             SELECT
@@ -72,13 +102,26 @@ impl ProjectService {
             "#,
         )
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to list archived projects: {}", e);
+            ServiceError::Database(e)
+        })?;
+
+        let project_names: Vec<&str> = projects.iter().map(|p| p.name.as_str()).collect();
+        info!(
+            "Listed {} archived projects: {:?}",
+            projects.len(),
+            project_names
+        );
 
         Ok(projects)
     }
 
     /// Get a project by ID.
     pub async fn get(pool: &SqlitePool, id: &str) -> ServiceResult<Project> {
+        debug!("Getting project by id: {}", id);
+
         let project = sqlx::query_as::<_, Project>(
             r#"
             SELECT
@@ -104,11 +147,23 @@ impl ProjectService {
         )
         .bind(id)
         .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| ServiceError::NotFound {
-            entity: "Project",
-            id: id.to_string(),
+        .await
+        .map_err(|e| {
+            error!("Failed to get project {}: {}", id, e);
+            ServiceError::Database(e)
+        })?
+        .ok_or_else(|| {
+            error!("Project not found: {}", id);
+            ServiceError::NotFound {
+                entity: "Project",
+                id: id.to_string(),
+            }
         })?;
+
+        debug!(
+            "Found project: id={}, name={}, git_repo_path={}",
+            project.id, project.name, project.git_repo_path
+        );
 
         Ok(project)
     }
@@ -118,6 +173,11 @@ impl ProjectService {
         pool: &SqlitePool,
         request: CreateProjectRequest,
     ) -> ServiceResult<Project> {
+        debug!(
+            "Creating project: name={}, git_repo_path={}",
+            request.name, request.git_repo_path
+        );
+
         let id = Uuid::new_v4().to_string();
         let base_branch = request.base_branch.unwrap_or_else(|| "main".to_string());
         let setup_script = request.setup_script.unwrap_or_default();
@@ -126,6 +186,11 @@ impl ProjectService {
         let workflows_folder = request
             .workflows_folder
             .unwrap_or_else(|| ".openflow/workflows".to_string());
+
+        debug!(
+            "Project defaults applied: id={}, base_branch={}, icon={}, workflows_folder={}",
+            id, base_branch, icon, workflows_folder
+        );
 
         sqlx::query(
             r#"
@@ -151,7 +216,19 @@ impl ProjectService {
         .bind(&workflows_folder)
         .bind(&request.verification_config)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to create project: name={}, git_repo_path={}, error={}",
+                request.name, request.git_repo_path, e
+            );
+            ServiceError::Database(e)
+        })?;
+
+        info!(
+            "Created project: id={}, name={}, git_repo_path={}",
+            id, request.name, request.git_repo_path
+        );
 
         Self::get(pool, &id).await
     }
@@ -162,8 +239,56 @@ impl ProjectService {
         id: &str,
         request: UpdateProjectRequest,
     ) -> ServiceResult<Project> {
+        debug!("Updating project: id={}", id);
+
         // Verify the project exists first
         let existing = Self::get(pool, id).await?;
+
+        // Track which fields are being updated
+        let mut updated_fields: Vec<&str> = Vec::new();
+        if request.name.is_some() {
+            updated_fields.push("name");
+        }
+        if request.git_repo_path.is_some() {
+            updated_fields.push("git_repo_path");
+        }
+        if request.base_branch.is_some() {
+            updated_fields.push("base_branch");
+        }
+        if request.setup_script.is_some() {
+            updated_fields.push("setup_script");
+        }
+        if request.dev_script.is_some() {
+            updated_fields.push("dev_script");
+        }
+        if request.cleanup_script.is_some() {
+            updated_fields.push("cleanup_script");
+        }
+        if request.copy_files.is_some() {
+            updated_fields.push("copy_files");
+        }
+        if request.icon.is_some() {
+            updated_fields.push("icon");
+        }
+        if request.rule_folders.is_some() {
+            updated_fields.push("rule_folders");
+        }
+        if request.always_included_rules.is_some() {
+            updated_fields.push("always_included_rules");
+        }
+        if request.workflows_folder.is_some() {
+            updated_fields.push("workflows_folder");
+        }
+        if request.verification_config.is_some() {
+            updated_fields.push("verification_config");
+        }
+
+        debug!(
+            "Updating {} fields for project {}: {:?}",
+            updated_fields.len(),
+            id,
+            updated_fields
+        );
 
         // Apply updates, falling back to existing values
         let name = request.name.unwrap_or(existing.name);
@@ -217,20 +342,38 @@ impl ProjectService {
         .bind(&verification_config)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to update project {}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
+
+        info!(
+            "Updated project: id={}, name={}, fields_updated={:?}",
+            id, name, updated_fields
+        );
 
         Self::get(pool, id).await
     }
 
     /// Delete a project by ID.
     pub async fn delete(pool: &SqlitePool, id: &str) -> ServiceResult<()> {
+        debug!("Deleting project: id={}", id);
+
         // Verify the project exists first
-        Self::get(pool, id).await?;
+        let project = Self::get(pool, id).await?;
+        let project_name = project.name.clone();
 
         sqlx::query("DELETE FROM projects WHERE id = ?")
             .bind(id)
             .execute(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to delete project {}: {}", id, e);
+                ServiceError::Database(e)
+            })?;
+
+        info!("Deleted project: id={}, name={}", id, project_name);
 
         Ok(())
     }
@@ -240,8 +383,16 @@ impl ProjectService {
     /// Sets the archived_at timestamp and cascades to archive all tasks in the project.
     /// Archived projects are excluded from list queries but can still be accessed by ID.
     pub async fn archive(pool: &SqlitePool, id: &str) -> ServiceResult<Project> {
+        debug!("Archiving project: id={}", id);
+
         // Verify the project exists first
-        Self::get(pool, id).await?;
+        let project = Self::get(pool, id).await?;
+
+        if project.archived_at.is_some() {
+            warn!("Project {} is already archived", id);
+        }
+
+        let project_name = project.name.clone();
 
         // Archive the project
         sqlx::query(
@@ -254,10 +405,14 @@ impl ProjectService {
         )
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to archive project {}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
 
         // Cascade: archive all tasks in this project
-        sqlx::query(
+        let cascade_result = sqlx::query(
             r#"
             UPDATE tasks
             SET archived_at = datetime('now', 'subsec'),
@@ -267,7 +422,17 @@ impl ProjectService {
         )
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to cascade archive tasks for project {}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
+
+        let tasks_archived = cascade_result.rows_affected();
+        info!(
+            "Archived project: id={}, name={}, tasks_archived={}",
+            id, project_name, tasks_archived
+        );
 
         Self::get(pool, id).await
     }
@@ -277,8 +442,16 @@ impl ProjectService {
     /// Clears the archived_at timestamp, making the project visible in list queries again.
     /// Note: Tasks remain archived and must be restored individually.
     pub async fn unarchive(pool: &SqlitePool, id: &str) -> ServiceResult<Project> {
+        debug!("Unarchiving project: id={}", id);
+
         // Verify the project exists first
-        Self::get(pool, id).await?;
+        let project = Self::get(pool, id).await?;
+
+        if project.archived_at.is_none() {
+            warn!("Project {} is not archived", id);
+        }
+
+        let project_name = project.name.clone();
 
         sqlx::query(
             r#"
@@ -290,7 +463,13 @@ impl ProjectService {
         )
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to unarchive project {}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
+
+        info!("Unarchived project: id={}, name={}", id, project_name);
 
         Self::get(pool, id).await
     }

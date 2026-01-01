@@ -15,6 +15,8 @@ export interface CheckboxProps
   size?: ResponsiveValue<CheckboxSize>;
   /** Error state for form validation */
   error?: boolean;
+  /** Callback when checked state changes (alternative to onChange) */
+  onCheckedChange?: (checked: boolean) => void;
   /** Message announced to screen readers when state changes (default: automatic) */
   'aria-describedby'?: string;
   /** Data test id for testing */
@@ -143,6 +145,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
     disabled,
     size = 'md',
     error = false,
+    onCheckedChange,
+    onChange,
     'data-testid': dataTestId,
     'aria-describedby': ariaDescribedBy,
     ...props
@@ -202,6 +206,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           disabled={disabled}
           aria-invalid={error || undefined}
           aria-describedby={ariaDescribedBy}
+          onChange={(e) => {
+            onChange?.(e);
+            onCheckedChange?.(e.target.checked);
+          }}
           className={cn(
             'peer shrink-0 cursor-pointer appearance-none rounded',
             'border',

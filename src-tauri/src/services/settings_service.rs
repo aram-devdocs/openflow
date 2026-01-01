@@ -2,9 +2,26 @@
 //!
 //! Handles application settings storage and retrieval using a simple key-value store.
 //! Settings are persisted in the `app_settings` table.
+//!
+//! ## Logging
+//!
+//! This service uses structured logging at appropriate levels:
+//! - `debug!` - For query parameters, cache lookups, and internal operations
+//! - `info!` - For successful operations (set, delete) with key context
+//! - `warn!` - For expected issues (key not found on delete)
+//! - `error!` - For database failures and unexpected errors
+//!
+//! **Security**: Setting values are NOT logged to avoid leaking sensitive data.
+//! Only keys and value lengths are logged.
+//!
+//! ## Error Handling
+//!
+//! All functions return `ServiceResult<T>` with proper error context.
+//! Database errors are propagated via the `?` operator with sqlx error conversion.
 
 use std::collections::HashMap;
 
+use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 
 use super::{ServiceError, ServiceResult};
@@ -17,6 +34,8 @@ impl SettingsService {
     ///
     /// Returns `None` if the key doesn't exist.
     pub async fn get(pool: &SqlitePool, key: &str) -> ServiceResult<Option<String>> {
+        debug!("Getting setting: key={}", key);
+
         let result = sqlx::query_scalar::<_, String>(
             r#"
             SELECT value
@@ -26,7 +45,18 @@ impl SettingsService {
         )
         .bind(key)
         .fetch_optional(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to get setting: key={}, error={}", key, e);
+            e
+        })?;
+
+        debug!(
+            "Setting fetch result: key={}, found={}, value_length={}",
+            key,
+            result.is_some(),
+            result.as_ref().map(|v| v.len()).unwrap_or(0)
+        );
 
         Ok(result)
     }
@@ -36,6 +66,8 @@ impl SettingsService {
     /// If the key already exists, the value is updated.
     /// If the key doesn't exist, a new setting is created.
     pub async fn set(pool: &SqlitePool, key: &str, value: &str) -> ServiceResult<()> {
+        debug!("Setting value: key={}, value_length={}", key, value.len());
+
         sqlx::query(
             r#"
             INSERT INTO app_settings (key, value)
@@ -48,7 +80,18 @@ impl SettingsService {
         .bind(key)
         .bind(value)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to set setting: key={}, value_length={}, error={}",
+                key,
+                value.len(),
+                e
+            );
+            e
+        })?;
+
+        info!("Setting saved: key={}, value_length={}", key, value.len());
 
         Ok(())
     }
@@ -57,6 +100,8 @@ impl SettingsService {
     ///
     /// Returns an empty map if no settings exist.
     pub async fn get_all(pool: &SqlitePool) -> ServiceResult<HashMap<String, String>> {
+        debug!("Getting all settings");
+
         let rows = sqlx::query_as::<_, (String, String)>(
             r#"
             SELECT key, value
@@ -65,9 +110,20 @@ impl SettingsService {
             "#,
         )
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to get all settings: error={}", e);
+            e
+        })?;
 
         let settings: HashMap<String, String> = rows.into_iter().collect();
+
+        debug!(
+            "Retrieved all settings: count={}, keys={:?}",
+            settings.len(),
+            settings.keys().collect::<Vec<_>>()
+        );
+
         Ok(settings)
     }
 
@@ -75,9 +131,12 @@ impl SettingsService {
     ///
     /// Returns an error if the key doesn't exist.
     pub async fn delete(pool: &SqlitePool, key: &str) -> ServiceResult<()> {
+        debug!("Deleting setting: key={}", key);
+
         // Check if the key exists first
         let exists = Self::get(pool, key).await?;
         if exists.is_none() {
+            warn!("Setting not found for deletion: key={}", key);
             return Err(ServiceError::NotFound {
                 entity: "Setting",
                 id: key.to_string(),
@@ -87,7 +146,13 @@ impl SettingsService {
         sqlx::query("DELETE FROM app_settings WHERE key = ?")
             .bind(key)
             .execute(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to delete setting: key={}, error={}", key, e);
+                e
+            })?;
+
+        info!("Setting deleted: key={}", key);
 
         Ok(())
     }
@@ -100,25 +165,60 @@ impl SettingsService {
         key: &str,
         default: &str,
     ) -> ServiceResult<String> {
+        debug!(
+            "Getting setting with default: key={}, default_length={}",
+            key,
+            default.len()
+        );
+
         let result = Self::get(pool, key).await?;
-        Ok(result.unwrap_or_else(|| default.to_string()))
+
+        let (value, used_default) = match result {
+            Some(v) => (v, false),
+            None => (default.to_string(), true),
+        };
+
+        debug!(
+            "Setting result: key={}, used_default={}, value_length={}",
+            key,
+            used_default,
+            value.len()
+        );
+
+        Ok(value)
     }
 
     /// Check if a setting exists.
     pub async fn exists(pool: &SqlitePool, key: &str) -> ServiceResult<bool> {
+        debug!("Checking setting existence: key={}", key);
+
         let result = Self::get(pool, key).await?;
-        Ok(result.is_some())
+        let exists = result.is_some();
+
+        debug!("Setting existence check: key={}, exists={}", key, exists);
+
+        Ok(exists)
     }
 
     /// Delete all settings.
     ///
     /// Use with caution - this removes all application settings.
     pub async fn delete_all(pool: &SqlitePool) -> ServiceResult<u64> {
+        warn!("Deleting ALL settings - this action cannot be undone");
+
         let result = sqlx::query("DELETE FROM app_settings")
             .execute(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to delete all settings: error={}", e);
+                e
+            })?;
 
-        Ok(result.rows_affected())
+        let deleted_count = result.rows_affected();
+
+        info!("All settings deleted: count={}", deleted_count);
+
+        Ok(deleted_count)
     }
 }
 

@@ -88,7 +88,7 @@
     "vitest": "^2.1.8"
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx}": ["biome check --write"],
+    "*.{ts,tsx,js,jsx}": ["biome check --write --diagnostic-level=error"],
     "src-tauri/**/*.rs": ["bash -c 'cd src-tauri && cargo fmt --check'"]
   }
 }

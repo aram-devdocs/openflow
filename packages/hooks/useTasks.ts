@@ -6,6 +6,7 @@ import type {
   UpdateTaskRequest,
 } from '@openflow/generated';
 import { taskQueries } from '@openflow/queries';
+import { createLogger } from '@openflow/utils';
 import {
   type UseMutationResult,
   type UseQueryResult,
@@ -13,6 +14,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+
+const logger = createLogger('useTasks');
 
 /**
  * Query key factory for tasks.
@@ -66,8 +69,16 @@ export function useCreateTask(): UseMutationResult<Task, Error, CreateTaskReques
 
   return useMutation({
     mutationFn: (request: CreateTaskRequest) => taskQueries.create(request),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      logger.info('Task created', { taskId: data.id, title: variables.title });
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    },
+    onError: (error, variables) => {
+      logger.error('Failed to create task', {
+        title: variables.title,
+        projectId: variables.projectId,
+        error: error.message,
+      });
     },
   });
 }
@@ -86,9 +97,16 @@ export function useUpdateTask(): UseMutationResult<
 
   return useMutation({
     mutationFn: ({ id, request }) => taskQueries.update(id, request),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
+      logger.info('Task updated', { taskId: data.id, updates: variables.request });
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.id) });
+    },
+    onError: (error, variables) => {
+      logger.error('Failed to update task', {
+        taskId: variables.id,
+        error: error.message,
+      });
     },
   });
 }
@@ -104,8 +122,12 @@ export function useArchiveTask(): UseMutationResult<Task, Error, string> {
   return useMutation({
     mutationFn: (id: string) => taskQueries.archive(id),
     onSuccess: (data) => {
+      logger.info('Task archived', { taskId: data.id, title: data.title });
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.id) });
+    },
+    onError: (error, taskId) => {
+      logger.error('Failed to archive task', { taskId, error: error.message });
     },
   });
 }
@@ -120,9 +142,13 @@ export function useDeleteTask(): UseMutationResult<void, Error, string> {
 
   return useMutation({
     mutationFn: (id: string) => taskQueries.delete(id),
-    onSuccess: (_data, id) => {
+    onSuccess: (_data, taskId) => {
+      logger.info('Task deleted', { taskId });
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
-      queryClient.removeQueries({ queryKey: taskKeys.detail(id) });
+      queryClient.removeQueries({ queryKey: taskKeys.detail(taskId) });
+    },
+    onError: (error, taskId) => {
+      logger.error('Failed to delete task', { taskId, error: error.message });
     },
   });
 }
@@ -151,8 +177,12 @@ export function useRestoreTask(): UseMutationResult<Task, Error, { id: string }>
   return useMutation({
     mutationFn: ({ id }) => taskQueries.unarchive(id),
     onSuccess: (data) => {
+      logger.info('Task restored', { taskId: data.id, title: data.title });
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
       queryClient.invalidateQueries({ queryKey: taskKeys.detail(data.id) });
+    },
+    onError: (error, variables) => {
+      logger.error('Failed to restore task', { taskId: variables.id, error: error.message });
     },
   });
 }
@@ -168,9 +198,17 @@ export function useDuplicateTask(): UseMutationResult<Task, Error, string> {
 
   return useMutation({
     mutationFn: (id: string) => taskQueries.duplicate(id),
-    onSuccess: () => {
+    onSuccess: (data, originalTaskId) => {
+      logger.info('Task duplicated', {
+        originalTaskId,
+        newTaskId: data.id,
+        title: data.title,
+      });
       // Invalidate task lists to show the new duplicate
       queryClient.invalidateQueries({ queryKey: taskKeys.lists() });
+    },
+    onError: (error, taskId) => {
+      logger.error('Failed to duplicate task', { taskId, error: error.message });
     },
   });
 }

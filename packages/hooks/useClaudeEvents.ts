@@ -1,6 +1,10 @@
 import type { ProcessStatus, ProcessStatusEvent } from '@openflow/generated';
+import { createLogger } from '@openflow/utils';
 import { type UnlistenFn, listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+// Create logger for this hook
+const logger = createLogger('useClaudeEvents');
 
 /**
  * Claude Code stream-json event types.
@@ -92,6 +96,28 @@ export interface ClaudeEventsState {
 }
 
 /**
+ * Get a human-readable description of the event type for logging
+ */
+function getEventTypeDescription(event: ClaudeEvent): string {
+  switch (event.type) {
+    case 'system':
+      return `system:${event.subtype}`;
+    case 'assistant': {
+      const contentTypes = event.message.content?.map((c) => c.type).join(', ') || 'empty';
+      return `assistant (${contentTypes})`;
+    }
+    case 'user': {
+      const contentTypes = event.message.content?.map((c) => c.type).join(', ') || 'empty';
+      return `user (${contentTypes})`;
+    }
+    case 'result':
+      return `result:${event.subtype}`;
+    default:
+      return 'unknown';
+  }
+}
+
+/**
  * Hook to subscribe to Claude Code stream-json events via Tauri events.
  *
  * This hook listens to three event channels:
@@ -130,25 +156,40 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
   // Use ref to track if we're still mounted
   const mountedRef = useRef(true);
 
+  // Track event count for logging
+  const eventCountRef = useRef(0);
+
+  // Log hook initialization
+  logger.debug('Hook initialized', { processId });
+
   // Clear events handler
   const clearEvents = useCallback(() => {
+    logger.debug('Clearing events and raw output', {
+      eventCount: eventCountRef.current,
+    });
     setEvents([]);
     setRawOutput([]);
+    eventCountRef.current = 0;
   }, []);
 
   // Clear permission request handler
   const clearPermissionRequest = useCallback(() => {
+    logger.debug('Clearing permission request');
     setPermissionRequest(null);
   }, []);
 
   useEffect(() => {
     mountedRef.current = true;
+    eventCountRef.current = 0;
     const unlistenFns: UnlistenFn[] = [];
 
     // Skip if no process ID
     if (!processId) {
+      logger.debug('No process ID provided, skipping subscription');
       return;
     }
+
+    logger.info('Subscribing to Claude events', { processId });
 
     // Reset state when processId changes
     setEvents([]);
@@ -161,53 +202,129 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
     // Subscribe to Claude events
     const setupClaudeEventListener = async () => {
       try {
+        logger.debug('Setting up Claude event listener', {
+          channel: `claude-event-${processId}`,
+        });
         const unlisten = await listen<ClaudeEvent>(`claude-event-${processId}`, (event) => {
           if (!mountedRef.current) return;
+
+          eventCountRef.current += 1;
+          const eventType = getEventTypeDescription(event.payload);
+
+          // Log at debug level for most events, info for important ones
+          if (event.payload.type === 'system' && event.payload.subtype === 'init') {
+            logger.info('Claude session initialized', {
+              processId,
+              sessionId: event.payload.session_id,
+            });
+          } else if (event.payload.type === 'result') {
+            logger.info('Claude result received', {
+              processId,
+              subtype: event.payload.subtype,
+              totalEvents: eventCountRef.current,
+            });
+          } else {
+            logger.debug('Claude event received', {
+              processId,
+              eventType,
+              eventIndex: eventCountRef.current,
+            });
+          }
+
           setEvents((prev) => [...prev, event.payload]);
         });
         unlistenFns.push(unlisten);
+        logger.debug('Claude event listener established', { processId });
       } catch (error) {
-        console.error('Failed to subscribe to Claude events:', error);
+        logger.error('Failed to subscribe to Claude events', {
+          processId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     };
 
     // Subscribe to raw output (unparsed lines)
     const setupRawOutputListener = async () => {
       try {
+        logger.debug('Setting up raw output listener', {
+          channel: `raw-output-${processId}`,
+        });
         const unlisten = await listen<string>(`raw-output-${processId}`, (event) => {
           if (!mountedRef.current) return;
+
+          logger.debug('Raw output received', {
+            processId,
+            length: event.payload.length,
+          });
+
           setRawOutput((prev) => [...prev, event.payload]);
         });
         unlistenFns.push(unlisten);
+        logger.debug('Raw output listener established', { processId });
       } catch (error) {
-        console.error('Failed to subscribe to raw output:', error);
+        logger.error('Failed to subscribe to raw output', {
+          processId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     };
 
     // Subscribe to process status events
     const setupStatusListener = async () => {
       try {
+        logger.debug('Setting up process status listener', {
+          channel: `process-status-${processId}`,
+        });
         const unlisten = await listen<ProcessStatusEvent>(
           `process-status-${processId}`,
           (event) => {
             if (!mountedRef.current) return;
 
             const { status: newStatus, exitCode: newExitCode } = event.payload;
+
+            // Log status changes at info level
+            logger.info('Process status changed', {
+              processId,
+              previousStatus: status,
+              newStatus,
+              exitCode: newExitCode,
+              totalEvents: eventCountRef.current,
+            });
+
             setStatus(newStatus);
             if (newExitCode !== undefined && newExitCode !== null) {
               setExitCode(newExitCode);
+
+              // Log completion with exit code
+              if (newStatus === 'completed' || newStatus === 'failed' || newStatus === 'killed') {
+                const logFn =
+                  newStatus === 'completed' && newExitCode === 0 ? logger.info : logger.warn;
+                logFn('Process finished', {
+                  processId,
+                  status: newStatus,
+                  exitCode: newExitCode,
+                  totalEvents: eventCountRef.current,
+                });
+              }
             }
           }
         );
         unlistenFns.push(unlisten);
+        logger.debug('Process status listener established', { processId });
       } catch (error) {
-        console.error('Failed to subscribe to process status:', error);
+        logger.error('Failed to subscribe to process status', {
+          processId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     };
 
     // Subscribe to permission request events
     const setupPermissionListener = async () => {
       try {
+        logger.debug('Setting up permission request listener', {
+          channel: `permission-request-${processId}`,
+        });
         // The Rust backend sends snake_case, so we map to camelCase
         interface RustPermissionRequest {
           process_id: string;
@@ -219,7 +336,17 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
           `permission-request-${processId}`,
           (event) => {
             if (!mountedRef.current) return;
+
             const { process_id, tool_name, file_path, description } = event.payload;
+
+            // Permission requests are important, log at info level
+            logger.info('Permission request received', {
+              processId: process_id,
+              toolName: tool_name,
+              filePath: file_path,
+              descriptionLength: description.length,
+            });
+
             setPermissionRequest({
               processId: process_id,
               toolName: tool_name,
@@ -229,21 +356,38 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
           }
         );
         unlistenFns.push(unlisten);
+        logger.debug('Permission request listener established', { processId });
       } catch (error) {
-        console.error('Failed to subscribe to permission requests:', error);
+        logger.error('Failed to subscribe to permission requests', {
+          processId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     };
 
     // Subscribe to session ID events (emitted on "init" system events)
     const setupSessionIdListener = async () => {
       try {
+        logger.debug('Setting up session ID listener', {
+          channel: `session-id-${processId}`,
+        });
         const unlisten = await listen<string>(`session-id-${processId}`, (event) => {
           if (!mountedRef.current) return;
+
+          logger.info('Session ID received', {
+            processId,
+            sessionId: event.payload,
+          });
+
           setSessionId(event.payload);
         });
         unlistenFns.push(unlisten);
+        logger.debug('Session ID listener established', { processId });
       } catch (error) {
-        console.error('Failed to subscribe to session ID:', error);
+        logger.error('Failed to subscribe to session ID', {
+          processId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     };
 
@@ -256,12 +400,16 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
 
     // Cleanup on unmount or processId change
     return () => {
+      logger.debug('Cleaning up event listeners', {
+        processId,
+        totalEventsReceived: eventCountRef.current,
+      });
       mountedRef.current = false;
       for (const unlisten of unlistenFns) {
         unlisten();
       }
     };
-  }, [processId]);
+  }, [processId, status]);
 
   // Determine if process is running
   const isRunning = status === 'running' || (status === null && processId !== null);

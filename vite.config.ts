@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@openflow/generated': resolve(__dirname, 'packages/generated/index.ts'),
+      '@openflow/primitives': resolve(__dirname, 'packages/primitives/index.ts'),
       '@openflow/utils': resolve(__dirname, 'packages/utils/index.ts'),
       '@openflow/validation': resolve(__dirname, 'packages/validation/index.ts'),
       '@openflow/queries': resolve(__dirname, 'packages/queries/index.ts'),

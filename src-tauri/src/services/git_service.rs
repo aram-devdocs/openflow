@@ -14,10 +14,26 @@
 //!     +-- {task_id}-review/    # Review agent worktree
 //!     +-- {task_id}-test/      # Test agent worktree
 //! ```
+//!
+//! ## Logging
+//!
+//! This service uses structured logging at the following levels:
+//! - `debug`: Git command execution details, parameter values
+//! - `info`: Successful operations (worktree created/deleted, branch pushed)
+//! - `warn`: Fallback operations (force delete, empty diff)
+//! - `error`: Git command failures with stderr output
+//!
+//! ## Error Handling
+//!
+//! All public functions return `ServiceResult<T>` with appropriate error variants:
+//! - `ServiceError::Git` for git command failures
+//! - `ServiceError::Validation` for input validation errors
+//! - `ServiceError::Io` for filesystem errors
 
 use std::path::Path;
 use std::process::Command;
 
+use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 
 use crate::types::{Commit, DiffHunk, FileDiff};
@@ -47,17 +63,28 @@ impl GitService {
         base_branch: &str,
         worktree_path: &str,
     ) -> ServiceResult<String> {
+        debug!(
+            "Creating worktree: repo_path={}, branch_name={}, base_branch={}, worktree_path={}",
+            repo_path, branch_name, base_branch, worktree_path
+        );
+
         // Ensure the parent directory exists
-        let worktree_parent = Path::new(worktree_path)
-            .parent()
-            .ok_or_else(|| ServiceError::Git("Invalid worktree path".to_string()))?;
+        let worktree_parent = Path::new(worktree_path).parent().ok_or_else(|| {
+            error!("Invalid worktree path: {}", worktree_path);
+            ServiceError::Git("Invalid worktree path".to_string())
+        })?;
 
         if !worktree_parent.exists() {
+            debug!("Creating parent directory: {:?}", worktree_parent);
             std::fs::create_dir_all(worktree_parent)?;
         }
 
         // Create the worktree with a new branch based on base_branch
         // git worktree add -b <branch_name> <worktree_path> <base_branch>
+        debug!(
+            "Running: git -C {} worktree add -b {} {} {}",
+            repo_path, branch_name, worktree_path, base_branch
+        );
         let output = Command::new("git")
             .args([
                 "-C",
@@ -73,12 +100,22 @@ impl GitService {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            error!(
+                "Failed to create worktree: repo_path={}, branch_name={}, stderr={}",
+                repo_path,
+                branch_name,
+                stderr.trim()
+            );
             return Err(ServiceError::Git(format!(
                 "Failed to create worktree: {}",
                 stderr
             )));
         }
 
+        info!(
+            "Created worktree: branch_name={}, worktree_path={}",
+            branch_name, worktree_path
+        );
         Ok(worktree_path.to_string())
     }
 
@@ -91,13 +128,33 @@ impl GitService {
     /// # Errors
     /// Returns an error if the git command fails.
     pub async fn delete_worktree(repo_path: &str, worktree_path: &str) -> ServiceResult<()> {
+        debug!(
+            "Deleting worktree: repo_path={}, worktree_path={}",
+            repo_path, worktree_path
+        );
+
         // First try to remove the worktree normally
+        debug!(
+            "Running: git -C {} worktree remove {}",
+            repo_path, worktree_path
+        );
         let output = Command::new("git")
             .args(["-C", repo_path, "worktree", "remove", worktree_path])
             .output()?;
 
         if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            warn!(
+                "Normal worktree removal failed, trying force: worktree_path={}, stderr={}",
+                worktree_path,
+                stderr.trim()
+            );
+
             // If normal removal fails, try force removal
+            debug!(
+                "Running: git -C {} worktree remove --force {}",
+                repo_path, worktree_path
+            );
             let force_output = Command::new("git")
                 .args([
                     "-C",
@@ -111,14 +168,27 @@ impl GitService {
 
             if !force_output.status.success() {
                 let stderr = String::from_utf8_lossy(&force_output.stderr);
+                error!(
+                    "Failed to delete worktree (even with --force): worktree_path={}, stderr={}",
+                    worktree_path,
+                    stderr.trim()
+                );
                 return Err(ServiceError::Git(format!(
                     "Failed to delete worktree: {}",
                     stderr
                 )));
             }
+
+            info!(
+                "Deleted worktree with --force: worktree_path={}",
+                worktree_path
+            );
+        } else {
+            info!("Deleted worktree: worktree_path={}", worktree_path);
         }
 
         // Prune any stale worktree entries
+        debug!("Running: git -C {} worktree prune", repo_path);
         let _ = Command::new("git")
             .args(["-C", repo_path, "worktree", "prune"])
             .output();
@@ -136,7 +206,13 @@ impl GitService {
     /// # Returns
     /// A vector of file diffs showing all changes.
     pub async fn get_diff(worktree_path: &str) -> ServiceResult<Vec<FileDiff>> {
+        debug!("Getting diff: worktree_path={}", worktree_path);
+
         // Get diff for all changes (staged and unstaged)
+        debug!(
+            "Running: git -C {} diff HEAD --numstat --name-status",
+            worktree_path
+        );
         let output = Command::new("git")
             .args([
                 "-C",
@@ -150,16 +226,28 @@ impl GitService {
 
         if !output.status.success() {
             // If HEAD doesn't exist (new repo), get diff against empty tree
+            debug!(
+                "HEAD diff failed (possibly new repo), trying cached: worktree_path={}",
+                worktree_path
+            );
             let output = Command::new("git")
                 .args(["-C", worktree_path, "diff", "--cached", "--numstat"])
                 .output()?;
 
             if !output.status.success() {
+                warn!(
+                    "No diff available (new repo with no staged changes): worktree_path={}",
+                    worktree_path
+                );
                 return Ok(vec![]);
             }
         }
 
         // Get detailed diff with hunks
+        debug!(
+            "Running: git -C {} diff HEAD --unified=3 --no-color",
+            worktree_path
+        );
         let diff_output = Command::new("git")
             .args([
                 "-C",
@@ -173,6 +261,18 @@ impl GitService {
 
         let diff_text = String::from_utf8_lossy(&diff_output.stdout);
         let diffs = Self::parse_diff(&diff_text);
+
+        info!(
+            "Got diff: worktree_path={}, file_count={}, files=[{}]",
+            worktree_path,
+            diffs.len(),
+            diffs
+                .iter()
+                .take(5)
+                .map(|d| d.path.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
 
         Ok(diffs)
     }
@@ -333,9 +433,17 @@ impl GitService {
         limit: Option<usize>,
     ) -> ServiceResult<Vec<Commit>> {
         let limit = limit.unwrap_or(50);
+        debug!(
+            "Getting commits: worktree_path={}, limit={}",
+            worktree_path, limit
+        );
 
         // Get commit log with stats
         // Format: hash|short_hash|message|author|email|date|files_changed|insertions|deletions
+        debug!(
+            "Running: git -C {} log -{} --format=... --shortstat",
+            worktree_path, limit
+        );
         let output = Command::new("git")
             .args([
                 "-C",
@@ -351,8 +459,17 @@ impl GitService {
             let stderr = String::from_utf8_lossy(&output.stderr);
             // If no commits yet, return empty list
             if stderr.contains("does not have any commits") {
+                debug!(
+                    "No commits yet in repository: worktree_path={}",
+                    worktree_path
+                );
                 return Ok(vec![]);
             }
+            error!(
+                "Failed to get commits: worktree_path={}, stderr={}",
+                worktree_path,
+                stderr.trim()
+            );
             return Err(ServiceError::Git(format!(
                 "Failed to get commits: {}",
                 stderr
@@ -361,6 +478,18 @@ impl GitService {
 
         let stdout = String::from_utf8_lossy(&output.stdout);
         let commits = Self::parse_commits(&stdout);
+
+        info!(
+            "Got commits: worktree_path={}, commit_count={}, recent=[{}]",
+            worktree_path,
+            commits.len(),
+            commits
+                .iter()
+                .take(3)
+                .map(|c| format!("{}:{}", c.short_hash, &c.message[..c.message.len().min(30)]))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
 
         Ok(commits)
     }
@@ -441,13 +570,27 @@ impl GitService {
     /// Returns an error if the push fails.
     pub async fn push_branch(worktree_path: &str, remote: Option<&str>) -> ServiceResult<()> {
         let remote = remote.unwrap_or("origin");
+        debug!(
+            "Pushing branch: worktree_path={}, remote={}",
+            worktree_path, remote
+        );
 
         // Get current branch name
+        debug!(
+            "Running: git -C {} rev-parse --abbrev-ref HEAD",
+            worktree_path
+        );
         let branch_output = Command::new("git")
             .args(["-C", worktree_path, "rev-parse", "--abbrev-ref", "HEAD"])
             .output()?;
 
         if !branch_output.status.success() {
+            let stderr = String::from_utf8_lossy(&branch_output.stderr);
+            error!(
+                "Failed to get current branch: worktree_path={}, stderr={}",
+                worktree_path,
+                stderr.trim()
+            );
             return Err(ServiceError::Git(
                 "Failed to get current branch".to_string(),
             ));
@@ -456,20 +599,36 @@ impl GitService {
         let branch = String::from_utf8_lossy(&branch_output.stdout)
             .trim()
             .to_string();
+        debug!("Current branch: {}", branch);
 
         // Push with set-upstream
+        debug!(
+            "Running: git -C {} push -u {} {}",
+            worktree_path, remote, branch
+        );
         let output = Command::new("git")
             .args(["-C", worktree_path, "push", "-u", remote, &branch])
             .output()?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            error!(
+                "Failed to push branch: worktree_path={}, branch={}, remote={}, stderr={}",
+                worktree_path,
+                branch,
+                remote,
+                stderr.trim()
+            );
             return Err(ServiceError::Git(format!(
                 "Failed to push branch: {}",
                 stderr
             )));
         }
 
+        info!(
+            "Pushed branch: branch={}, remote={}, worktree_path={}",
+            branch, remote, worktree_path
+        );
         Ok(())
     }
 
@@ -487,17 +646,27 @@ impl GitService {
     /// # Errors
     /// Returns an error if the task_id or chat_role is empty.
     pub fn generate_branch_name(task_id: &str, chat_role: &str) -> ServiceResult<String> {
+        debug!(
+            "Generating branch name: task_id={}, chat_role={}",
+            task_id, chat_role
+        );
+
         if task_id.is_empty() {
+            error!("Cannot generate branch name: task_id is empty");
             return Err(ServiceError::Validation(
                 "task_id cannot be empty".to_string(),
             ));
         }
         if chat_role.is_empty() {
+            error!("Cannot generate branch name: chat_role is empty");
             return Err(ServiceError::Validation(
                 "chat_role cannot be empty".to_string(),
             ));
         }
-        Ok(format!("openflow/{}/{}", task_id, chat_role.to_lowercase()))
+
+        let branch_name = format!("openflow/{}/{}", task_id, chat_role.to_lowercase());
+        debug!("Generated branch name: {}", branch_name);
+        Ok(branch_name)
     }
 
     /// Generate a worktree path for a chat.
@@ -515,71 +684,123 @@ impl GitService {
         task_id: &str,
         chat_role: &str,
     ) -> String {
+        debug!(
+            "Generating worktree path: base_path={}, project_id={}, task_id={}, chat_role={}",
+            base_path, project_id, task_id, chat_role
+        );
+
         let expanded_base = shellexpand::tilde(base_path);
-        format!(
+        let path = format!(
             "{}/{}/{}-{}",
             expanded_base,
             project_id,
             task_id,
             chat_role.to_lowercase()
-        )
+        );
+
+        debug!("Generated worktree path: {}", path);
+        path
     }
 
     /// Get the current branch name in a worktree.
     pub async fn get_current_branch(worktree_path: &str) -> ServiceResult<String> {
+        debug!("Getting current branch: worktree_path={}", worktree_path);
+
         let output = Command::new("git")
             .args(["-C", worktree_path, "rev-parse", "--abbrev-ref", "HEAD"])
             .output()?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            error!(
+                "Failed to get current branch: worktree_path={}, stderr={}",
+                worktree_path,
+                stderr.trim()
+            );
             return Err(ServiceError::Git(format!(
                 "Failed to get current branch: {}",
                 stderr
             )));
         }
 
-        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+        let branch = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        debug!(
+            "Current branch: worktree_path={}, branch={}",
+            worktree_path, branch
+        );
+        Ok(branch)
     }
 
     /// Get the HEAD commit hash.
     pub async fn get_head_commit(worktree_path: &str) -> ServiceResult<Option<String>> {
+        debug!("Getting HEAD commit: worktree_path={}", worktree_path);
+
         let output = Command::new("git")
             .args(["-C", worktree_path, "rev-parse", "HEAD"])
             .output()?;
 
         if !output.status.success() {
             // No commits yet
+            debug!(
+                "No HEAD commit (new repository): worktree_path={}",
+                worktree_path
+            );
             return Ok(None);
         }
 
-        Ok(Some(
-            String::from_utf8_lossy(&output.stdout).trim().to_string(),
-        ))
+        let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        debug!(
+            "HEAD commit: worktree_path={}, hash={}",
+            worktree_path, hash
+        );
+        Ok(Some(hash))
     }
 
     /// Check if a repository has uncommitted changes.
     pub async fn has_uncommitted_changes(worktree_path: &str) -> ServiceResult<bool> {
+        debug!(
+            "Checking for uncommitted changes: worktree_path={}",
+            worktree_path
+        );
+
         let output = Command::new("git")
             .args(["-C", worktree_path, "status", "--porcelain"])
             .output()?;
 
         if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            error!(
+                "Failed to check git status: worktree_path={}, stderr={}",
+                worktree_path,
+                stderr.trim()
+            );
             return Err(ServiceError::Git("Failed to check git status".to_string()));
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
-        Ok(!stdout.trim().is_empty())
+        let has_changes = !stdout.trim().is_empty();
+        debug!(
+            "Uncommitted changes check: worktree_path={}, has_changes={}",
+            worktree_path, has_changes
+        );
+        Ok(has_changes)
     }
 
     /// List all worktrees for a repository.
     pub async fn list_worktrees(repo_path: &str) -> ServiceResult<Vec<String>> {
+        debug!("Listing worktrees: repo_path={}", repo_path);
+
         let output = Command::new("git")
             .args(["-C", repo_path, "worktree", "list", "--porcelain"])
             .output()?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            error!(
+                "Failed to list worktrees: repo_path={}, stderr={}",
+                repo_path,
+                stderr.trim()
+            );
             return Err(ServiceError::Git(format!(
                 "Failed to list worktrees: {}",
                 stderr
@@ -595,6 +816,11 @@ impl GitService {
             }
         }
 
+        debug!(
+            "Listed worktrees: repo_path={}, count={}",
+            repo_path,
+            worktrees.len()
+        );
         Ok(worktrees)
     }
 
@@ -610,8 +836,15 @@ impl GitService {
     /// # Returns
     /// A vector of file diffs showing all uncommitted changes.
     pub async fn get_task_diff(pool: &SqlitePool, task_id: &str) -> ServiceResult<Vec<FileDiff>> {
+        debug!("Getting task diff: task_id={}", task_id);
+
         // Get the task with its chats
         let task_with_chats = TaskService::get(pool, task_id).await?;
+        debug!(
+            "Loaded task: task_id={}, chat_count={}",
+            task_id,
+            task_with_chats.chats.len()
+        );
 
         // Find the first chat with a worktree path (prefer main role)
         let worktree_path = task_with_chats
@@ -623,8 +856,18 @@ impl GitService {
 
         // If no worktree, fall back to project's git repo
         let diff_path = match worktree_path {
-            Some(path) => path,
+            Some(path) => {
+                debug!(
+                    "Using worktree path for diff: task_id={}, path={}",
+                    task_id, path
+                );
+                path
+            }
             None => {
+                debug!(
+                    "No worktree found, falling back to project repo: task_id={}, project_id={}",
+                    task_id, task_with_chats.task.project_id
+                );
                 let project = ProjectService::get(pool, &task_with_chats.task.project_id).await?;
                 project.git_repo_path
             }
@@ -650,8 +893,18 @@ impl GitService {
         task_id: &str,
         limit: Option<usize>,
     ) -> ServiceResult<Vec<Commit>> {
+        debug!(
+            "Getting task commits: task_id={}, limit={:?}",
+            task_id, limit
+        );
+
         // Get the task with its chats
         let task_with_chats = TaskService::get(pool, task_id).await?;
+        debug!(
+            "Loaded task: task_id={}, chat_count={}",
+            task_id,
+            task_with_chats.chats.len()
+        );
 
         // Find the first chat with a worktree path (prefer by step index)
         let worktree_path = task_with_chats
@@ -663,8 +916,18 @@ impl GitService {
 
         // If no worktree, fall back to project's git repo
         let commits_path = match worktree_path {
-            Some(path) => path,
+            Some(path) => {
+                debug!(
+                    "Using worktree path for commits: task_id={}, path={}",
+                    task_id, path
+                );
+                path
+            }
             None => {
+                debug!(
+                    "No worktree found, falling back to project repo: task_id={}, project_id={}",
+                    task_id, task_with_chats.task.project_id
+                );
                 let project = ProjectService::get(pool, &task_with_chats.task.project_id).await?;
                 project.git_repo_path
             }

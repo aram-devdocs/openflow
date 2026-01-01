@@ -8,7 +8,7 @@ import { type HTMLAttributes, type ReactNode, forwardRef } from 'react';
 
 export type CardPadding = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8';
 
-export interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'role'> {
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   /** Card content */
   children: ReactNode;
   /** Whether the card is in a selected state */

@@ -2,7 +2,25 @@ import type { Meta, StoryObj } from '@storybook/react';
 import type { Terminal as XTerm } from '@xterm/xterm';
 import { useCallback, useRef, useState } from 'react';
 import { Button } from '../atoms/Button';
-import { Terminal } from './Terminal';
+import {
+  DEFAULT_ERROR_DESCRIPTION,
+  DEFAULT_ERROR_TITLE,
+  DEFAULT_RETRY_LABEL,
+  // Constants
+  DEFAULT_TERMINAL_LABEL,
+  SR_TERMINAL_FOCUSED,
+  SR_TERMINAL_LOADING,
+  SR_TERMINAL_READY,
+  SR_TERMINAL_READ_ONLY,
+  SR_TERMINAL_RESIZED,
+  TERMINAL_FONT_SIZES,
+  TERMINAL_PADDING_CLASSES,
+  Terminal,
+  TerminalError,
+  // Types
+  type TerminalHandle,
+  TerminalSkeleton,
+} from './Terminal';
 
 const meta: Meta<typeof Terminal> = {
   title: 'Organisms/Terminal',
@@ -11,8 +29,30 @@ const meta: Meta<typeof Terminal> = {
     layout: 'fullscreen',
     docs: {
       description: {
-        component:
-          'A fully-featured terminal emulator component built on xterm.js. Supports real terminal emulation with PTY, automatic resize handling, theming, and read-only mode.',
+        component: `
+A fully-featured terminal emulator component built on xterm.js. Supports real terminal emulation with PTY, automatic resize handling, theming, and read-only mode.
+
+## Accessibility Features
+
+- **role="application"** for proper screen reader interaction
+- **aria-roledescription="terminal emulator"** for context
+- **aria-busy** indicates loading state
+- **aria-live regions** for announcements
+- **Keyboard navigation** - Enter/Space to focus
+- **Focus ring** visible on keyboard focus
+- **Touch targets** ≥44px (WCAG 2.5.5)
+- **Error states** with role="alert"
+- **Read-only mode** clearly announced
+
+## Responsive Sizing
+
+Use the \`size\` prop for responsive terminal sizing:
+- \`sm\`: 12px font, minimal padding
+- \`md\`: 14px font, standard padding (default)
+- \`lg\`: 16px font, generous padding
+
+Supports responsive objects: \`{ base: 'sm', md: 'md', lg: 'lg' }\`
+        `,
       },
     },
   },
@@ -48,11 +88,20 @@ const meta: Meta<typeof Terminal> = {
       control: 'boolean',
       description: 'Auto-focus terminal on mount',
     },
+    size: {
+      control: 'radio',
+      options: ['sm', 'md', 'lg'],
+      description: 'Responsive size variant',
+    },
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof Terminal>;
+
+// ============================================================================
+// Basic Examples
+// ============================================================================
 
 /**
  * Default terminal with dark theme.
@@ -92,6 +141,7 @@ export const Default: Story = {
           onInput={handleInput}
           onResize={handleResize}
           colorMode="dark"
+          data-testid="default-terminal"
         />
       </div>
     );
@@ -127,7 +177,12 @@ export const LightTheme: Story = {
 
     return (
       <div className="h-[400px] w-full bg-white">
-        <Terminal onReady={handleReady} onInput={handleInput} colorMode="light" />
+        <Terminal
+          onReady={handleReady}
+          onInput={handleInput}
+          colorMode="light"
+          data-testid="light-terminal"
+        />
       </div>
     );
   },
@@ -161,11 +216,164 @@ export const ReadOnly: Story = {
 
     return (
       <div className="h-[400px] w-full bg-[rgb(var(--background))]">
-        <Terminal onReady={handleReady} readOnly colorMode="dark" ariaLabel="Application logs" />
+        <Terminal
+          onReady={handleReady}
+          readOnly
+          colorMode="dark"
+          aria-label="Application logs"
+          data-testid="readonly-terminal"
+        />
       </div>
     );
   },
 };
+
+// ============================================================================
+// Size Variants
+// ============================================================================
+
+/**
+ * Small size terminal - compact for sidebar panels.
+ */
+export const SizeSmall: Story = {
+  render: () => {
+    const handleReady = useCallback((terminal: XTerm) => {
+      terminal.write('Small terminal (12px font)\r\n$ ');
+    }, []);
+
+    return (
+      <div className="h-[300px] w-full bg-[rgb(var(--background))]">
+        <Terminal
+          onReady={handleReady}
+          size="sm"
+          readOnly
+          colorMode="dark"
+          data-testid="small-terminal"
+        />
+      </div>
+    );
+  },
+};
+
+/**
+ * Medium size terminal - default size.
+ */
+export const SizeMedium: Story = {
+  render: () => {
+    const handleReady = useCallback((terminal: XTerm) => {
+      terminal.write('Medium terminal (14px font)\r\n$ ');
+    }, []);
+
+    return (
+      <div className="h-[400px] w-full bg-[rgb(var(--background))]">
+        <Terminal
+          onReady={handleReady}
+          size="md"
+          readOnly
+          colorMode="dark"
+          data-testid="medium-terminal"
+        />
+      </div>
+    );
+  },
+};
+
+/**
+ * Large size terminal - spacious for main content.
+ */
+export const SizeLarge: Story = {
+  render: () => {
+    const handleReady = useCallback((terminal: XTerm) => {
+      terminal.write('Large terminal (16px font)\r\n$ ');
+    }, []);
+
+    return (
+      <div className="h-[500px] w-full bg-[rgb(var(--background))]">
+        <Terminal
+          onReady={handleReady}
+          size="lg"
+          readOnly
+          colorMode="dark"
+          data-testid="large-terminal"
+        />
+      </div>
+    );
+  },
+};
+
+/**
+ * All sizes side by side for comparison.
+ */
+export const AllSizes: Story = {
+  render: () => {
+    const handleReady = useCallback(
+      (size: string) => (terminal: XTerm) => {
+        terminal.write(`${size.toUpperCase()} terminal\r\n`);
+        terminal.write(
+          `Font: ${TERMINAL_FONT_SIZES[size as keyof typeof TERMINAL_FONT_SIZES]}px\r\n`
+        );
+        terminal.write(
+          `Padding: ${TERMINAL_PADDING_CLASSES[size as keyof typeof TERMINAL_PADDING_CLASSES]}\r\n`
+        );
+        terminal.write('$ ');
+      },
+      []
+    );
+
+    return (
+      <div className="flex gap-4 p-4 bg-[rgb(var(--muted))]">
+        {(['sm', 'md', 'lg'] as const).map((size) => (
+          <div
+            key={size}
+            className="flex-1 overflow-hidden rounded-lg border border-[rgb(var(--border))]"
+          >
+            <div className="h-[300px]">
+              <Terminal
+                onReady={handleReady(size)}
+                size={size}
+                readOnly
+                colorMode="dark"
+                aria-label={`${size} size terminal`}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+/**
+ * Responsive sizing - changes with viewport.
+ */
+export const ResponsiveSizing: Story = {
+  render: () => {
+    const handleReady = useCallback((terminal: XTerm) => {
+      terminal.write('Responsive terminal\r\n');
+      terminal.write('Resize the window to see font size change:\r\n');
+      terminal.write('- Mobile (base): 12px\r\n');
+      terminal.write('- Tablet (md): 14px\r\n');
+      terminal.write('- Desktop (lg): 16px\r\n');
+      terminal.write('$ ');
+    }, []);
+
+    return (
+      <div className="h-[400px] w-full bg-[rgb(var(--background))]">
+        <Terminal
+          onReady={handleReady}
+          size={{ base: 'sm', md: 'md', lg: 'lg' }}
+          readOnly
+          colorMode="dark"
+          aria-label="Responsive terminal"
+        />
+      </div>
+    );
+  },
+};
+
+// ============================================================================
+// Customization
+// ============================================================================
 
 /**
  * Terminal with custom font settings.
@@ -202,6 +410,7 @@ export const CustomFont: Story = {
             variant="secondary"
             size="sm"
             onClick={() => setFontSize((s) => Math.max(10, s - 2))}
+            aria-label="Decrease font size"
           >
             Smaller
           </Button>
@@ -209,6 +418,7 @@ export const CustomFont: Story = {
             variant="secondary"
             size="sm"
             onClick={() => setFontSize((s) => Math.min(24, s + 2))}
+            aria-label="Increase font size"
           >
             Larger
           </Button>
@@ -264,6 +474,7 @@ export const CursorStyles: Story = {
               variant={cursorStyle === style ? 'primary' : 'secondary'}
               size="sm"
               onClick={() => setCursorStyle(style)}
+              aria-pressed={cursorStyle === style}
             >
               {style.charAt(0).toUpperCase() + style.slice(1)}
             </Button>
@@ -347,12 +558,16 @@ export const AnsiColors: Story = {
           readOnly
           colorMode="dark"
           scrollback={1000}
-          ariaLabel="ANSI colors demo"
+          aria-label="ANSI colors demo"
         />
       </div>
     );
   },
 };
+
+// ============================================================================
+// Interactive Examples
+// ============================================================================
 
 /**
  * Interactive terminal with simulated command execution.
@@ -466,11 +681,126 @@ export const InteractiveDemo: Story = {
           colorMode="dark"
           fontSize={14}
           cursorBlink
+          aria-label="Interactive terminal demo"
         />
       </div>
     );
   },
 };
+
+/**
+ * Using imperative handle for programmatic control.
+ */
+export const ImperativeHandle: Story = {
+  render: () => {
+    const terminalRef = useRef<TerminalHandle>(null);
+
+    const handleWrite = () => {
+      terminalRef.current?.write('Hello from button!\r\n$ ');
+    };
+
+    const handleClear = () => {
+      terminalRef.current?.clear();
+      terminalRef.current?.write('Terminal cleared!\r\n$ ');
+    };
+
+    const handleFocus = () => {
+      terminalRef.current?.focus();
+    };
+
+    return (
+      <div className="flex h-[500px] flex-col bg-[rgb(var(--background))]">
+        <div className="flex items-center gap-4 border-b border-[rgb(var(--border))] p-4">
+          <Button variant="secondary" size="sm" onClick={handleWrite}>
+            Write Text
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleClear}>
+            Clear
+          </Button>
+          <Button variant="secondary" size="sm" onClick={handleFocus}>
+            Focus Terminal
+          </Button>
+        </div>
+        <div className="flex-1">
+          <Terminal
+            ref={terminalRef}
+            onReady={(term) => term.write('Use buttons above to control terminal\r\n$ ')}
+            colorMode="dark"
+            autoFocus={false}
+          />
+        </div>
+      </div>
+    );
+  },
+};
+
+// ============================================================================
+// Loading & Error States
+// ============================================================================
+
+/**
+ * Terminal skeleton loading state.
+ */
+export const SkeletonLoading: Story = {
+  render: () => (
+    <div className="flex gap-4 p-4 bg-[rgb(var(--muted))]">
+      {(['sm', 'md', 'lg'] as const).map((size) => (
+        <div
+          key={size}
+          className="flex-1 h-[300px] overflow-hidden rounded-lg border border-[rgb(var(--border))]"
+        >
+          <TerminalSkeleton size={size} data-testid={`skeleton-${size}`} />
+        </div>
+      ))}
+    </div>
+  ),
+};
+
+/**
+ * Terminal error state with retry.
+ */
+export const ErrorState: Story = {
+  render: () => {
+    const [retryCount, setRetryCount] = useState(0);
+
+    const handleRetry = () => {
+      setRetryCount((c) => c + 1);
+      console.log('Retry clicked', retryCount + 1);
+    };
+
+    return (
+      <div className="flex gap-4 p-4 bg-[rgb(var(--muted))]">
+        {(['sm', 'md', 'lg'] as const).map((size) => (
+          <div
+            key={size}
+            className="flex-1 h-[300px] overflow-hidden rounded-lg border border-[rgb(var(--border))]"
+          >
+            <TerminalError size={size} onRetry={handleRetry} data-testid={`error-${size}`} />
+          </div>
+        ))}
+      </div>
+    );
+  },
+};
+
+/**
+ * Custom error messages.
+ */
+export const CustomError: Story = {
+  render: () => (
+    <div className="h-[300px] w-full max-w-lg mx-auto p-4">
+      <TerminalError
+        title="Connection Lost"
+        description="The terminal session was disconnected. Check your network connection and try again."
+        onRetry={() => console.log('Reconnecting...')}
+      />
+    </div>
+  ),
+};
+
+// ============================================================================
+// Theme Comparison
+// ============================================================================
 
 /**
  * Side-by-side dark and light themes.
@@ -499,12 +829,415 @@ export const ThemeComparison: Story = {
     return (
       <div className="flex h-[400px] gap-4 p-4 bg-[rgb(var(--muted))]">
         <div className="flex-1 overflow-hidden rounded-lg border border-[rgb(var(--border))]">
-          <Terminal onReady={handleReadyDark} readOnly colorMode="dark" />
+          <Terminal
+            onReady={handleReadyDark}
+            readOnly
+            colorMode="dark"
+            aria-label="Dark theme terminal"
+          />
         </div>
         <div className="flex-1 overflow-hidden rounded-lg border border-[rgb(var(--border))]">
-          <Terminal onReady={handleReadyLight} readOnly colorMode="light" />
+          <Terminal
+            onReady={handleReadyLight}
+            readOnly
+            colorMode="light"
+            aria-label="Light theme terminal"
+          />
         </div>
       </div>
     );
   },
+};
+
+// ============================================================================
+// Accessibility Demos
+// ============================================================================
+
+/**
+ * Focus ring visibility demonstration.
+ */
+export const FocusRingVisibility: Story = {
+  render: () => {
+    const handleReady = useCallback((terminal: XTerm) => {
+      terminal.write('Focus Ring Demo\r\n');
+      terminal.write('================\r\n\r\n');
+      terminal.write('Tab to this terminal to see the focus ring.\r\n');
+      terminal.write('The ring uses ring-offset for visibility\r\n');
+      terminal.write('on both light and dark backgrounds.\r\n\r\n');
+      terminal.write('$ ');
+    }, []);
+
+    return (
+      <div className="space-y-8 p-8">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">On Dark Background</h3>
+          <div className="h-[200px] bg-gray-900 p-4 rounded-lg">
+            <Terminal
+              onReady={handleReady}
+              readOnly
+              colorMode="dark"
+              autoFocus={false}
+              aria-label="Terminal on dark background"
+            />
+          </div>
+        </div>
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">On Light Background</h3>
+          <div className="h-[200px] bg-gray-100 p-4 rounded-lg">
+            <Terminal
+              onReady={handleReady}
+              readOnly
+              colorMode="light"
+              autoFocus={false}
+              aria-label="Terminal on light background"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  },
+};
+
+/**
+ * Screen reader accessibility demonstration.
+ */
+export const ScreenReaderAccessibility: Story = {
+  render: () => {
+    const handleReady = useCallback((terminal: XTerm) => {
+      terminal.write('Screen Reader Demo\r\n');
+      terminal.write('==================\r\n\r\n');
+      terminal.write('This terminal announces:\r\n');
+      terminal.write('- When it becomes ready\r\n');
+      terminal.write('- When it receives focus\r\n');
+      terminal.write('- When it is resized\r\n');
+      terminal.write('- Its read-only status\r\n\r\n');
+      terminal.write('Try resizing the window!\r\n\r\n');
+      terminal.write('$ ');
+    }, []);
+
+    return (
+      <div className="p-8 space-y-4">
+        <div className="text-sm text-muted-foreground">
+          <p>This terminal provides screen reader announcements for:</p>
+          <ul className="list-disc list-inside mt-2 space-y-1">
+            <li>{SR_TERMINAL_READY}</li>
+            <li>{SR_TERMINAL_FOCUSED}</li>
+            <li>{SR_TERMINAL_READ_ONLY}</li>
+            <li>{SR_TERMINAL_RESIZED(80, 24)}</li>
+            <li>{SR_TERMINAL_LOADING}</li>
+          </ul>
+        </div>
+        <div className="h-[300px] rounded-lg overflow-hidden border">
+          <Terminal
+            onReady={handleReady}
+            readOnly
+            colorMode="dark"
+            aria-label="Screen reader demo terminal"
+          />
+        </div>
+      </div>
+    );
+  },
+};
+
+/**
+ * Keyboard navigation demonstration.
+ */
+export const KeyboardNavigation: Story = {
+  render: () => {
+    const terminalRef = useRef<XTerm | null>(null);
+
+    const handleReady = useCallback((terminal: XTerm) => {
+      terminalRef.current = terminal;
+      terminal.write('Keyboard Navigation Demo\r\n');
+      terminal.write('========================\r\n\r\n');
+      terminal.write('Keyboard shortcuts:\r\n');
+      terminal.write('- Tab: Focus terminal\r\n');
+      terminal.write('- Enter/Space: Activate terminal (when focused)\r\n');
+      terminal.write('- Shift+Tab: Move to previous element\r\n');
+      terminal.write('- Ctrl+C: Cancel current input\r\n\r\n');
+      terminal.write('Try typing a command:\r\n');
+      terminal.write('$ ');
+    }, []);
+
+    const handleInput = useCallback((data: string) => {
+      if (terminalRef.current) {
+        if (data === '\r') {
+          terminalRef.current.write('\r\nCommand received!\r\n$ ');
+        } else if (data === '\x7f') {
+          terminalRef.current.write('\b \b');
+        } else if (data === '\x03') {
+          terminalRef.current.write('^C\r\n$ ');
+        } else {
+          terminalRef.current.write(data);
+        }
+      }
+    }, []);
+
+    return (
+      <div className="p-8 space-y-4">
+        <Button variant="secondary" className="mb-4">
+          Focus here first, then Tab to terminal
+        </Button>
+        <div className="h-[350px] rounded-lg overflow-hidden border">
+          <Terminal
+            onReady={handleReady}
+            onInput={handleInput}
+            colorMode="dark"
+            autoFocus={false}
+            aria-label="Keyboard navigation demo terminal"
+          />
+        </div>
+        <Button variant="secondary">Tab past terminal to reach this button</Button>
+      </div>
+    );
+  },
+};
+
+// ============================================================================
+// Data Attributes & Ref Forwarding
+// ============================================================================
+
+/**
+ * Data attributes for testing.
+ */
+export const DataAttributes: Story = {
+  render: () => (
+    <div className="p-8 space-y-4">
+      <pre className="text-xs bg-muted p-4 rounded overflow-auto">
+        {`// Data attributes available on Terminal:
+data-testid="my-terminal"
+data-size="md"
+data-ready="true|false"
+data-read-only="true|false"
+data-color-mode="dark|light"
+
+// On TerminalSkeleton:
+data-testid="my-skeleton"
+data-size="md"
+
+// On TerminalError:
+data-testid="my-error"
+data-size="md"
+`}
+      </pre>
+      <div className="h-[300px] rounded-lg overflow-hidden border">
+        <Terminal
+          onReady={(term) => term.write('Check DOM for data attributes\r\n$ ')}
+          readOnly
+          colorMode="dark"
+          size="md"
+          data-testid="demo-terminal"
+        />
+      </div>
+    </div>
+  ),
+};
+
+// ============================================================================
+// Real-World Examples
+// ============================================================================
+
+/**
+ * Build process output viewer.
+ */
+export const BuildProcessViewer: Story = {
+  render: () => {
+    const handleReady = useCallback((terminal: XTerm) => {
+      const steps = [
+        { text: '\x1b[36m$ npm run build\x1b[0m', delay: 0 },
+        { text: '\x1b[90m> openflow@1.0.0 build\x1b[0m', delay: 200 },
+        { text: '\x1b[90m> tsc && vite build\x1b[0m', delay: 300 },
+        { text: '', delay: 400 },
+        { text: '\x1b[32m✓\x1b[0m TypeScript compiled successfully', delay: 800 },
+        { text: '', delay: 900 },
+        { text: '\x1b[36mvite v5.0.0 building for production...\x1b[0m', delay: 1000 },
+        { text: '\x1b[32m✓\x1b[0m 143 modules transformed.', delay: 1500 },
+        { text: '', delay: 1600 },
+        { text: 'dist/index.html                  0.46 kB │ gzip: 0.30 kB', delay: 1700 },
+        {
+          text: 'dist/assets/index-\x1b[33mBg5MkQXj\x1b[0m.css   8.12 kB │ gzip: 2.45 kB',
+          delay: 1800,
+        },
+        {
+          text: 'dist/assets/index-\x1b[33mCd4LmNpR\x1b[0m.js  245.67 kB │ gzip: 78.23 kB',
+          delay: 1900,
+        },
+        { text: '', delay: 2000 },
+        { text: '\x1b[32m✓\x1b[0m built in 2.34s', delay: 2100 },
+      ];
+
+      steps.forEach(({ text, delay }) => {
+        setTimeout(() => {
+          terminal.write(`${text}\r\n`);
+        }, delay);
+      });
+    }, []);
+
+    return (
+      <div className="h-[400px] w-full bg-[rgb(var(--background))]">
+        <Terminal
+          onReady={handleReady}
+          readOnly
+          colorMode="dark"
+          scrollback={5000}
+          aria-label="Build process output"
+        />
+      </div>
+    );
+  },
+};
+
+/**
+ * Log viewer with streaming output.
+ */
+export const LogViewer: Story = {
+  render: () => {
+    const terminalRef = useRef<XTerm | null>(null);
+    const [isStreaming, setIsStreaming] = useState(false);
+    const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const handleReady = useCallback((terminal: XTerm) => {
+      terminalRef.current = terminal;
+      terminal.write('\x1b[1;36mApplication Logs\x1b[0m\r\n');
+      terminal.write('Click "Start Streaming" to simulate live logs\r\n\r\n');
+    }, []);
+
+    const startStreaming = () => {
+      if (!terminalRef.current || isStreaming) return;
+      setIsStreaming(true);
+
+      const logTypes = [
+        {
+          prefix: '\x1b[32m[INFO]\x1b[0m',
+          messages: ['Request received', 'Processing...', 'Response sent'],
+        },
+        { prefix: '\x1b[33m[WARN]\x1b[0m', messages: ['High memory usage', 'Slow query detected'] },
+        {
+          prefix: '\x1b[36m[DEBUG]\x1b[0m',
+          messages: ['Cache hit', 'DB query completed', 'Validating input'],
+        },
+      ];
+
+      intervalRef.current = setInterval(() => {
+        if (!terminalRef.current) return;
+        const typeIndex = Math.floor(Math.random() * logTypes.length);
+        const logType = logTypes[typeIndex];
+        if (!logType) return;
+        const messageIndex = Math.floor(Math.random() * logType.messages.length);
+        const message = logType.messages[messageIndex];
+        if (!message) return;
+        const timestamp = new Date().toISOString().split('T')[1]?.slice(0, 12) ?? '';
+        terminalRef.current.write(`${logType.prefix} ${timestamp} ${message}\r\n`);
+      }, 500);
+    };
+
+    const stopStreaming = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      setIsStreaming(false);
+    };
+
+    return (
+      <div className="flex h-[500px] flex-col bg-[rgb(var(--background))]">
+        <div className="flex items-center gap-4 border-b border-[rgb(var(--border))] p-4">
+          <Button
+            variant={isStreaming ? 'destructive' : 'primary'}
+            size="sm"
+            onClick={isStreaming ? stopStreaming : startStreaming}
+          >
+            {isStreaming ? 'Stop Streaming' : 'Start Streaming'}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => terminalRef.current?.clear()}>
+            Clear Logs
+          </Button>
+        </div>
+        <div className="flex-1">
+          <Terminal
+            onReady={handleReady}
+            readOnly
+            colorMode="dark"
+            scrollback={10000}
+            aria-label="Live application logs"
+          />
+        </div>
+      </div>
+    );
+  },
+};
+
+// ============================================================================
+// Constants Reference
+// ============================================================================
+
+/**
+ * Reference for all exported constants and utilities.
+ */
+export const ConstantsReference: Story = {
+  render: () => (
+    <div className="p-8 space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Label Constants</h3>
+        <pre className="text-xs bg-muted p-4 rounded overflow-auto">
+          {`DEFAULT_TERMINAL_LABEL: "${DEFAULT_TERMINAL_LABEL}"
+DEFAULT_ERROR_TITLE: "${DEFAULT_ERROR_TITLE}"
+DEFAULT_ERROR_DESCRIPTION: "${DEFAULT_ERROR_DESCRIPTION}"
+DEFAULT_RETRY_LABEL: "${DEFAULT_RETRY_LABEL}"`}
+        </pre>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Screen Reader Announcements</h3>
+        <pre className="text-xs bg-muted p-4 rounded overflow-auto">
+          {`SR_TERMINAL_READY: "${SR_TERMINAL_READY}"
+SR_TERMINAL_FOCUSED: "${SR_TERMINAL_FOCUSED}"
+SR_TERMINAL_READ_ONLY: "${SR_TERMINAL_READ_ONLY}"
+SR_TERMINAL_LOADING: "${SR_TERMINAL_LOADING}"
+SR_TERMINAL_RESIZED(80, 24): "${SR_TERMINAL_RESIZED(80, 24)}"`}
+        </pre>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Size Configuration</h3>
+        <pre className="text-xs bg-muted p-4 rounded overflow-auto">
+          {`TERMINAL_PADDING_CLASSES: ${JSON.stringify(TERMINAL_PADDING_CLASSES, null, 2)}
+
+TERMINAL_FONT_SIZES: ${JSON.stringify(TERMINAL_FONT_SIZES, null, 2)}`}
+        </pre>
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Utility Functions</h3>
+        <pre className="text-xs bg-muted p-4 rounded overflow-auto">
+          {`// getBaseSize - Extract base size from responsive value
+getBaseSize('md') // => 'md'
+getBaseSize({ base: 'sm', lg: 'lg' }) // => 'sm'
+
+// getResponsiveSizeClasses - Generate responsive classes
+getResponsiveSizeClasses('md', TERMINAL_PADDING_CLASSES)
+// => 'p-2'
+
+getResponsiveSizeClasses({ base: 'sm', md: 'md', lg: 'lg' }, TERMINAL_PADDING_CLASSES)
+// => 'p-1 md:p-2 lg:p-3'
+
+// getFontSizeForSize - Get font size for terminal size
+getFontSizeForSize('sm') // => 12
+getFontSizeForSize('md') // => 14
+getFontSizeForSize('lg') // => 16
+
+// buildTerminalAccessibleLabel - Build ARIA label
+buildTerminalAccessibleLabel('Terminal', false, true)
+// => 'Terminal'
+buildTerminalAccessibleLabel('Terminal', true, false)
+// => 'Terminal (read-only) - Loading'
+
+// buildResizeAnnouncement - Build resize announcement
+buildResizeAnnouncement(80, 24)
+// => 'Terminal resized to 80 columns by 24 rows'`}
+        </pre>
+      </div>
+    </div>
+  ),
 };

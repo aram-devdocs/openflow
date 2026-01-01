@@ -1,7 +1,21 @@
 //! Chat management service.
 //!
 //! Handles CRUD operations for chats (workflow step sessions).
+//!
+//! ## Logging
+//!
+//! This service uses the `log` crate for structured logging:
+//! - `debug!`: Detailed operation tracing (query params, internal steps)
+//! - `info!`: Successful operations (create, update, delete, archive)
+//! - `warn!`: Potentially problematic but recoverable situations
+//! - `error!`: Operation failures (logged before returning error)
+//!
+//! ## Error Handling
+//!
+//! All functions return `ServiceResult<T>` which wraps errors in `ServiceError`.
+//! Errors are logged at the appropriate level before being returned.
 
+use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -12,6 +26,12 @@ use crate::types::{
 use super::{ServiceError, ServiceResult};
 
 /// Service for managing chats.
+///
+/// Provides CRUD operations for chat sessions, including:
+/// - Task-linked chats (workflow steps)
+/// - Standalone chats (project-level conversations)
+/// - Archive/unarchive functionality
+/// - Step completion toggling
 pub struct ChatService;
 
 impl ChatService {
@@ -23,6 +43,8 @@ impl ChatService {
     ///
     /// Returns non-archived chats ordered by workflow_step_index ASC, then created_at ASC.
     pub async fn list(pool: &SqlitePool, task_id: &str) -> ServiceResult<Vec<Chat>> {
+        debug!("Listing chats for task_id={}", task_id);
+
         let chats = sqlx::query_as::<_, Chat>(
             r#"
             SELECT
@@ -38,8 +60,13 @@ impl ChatService {
         )
         .bind(task_id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to list chats for task_id={}: {}", task_id, e);
+            ServiceError::Database(e)
+        })?;
 
+        debug!("Found {} chats for task_id={}", chats.len(), task_id);
         Ok(chats)
     }
 
@@ -51,6 +78,8 @@ impl ChatService {
     ///
     /// Returns non-archived chats ordered by created_at DESC (most recent first).
     pub async fn list_standalone(pool: &SqlitePool, project_id: &str) -> ServiceResult<Vec<Chat>> {
+        debug!("Listing standalone chats for project_id={}", project_id);
+
         let chats = sqlx::query_as::<_, Chat>(
             r#"
             SELECT
@@ -66,8 +95,20 @@ impl ChatService {
         )
         .bind(project_id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to list standalone chats for project_id={}: {}",
+                project_id, e
+            );
+            ServiceError::Database(e)
+        })?;
 
+        debug!(
+            "Found {} standalone chats for project_id={}",
+            chats.len(),
+            project_id
+        );
         Ok(chats)
     }
 
@@ -79,6 +120,8 @@ impl ChatService {
     ///
     /// Returns non-archived chats ordered by created_at DESC.
     pub async fn list_by_project(pool: &SqlitePool, project_id: &str) -> ServiceResult<Vec<Chat>> {
+        debug!("Listing all chats for project_id={}", project_id);
+
         let chats = sqlx::query_as::<_, Chat>(
             r#"
             SELECT
@@ -94,8 +137,13 @@ impl ChatService {
         )
         .bind(project_id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to list chats for project_id={}: {}", project_id, e);
+            ServiceError::Database(e)
+        })?;
 
+        debug!("Found {} chats for project_id={}", chats.len(), project_id);
         Ok(chats)
     }
 
@@ -103,6 +151,8 @@ impl ChatService {
     ///
     /// Returns archived chats ordered by archived_at DESC (most recently archived first).
     pub async fn list_archived(pool: &SqlitePool) -> ServiceResult<Vec<Chat>> {
+        debug!("Listing all archived chats");
+
         let chats = sqlx::query_as::<_, Chat>(
             r#"
             SELECT
@@ -117,13 +167,20 @@ impl ChatService {
             "#,
         )
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to list archived chats: {}", e);
+            ServiceError::Database(e)
+        })?;
 
+        debug!("Found {} archived chats", chats.len());
         Ok(chats)
     }
 
     /// Get a chat by ID with its messages.
     pub async fn get(pool: &SqlitePool, id: &str) -> ServiceResult<ChatWithMessages> {
+        debug!("Getting chat id={}", id);
+
         let chat = sqlx::query_as::<_, Chat>(
             r#"
             SELECT
@@ -138,10 +195,17 @@ impl ChatService {
         )
         .bind(id)
         .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| ServiceError::NotFound {
-            entity: "Chat",
-            id: id.to_string(),
+        .await
+        .map_err(|e| {
+            error!("Database error while fetching chat id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?
+        .ok_or_else(|| {
+            debug!("Chat not found: id={}", id);
+            ServiceError::NotFound {
+                entity: "Chat",
+                id: id.to_string(),
+            }
         })?;
 
         let messages = sqlx::query_as::<_, Message>(
@@ -156,8 +220,16 @@ impl ChatService {
         )
         .bind(id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Database error while fetching messages for chat id={}: {}",
+                id, e
+            );
+            ServiceError::Database(e)
+        })?;
 
+        debug!("Found chat id={} with {} messages", id, messages.len());
         Ok(ChatWithMessages { chat, messages })
     }
 
@@ -167,9 +239,17 @@ impl ChatService {
     /// For task-linked chats, both task_id and project_id are required.
     pub async fn create(pool: &SqlitePool, request: CreateChatRequest) -> ServiceResult<Chat> {
         let id = Uuid::new_v4().to_string();
-        let chat_role = request.chat_role.unwrap_or(ChatRole::Main);
-        let base_branch = request.base_branch.unwrap_or_else(|| "main".to_string());
+        let chat_role = request.chat_role.clone().unwrap_or(ChatRole::Main);
+        let base_branch = request
+            .base_branch
+            .clone()
+            .unwrap_or_else(|| "main".to_string());
         let is_plan_container = request.is_plan_container.unwrap_or(false);
+
+        debug!(
+            "Creating chat: id={}, project_id={}, task_id={:?}, role={:?}",
+            id, request.project_id, request.task_id, chat_role
+        );
 
         sqlx::query(
             r#"
@@ -194,10 +274,22 @@ impl ChatService {
         .bind(&request.main_chat_id)
         .bind(request.workflow_step_index)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to create chat: project_id={}, task_id={:?}, error={}",
+                request.project_id, request.task_id, e
+            );
+            ServiceError::Database(e)
+        })?;
 
         // Fetch and return the created chat
         let chat_with_messages = Self::get(pool, &id).await?;
+
+        info!(
+            "Created chat: id={}, project_id={}, task_id={:?}, role={:?}",
+            id, request.project_id, request.task_id, chat_role
+        );
         Ok(chat_with_messages.chat)
     }
 
@@ -207,6 +299,8 @@ impl ChatService {
         id: &str,
         request: UpdateChatRequest,
     ) -> ServiceResult<Chat> {
+        debug!("Updating chat id={}", id);
+
         // Verify the chat exists first
         let existing = Self::get(pool, id).await?.chat;
 
@@ -251,9 +345,15 @@ impl ChatService {
         .bind(&claude_session_id)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to update chat id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
 
         let chat_with_messages = Self::get(pool, id).await?;
+
+        info!("Updated chat id={}", id);
         Ok(chat_with_messages.chat)
     }
 
@@ -262,8 +362,14 @@ impl ChatService {
     /// Sets the archived_at timestamp to the current time.
     /// Archived chats are excluded from list queries but can still be accessed by ID.
     pub async fn archive(pool: &SqlitePool, id: &str) -> ServiceResult<Chat> {
+        debug!("Archiving chat id={}", id);
+
         // Verify the chat exists first
-        Self::get(pool, id).await?;
+        let existing = Self::get(pool, id).await?.chat;
+
+        if existing.archived_at.is_some() {
+            warn!("Chat id={} is already archived", id);
+        }
 
         sqlx::query(
             r#"
@@ -275,9 +381,15 @@ impl ChatService {
         )
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to archive chat id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
 
         let chat_with_messages = Self::get(pool, id).await?;
+
+        info!("Archived chat id={}", id);
         Ok(chat_with_messages.chat)
     }
 
@@ -285,8 +397,14 @@ impl ChatService {
     ///
     /// Clears the archived_at timestamp, making the chat visible in list queries again.
     pub async fn unarchive(pool: &SqlitePool, id: &str) -> ServiceResult<Chat> {
+        debug!("Unarchiving chat id={}", id);
+
         // Verify the chat exists first
-        Self::get(pool, id).await?;
+        let existing = Self::get(pool, id).await?.chat;
+
+        if existing.archived_at.is_none() {
+            warn!("Chat id={} is not archived", id);
+        }
 
         sqlx::query(
             r#"
@@ -298,23 +416,40 @@ impl ChatService {
         )
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to unarchive chat id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
 
         let chat_with_messages = Self::get(pool, id).await?;
+
+        info!("Unarchived chat id={}", id);
         Ok(chat_with_messages.chat)
     }
 
     /// Delete a chat by ID.
     /// Note: Due to CASCADE, this also deletes associated messages.
     pub async fn delete(pool: &SqlitePool, id: &str) -> ServiceResult<()> {
-        // Verify the chat exists first
-        Self::get(pool, id).await?;
+        debug!("Deleting chat id={}", id);
+
+        // Verify the chat exists first and get details for logging
+        let existing = Self::get(pool, id).await?.chat;
+        let message_count = Self::get(pool, id).await?.messages.len();
 
         sqlx::query("DELETE FROM chats WHERE id = ?")
             .bind(id)
             .execute(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to delete chat id={}: {}", id, e);
+                ServiceError::Database(e)
+            })?;
 
+        info!(
+            "Deleted chat id={}, project_id={}, cascaded {} messages",
+            id, existing.project_id, message_count
+        );
         Ok(())
     }
 
@@ -330,12 +465,16 @@ impl ChatService {
     /// # Returns
     /// The updated Chat with toggled completion status.
     pub async fn toggle_step_complete(pool: &SqlitePool, id: &str) -> ServiceResult<Chat> {
+        debug!("Toggling step completion for chat id={}", id);
+
         // Get the current chat to check completion status
         let existing = Self::get(pool, id).await?.chat;
+        let was_completed = existing.setup_completed_at.is_some();
 
         // Toggle: if completed, clear it; if not completed, set to now
-        if existing.setup_completed_at.is_some() {
+        if was_completed {
             // Clear completion
+            debug!("Marking chat id={} as incomplete", id);
             sqlx::query(
                 r#"
                 UPDATE chats
@@ -346,9 +485,14 @@ impl ChatService {
             )
             .bind(id)
             .execute(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to clear completion for chat id={}: {}", id, e);
+                ServiceError::Database(e)
+            })?;
         } else {
             // Mark as completed
+            debug!("Marking chat id={} as complete", id);
             sqlx::query(
                 r#"
                 UPDATE chats
@@ -359,10 +503,29 @@ impl ChatService {
             )
             .bind(id)
             .execute(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to mark completion for chat id={}: {}", id, e);
+                ServiceError::Database(e)
+            })?;
         }
 
         let chat_with_messages = Self::get(pool, id).await?;
+
+        info!(
+            "Toggled step completion for chat id={}: {} -> {}",
+            id,
+            if was_completed {
+                "completed"
+            } else {
+                "incomplete"
+            },
+            if chat_with_messages.chat.setup_completed_at.is_some() {
+                "completed"
+            } else {
+                "incomplete"
+            }
+        );
         Ok(chat_with_messages.chat)
     }
 }

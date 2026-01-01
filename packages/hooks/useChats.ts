@@ -1,3 +1,15 @@
+/**
+ * useChats - Hooks for managing chats
+ *
+ * This module provides React Query hooks for CRUD operations on chats,
+ * including task-linked chats, standalone chats, and archived chats.
+ *
+ * Features:
+ * - Full logging at DEBUG/INFO/ERROR levels
+ * - Toast notifications for user feedback on mutations
+ * - Proper error handling with try/catch patterns
+ */
+
 import type {
   Chat,
   ChatWithMessages,
@@ -6,6 +18,7 @@ import type {
   UpdateChatRequest,
 } from '@openflow/generated';
 import { chatQueries } from '@openflow/queries';
+import { createLogger } from '@openflow/utils';
 import {
   type UseMutationResult,
   type UseQueryResult,
@@ -14,6 +27,17 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { taskKeys } from './useTasks';
+import { useToast } from './useToast';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+const logger = createLogger('useChats');
+
+// ============================================================================
+// Query Keys
+// ============================================================================
 
 /**
  * Query key factory for chats.
@@ -30,6 +54,10 @@ export const chatKeys = {
   detail: (id: string) => [...chatKeys.details(), id] as const,
 };
 
+// ============================================================================
+// Query Hooks
+// ============================================================================
+
 /**
  * Fetch all chats for a task.
  *
@@ -37,9 +65,27 @@ export const chatKeys = {
  * @returns Query result with array of chats
  */
 export function useChats(taskId: string): UseQueryResult<Chat[]> {
+  logger.debug('useChats hook called', { taskId, enabled: Boolean(taskId) });
+
   return useQuery({
     queryKey: chatKeys.list(taskId),
-    queryFn: () => chatQueries.list(taskId),
+    queryFn: async () => {
+      logger.debug('Fetching chats for task', { taskId });
+      try {
+        const chats = await chatQueries.list(taskId);
+        logger.info('Chats fetched successfully', {
+          taskId,
+          count: chats.length,
+        });
+        return chats;
+      } catch (error) {
+        logger.error('Failed to fetch chats', {
+          taskId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     enabled: Boolean(taskId),
   });
 }
@@ -51,9 +97,27 @@ export function useChats(taskId: string): UseQueryResult<Chat[]> {
  * @returns Query result with array of standalone chats
  */
 export function useStandaloneChats(projectId: string): UseQueryResult<Chat[]> {
+  logger.debug('useStandaloneChats hook called', { projectId, enabled: Boolean(projectId) });
+
   return useQuery({
     queryKey: chatKeys.standalone(projectId),
-    queryFn: () => chatQueries.listStandalone(projectId),
+    queryFn: async () => {
+      logger.debug('Fetching standalone chats', { projectId });
+      try {
+        const chats = await chatQueries.listStandalone(projectId);
+        logger.info('Standalone chats fetched successfully', {
+          projectId,
+          count: chats.length,
+        });
+        return chats;
+      } catch (error) {
+        logger.error('Failed to fetch standalone chats', {
+          projectId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     enabled: Boolean(projectId),
   });
 }
@@ -65,9 +129,27 @@ export function useStandaloneChats(projectId: string): UseQueryResult<Chat[]> {
  * @returns Query result with array of all chats
  */
 export function useChatsByProject(projectId: string): UseQueryResult<Chat[]> {
+  logger.debug('useChatsByProject hook called', { projectId, enabled: Boolean(projectId) });
+
   return useQuery({
     queryKey: chatKeys.byProject(projectId),
-    queryFn: () => chatQueries.listByProject(projectId),
+    queryFn: async () => {
+      logger.debug('Fetching all chats for project', { projectId });
+      try {
+        const chats = await chatQueries.listByProject(projectId);
+        logger.info('Project chats fetched successfully', {
+          projectId,
+          count: chats.length,
+        });
+        return chats;
+      } catch (error) {
+        logger.error('Failed to fetch project chats', {
+          projectId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     enabled: Boolean(projectId),
   });
 }
@@ -78,9 +160,25 @@ export function useChatsByProject(projectId: string): UseQueryResult<Chat[]> {
  * @returns Query result with array of archived chats
  */
 export function useArchivedChats(): UseQueryResult<Chat[]> {
+  logger.debug('useArchivedChats hook called');
+
   return useQuery({
     queryKey: chatKeys.archived(),
-    queryFn: () => chatQueries.listArchived(),
+    queryFn: async () => {
+      logger.debug('Fetching archived chats');
+      try {
+        const chats = await chatQueries.listArchived();
+        logger.info('Archived chats fetched successfully', {
+          count: chats.length,
+        });
+        return chats;
+      } catch (error) {
+        logger.error('Failed to fetch archived chats', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
   });
 }
 
@@ -91,12 +189,35 @@ export function useArchivedChats(): UseQueryResult<Chat[]> {
  * @returns Query result with chat and messages data
  */
 export function useChat(id: string): UseQueryResult<ChatWithMessages> {
+  logger.debug('useChat hook called', { id, enabled: Boolean(id) });
+
   return useQuery({
     queryKey: chatKeys.detail(id),
-    queryFn: () => chatQueries.get(id),
+    queryFn: async () => {
+      logger.debug('Fetching chat detail', { id });
+      try {
+        const chat = await chatQueries.get(id);
+        logger.info('Chat detail fetched successfully', {
+          id,
+          title: chat.chat.title,
+          messageCount: chat.messages.length,
+        });
+        return chat;
+      } catch (error) {
+        logger.error('Failed to fetch chat detail', {
+          id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     enabled: Boolean(id),
   });
 }
+
+// ============================================================================
+// Mutation Hooks
+// ============================================================================
 
 /**
  * Create a new chat.
@@ -105,28 +226,39 @@ export function useChat(id: string): UseQueryResult<ChatWithMessages> {
  */
 export function useCreateChat(): UseMutationResult<Chat, Error, CreateChatRequest> {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  logger.debug('useCreateChat hook initialized');
 
   return useMutation({
-    mutationFn: (request: CreateChatRequest) => {
-      if (import.meta.env.DEV) {
-        console.log('[useCreateChat] Creating chat:', {
+    mutationFn: async (request: CreateChatRequest) => {
+      logger.debug('Creating chat', {
+        projectId: request.projectId,
+        taskId: request.taskId,
+        title: request.title,
+        isStandalone: !request.taskId,
+      });
+      try {
+        const chat = await chatQueries.create(request);
+        logger.info('Chat created successfully', {
+          id: chat.id,
+          projectId: chat.projectId,
+          taskId: chat.taskId,
+          isStandalone: !chat.taskId,
+        });
+        return chat;
+      } catch (error) {
+        logger.error('Failed to create chat', {
           projectId: request.projectId,
           taskId: request.taskId,
           title: request.title,
-          isStandalone: !request.taskId,
+          error: error instanceof Error ? error.message : String(error),
         });
+        throw error;
       }
-      return chatQueries.create(request);
     },
     onSuccess: (data) => {
-      if (import.meta.env.DEV) {
-        console.log('[useCreateChat] Chat created:', {
-          id: data.id,
-          projectId: data.projectId,
-          taskId: data.taskId,
-          isStandalone: !data.taskId,
-        });
-      }
+      toast.success('Chat Created', `"${data.title || 'New chat'}" has been created.`);
       // Invalidate task-specific list if this is a task-linked chat
       if (data.taskId) {
         queryClient.invalidateQueries({ queryKey: chatKeys.list(data.taskId) });
@@ -137,9 +269,10 @@ export function useCreateChat(): UseMutationResult<Chat, Error, CreateChatReques
       queryClient.invalidateQueries({ queryKey: chatKeys.byProject(data.projectId) });
     },
     onError: (error) => {
-      if (import.meta.env.DEV) {
-        console.error('[useCreateChat] Failed to create chat:', error);
-      }
+      toast.error(
+        'Failed to Create Chat',
+        error instanceof Error ? error.message : 'Please try again.'
+      );
     },
   });
 }
@@ -152,11 +285,37 @@ export function useCreateChat(): UseMutationResult<Chat, Error, CreateChatReques
  */
 export function useStartWorkflowStep(): UseMutationResult<ExecutionProcess, Error, string> {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  logger.debug('useStartWorkflowStep hook initialized');
 
   return useMutation({
-    mutationFn: (chatId: string) => chatQueries.startWorkflowStep(chatId),
+    mutationFn: async (chatId: string) => {
+      logger.debug('Starting workflow step', { chatId });
+      try {
+        const process = await chatQueries.startWorkflowStep(chatId);
+        logger.info('Workflow step started successfully', {
+          chatId,
+          processId: process.id,
+        });
+        return process;
+      } catch (error) {
+        logger.error('Failed to start workflow step', {
+          chatId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     onSuccess: (data) => {
+      toast.success('Workflow Started', 'The workflow step has been started.');
       queryClient.invalidateQueries({ queryKey: chatKeys.detail(data.chatId) });
+    },
+    onError: (error) => {
+      toast.error(
+        'Failed to Start Workflow',
+        error instanceof Error ? error.message : 'Please try again.'
+      );
     },
   });
 }
@@ -172,10 +331,31 @@ export function useUpdateChat(): UseMutationResult<
   { id: string; request: UpdateChatRequest }
 > {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  logger.debug('useUpdateChat hook initialized');
 
   return useMutation({
-    mutationFn: ({ id, request }) => chatQueries.update(id, request),
+    mutationFn: async ({ id, request }) => {
+      logger.debug('Updating chat', { id, request });
+      try {
+        const chat = await chatQueries.update(id, request);
+        logger.info('Chat updated successfully', {
+          id: chat.id,
+          title: chat.title,
+        });
+        return chat;
+      } catch (error) {
+        logger.error('Failed to update chat', {
+          id,
+          request,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     onSuccess: (data) => {
+      toast.success('Chat Updated', `"${data.title || 'Chat'}" has been updated.`);
       queryClient.invalidateQueries({ queryKey: chatKeys.detail(data.id) });
       // Also invalidate list caches
       if (data.taskId) {
@@ -183,6 +363,12 @@ export function useUpdateChat(): UseMutationResult<
       }
       queryClient.invalidateQueries({ queryKey: chatKeys.standalone(data.projectId) });
       queryClient.invalidateQueries({ queryKey: chatKeys.byProject(data.projectId) });
+    },
+    onError: (error) => {
+      toast.error(
+        'Failed to Update Chat',
+        error instanceof Error ? error.message : 'Please try again.'
+      );
     },
   });
 }
@@ -196,13 +382,29 @@ export function useUpdateChat(): UseMutationResult<
 export function useDeleteChat(): UseMutationResult<
   void,
   Error,
-  { id: string; projectId: string; taskId?: string }
+  { id: string; title?: string; projectId: string; taskId?: string }
 > {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  logger.debug('useDeleteChat hook initialized');
 
   return useMutation({
-    mutationFn: ({ id }) => chatQueries.delete(id),
+    mutationFn: async ({ id }) => {
+      logger.debug('Deleting chat', { id });
+      try {
+        await chatQueries.delete(id);
+        logger.info('Chat deleted successfully', { id });
+      } catch (error) {
+        logger.error('Failed to delete chat', {
+          id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     onSuccess: (_, variables) => {
+      toast.success('Chat Deleted', `"${variables.title || 'Chat'}" has been deleted.`);
       queryClient.invalidateQueries({ queryKey: chatKeys.detail(variables.id) });
       if (variables.taskId) {
         queryClient.invalidateQueries({ queryKey: chatKeys.list(variables.taskId) });
@@ -210,6 +412,12 @@ export function useDeleteChat(): UseMutationResult<
       }
       queryClient.invalidateQueries({ queryKey: chatKeys.standalone(variables.projectId) });
       queryClient.invalidateQueries({ queryKey: chatKeys.byProject(variables.projectId) });
+    },
+    onError: (error, variables) => {
+      toast.error(
+        'Failed to Delete Chat',
+        `Could not delete "${variables.title || 'chat'}". ${error instanceof Error ? error.message : 'Please try again.'}`
+      );
     },
   });
 }
@@ -222,10 +430,30 @@ export function useDeleteChat(): UseMutationResult<
  */
 export function useArchiveChat(): UseMutationResult<Chat, Error, string> {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  logger.debug('useArchiveChat hook initialized');
 
   return useMutation({
-    mutationFn: (id: string) => chatQueries.archive(id),
+    mutationFn: async (id: string) => {
+      logger.debug('Archiving chat', { id });
+      try {
+        const chat = await chatQueries.archive(id);
+        logger.info('Chat archived successfully', {
+          id: chat.id,
+          title: chat.title,
+        });
+        return chat;
+      } catch (error) {
+        logger.error('Failed to archive chat', {
+          id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     onSuccess: (data) => {
+      toast.success('Chat Archived', `"${data.title || 'Chat'}" has been archived.`);
       queryClient.invalidateQueries({ queryKey: chatKeys.detail(data.id) });
       if (data.taskId) {
         queryClient.invalidateQueries({ queryKey: chatKeys.list(data.taskId) });
@@ -234,6 +462,12 @@ export function useArchiveChat(): UseMutationResult<Chat, Error, string> {
       queryClient.invalidateQueries({ queryKey: chatKeys.standalone(data.projectId) });
       queryClient.invalidateQueries({ queryKey: chatKeys.byProject(data.projectId) });
       queryClient.invalidateQueries({ queryKey: chatKeys.archived() });
+    },
+    onError: (error) => {
+      toast.error(
+        'Failed to Archive Chat',
+        error instanceof Error ? error.message : 'Please try again.'
+      );
     },
   });
 }
@@ -246,10 +480,30 @@ export function useArchiveChat(): UseMutationResult<Chat, Error, string> {
  */
 export function useUnarchiveChat(): UseMutationResult<Chat, Error, string> {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  logger.debug('useUnarchiveChat hook initialized');
 
   return useMutation({
-    mutationFn: (id: string) => chatQueries.unarchive(id),
+    mutationFn: async (id: string) => {
+      logger.debug('Unarchiving chat', { id });
+      try {
+        const chat = await chatQueries.unarchive(id);
+        logger.info('Chat unarchived successfully', {
+          id: chat.id,
+          title: chat.title,
+        });
+        return chat;
+      } catch (error) {
+        logger.error('Failed to unarchive chat', {
+          id,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     onSuccess: (data) => {
+      toast.success('Chat Restored', `"${data.title || 'Chat'}" has been restored from archive.`);
       queryClient.invalidateQueries({ queryKey: chatKeys.detail(data.id) });
       if (data.taskId) {
         queryClient.invalidateQueries({ queryKey: chatKeys.list(data.taskId) });
@@ -258,6 +512,12 @@ export function useUnarchiveChat(): UseMutationResult<Chat, Error, string> {
       queryClient.invalidateQueries({ queryKey: chatKeys.standalone(data.projectId) });
       queryClient.invalidateQueries({ queryKey: chatKeys.byProject(data.projectId) });
       queryClient.invalidateQueries({ queryKey: chatKeys.archived() });
+    },
+    onError: (error) => {
+      toast.error(
+        'Failed to Restore Chat',
+        error instanceof Error ? error.message : 'Please try again.'
+      );
     },
   });
 }
@@ -271,10 +531,33 @@ export function useUnarchiveChat(): UseMutationResult<Chat, Error, string> {
  */
 export function useToggleStepComplete(): UseMutationResult<Chat, Error, string> {
   const queryClient = useQueryClient();
+  const toast = useToast();
+
+  logger.debug('useToggleStepComplete hook initialized');
 
   return useMutation({
-    mutationFn: (chatId: string) => chatQueries.toggleStepComplete(chatId),
+    mutationFn: async (chatId: string) => {
+      logger.debug('Toggling step completion', { chatId });
+      try {
+        const chat = await chatQueries.toggleStepComplete(chatId);
+        const isCompleted = Boolean(chat.setupCompletedAt);
+        logger.info('Step completion toggled successfully', {
+          chatId: chat.id,
+          isCompleted,
+        });
+        return chat;
+      } catch (error) {
+        logger.error('Failed to toggle step completion', {
+          chatId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     onSuccess: (data) => {
+      const isCompleted = Boolean(data.setupCompletedAt);
+      const status = isCompleted ? 'completed' : 'incomplete';
+      toast.success('Step Updated', `Step marked as ${status}.`);
       // Invalidate the chat detail cache
       queryClient.invalidateQueries({ queryKey: chatKeys.detail(data.id) });
       // Invalidate task-related caches to update the steps panel
@@ -284,6 +567,12 @@ export function useToggleStepComplete(): UseMutationResult<Chat, Error, string> 
       }
       // Invalidate project-level caches
       queryClient.invalidateQueries({ queryKey: chatKeys.byProject(data.projectId) });
+    },
+    onError: (error) => {
+      toast.error(
+        'Failed to Update Step',
+        error instanceof Error ? error.message : 'Please try again.'
+      );
     },
   });
 }

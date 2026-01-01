@@ -18,8 +18,11 @@
  * );
  */
 
+import { createLogger } from '@openflow/utils';
 import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useMutation } from '@tanstack/react-query';
+
+const logger = createLogger('useToastMutation');
 
 /** Toast action button configuration */
 export interface ToastActionConfig {
@@ -100,12 +103,22 @@ export function useToastMutation<
     ...mutationOptions,
     onSuccess: () => {
       if (successMessage) {
+        logger.debug('Mutation succeeded', {
+          message: successMessage,
+          description: successDescription,
+        });
         toastContext.success(successMessage, successDescription);
       }
     },
     onError: (error) => {
       const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred';
       const title = errorMessage || 'Operation failed';
+
+      logger.error('Mutation failed', {
+        title,
+        errorMessage: errorMsg,
+        showRetryAction,
+      });
 
       if (showRetryAction) {
         toastContext.toast({
@@ -117,7 +130,7 @@ export function useToastMutation<
             onClick: () => {
               // Note: Retry action callback should be overridden by the consumer
               // if they want to actually implement retry functionality
-              console.warn('Retry action not implemented - override in onError callback');
+              logger.warn('Retry action clicked but not implemented');
             },
           },
         });
@@ -154,12 +167,21 @@ export function withToastHandling<TData = unknown, TError = Error, TVariables = 
   return {
     onSuccess: () => {
       if (config.successMessage) {
+        logger.debug('Mutation succeeded (withToastHandling)', {
+          message: config.successMessage,
+          description: config.successDescription,
+        });
         toastContext.success(config.successMessage, config.successDescription);
       }
     },
     onError: (error: TError) => {
       const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-      toastContext.error(config.errorMessage || 'Operation failed', message);
+      const title = config.errorMessage || 'Operation failed';
+      logger.error('Mutation failed (withToastHandling)', {
+        title,
+        errorMessage: message,
+      });
+      toastContext.error(title, message);
     },
   };
 }

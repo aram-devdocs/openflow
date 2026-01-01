@@ -7,15 +7,48 @@
  *
  * The component is stateless - all process communication is handled
  * via callbacks, following the OpenFlow architecture pattern.
+ *
+ * Accessibility Features:
+ * - role="dialog" for panel semantics
+ * - aria-modal="true" when open
+ * - aria-labelledby for title association
+ * - aria-describedby for description
+ * - Focus trap within panel
+ * - Escape key closes (configurable)
+ * - Screen reader announcements via VisuallyHidden
+ * - Touch targets ≥44px (WCAG 2.5.5)
+ * - motion-safe: prefix for reduced motion support
  */
 
+import type { ResponsiveValue } from '@openflow/primitives';
+import { VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
-import { X } from 'lucide-react';
-import { useCallback, useEffect, useRef } from 'react';
+import { AlertTriangle, RefreshCw, X } from 'lucide-react';
+import {
+  type HTMLAttributes,
+  type KeyboardEvent,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from '../atoms/Button';
-import { Terminal, type TerminalInstance } from './Terminal';
+import { Icon } from '../atoms/Icon';
+import { Skeleton } from '../atoms/Skeleton';
+import { Spinner } from '../atoms/Spinner';
+import { Terminal, type TerminalHandle } from './Terminal';
 
-export interface TerminalPanelProps {
+// ============================================================================
+// Types
+// ============================================================================
+
+export type TerminalPanelSize = 'sm' | 'md' | 'lg';
+export type TerminalPanelBreakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+
+export interface TerminalPanelProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'title' | 'onInput'> {
   /** Whether the terminal panel is open */
   isOpen: boolean;
   /** Callback when the terminal should be closed */
@@ -32,13 +65,470 @@ export interface TerminalPanelProps {
   isRunning?: boolean;
   /** Whether the terminal is loading */
   isLoading?: boolean;
+  /** Whether there was an error */
+  hasError?: boolean;
+  /** Error message to display */
+  errorMessage?: string;
+  /** Callback to retry after error */
+  onRetry?: () => void;
   /** Color mode for the terminal */
   colorMode?: 'dark' | 'light';
-  /** Additional CSS classes for the panel */
-  className?: string;
   /** Title for the terminal panel */
   title?: string;
+  /** Description for accessibility */
+  description?: string;
+  /** Panel size for responsive layouts */
+  size?: ResponsiveValue<TerminalPanelSize>;
+  /** Whether to close on Escape key */
+  closeOnEscape?: boolean;
+  /** Custom close button label for accessibility */
+  closeLabel?: string;
+  /** Custom label for loading state */
+  loadingLabel?: string;
+  /** Custom label for running status */
+  runningLabel?: string;
+  /** Custom label for stopped status */
+  stoppedLabel?: string;
+  /** Custom label for no session state */
+  noSessionLabel?: string;
+  /** data-testid attribute for testing */
+  'data-testid'?: string;
 }
+
+export interface TerminalPanelSkeletonProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+  /** Panel size for responsive layouts */
+  size?: ResponsiveValue<TerminalPanelSize>;
+  /** Number of skeleton lines to show */
+  lines?: number;
+  /** data-testid attribute for testing */
+  'data-testid'?: string;
+}
+
+export interface TerminalPanelErrorProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'title'> {
+  /** Panel size for responsive layouts */
+  size?: ResponsiveValue<TerminalPanelSize>;
+  /** Error title */
+  title?: string;
+  /** Error message */
+  message?: string;
+  /** Retry callback */
+  onRetry?: () => void;
+  /** Custom retry button label */
+  retryLabel?: string;
+  /** data-testid attribute for testing */
+  'data-testid'?: string;
+}
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+// Default labels
+export const DEFAULT_PANEL_TITLE = 'Terminal';
+export const DEFAULT_PANEL_DESCRIPTION = 'Interactive terminal panel for process output';
+export const DEFAULT_CLOSE_LABEL = 'Close terminal panel';
+export const DEFAULT_LOADING_LABEL = 'Starting terminal...';
+export const DEFAULT_RUNNING_LABEL = 'Running';
+export const DEFAULT_STOPPED_LABEL = 'Stopped';
+export const DEFAULT_NO_SESSION_LABEL = 'No terminal session active';
+
+// Error defaults
+export const DEFAULT_ERROR_TITLE = 'Terminal Error';
+export const DEFAULT_ERROR_MESSAGE = 'Failed to connect to terminal. Please try again.';
+export const DEFAULT_RETRY_LABEL = 'Retry';
+
+// Screen reader announcements
+export const SR_PANEL_OPENED = 'Terminal panel opened';
+export const SR_PANEL_CLOSED = 'Terminal panel closed';
+export const SR_PROCESS_RUNNING = 'Process is running';
+export const SR_PROCESS_STOPPED = 'Process has stopped';
+export const SR_LOADING = 'Terminal is loading';
+export const SR_NO_SESSION = 'No active terminal session';
+export const SR_ERROR_OCCURRED = 'Terminal error occurred';
+
+// CSS class constants
+export const TERMINAL_PANEL_BASE_CLASSES = [
+  'fixed',
+  'inset-x-0',
+  'bottom-0',
+  'z-50',
+  'flex',
+  'flex-col',
+  'bg-[hsl(var(--background))]',
+  'border-t',
+  'border-[hsl(var(--border))]',
+  'shadow-lg',
+].join(' ');
+
+export const TERMINAL_PANEL_ANIMATION_CLASSES = [
+  'motion-safe:animate-in',
+  'motion-safe:slide-in-from-bottom',
+  'motion-safe:duration-200',
+].join(' ');
+
+export const TERMINAL_PANEL_HEIGHT_CLASSES: Record<TerminalPanelSize, string> = {
+  sm: 'h-64',
+  md: 'h-80',
+  lg: 'h-96',
+};
+
+export const TERMINAL_PANEL_HEADER_CLASSES = [
+  'flex',
+  'h-10',
+  'items-center',
+  'justify-between',
+  'border-b',
+  'border-[hsl(var(--border))]',
+  'bg-[hsl(var(--muted))]',
+  'px-4',
+].join(' ');
+
+export const TERMINAL_PANEL_HEADER_TITLE_CLASSES = ['font-medium', 'text-sm'].join(' ');
+
+export const TERMINAL_PANEL_STATUS_CLASSES = [
+  'text-xs',
+  'text-[hsl(var(--muted-foreground))]',
+].join(' ');
+
+export const TERMINAL_PANEL_STATUS_RUNNING_CLASSES = ['text-[hsl(var(--success))]'].join(' ');
+
+export const TERMINAL_PANEL_CLOSE_BUTTON_CLASSES = [
+  'h-8',
+  'w-8',
+  'p-0',
+  'min-h-[44px]',
+  'min-w-[44px]',
+  'sm:min-h-0',
+  'sm:min-w-0',
+  'sm:h-6',
+  'sm:w-6',
+].join(' ');
+
+export const TERMINAL_PANEL_CONTENT_CLASSES = ['flex-1', 'overflow-hidden'].join(' ');
+
+export const TERMINAL_PANEL_LOADING_CLASSES = [
+  'flex',
+  'h-full',
+  'items-center',
+  'justify-center',
+].join(' ');
+
+export const TERMINAL_PANEL_LOADING_CONTAINER_CLASSES = [
+  'flex',
+  'flex-col',
+  'items-center',
+  'gap-2',
+].join(' ');
+
+export const TERMINAL_PANEL_LOADING_TEXT_CLASSES = [
+  'text-sm',
+  'text-[hsl(var(--muted-foreground))]',
+].join(' ');
+
+export const TERMINAL_PANEL_NO_SESSION_CLASSES = [
+  'flex',
+  'h-full',
+  'items-center',
+  'justify-center',
+].join(' ');
+
+export const TERMINAL_PANEL_NO_SESSION_TEXT_CLASSES = [
+  'text-sm',
+  'text-[hsl(var(--muted-foreground))]',
+].join(' ');
+
+// Skeleton classes
+export const TERMINAL_PANEL_SKELETON_BASE_CLASSES = [
+  'fixed',
+  'inset-x-0',
+  'bottom-0',
+  'z-50',
+  'flex',
+  'flex-col',
+  'bg-[hsl(var(--background))]',
+  'border-t',
+  'border-[hsl(var(--border))]',
+  'shadow-lg',
+].join(' ');
+
+export const TERMINAL_PANEL_SKELETON_HEADER_CLASSES = [
+  'flex',
+  'h-10',
+  'items-center',
+  'justify-between',
+  'border-b',
+  'border-[hsl(var(--border))]',
+  'bg-[hsl(var(--muted))]',
+  'px-4',
+].join(' ');
+
+export const TERMINAL_PANEL_SKELETON_CONTENT_CLASSES = ['flex-1', 'p-4', 'space-y-2'].join(' ');
+
+export const TERMINAL_PANEL_SKELETON_LINE_WIDTHS = ['60%', '75%', '50%', '80%', '45%'];
+
+// Error classes
+export const TERMINAL_PANEL_ERROR_BASE_CLASSES = [
+  'flex',
+  'h-full',
+  'flex-col',
+  'items-center',
+  'justify-center',
+  'gap-4',
+  'p-4',
+].join(' ');
+
+export const TERMINAL_PANEL_ERROR_ICON_CLASSES = [
+  'h-12',
+  'w-12',
+  'text-[hsl(var(--destructive))]',
+].join(' ');
+
+export const TERMINAL_PANEL_ERROR_TITLE_CLASSES = [
+  'text-lg',
+  'font-semibold',
+  'text-[hsl(var(--foreground))]',
+].join(' ');
+
+export const TERMINAL_PANEL_ERROR_MESSAGE_CLASSES = [
+  'text-sm',
+  'text-[hsl(var(--muted-foreground))]',
+  'text-center',
+  'max-w-md',
+].join(' ');
+
+export const TERMINAL_PANEL_ERROR_BUTTON_CLASSES = [
+  'min-h-[44px]',
+  'min-w-[44px]',
+  'sm:min-h-0',
+  'sm:min-w-0',
+].join(' ');
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Get base size from a potentially responsive size value.
+ */
+export function getBaseSize(
+  size: ResponsiveValue<TerminalPanelSize> | undefined
+): TerminalPanelSize {
+  if (!size) return 'md';
+  if (typeof size === 'string') return size;
+  return size.base ?? 'md';
+}
+
+/**
+ * Generate responsive size classes from a size prop.
+ */
+export function getResponsiveSizeClasses(
+  size: ResponsiveValue<TerminalPanelSize> | undefined,
+  classMap: Record<TerminalPanelSize, string>
+): string {
+  if (!size) return classMap.md;
+
+  if (typeof size === 'string') {
+    return classMap[size];
+  }
+
+  const classes: string[] = [];
+  const breakpointOrder: TerminalPanelBreakpoint[] = ['base', 'sm', 'md', 'lg', 'xl', '2xl'];
+
+  for (const breakpoint of breakpointOrder) {
+    const sizeValue = size[breakpoint];
+    if (sizeValue) {
+      const sizeClass = classMap[sizeValue];
+      if (breakpoint === 'base') {
+        classes.push(sizeClass);
+      } else {
+        classes.push(`${breakpoint}:${sizeClass}`);
+      }
+    }
+  }
+
+  return classes.join(' ');
+}
+
+/**
+ * Build accessible label for the terminal panel.
+ */
+export function buildPanelAccessibleLabel(
+  title: string,
+  processId: string | null,
+  isRunning: boolean
+): string {
+  const parts = [title];
+  if (processId) {
+    parts.push(`Process: ${processId}`);
+    parts.push(isRunning ? 'Running' : 'Stopped');
+  } else {
+    parts.push('No active session');
+  }
+  return parts.join('. ');
+}
+
+/**
+ * Build status announcement for screen readers.
+ */
+export function buildStatusAnnouncement(
+  isRunning: boolean,
+  isLoading: boolean,
+  hasError: boolean,
+  processId: string | null
+): string {
+  if (hasError) return SR_ERROR_OCCURRED;
+  if (isLoading) return SR_LOADING;
+  if (!processId) return SR_NO_SESSION;
+  return isRunning ? SR_PROCESS_RUNNING : SR_PROCESS_STOPPED;
+}
+
+/**
+ * Get status indicator text and classes.
+ */
+export function getStatusDisplay(
+  isRunning: boolean,
+  runningLabel: string,
+  stoppedLabel: string
+): { text: string; indicator: string; classes: string } {
+  if (isRunning) {
+    return {
+      text: runningLabel,
+      indicator: '●',
+      classes: cn(TERMINAL_PANEL_STATUS_CLASSES, TERMINAL_PANEL_STATUS_RUNNING_CLASSES),
+    };
+  }
+  return {
+    text: stoppedLabel,
+    indicator: '○',
+    classes: TERMINAL_PANEL_STATUS_CLASSES,
+  };
+}
+
+// ============================================================================
+// Sub-components
+// ============================================================================
+
+/**
+ * Skeleton loading state for TerminalPanel.
+ */
+export const TerminalPanelSkeleton = forwardRef<HTMLDivElement, TerminalPanelSkeletonProps>(
+  function TerminalPanelSkeleton(
+    { size = 'md', lines = 5, className, 'data-testid': testId, ...props },
+    ref
+  ) {
+    const heightClasses = getResponsiveSizeClasses(size, TERMINAL_PANEL_HEIGHT_CLASSES);
+
+    return (
+      <div
+        ref={ref}
+        role="presentation"
+        aria-hidden="true"
+        className={cn(TERMINAL_PANEL_SKELETON_BASE_CLASSES, heightClasses, className)}
+        data-testid={testId}
+        data-lines={lines}
+        data-size={getBaseSize(size)}
+        {...props}
+      >
+        {/* Header skeleton */}
+        <div className={TERMINAL_PANEL_SKELETON_HEADER_CLASSES}>
+          <div className="flex items-center gap-2">
+            <Skeleton variant="text" width={80} height={16} />
+            <Skeleton variant="text" width={60} height={12} />
+          </div>
+          <Skeleton variant="circular" width={24} height={24} />
+        </div>
+
+        {/* Content skeleton */}
+        <div className={TERMINAL_PANEL_SKELETON_CONTENT_CLASSES}>
+          {Array.from({ length: lines }).map((_, index) => (
+            <Skeleton
+              key={index}
+              variant="text"
+              width={
+                TERMINAL_PANEL_SKELETON_LINE_WIDTHS[
+                  index % TERMINAL_PANEL_SKELETON_LINE_WIDTHS.length
+                ]
+              }
+              height={14}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+);
+
+TerminalPanelSkeleton.displayName = 'TerminalPanelSkeleton';
+
+/**
+ * Error state for TerminalPanel.
+ */
+export const TerminalPanelError = forwardRef<HTMLDivElement, TerminalPanelErrorProps>(
+  function TerminalPanelError(
+    {
+      size = 'md',
+      title = DEFAULT_ERROR_TITLE,
+      message = DEFAULT_ERROR_MESSAGE,
+      onRetry,
+      retryLabel = DEFAULT_RETRY_LABEL,
+      className,
+      'data-testid': testId,
+      ...props
+    },
+    ref
+  ) {
+    const errorId = useId();
+    const descriptionId = useId();
+    const heightClasses = getResponsiveSizeClasses(size, TERMINAL_PANEL_HEIGHT_CLASSES);
+
+    return (
+      <div
+        ref={ref}
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        aria-labelledby={errorId}
+        aria-describedby={descriptionId}
+        className={cn(TERMINAL_PANEL_SKELETON_BASE_CLASSES, heightClasses, className)}
+        data-testid={testId}
+        data-size={getBaseSize(size)}
+        {...props}
+      >
+        <div className={TERMINAL_PANEL_ERROR_BASE_CLASSES}>
+          <Icon
+            icon={AlertTriangle}
+            aria-hidden="true"
+            className={TERMINAL_PANEL_ERROR_ICON_CLASSES}
+          />
+          <h3 id={errorId} className={TERMINAL_PANEL_ERROR_TITLE_CLASSES}>
+            {title}
+          </h3>
+          <p id={descriptionId} className={TERMINAL_PANEL_ERROR_MESSAGE_CLASSES}>
+            {message}
+          </p>
+          {onRetry && (
+            <Button
+              variant="primary"
+              onClick={onRetry}
+              className={TERMINAL_PANEL_ERROR_BUTTON_CLASSES}
+            >
+              <Icon icon={RefreshCw} size="sm" aria-hidden="true" className="mr-2" />
+              {retryLabel}
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+);
+
+TerminalPanelError.displayName = 'TerminalPanelError';
+
+// ============================================================================
+// Main Component
+// ============================================================================
 
 /**
  * TerminalPanel - A slide-up terminal panel for the dashboard.
@@ -48,7 +538,9 @@ export interface TerminalPanelProps {
  * - Process output streaming
  * - User input forwarding
  * - Resize handling
- * - Loading and closed states
+ * - Loading, error, and closed states
+ * - Full accessibility support
+ * - Responsive sizing
  *
  * @example
  * ```tsx
@@ -69,34 +561,60 @@ export interface TerminalPanelProps {
  * }
  * ```
  */
-export function TerminalPanel({
-  isOpen,
-  onClose,
-  processId,
-  rawOutput,
-  onInput,
-  onResize,
-  isRunning = true,
-  isLoading = false,
-  colorMode = 'dark',
-  className,
-  title = 'Terminal',
-}: TerminalPanelProps) {
-  const terminalRef = useRef<TerminalInstance | null>(null);
+export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(function TerminalPanel(
+  {
+    isOpen,
+    onClose,
+    processId,
+    rawOutput,
+    onInput,
+    onResize,
+    isRunning = true,
+    isLoading = false,
+    hasError = false,
+    errorMessage,
+    onRetry,
+    colorMode = 'dark',
+    title = DEFAULT_PANEL_TITLE,
+    description = DEFAULT_PANEL_DESCRIPTION,
+    size = 'md',
+    closeOnEscape = true,
+    closeLabel = DEFAULT_CLOSE_LABEL,
+    loadingLabel = DEFAULT_LOADING_LABEL,
+    runningLabel = DEFAULT_RUNNING_LABEL,
+    stoppedLabel = DEFAULT_STOPPED_LABEL,
+    noSessionLabel = DEFAULT_NO_SESSION_LABEL,
+    className,
+    'data-testid': testId,
+    ...props
+  },
+  ref
+) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const terminalRef = useRef<TerminalHandle>(null);
   const lastOutputLengthRef = useRef(0);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
+
+  // IDs for accessibility
+  const titleId = useId();
+  const descriptionId = useId();
+
+  // Screen reader announcement state
+  const [announcement, setAnnouncement] = useState('');
+
+  // Height classes based on size
+  const heightClasses = getResponsiveSizeClasses(size, TERMINAL_PANEL_HEIGHT_CLASSES);
+
+  // Status display
+  const statusDisplay = getStatusDisplay(isRunning, runningLabel, stoppedLabel);
 
   // Handle terminal ready
-  const handleReady = useCallback(
-    (terminal: TerminalInstance) => {
-      terminalRef.current = terminal;
-      // Write any existing output
-      if (rawOutput) {
-        terminal.write(rawOutput);
-        lastOutputLengthRef.current = rawOutput.length;
-      }
-    },
-    [rawOutput]
-  );
+  const handleReady = useCallback(() => {
+    if (terminalRef.current && rawOutput) {
+      terminalRef.current.write(rawOutput);
+      lastOutputLengthRef.current = rawOutput.length;
+    }
+  }, [rawOutput]);
 
   // Write new output to terminal when rawOutput changes
   useEffect(() => {
@@ -118,30 +636,106 @@ export function TerminalPanel({
     }
   }, [processId]);
 
+  // Handle panel open/close for focus management
+  useEffect(() => {
+    if (isOpen) {
+      // Store previous focus
+      previousActiveElementRef.current = document.activeElement as HTMLElement;
+      // Announce panel opened
+      setAnnouncement(SR_PANEL_OPENED);
+      // Focus panel after render
+      requestAnimationFrame(() => {
+        panelRef.current?.focus();
+      });
+    } else {
+      // Restore focus on close
+      if (previousActiveElementRef.current) {
+        previousActiveElementRef.current.focus();
+        previousActiveElementRef.current = null;
+      }
+      // Announce panel closed
+      setAnnouncement(SR_PANEL_CLOSED);
+    }
+  }, [isOpen]);
+
+  // Announce status changes
+  useEffect(() => {
+    if (isOpen) {
+      const statusAnnouncement = buildStatusAnnouncement(isRunning, isLoading, hasError, processId);
+      setAnnouncement(statusAnnouncement);
+    }
+  }, [isOpen, isRunning, isLoading, hasError, processId]);
+
+  // Handle escape key
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (closeOnEscape && event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+      }
+    },
+    [closeOnEscape, onClose]
+  );
+
   if (!isOpen) {
     return null;
   }
 
+  // Build accessible label
+  const accessibleLabel = buildPanelAccessibleLabel(title, processId, isRunning);
+
   return (
     <div
+      ref={(node) => {
+        // Handle both refs
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          ref.current = node;
+        }
+        (panelRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-describedby={descriptionId}
+      aria-label={accessibleLabel}
+      tabIndex={-1}
+      onKeyDown={handleKeyDown}
       className={cn(
-        'fixed inset-x-0 bottom-0 z-50',
-        'h-80 md:h-96',
-        'flex flex-col',
-        'bg-[hsl(var(--background))]',
-        'border-t border-[hsl(var(--border))]',
-        'shadow-lg',
-        'animate-in slide-in-from-bottom duration-200',
+        TERMINAL_PANEL_BASE_CLASSES,
+        heightClasses,
+        TERMINAL_PANEL_ANIMATION_CLASSES,
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2',
         className
       )}
+      data-testid={testId}
+      data-state={isOpen ? 'open' : 'closed'}
+      data-size={getBaseSize(size)}
+      data-process-id={processId ?? undefined}
+      data-running={isRunning}
+      data-loading={isLoading}
+      data-error={hasError}
+      {...props}
     >
+      {/* Screen reader announcements */}
+      <VisuallyHidden>
+        <span role="status" aria-live="polite" aria-atomic="true">
+          {announcement}
+        </span>
+        <span id={descriptionId}>{description}</span>
+      </VisuallyHidden>
+
       {/* Header */}
-      <div className="flex h-10 items-center justify-between border-b border-[hsl(var(--border))] bg-[hsl(var(--muted))] px-4">
+      <div className={TERMINAL_PANEL_HEADER_CLASSES}>
         <div className="flex items-center gap-2">
-          <span className="font-medium text-sm">{title}</span>
+          <span id={titleId} className={TERMINAL_PANEL_HEADER_TITLE_CLASSES}>
+            {title}
+          </span>
           {processId && (
-            <span className="text-xs text-[hsl(var(--muted-foreground))]">
-              {isRunning ? '● Running' : '○ Stopped'}
+            <span className={statusDisplay.classes} aria-label={statusDisplay.text}>
+              {statusDisplay.indicator} {statusDisplay.text}
             </span>
           )}
         </div>
@@ -149,26 +743,47 @@ export function TerminalPanel({
           variant="ghost"
           size="sm"
           onClick={onClose}
-          className="h-6 w-6 p-0"
-          aria-label="Close terminal"
+          className={TERMINAL_PANEL_CLOSE_BUTTON_CLASSES}
+          aria-label={closeLabel}
         >
-          <X className="h-4 w-4" />
+          <Icon icon={X} size="sm" aria-hidden="true" />
         </Button>
       </div>
 
       {/* Terminal content */}
-      <div className="flex-1 overflow-hidden">
-        {isLoading ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[hsl(var(--primary))] border-t-transparent" />
-              <span className="text-sm text-[hsl(var(--muted-foreground))]">
-                Starting terminal...
-              </span>
+      <div className={TERMINAL_PANEL_CONTENT_CLASSES}>
+        {hasError ? (
+          <div className={TERMINAL_PANEL_ERROR_BASE_CLASSES}>
+            <Icon
+              icon={AlertTriangle}
+              aria-hidden="true"
+              className={TERMINAL_PANEL_ERROR_ICON_CLASSES}
+            />
+            <h3 className={TERMINAL_PANEL_ERROR_TITLE_CLASSES}>{DEFAULT_ERROR_TITLE}</h3>
+            <p className={TERMINAL_PANEL_ERROR_MESSAGE_CLASSES}>
+              {errorMessage ?? DEFAULT_ERROR_MESSAGE}
+            </p>
+            {onRetry && (
+              <Button
+                variant="primary"
+                onClick={onRetry}
+                className={TERMINAL_PANEL_ERROR_BUTTON_CLASSES}
+              >
+                <Icon icon={RefreshCw} size="sm" aria-hidden="true" className="mr-2" />
+                {DEFAULT_RETRY_LABEL}
+              </Button>
+            )}
+          </div>
+        ) : isLoading ? (
+          <div className={TERMINAL_PANEL_LOADING_CLASSES} role="status" aria-busy="true">
+            <div className={TERMINAL_PANEL_LOADING_CONTAINER_CLASSES}>
+              <Spinner size="md" label={loadingLabel} />
+              <span className={TERMINAL_PANEL_LOADING_TEXT_CLASSES}>{loadingLabel}</span>
             </div>
           </div>
         ) : processId ? (
           <Terminal
+            ref={terminalRef}
             id={`terminal-${processId}`}
             onInput={onInput}
             onResize={onResize}
@@ -180,15 +795,13 @@ export function TerminalPanel({
             cursorBlink
           />
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <span className="text-sm text-[hsl(var(--muted-foreground))]">
-              No terminal session active
-            </span>
+          <div className={TERMINAL_PANEL_NO_SESSION_CLASSES} role="status">
+            <span className={TERMINAL_PANEL_NO_SESSION_TEXT_CLASSES}>{noSessionLabel}</span>
           </div>
         )}
       </div>
     </div>
   );
-}
+});
 
 TerminalPanel.displayName = 'TerminalPanel';

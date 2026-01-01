@@ -64,6 +64,389 @@ Queries are thin wrappers around Tauri invoke calls that handle serialization. H
 
 Long-running processes (CLI tools, dev servers) stream output via Tauri events. The frontend subscribes to process-specific event channels and aggregates output in local state.
 
+## Primitives System
+
+OpenFlow uses a primitives package (`@openflow/primitives`) to enforce semantic HTML usage and accessibility compliance across the UI.
+
+### What Are Primitives?
+
+Primitives are React components that wrap raw HTML elements with:
+- Accessibility defaults (ARIA attributes, roles, focus management)
+- Responsive prop support via `ResponsiveValue<T>`
+- Consistent styling through Tailwind classes
+- TypeScript enforcement (e.g., `alt` required on Image, `aria-label` required on Section)
+
+### Available Primitives
+
+| Category | Components |
+|----------|------------|
+| Layout | `Box`, `Flex`, `Grid`, `Stack` |
+| Typography | `Text`, `Heading`, `Paragraph` |
+| Lists | `List`, `ListItem` |
+| Interactive | `Link`, `Image` |
+| Accessibility | `VisuallyHidden` |
+| Landmarks | `Section`, `Article`, `Nav`, `Main`, `Aside`, `Header`, `Footer` |
+
+### Import Rules
+
+**CRITICAL:** These rules are enforced by the `validate:primitives` validator.
+
+1. **Only `@openflow/primitives` may use raw HTML tags** (`<div>`, `<span>`, `<p>`, etc.)
+2. **Only `@openflow/ui/atoms` may import from `@openflow/primitives`**
+3. **All other UI packages must use atoms or higher-level components**
+
+```typescript
+// ❌ WRONG - Raw HTML in atoms/molecules/organisms
+const Card = () => <div className="p-4">...</div>;
+
+// ✅ CORRECT - Use primitives in atoms
+import { Box } from '@openflow/primitives';
+const Card = () => <Box p="4">...</Box>;
+
+// ❌ WRONG - Importing primitives in molecules
+import { Flex } from '@openflow/primitives'; // Only atoms can do this
+
+// ✅ CORRECT - Molecules use atoms
+import { Card } from '@openflow/ui/atoms';
+```
+
+### ResponsiveValue Pattern
+
+All primitives support breakpoint-aware props:
+
+```typescript
+type ResponsiveValue<T> = T | {
+  base?: T;  // Default (mobile-first)
+  sm?: T;    // 640px+
+  md?: T;    // 768px+
+  lg?: T;    // 1024px+
+  xl?: T;    // 1280px+
+  '2xl'?: T; // 1536px+
+};
+
+// Example: Responsive padding
+<Box p={{ base: '2', md: '4', lg: '6' }}>
+  Content adapts to screen size
+</Box>
+
+// Example: Responsive flex direction
+<Flex direction={{ base: 'column', md: 'row' }}>
+  Stacks on mobile, horizontal on desktop
+</Flex>
+```
+
+### Key Enforcement Points
+
+- **Image**: `alt` prop is required (TypeScript error if missing)
+- **Section**: `aria-label` prop is required for landmark identification
+- **Link**: External links automatically get `rel="noopener noreferrer"`
+- **VisuallyHidden**: For screen-reader-only content (skip links, announcements)
+
+## Logging Conventions
+
+OpenFlow uses structured logging throughout the codebase with consistent patterns for debugging, monitoring, and error tracking.
+
+### Logger Setup
+
+All hooks, queries, and Rust services use contextual loggers:
+
+```typescript
+// TypeScript (hooks/queries)
+import { createLogger } from '@openflow/utils';
+
+const logger = createLogger('useProjects');
+// Creates logger with context tag for filtering
+
+// Child loggers for sub-contexts
+const validatorLogger = logger.child('validator');
+// Logs as "useProjects:validator"
+```
+
+```rust
+// Rust (services)
+use log::{debug, info, warn, error};
+
+// Context is the module name, set at module level
+```
+
+### Log Levels
+
+| Level | When to Use | Example |
+|-------|-------------|---------|
+| `debug` | Detailed info for development/debugging | Function entry, intermediate steps, state changes |
+| `info` | Successful operations worth noting | "Created project", "Fetched 42 tasks" |
+| `warn` | Non-fatal issues, deprecated usage | "Profile not found, using default", "Validation failed" |
+| `error` | Failures requiring attention | "Failed to save", "Database connection lost" |
+
+### Hook Logging Pattern
+
+All hooks follow this pattern:
+
+```typescript
+const logger = createLogger('useProjects');
+
+export function useProjects() {
+  return useQuery({
+    queryKey: ['projects'],
+    queryFn: async () => {
+      logger.debug('Fetching projects');
+      try {
+        const result = await projectQueries.list();
+        logger.info('Projects fetched', {
+          count: result.length,
+          names: result.slice(0, 3).map(p => p.name)
+        });
+        return result;
+      } catch (error) {
+        logger.error('Failed to fetch projects', {
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+        throw error;
+      }
+    },
+  });
+}
+```
+
+**Key points:**
+- `debug` on function entry with parameters
+- `info` on success with summary data (counts, names)
+- `error` on failure with error message
+- Re-throw errors for React Query to handle
+
+### Query Logging Pattern
+
+```typescript
+const logger = createLogger('queries:projects');
+
+export async function list(): Promise<Project[]> {
+  logger.debug('Fetching project list');
+  try {
+    const result = await invoke<Project[]>('list_projects');
+    logger.info('Projects fetched', {
+      count: result.length
+    });
+    return result;
+  } catch (error) {
+    logger.error('Failed to fetch projects', {
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    throw error;
+  }
+}
+```
+
+### Rust Service Logging Pattern
+
+```rust
+pub fn create(pool: &DbPool, input: CreateProjectInput) -> ServiceResult<Project> {
+    debug!("Creating project: name={}, path={}", input.name, input.git_repo_path);
+
+    // ... implementation ...
+
+    info!("Created project: id={}, name={}", project.id, project.name);
+    Ok(project)
+}
+```
+
+### What NOT to Log
+
+- **Sensitive data**: Passwords, tokens, API keys, setting values
+- **Large payloads**: Full file contents, base64 blobs
+- **High-frequency events**: Every keystroke, every scroll event
+
+Instead, log metadata:
+```typescript
+// ❌ Don't log the actual value
+logger.info('Setting saved', { value: settingValue });
+
+// ✅ Log metadata only
+logger.info('Setting saved', { key: 'theme', valueLength: 12 });
+```
+
+## Error Handling Conventions
+
+OpenFlow uses consistent error handling patterns across the frontend and backend.
+
+### Frontend Error Handling
+
+#### Queries: Try/Catch with Re-throw
+
+```typescript
+// All queries wrap invoke in try/catch
+export async function create(input: CreateInput): Promise<Entity> {
+  try {
+    const result = await invoke<Entity>('create_entity', { input });
+    return result;
+  } catch (error) {
+    logger.error('Failed to create entity', { error: ... });
+    throw error; // Re-throw for React Query
+  }
+}
+```
+
+#### Hooks: onSuccess/onError Callbacks with Toast
+
+```typescript
+export function useCreateProject() {
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: projectQueries.create,
+    onSuccess: (project) => {
+      toast.success(`Created "${project.name}"`);
+      logger.info('Project created', { id: project.id });
+    },
+    onError: (error) => {
+      toast.error('Failed to create project', {
+        description: error.message
+      });
+      logger.error('Failed to create project', { error: ... });
+    },
+  });
+}
+```
+
+#### Session Hooks: Validation Before Operations
+
+```typescript
+const handleSubmit = async () => {
+  // 1. Validate
+  if (!title.trim()) {
+    logger.warn('Validation failed: empty title');
+    setError('Title is required');
+    return;
+  }
+
+  // 2. Call mutation
+  try {
+    await createMutation.mutateAsync({ title });
+  } catch (error) {
+    // Error already handled by mutation's onError
+  }
+};
+```
+
+### Backend Error Handling (Rust)
+
+#### Services Return Result Types
+
+```rust
+// All service functions return ServiceResult<T>
+pub fn get(pool: &DbPool, id: &str) -> ServiceResult<Project> {
+    let project = projects::table
+        .find(id)
+        .first::<Project>(&mut conn)
+        .map_err(|e| ServiceError::NotFound(format!("Project {id}")))?;
+
+    Ok(project)
+}
+```
+
+#### Use anyhow Context
+
+```rust
+use anyhow::Context;
+
+let file = std::fs::read_to_string(&path)
+    .with_context(|| format!("Failed to read workflow file: {}", path))?;
+```
+
+#### No Panics in Service Layer
+
+```rust
+// ❌ Never do this in services
+let value = map.get("key").unwrap();
+
+// ✅ Return errors gracefully
+let value = map.get("key")
+    .ok_or_else(|| ServiceError::InvalidInput("Missing key".into()))?;
+```
+
+## Accessibility Patterns
+
+OpenFlow follows WCAG 2.1 Level AA compliance with these patterns enforced throughout the UI.
+
+### Required ARIA Patterns
+
+| Pattern | Implementation |
+|---------|---------------|
+| Touch targets | Minimum 44x44px on mobile (`min-h-[44px] min-w-[44px]`) |
+| Focus rings | `focus-visible:ring-2 focus-visible:ring-offset-2` |
+| Color independence | Status conveyed via icon + text, not color alone |
+| Reduced motion | `motion-safe:` prefix on all animations |
+| Screen reader announcements | `VisuallyHidden` with `aria-live` regions |
+
+### Component Accessibility Checklist
+
+All UI components must implement:
+
+1. **Keyboard navigation** - Arrow keys, Enter/Space, Escape, Tab
+2. **Focus management** - Focus trap in dialogs, focus restoration on close
+3. **ARIA roles** - Proper role attributes (`button`, `listbox`, `dialog`, etc.)
+4. **Labels** - `aria-label` or `aria-labelledby` on interactive elements
+5. **States** - `aria-expanded`, `aria-selected`, `aria-pressed`, `aria-disabled`
+6. **Announcements** - Live regions for dynamic content changes
+
+### Loading/Error/Empty States
+
+Every data-fetching component must handle:
+
+```typescript
+// Skeleton components for loading
+<ComponentSkeleton count={5} />
+
+// Error states with retry
+<ComponentError
+  message="Failed to load"
+  onRetry={refetch}
+/>
+
+// Empty states with action
+<EmptyState
+  icon={InboxIcon}
+  title="No items yet"
+  description="Create your first item to get started"
+  action={{ label: "Create item", onClick: handleCreate }}
+/>
+```
+
+### Screen Reader Announcements
+
+Use `VisuallyHidden` for dynamic announcements:
+
+```typescript
+<VisuallyHidden>
+  <span role="status" aria-live="polite">
+    {isLoading ? 'Loading...' : `Loaded ${items.length} items`}
+  </span>
+</VisuallyHidden>
+```
+
+### forwardRef Pattern
+
+All components support ref forwarding for focus management:
+
+```typescript
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ children, ...props }, ref) => (
+    <button ref={ref} {...props}>{children}</button>
+  )
+);
+```
+
+### Data Attributes for Testing
+
+All components include testability attributes:
+
+```typescript
+<Component
+  data-testid="project-card"
+  data-project-id={project.id}
+  data-state={isSelected ? 'selected' : 'default'}
+/>
+```
+
 ## Data Model
 
 ### Core Entities
@@ -183,6 +566,8 @@ Validators are divided into two categories based on their severity:
 | Storybook | `validate:storybook` | Reports components missing stories |
 | Test Coverage | `validate:coverage` | Checks test coverage thresholds |
 | Rust Services | `validate:rust` | Validates Rust service layer pattern |
+| Primitives | `validate:primitives` | Flags raw HTML tags outside primitives package |
+| Accessibility | `validate:a11y` | Static accessibility checks (alt text, button names, etc.) |
 
 ### Validation Rules
 

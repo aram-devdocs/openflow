@@ -1,7 +1,22 @@
 //! Task management service.
 //!
 //! Handles CRUD operations for tasks and their associated chats.
+//!
+//! # Logging
+//!
+//! This module uses structured logging at the following levels:
+//! - `debug`: Query parameters, function entry/exit, intermediate states
+//! - `info`: Successful operations with key identifiers (task_id, title, status)
+//! - `warn`: Non-critical issues (already archived tasks, validation edge cases)
+//! - `error`: Operation failures with context for debugging
+//!
+//! # Error Handling
+//!
+//! All functions return `ServiceResult<T>` with:
+//! - `ServiceError::NotFound` for missing tasks
+//! - `ServiceError::Database` for database failures (via `?` operator)
 
+use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -26,6 +41,11 @@ impl TaskService {
         status: Option<TaskStatus>,
         include_archived: bool,
     ) -> ServiceResult<Vec<Task>> {
+        debug!(
+            "Listing tasks: project_id={}, status={:?}, include_archived={}",
+            project_id, status, include_archived
+        );
+
         let tasks = match (status, include_archived) {
             (Some(status), true) => {
                 sqlx::query_as::<_, Task>(
@@ -99,11 +119,29 @@ impl TaskService {
             }
         };
 
+        // Count tasks by status for logging
+        let by_status = tasks
+            .iter()
+            .fold(std::collections::HashMap::new(), |mut acc, task| {
+                *acc.entry(task.status.to_string()).or_insert(0) += 1;
+                acc
+            });
+
+        info!(
+            "Listed {} tasks for project {}: by_status={:?}, titles={:?}",
+            tasks.len(),
+            project_id,
+            by_status,
+            tasks.iter().take(5).map(|t| &t.title).collect::<Vec<_>>()
+        );
+
         Ok(tasks)
     }
 
     /// Get a task by ID with its associated chats.
     pub async fn get(pool: &SqlitePool, id: &str) -> ServiceResult<TaskWithChats> {
+        debug!("Fetching task: id={}", id);
+
         let task = sqlx::query_as::<_, Task>(
             r#"
             SELECT
@@ -118,9 +156,12 @@ impl TaskService {
         .bind(id)
         .fetch_optional(pool)
         .await?
-        .ok_or_else(|| ServiceError::NotFound {
-            entity: "Task",
-            id: id.to_string(),
+        .ok_or_else(|| {
+            error!("Task not found: id={}", id);
+            ServiceError::NotFound {
+                entity: "Task",
+                id: id.to_string(),
+            }
         })?;
 
         let chats = sqlx::query_as::<_, Chat>(
@@ -140,12 +181,25 @@ impl TaskService {
         .fetch_all(pool)
         .await?;
 
+        debug!(
+            "Fetched task: id={}, title={}, status={}, chat_count={}",
+            task.id,
+            task.title,
+            task.status,
+            chats.len()
+        );
+
         Ok(TaskWithChats { task, chats })
     }
 
     /// Create a new task.
     pub async fn create(pool: &SqlitePool, request: CreateTaskRequest) -> ServiceResult<Task> {
         let id = Uuid::new_v4().to_string();
+
+        debug!(
+            "Creating task: id={}, project_id={}, title={}, workflow_template={:?}, parent_task_id={:?}",
+            id, request.project_id, request.title, request.workflow_template, request.parent_task_id
+        );
 
         sqlx::query(
             r#"
@@ -169,6 +223,12 @@ impl TaskService {
 
         // Fetch and return the created task
         let task_with_chats = Self::get(pool, &id).await?;
+
+        info!(
+            "Created task: id={}, project_id={}, title={}",
+            task_with_chats.task.id, task_with_chats.task.project_id, task_with_chats.task.title
+        );
+
         Ok(task_with_chats.task)
     }
 
@@ -178,19 +238,37 @@ impl TaskService {
         id: &str,
         request: UpdateTaskRequest,
     ) -> ServiceResult<Task> {
+        debug!(
+            "Updating task: id={}, title_changed={}, description_changed={}, status={:?}, auto_start_next_step={:?}",
+            id,
+            request.title.is_some(),
+            request.description.is_some(),
+            request.status,
+            request.auto_start_next_step
+        );
+
         // Verify the task exists first
         let existing = Self::get(pool, id).await?.task;
+        let existing_status = existing.status.clone();
 
         // Apply updates, falling back to existing values
-        let title = request.title.unwrap_or(existing.title);
-        let description = request.description.or(existing.description);
+        let title = request.title.unwrap_or(existing.title.clone());
+        let description = request.description.or(existing.description.clone());
         let status = request.status.unwrap_or(existing.status);
         let auto_start_next_step = request
             .auto_start_next_step
             .unwrap_or(existing.auto_start_next_step);
         let default_executor_profile_id = request
             .default_executor_profile_id
-            .or(existing.default_executor_profile_id);
+            .or(existing.default_executor_profile_id.clone());
+
+        // Log status transition if changed
+        if status != existing_status {
+            debug!(
+                "Task status transition: id={}, from={} to={}",
+                id, existing_status, status
+            );
+        }
 
         sqlx::query(
             r#"
@@ -215,13 +293,29 @@ impl TaskService {
         .await?;
 
         let task_with_chats = Self::get(pool, id).await?;
+
+        info!(
+            "Updated task: id={}, title={}, status={}",
+            task_with_chats.task.id, task_with_chats.task.title, task_with_chats.task.status
+        );
+
         Ok(task_with_chats.task)
     }
 
     /// Archive a task by setting its archived_at timestamp.
     pub async fn archive(pool: &SqlitePool, id: &str) -> ServiceResult<Task> {
+        debug!("Archiving task: id={}", id);
+
         // Verify the task exists first
-        Self::get(pool, id).await?;
+        let existing = Self::get(pool, id).await?.task;
+
+        // Warn if already archived
+        if existing.archived_at.is_some() {
+            warn!(
+                "Task already archived: id={}, title={}, archived_at={:?}",
+                id, existing.title, existing.archived_at
+            );
+        }
 
         sqlx::query(
             r#"
@@ -237,13 +331,29 @@ impl TaskService {
         .await?;
 
         let task_with_chats = Self::get(pool, id).await?;
+
+        info!(
+            "Archived task: id={}, title={}",
+            task_with_chats.task.id, task_with_chats.task.title
+        );
+
         Ok(task_with_chats.task)
     }
 
     /// Unarchive a task by clearing its archived_at timestamp.
     pub async fn unarchive(pool: &SqlitePool, id: &str) -> ServiceResult<Task> {
+        debug!("Unarchiving task: id={}", id);
+
         // Verify the task exists first
-        Self::get(pool, id).await?;
+        let existing = Self::get(pool, id).await?.task;
+
+        // Warn if not currently archived
+        if existing.archived_at.is_none() {
+            warn!(
+                "Task is not archived, no-op: id={}, title={}",
+                id, existing.title
+            );
+        }
 
         sqlx::query(
             r#"
@@ -259,19 +369,34 @@ impl TaskService {
         .await?;
 
         let task_with_chats = Self::get(pool, id).await?;
+
+        info!(
+            "Unarchived task: id={}, title={}",
+            task_with_chats.task.id, task_with_chats.task.title
+        );
+
         Ok(task_with_chats.task)
     }
 
     /// Delete a task by ID.
     /// Note: Due to CASCADE, this also deletes associated chats and messages.
     pub async fn delete(pool: &SqlitePool, id: &str) -> ServiceResult<()> {
-        // Verify the task exists first
-        Self::get(pool, id).await?;
+        debug!("Deleting task: id={}", id);
+
+        // Verify the task exists first and get details for logging
+        let task_with_chats = Self::get(pool, id).await?;
+        let task = task_with_chats.task;
+        let chat_count = task_with_chats.chats.len();
 
         sqlx::query("DELETE FROM tasks WHERE id = ?")
             .bind(id)
             .execute(pool)
             .await?;
+
+        info!(
+            "Deleted task: id={}, title={}, cascade_deleted_chats={}",
+            id, task.title, chat_count
+        );
 
         Ok(())
     }
@@ -293,12 +418,19 @@ impl TaskService {
     /// # Returns
     /// The newly created duplicate task.
     pub async fn duplicate(pool: &SqlitePool, id: &str) -> ServiceResult<Task> {
+        debug!("Duplicating task: id={}", id);
+
         // Get the original task
         let original = Self::get(pool, id).await?.task;
 
         // Create the duplicate with a new ID and modified title
         let new_id = Uuid::new_v4().to_string();
         let new_title = format!("{} (copy)", original.title);
+
+        debug!(
+            "Creating duplicate: original_id={}, new_id={}, original_title={}, new_title={}",
+            id, new_id, original.title, new_title
+        );
 
         sqlx::query(
             r#"
@@ -324,6 +456,12 @@ impl TaskService {
 
         // Fetch and return the created task
         let task_with_chats = Self::get(pool, &new_id).await?;
+
+        info!(
+            "Duplicated task: original_id={}, new_id={}, new_title={}",
+            id, task_with_chats.task.id, task_with_chats.task.title
+        );
+
         Ok(task_with_chats.task)
     }
 }
