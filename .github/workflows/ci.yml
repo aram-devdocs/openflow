@@ -243,7 +243,15 @@ jobs:
               '<summary>View full report</summary>',
               '',
               '```json',
-              JSON.stringify(data, null, 2),
+              // Truncate the JSON to avoid GitHub's 65536 character limit
+              (() => {
+                const fullJson = JSON.stringify(data, null, 2);
+                const maxLen = 50000; // Leave room for the rest of the comment
+                if (fullJson.length > maxLen) {
+                  return fullJson.substring(0, maxLen) + '\n... (truncated, see artifacts for full report)';
+                }
+                return fullJson;
+              })(),
               '```',
               '',
               '</details>',
