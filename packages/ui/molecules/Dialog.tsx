@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { X } from 'lucide-react';
 import {
@@ -389,22 +389,22 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
   const sizeClasses = getResponsiveSizeClasses(size);
 
   return (
-    <div
+    <Box
       role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center"
       data-testid={dataTestId ? `${dataTestId}-container` : undefined}
     >
       {/* Screen reader announcement */}
       <VisuallyHidden>
-        <span role="status" aria-live="polite">
+        <Text as="span" role="status" aria-live="polite">
           {title ? `Dialog opened: ${title}` : 'Dialog opened'}
-        </span>
+        </Text>
       </VisuallyHidden>
 
       {/* Backdrop - click is supplementary to keyboard Escape handling
           Note: Backdrop is aria-hidden and not focusable, so onClick is for mouse users only.
           Keyboard users close the dialog via Escape key (handled at document level) */}
-      <div
+      <Box
         className={DIALOG_BACKDROP_CLASSES}
         aria-hidden="true"
         onClick={handleBackdropClick}
@@ -413,7 +413,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
       />
 
       {/* Dialog panel - using custom dialog implementation with focus trap */}
-      <div
+      <Box
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
@@ -428,16 +428,20 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
       >
         {/* Header */}
         {(title || showCloseButton) && (
-          <div
+          <Box
             className={cn(DIALOG_HEADER_CLASSES, 'px-4 py-3 md:px-6')}
             data-testid={dataTestId ? `${dataTestId}-header` : undefined}
           >
             {title && (
-              <h2 id={titleId} className="text-lg font-semibold text-[rgb(var(--foreground))]">
+              <Heading
+                level={2}
+                id={titleId}
+                className="text-lg font-semibold text-[rgb(var(--foreground))]"
+              >
                 {title}
-              </h2>
+              </Heading>
             )}
-            {!title && <div />}
+            {!title && <Box />}
             {showCloseButton && (
               <Button
                 variant="ghost"
@@ -450,13 +454,13 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
                 <Icon icon={X} size="sm" />
               </Button>
             )}
-          </div>
+          </Box>
         )}
 
         {/* Content */}
         {children}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 });
 
@@ -487,7 +491,7 @@ export const DialogHeader = forwardRef<HTMLDivElement, DialogHeaderProps>(functi
   const paddingClasses = getDialogPaddingClasses(p, 'px-4 py-3 md:px-6');
 
   return (
-    <div
+    <Box
       ref={ref}
       data-testid={dataTestId}
       className={cn(
@@ -498,7 +502,7 @@ export const DialogHeader = forwardRef<HTMLDivElement, DialogHeaderProps>(functi
       {...props}
     >
       {children}
-    </div>
+    </Box>
   );
 });
 
@@ -528,14 +532,14 @@ export const DialogContent = forwardRef<HTMLDivElement, DialogContentProps>(func
   const paddingClasses = getDialogPaddingClasses(p, 'p-4 md:p-6');
 
   return (
-    <div
+    <Box
       ref={ref}
       data-testid={dataTestId}
       className={cn(DIALOG_CONTENT_CLASSES, paddingClasses, className)}
       {...props}
     >
       {children}
-    </div>
+    </Box>
   );
 });
 
@@ -567,14 +571,14 @@ export const DialogFooter = forwardRef<HTMLDivElement, DialogFooterProps>(functi
   const paddingClasses = getDialogPaddingClasses(p, 'px-4 py-3 md:px-6');
 
   return (
-    <div
+    <Box
       ref={ref}
       data-testid={dataTestId}
       className={cn(DIALOG_FOOTER_CLASSES, paddingClasses, className)}
       {...props}
     >
       {children}
-    </div>
+    </Box>
   );
 });
 

@@ -13,7 +13,7 @@
  * - data-testid support for testing
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -179,7 +179,7 @@ function SkeletonArchiveItem({ size, index }: SkeletonArchiveItemProps) {
   const secondaryActionClasses = getResponsiveSizeClasses(size, SKELETON_SECONDARY_ACTION_CLASSES);
 
   return (
-    <div
+    <Box
       className={cn(
         'flex items-center justify-between rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]',
         containerClasses
@@ -187,11 +187,11 @@ function SkeletonArchiveItem({ size, index }: SkeletonArchiveItemProps) {
       data-testid={`skeleton-archive-item-${index}`}
     >
       {/* Content section - matches the layout of archived item buttons */}
-      <div className="flex flex-1 flex-col gap-1">
+      <Box className="flex flex-1 flex-col gap-1">
         {/* Title skeleton */}
         <Skeleton variant="text" className={titleClasses} data-testid={`skeleton-title-${index}`} />
         {/* Metadata row skeleton - matches project name / archived date layout */}
-        <div className="flex items-center gap-2">
+        <Box className="flex items-center gap-2">
           <Skeleton
             variant="text"
             className={metadataClasses}
@@ -202,11 +202,11 @@ function SkeletonArchiveItem({ size, index }: SkeletonArchiveItemProps) {
             className={secondaryMetadataClasses}
             data-testid={`skeleton-secondary-metadata-${index}`}
           />
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Action buttons section - matches restore/delete button layout */}
-      <div className="flex items-center gap-2">
+      <Box className="flex items-center gap-2">
         <Skeleton
           className={cn('rounded-md', actionClasses)}
           data-testid={`skeleton-action-primary-${index}`}
@@ -215,8 +215,8 @@ function SkeletonArchiveItem({ size, index }: SkeletonArchiveItemProps) {
           className={cn('rounded-md', secondaryActionClasses)}
           data-testid={`skeleton-action-secondary-${index}`}
         />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
 
@@ -250,7 +250,7 @@ export const SkeletonArchiveList = forwardRef<HTMLDivElement, SkeletonArchiveLis
     const gapClasses = getResponsiveSizeClasses(size, SKELETON_ARCHIVE_LIST_SIZE_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(SKELETON_ARCHIVE_LIST_BASE_CLASSES, gapClasses, className)}
         aria-hidden={true}
@@ -263,7 +263,7 @@ export const SkeletonArchiveList = forwardRef<HTMLDivElement, SkeletonArchiveLis
         {Array.from({ length: count }).map((_, index) => (
           <SkeletonArchiveItem key={`skeleton-archive-${index}`} size={size} index={index} />
         ))}
-      </div>
+      </Box>
     );
   }
 );

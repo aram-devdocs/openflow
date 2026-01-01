@@ -1,4 +1,11 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  List,
+  ListItem,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Check, ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -432,12 +439,12 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
   const sizeClasses = getResponsiveSizeClasses(size);
 
   return (
-    <div ref={ref} className="relative" data-testid={dataTestId} {...props}>
+    <Box ref={ref} className="relative" data-testid={dataTestId} {...props}>
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <span role="status" aria-live="polite" aria-atomic="true">
+        <Text as="span" role="status" aria-live="polite" aria-atomic="true">
           {announcement}
-        </span>
+        </Text>
       </VisuallyHidden>
 
       {/* Trigger button */}
@@ -474,7 +481,8 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
           className
         )}
       >
-        <span
+        <Text
+          as="span"
           className={cn(
             'flex items-center gap-2 truncate',
             !selectedOption && 'text-[rgb(var(--muted-foreground))]'
@@ -482,7 +490,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
         >
           {selectedOption?.icon && <Icon icon={selectedOption.icon} size="sm" />}
           {selectedOption?.label ?? placeholder}
-        </span>
+        </Text>
         <Icon
           icon={ChevronDown}
           size="sm"
@@ -495,7 +503,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
 
       {/* Options list */}
       {isOpen && (
-        <ul
+        <List
           ref={listRef}
           id={listboxId}
           role="listbox"
@@ -506,12 +514,12 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
           className={DROPDOWN_LISTBOX_CLASSES}
         >
           {options.length === 0 ? (
-            <li
+            <ListItem
               className="px-3 py-2 text-sm text-[rgb(var(--muted-foreground))]"
               role="presentation"
             >
               {emptyLabel}
-            </li>
+            </ListItem>
           ) : (
             options.map((option) => {
               const isSelected = option.value === value;
@@ -524,7 +532,7 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
                 // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Required for accessible listbox
                 // biome-ignore lint/a11y/useFocusableInteractive: Focus managed by parent listbox via aria-activedescendant
                 // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handled by parent listbox
-                <li
+                <ListItem
                   key={option.value}
                   id={optionId}
                   role="option"
@@ -554,17 +562,19 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
                   )}
                 >
                   {option.icon && <Icon icon={option.icon} size="sm" />}
-                  <span className="flex-1 truncate">{option.label}</span>
+                  <Text as="span" className="flex-1 truncate">
+                    {option.label}
+                  </Text>
                   {isSelected && (
                     <Icon icon={Check} size="sm" className="text-[rgb(var(--primary))]" />
                   )}
-                </li>
+                </ListItem>
               );
             })
           )}
-        </ul>
+        </List>
       )}
-    </div>
+    </Box>
   );
 });
 

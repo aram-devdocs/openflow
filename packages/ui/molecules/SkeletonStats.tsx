@@ -12,7 +12,7 @@
  * - data-testid support for testing
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -246,7 +246,7 @@ export const SkeletonStats = forwardRef<HTMLDivElement, SkeletonStatsProps>(func
   const iconDimensions = getIconDimensions(size);
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(
         SKELETON_STATS_BASE_CLASSES,
@@ -264,7 +264,7 @@ export const SkeletonStats = forwardRef<HTMLDivElement, SkeletonStatsProps>(func
       {...props}
     >
       {Array.from({ length: count }).map((_, index) => (
-        <div
+        <Box
           key={`skeleton-stat-${index}`}
           className={cn(SKELETON_STAT_CARD_CLASSES, cardPaddingClasses)}
           data-testid={dataTestId ? `${dataTestId}-stat-${index}` : undefined}
@@ -281,7 +281,7 @@ export const SkeletonStats = forwardRef<HTMLDivElement, SkeletonStatsProps>(func
           )}
 
           {/* Content: label and value */}
-          <div className={cn('flex flex-col', contentGapClasses)}>
+          <Box className={cn('flex flex-col', contentGapClasses)}>
             <Skeleton
               variant="text"
               className={labelClasses}
@@ -291,7 +291,7 @@ export const SkeletonStats = forwardRef<HTMLDivElement, SkeletonStatsProps>(func
               className={valueClasses}
               data-testid={dataTestId ? `${dataTestId}-stat-${index}-value` : undefined}
             />
-          </div>
+          </Box>
 
           {/* Trend skeleton */}
           {showTrend && (
@@ -301,9 +301,9 @@ export const SkeletonStats = forwardRef<HTMLDivElement, SkeletonStatsProps>(func
               data-testid={dataTestId ? `${dataTestId}-stat-${index}-trend` : undefined}
             />
           )}
-        </div>
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 });
 

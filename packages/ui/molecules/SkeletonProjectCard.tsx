@@ -12,7 +12,7 @@
  * - data-testid support for testing
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -205,7 +205,7 @@ export const SkeletonProjectCard = forwardRef<HTMLDivElement, SkeletonProjectCar
     const iconDimensions = getIconDimensions(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(SKELETON_PROJECT_CARD_BASE_CLASSES, paddingClasses, className)}
         aria-hidden={true}
@@ -238,7 +238,7 @@ export const SkeletonProjectCard = forwardRef<HTMLDivElement, SkeletonProjectCar
             data-testid={dataTestId ? `${dataTestId}-description` : undefined}
           />
         )}
-      </div>
+      </Box>
     );
   }
 );

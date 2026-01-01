@@ -12,7 +12,7 @@
  * - data-testid support for testing
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -262,7 +262,7 @@ export const SkeletonTaskCard = forwardRef<HTMLDivElement, SkeletonTaskCardProps
     const badgeDimensions = getBadgeDimensions(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(SKELETON_TASK_CARD_BASE_CLASSES, paddingClasses, spacingClasses, className)}
         aria-hidden={true}
@@ -275,7 +275,7 @@ export const SkeletonTaskCard = forwardRef<HTMLDivElement, SkeletonTaskCardProps
         {...props}
       >
         {/* Header: Title and Status badge */}
-        <div className={cn('flex items-start justify-between', headerGapClasses)}>
+        <Box className={cn('flex items-start justify-between', headerGapClasses)}>
           <Skeleton
             variant="text"
             className={cn(titleClasses, 'w-2/3')}
@@ -285,11 +285,11 @@ export const SkeletonTaskCard = forwardRef<HTMLDivElement, SkeletonTaskCardProps
             className={cn(badgeDimensions.height, badgeDimensions.width, 'rounded-full shrink-0')}
             data-testid={dataTestId ? `${dataTestId}-badge` : undefined}
           />
-        </div>
+        </Box>
 
         {/* Description */}
         {showDescription && (
-          <div className={descriptionGapClasses}>
+          <Box className={descriptionGapClasses}>
             <Skeleton
               variant="text"
               className={cn(descriptionClasses, 'w-full')}
@@ -302,12 +302,12 @@ export const SkeletonTaskCard = forwardRef<HTMLDivElement, SkeletonTaskCardProps
                 data-testid={dataTestId ? `${dataTestId}-description-2` : undefined}
               />
             )}
-          </div>
+          </Box>
         )}
 
         {/* Footer: Metadata */}
         {showFooter && (
-          <div
+          <Box
             className={cn('flex items-center', footerGapClasses, footerPaddingClasses)}
             data-testid={dataTestId ? `${dataTestId}-footer` : undefined}
           >
@@ -321,9 +321,9 @@ export const SkeletonTaskCard = forwardRef<HTMLDivElement, SkeletonTaskCardProps
               className={cn(footerClasses, 'w-16')}
               data-testid={dataTestId ? `${dataTestId}-metadata-2` : undefined}
             />
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );

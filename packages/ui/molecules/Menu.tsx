@@ -1,4 +1,4 @@
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -292,12 +292,12 @@ export const Menu = forwardRef(function Menu(
       {/* Screen reader announcement for highlighted item */}
       {highlightedItem && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite" aria-atomic="true">
+          <Text as="span" role="status" aria-live="polite" aria-atomic="true">
             {getItemAnnouncement(highlightedItem.label, highlightedItem.destructive)}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
-      <div
+      <Box
         ref={menuRef}
         id={menuId}
         role="menu"
@@ -319,7 +319,7 @@ export const Menu = forwardRef(function Menu(
           if (item.divider) {
             return (
               // biome-ignore lint/a11y/useFocusableInteractive: Separator is not interactive
-              <div key={item.id} role="separator" className={MENU_DIVIDER_CLASSES} />
+              <Box key={item.id} role="separator" className={MENU_DIVIDER_CLASSES} />
             );
           }
 
@@ -374,9 +374,12 @@ export const Menu = forwardRef(function Menu(
                   )}
                 />
               )}
-              <span className="flex-1">{item.label}</span>
+              <Text as="span" className="flex-1">
+                {item.label}
+              </Text>
               {item.shortcut && (
-                <span
+                <Text
+                  as="span"
                   className={cn(
                     'ml-auto text-xs',
                     isHighlighted
@@ -385,12 +388,12 @@ export const Menu = forwardRef(function Menu(
                   )}
                 >
                   {item.shortcut}
-                </span>
+                </Text>
               )}
             </button>
           );
         })}
-      </div>
+      </Box>
     </>
   );
 });

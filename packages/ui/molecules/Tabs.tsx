@@ -1,4 +1,4 @@
-import type { ResponsiveValue } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
 import { type HTMLAttributes, type KeyboardEvent, type ReactNode, forwardRef } from 'react';
@@ -299,7 +299,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   };
 
   return (
-    <div
+    <Box
       ref={ref}
       role="tablist"
       aria-orientation="horizontal"
@@ -357,7 +357,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
                 aria-hidden="true"
               />
             )}
-            <span>{tab.label}</span>
+            <Text as="span">{tab.label}</Text>
             {tab.badge !== undefined && (
               <Badge
                 variant={isActive && variant === 'pills' ? 'default' : 'info'}
@@ -371,7 +371,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
           </button>
         );
       })}
-    </div>
+    </Box>
   );
 });
 
@@ -393,7 +393,7 @@ export const TabPanel = forwardRef<HTMLDivElement, TabPanelProps>(function TabPa
   }
 
   return (
-    <div
+    <Box
       ref={ref}
       role="tabpanel"
       id={`tabpanel-${tabId}`}
@@ -404,7 +404,7 @@ export const TabPanel = forwardRef<HTMLDivElement, TabPanelProps>(function TabPa
       {...props}
     >
       {children}
-    </div>
+    </Box>
   );
 });
 

@@ -1,4 +1,11 @@
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
 import { forwardRef, useId } from 'react';
@@ -196,7 +203,7 @@ export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function E
   const descriptionId = useId();
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(EMPTY_STATE_BASE_CLASSES, ...responsiveClasses, className)}
       role="status"
@@ -213,13 +220,13 @@ export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function E
       </VisuallyHidden>
 
       {IconComponent && (
-        <div className={cn('rounded-full bg-[rgb(var(--muted))]', styles.iconWrapper)}>
+        <Box className={cn('rounded-full bg-[rgb(var(--muted))]', styles.iconWrapper)}>
           <Icon
             icon={IconComponent}
             className={cn('text-[rgb(var(--muted-foreground))]', styles.icon)}
             aria-hidden="true"
           />
-        </div>
+        </Box>
       )}
 
       <Heading
@@ -270,7 +277,7 @@ export const EmptyState = forwardRef<HTMLDivElement, EmptyStateProps>(function E
           )}
         </Flex>
       )}
-    </div>
+    </Box>
   );
 });
 

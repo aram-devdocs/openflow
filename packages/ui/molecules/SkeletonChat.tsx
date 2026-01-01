@@ -13,7 +13,7 @@
  * - Alternating left (assistant) and right (user) message layouts
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -240,7 +240,7 @@ function SkeletonMessage({ isUser, size, index, testIdPrefix }: SkeletonMessageP
   const baseTestId = testIdPrefix ? `${testIdPrefix}-message-${index}` : undefined;
 
   return (
-    <div
+    <Box
       className={cn('flex', bubbleGapClasses, isUser ? 'justify-end' : 'justify-start')}
       data-testid={baseTestId}
       data-message-type={isUser ? 'user' : 'assistant'}
@@ -256,7 +256,7 @@ function SkeletonMessage({ isUser, size, index, testIdPrefix }: SkeletonMessageP
       )}
 
       {/* Message bubble */}
-      <div
+      <Box
         className={cn(
           bubbleClasses,
           bubbleSpacingClasses,
@@ -282,7 +282,7 @@ function SkeletonMessage({ isUser, size, index, testIdPrefix }: SkeletonMessageP
             data-testid={baseTestId ? `${baseTestId}-text-3` : undefined}
           />
         )}
-      </div>
+      </Box>
 
       {/* User avatar on right */}
       {isUser && (
@@ -293,7 +293,7 @@ function SkeletonMessage({ isUser, size, index, testIdPrefix }: SkeletonMessageP
           data-testid={baseTestId ? `${baseTestId}-avatar` : undefined}
         />
       )}
-    </div>
+    </Box>
   );
 }
 
@@ -333,7 +333,7 @@ export const SkeletonChat = forwardRef<HTMLDivElement, SkeletonChatProps>(functi
   const gapClasses = getResponsiveSizeClasses(size, SKELETON_CHAT_GAP_CLASSES);
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(SKELETON_CHAT_BASE_CLASSES, paddingClasses, gapClasses, className)}
       aria-hidden={true}
@@ -356,7 +356,7 @@ export const SkeletonChat = forwardRef<HTMLDivElement, SkeletonChatProps>(functi
           />
         );
       })}
-    </div>
+    </Box>
   );
 });
 

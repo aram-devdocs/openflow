@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, type ReactNode, forwardRef } from 'react';
 
@@ -178,7 +178,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
   const clickable = isClickable || Boolean(onClick);
 
   return (
-    <div
+    <Box
       ref={ref}
       role={clickable ? 'button' : undefined}
       tabIndex={clickable ? 0 : undefined}
@@ -210,13 +210,13 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       {/* Screen reader announcement for selected state */}
       {isSelected && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {selectedLabel}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
       {children}
-    </div>
+    </Box>
   );
 });
 
@@ -247,14 +247,14 @@ export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(function C
   const paddingClasses = getResponsivePaddingClasses(p, 'p-4');
 
   return (
-    <div
+    <Box
       ref={ref}
       data-testid={dataTestId}
       className={cn('flex flex-col space-y-1.5 pb-0', paddingClasses, className)}
       {...props}
     >
       {children}
-    </div>
+    </Box>
   );
 });
 
@@ -284,9 +284,9 @@ export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(function
   const paddingClasses = getResponsivePaddingClasses(p, 'p-4');
 
   return (
-    <div ref={ref} data-testid={dataTestId} className={cn(paddingClasses, className)} {...props}>
+    <Box ref={ref} data-testid={dataTestId} className={cn(paddingClasses, className)} {...props}>
       {children}
-    </div>
+    </Box>
   );
 });
 
@@ -317,14 +317,14 @@ export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(function C
   const paddingClasses = getResponsivePaddingClasses(p, 'p-4');
 
   return (
-    <div
+    <Box
       ref={ref}
       data-testid={dataTestId}
       className={cn('flex items-center pt-0', paddingClasses, className)}
       {...props}
     >
       {children}
-    </div>
+    </Box>
   );
 });
 

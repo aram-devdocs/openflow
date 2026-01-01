@@ -14,7 +14,7 @@
  * - Configurable sections (showTabs, showStepsPanel, showInput)
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -504,7 +504,7 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
     );
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(SKELETON_TASK_DETAIL_BASE_CLASSES, className)}
         aria-hidden={true}
@@ -520,12 +520,12 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
         {...props}
       >
         {/* Main content area */}
-        <div
+        <Box
           className="flex-1 flex flex-col"
           data-testid={dataTestId ? `${dataTestId}-main` : undefined}
         >
           {/* Header */}
-          <div
+          <Box
             className={cn(
               'flex items-center gap-4 border-b border-[rgb(var(--border))] bg-[rgb(var(--card))]',
               headerPaddingClasses
@@ -538,7 +538,7 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
               height={headerAvatarDimensions.height}
               data-testid={dataTestId ? `${dataTestId}-header-avatar` : undefined}
             />
-            <div className="flex-1">
+            <Box className="flex-1">
               <Skeleton
                 variant="text"
                 className={cn(headerTitleClasses, 'mb-1')}
@@ -549,16 +549,16 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                 className={headerSubtitleClasses}
                 data-testid={dataTestId ? `${dataTestId}-header-subtitle` : undefined}
               />
-            </div>
+            </Box>
             <Skeleton
               className={cn(headerActionClasses, 'rounded-md')}
               data-testid={dataTestId ? `${dataTestId}-header-action` : undefined}
             />
-          </div>
+          </Box>
 
           {/* Tabs */}
           {showTabs && (
-            <div
+            <Box
               className={cn(
                 'flex border-b border-[rgb(var(--border))]',
                 tabsPaddingClasses,
@@ -573,19 +573,19 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                   data-testid={dataTestId ? `${dataTestId}-tab-${i}` : undefined}
                 />
               ))}
-            </div>
+            </Box>
           )}
 
           {/* Main content - Chat messages */}
-          <div
+          <Box
             className={cn('flex-1', contentPaddingClasses)}
             data-testid={dataTestId ? `${dataTestId}-content` : undefined}
           >
-            <div className={contentGapClasses}>
+            <Box className={contentGapClasses}>
               {Array.from({ length: messageCount }).map((_, i) => {
                 const isUser = i % 2 !== 0;
                 return (
-                  <div
+                  <Box
                     key={`skeleton-msg-${i}`}
                     className={cn('flex gap-3', isUser ? 'justify-end' : 'justify-start')}
                     data-testid={dataTestId ? `${dataTestId}-message-${i}` : undefined}
@@ -602,7 +602,7 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                     )}
 
                     {/* Message bubble */}
-                    <div
+                    <Box
                       className={cn(
                         'max-w-[70%] rounded-lg bg-[rgb(var(--muted))]',
                         messageBubbleClasses
@@ -626,7 +626,7 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                           data-testid={dataTestId ? `${dataTestId}-message-${i}-text-3` : undefined}
                         />
                       )}
-                    </div>
+                    </Box>
 
                     {/* User avatar on right */}
                     {isUser && (
@@ -637,15 +637,15 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                         data-testid={dataTestId ? `${dataTestId}-message-${i}-avatar` : undefined}
                       />
                     )}
-                  </div>
+                  </Box>
                 );
               })}
-            </div>
-          </div>
+            </Box>
+          </Box>
 
           {/* Input area */}
           {showInput && (
-            <div
+            <Box
               className={cn('border-t border-[rgb(var(--border))]', inputPaddingClasses)}
               data-testid={dataTestId ? `${dataTestId}-input` : undefined}
             >
@@ -653,13 +653,13 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                 className={cn(inputClasses, 'w-full rounded-xl')}
                 data-testid={dataTestId ? `${dataTestId}-input-field` : undefined}
               />
-            </div>
+            </Box>
           )}
-        </div>
+        </Box>
 
         {/* Steps panel */}
         {showStepsPanel && (
-          <div
+          <Box
             className={cn(
               'border-l border-[rgb(var(--border))] bg-[rgb(var(--card))]',
               stepsPanelWidthClasses,
@@ -668,7 +668,7 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
             data-testid={dataTestId ? `${dataTestId}-steps-panel` : undefined}
           >
             {/* Steps header */}
-            <div
+            <Box
               className={cn('flex items-center justify-between', stepsHeaderClasses)}
               data-testid={dataTestId ? `${dataTestId}-steps-header` : undefined}
             >
@@ -681,15 +681,15 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                 className={cn(stepsActionClasses, 'rounded-md')}
                 data-testid={dataTestId ? `${dataTestId}-steps-action` : undefined}
               />
-            </div>
+            </Box>
 
             {/* Steps list */}
-            <div
+            <Box
               className={stepsGapClasses}
               data-testid={dataTestId ? `${dataTestId}-steps-list` : undefined}
             >
               {Array.from({ length: stepCount }).map((_, i) => (
-                <div
+                <Box
                   key={`skeleton-step-${i}`}
                   className={cn(
                     'rounded-lg border border-[rgb(var(--border))]',
@@ -698,7 +698,7 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                   data-testid={dataTestId ? `${dataTestId}-step-${i}` : undefined}
                 >
                   {/* Step header */}
-                  <div className={cn('flex items-center', stepHeaderGapClasses)}>
+                  <Box className={cn('flex items-center', stepHeaderGapClasses)}>
                     <Skeleton
                       variant="circular"
                       width={stepNumberDimensions.width}
@@ -710,19 +710,19 @@ export const SkeletonTaskDetail = forwardRef<HTMLDivElement, SkeletonTaskDetailP
                       className={stepTitleClasses}
                       data-testid={dataTestId ? `${dataTestId}-step-${i}-title` : undefined}
                     />
-                  </div>
+                  </Box>
                   {/* Step description */}
                   <Skeleton
                     variant="text"
                     className={cn(stepDescriptionClasses, 'w-full')}
                     data-testid={dataTestId ? `${dataTestId}-step-${i}-description` : undefined}
                   />
-                </div>
+                </Box>
               ))}
-            </div>
-          </div>
+            </Box>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );

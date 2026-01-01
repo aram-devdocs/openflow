@@ -1,4 +1,4 @@
-import { VisuallyHidden } from '@openflow/primitives';
+import { Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Archive, Code, Copy, Eye, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { type ForwardedRef, forwardRef, useMemo } from 'react';
@@ -297,9 +297,9 @@ export const EntityContextMenu = forwardRef(function EntityContextMenu(
       {/* Screen reader announcement */}
       {isOpen && announcement && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite" aria-atomic="true">
+          <Text as="span" role="status" aria-live="polite" aria-atomic="true">
             {announcement}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
       <Menu

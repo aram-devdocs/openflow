@@ -28,7 +28,7 @@
  * </FormField>
  */
 
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, type ReactNode, forwardRef, useId } from 'react';
 import { Label, type LabelSize } from '../atoms/Label';
@@ -232,7 +232,7 @@ export const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
     const spacingClasses = getResponsiveSpacingClasses(spacing);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(...FORM_FIELD_BASE_CLASSES, ...spacingClasses, className)}
         data-testid={dataTestId}
@@ -243,7 +243,9 @@ export const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
         {/* Screen reader announcement for error state change */}
         {hasError && (
           <VisuallyHidden>
-            <span aria-live="assertive">Error: {error}</span>
+            <Text as="span" aria-live="assertive">
+              Error: {error}
+            </Text>
           </VisuallyHidden>
         )}
 
@@ -287,7 +289,7 @@ export const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
             {error}
           </Text>
         )}
-      </div>
+      </Box>
     );
   }
 );

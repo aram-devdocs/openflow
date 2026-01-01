@@ -12,7 +12,7 @@
  * - data-testid support for testing
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -259,7 +259,7 @@ export const SkeletonSettings = forwardRef<HTMLDivElement, SkeletonSettingsProps
     const iconDimensions = getIconDimensions(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(SKELETON_SETTINGS_BASE_CLASSES, gapClasses, className)}
         aria-hidden={true}
@@ -272,20 +272,20 @@ export const SkeletonSettings = forwardRef<HTMLDivElement, SkeletonSettingsProps
         {...props}
       >
         {Array.from({ length: sectionCount }).map((_, sectionIndex) => (
-          <div
+          <Box
             key={`skeleton-section-${sectionIndex}`}
             className={SKELETON_SECTION_CARD_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-section-${sectionIndex}` : undefined}
           >
             {/* Section header */}
-            <div
+            <Box
               className={cn(
                 'border-b border-[rgb(var(--border))] bg-[rgb(var(--muted))]/50',
                 headerPaddingClasses
               )}
               data-testid={dataTestId ? `${dataTestId}-section-${sectionIndex}-header` : undefined}
             >
-              <div className="flex items-center gap-2">
+              <Box className="flex items-center gap-2">
                 <Skeleton
                   variant="circular"
                   width={iconDimensions.width}
@@ -301,7 +301,7 @@ export const SkeletonSettings = forwardRef<HTMLDivElement, SkeletonSettingsProps
                     dataTestId ? `${dataTestId}-section-${sectionIndex}-title` : undefined
                   }
                 />
-              </div>
+              </Box>
               {showDescriptions && (
                 <Skeleton
                   variant="text"
@@ -311,15 +311,15 @@ export const SkeletonSettings = forwardRef<HTMLDivElement, SkeletonSettingsProps
                   }
                 />
               )}
-            </div>
+            </Box>
 
             {/* Section content */}
-            <div
+            <Box
               className={cn('flex flex-col', contentPaddingClasses, contentGapClasses)}
               data-testid={dataTestId ? `${dataTestId}-section-${sectionIndex}-content` : undefined}
             >
               {Array.from({ length: fieldsPerSection }).map((_, fieldIndex) => (
-                <div
+                <Box
                   key={`skeleton-field-${sectionIndex}-${fieldIndex}`}
                   className={cn('flex flex-col', fieldGapClasses)}
                   data-testid={
@@ -345,12 +345,12 @@ export const SkeletonSettings = forwardRef<HTMLDivElement, SkeletonSettingsProps
                         : undefined
                     }
                   />
-                </div>
+                </Box>
               ))}
-            </div>
-          </div>
+            </Box>
+          </Box>
         ))}
-      </div>
+      </Box>
     );
   }
 );

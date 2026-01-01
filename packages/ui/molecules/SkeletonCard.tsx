@@ -12,7 +12,7 @@
  * - data-testid support for testing
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -233,7 +233,7 @@ export const SkeletonCard = forwardRef<HTMLDivElement, SkeletonCardProps>(functi
   const avatarDimensions = getAvatarDimensions(size);
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(SKELETON_CARD_BASE_CLASSES, paddingClasses, className)}
       aria-hidden={true}
@@ -245,7 +245,7 @@ export const SkeletonCard = forwardRef<HTMLDivElement, SkeletonCardProps>(functi
       data-lines={lines}
       {...props}
     >
-      <div className={cn('flex items-start', headerGapClasses)}>
+      <Box className={cn('flex items-start', headerGapClasses)}>
         {showAvatar && (
           <Skeleton
             variant="circular"
@@ -254,7 +254,7 @@ export const SkeletonCard = forwardRef<HTMLDivElement, SkeletonCardProps>(functi
             data-testid={dataTestId ? `${dataTestId}-avatar` : undefined}
           />
         )}
-        <div className={cn('flex-1', contentGapClasses)}>
+        <Box className={cn('flex-1', contentGapClasses)}>
           {/* Title skeleton - always shown */}
           <Skeleton
             variant="text"
@@ -276,10 +276,10 @@ export const SkeletonCard = forwardRef<HTMLDivElement, SkeletonCardProps>(functi
               data-testid={dataTestId ? `${dataTestId}-description-2` : undefined}
             />
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
       {showActions && (
-        <div className={cn('flex', actionsGapClasses, actionsMarginClasses)}>
+        <Box className={cn('flex', actionsGapClasses, actionsMarginClasses)}>
           <Skeleton
             className={cn('rounded-md', actionClasses)}
             data-testid={dataTestId ? `${dataTestId}-action-primary` : undefined}
@@ -288,9 +288,9 @@ export const SkeletonCard = forwardRef<HTMLDivElement, SkeletonCardProps>(functi
             className={cn('rounded-md', actionClasses)}
             data-testid={dataTestId ? `${dataTestId}-action-secondary` : undefined}
           />
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 });
 

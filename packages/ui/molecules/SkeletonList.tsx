@@ -12,7 +12,7 @@
  * - data-testid support for testing
  */
 
-import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
+import { Box, type Breakpoint, type ResponsiveValue } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -200,7 +200,7 @@ function SkeletonListItem({ size, index, showAvatar, lines }: SkeletonListItemPr
   const avatarSize = getAvatarDimensions(size);
 
   return (
-    <div
+    <Box
       className={cn('flex items-center rounded-md', paddingClasses, itemGapClasses)}
       data-testid={`skeleton-list-item-${index}`}
     >
@@ -212,7 +212,7 @@ function SkeletonListItem({ size, index, showAvatar, lines }: SkeletonListItemPr
           data-testid={`skeleton-avatar-${index}`}
         />
       )}
-      <div className={cn('flex flex-1 flex-col', textGapClasses)}>
+      <Box className={cn('flex flex-1 flex-col', textGapClasses)}>
         <Skeleton
           variant="text"
           className={primaryTextClasses}
@@ -232,8 +232,8 @@ function SkeletonListItem({ size, index, showAvatar, lines }: SkeletonListItemPr
             data-testid={`skeleton-tertiary-text-${index}`}
           />
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
 
@@ -274,7 +274,7 @@ export const SkeletonList = forwardRef<HTMLDivElement, SkeletonListProps>(functi
   const gapClasses = getResponsiveSizeClasses(size, SKELETON_LIST_GAP_CLASSES);
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(SKELETON_LIST_BASE_CLASSES, gapClasses, className)}
       aria-hidden={true}
@@ -295,7 +295,7 @@ export const SkeletonList = forwardRef<HTMLDivElement, SkeletonListProps>(functi
           lines={lines}
         />
       ))}
-    </div>
+    </Box>
   );
 });
 

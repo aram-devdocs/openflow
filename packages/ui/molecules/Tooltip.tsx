@@ -22,7 +22,7 @@
  * </Tooltip>
  */
 
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react';
 
@@ -290,9 +290,9 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip
   }
 
   return (
-    <div ref={ref} className={TOOLTIP_TRIGGER_CLASSES} data-testid={dataTestId}>
+    <Box ref={ref} className={TOOLTIP_TRIGGER_CLASSES} data-testid={dataTestId}>
       {/* Trigger wrapper - handles hover/focus events */}
-      <div
+      <Box
         ref={triggerRef}
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
@@ -304,11 +304,11 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip
         data-testid={dataTestId ? `${dataTestId}-trigger` : undefined}
       >
         {children}
-      </div>
+      </Box>
 
       {/* Tooltip - visible when hovering or focused */}
       {isVisible && (
-        <div
+        <Box
           id={tooltipId}
           role="tooltip"
           aria-label={ariaLabel}
@@ -320,28 +320,28 @@ export const Tooltip = forwardRef<HTMLDivElement, TooltipProps>(function Tooltip
           data-testid={dataTestId ? `${dataTestId}-tooltip` : undefined}
           data-position={position}
         >
-          <div
+          <Box
             className={cn(TOOLTIP_CONTENT_CLASSES, TOOLTIP_MAX_WIDTH_CLASSES[maxWidth], className)}
           >
             {content}
             {/* Arrow indicator */}
-            <div
+            <Box
               className={cn(TOOLTIP_ARROW_BASE_CLASSES, TOOLTIP_ARROW_CLASSES[position])}
               aria-hidden="true"
             />
-          </div>
-        </div>
+          </Box>
+        </Box>
       )}
 
       {/* Screen reader announcement when tooltip first appears */}
       {isVisible && hasBeenShown && accessibleDescription && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {accessibleDescription}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
-    </div>
+    </Box>
   );
 });
 
