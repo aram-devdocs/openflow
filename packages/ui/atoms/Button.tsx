@@ -1,4 +1,10 @@
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+  generateResponsiveClasses,
+  getResponsiveBaseValue,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type ButtonHTMLAttributes, type ReactNode, forwardRef } from 'react';
 import { Spinner } from './Spinner';
@@ -60,52 +66,19 @@ const spinnerSizeMap: Record<ButtonSize, 'sm' | 'md' | 'lg'> = {
 };
 
 /**
- * Breakpoint order for responsive class generation
- */
-const BREAKPOINT_ORDER = ['base', 'sm', 'md', 'lg', 'xl', '2xl'] as const;
-type Breakpoint = (typeof BREAKPOINT_ORDER)[number];
-
-/**
- * Generate responsive classes for size prop
+ * Generate responsive classes for size prop.
+ * Uses shared utility from @openflow/primitives.
  */
 function getResponsiveSizeClasses(size: ResponsiveValue<ButtonSize>): string[] {
-  const classes: string[] = [];
-
-  if (typeof size === 'string') {
-    classes.push(sizeClasses[size]);
-  } else if (typeof size === 'object' && size !== null) {
-    for (const breakpoint of BREAKPOINT_ORDER) {
-      const breakpointValue = (size as Partial<Record<Breakpoint, ButtonSize>>)[breakpoint];
-      if (breakpointValue !== undefined) {
-        const sizeClass = sizeClasses[breakpointValue];
-        // Parse individual classes and add breakpoint prefix
-        const individualClasses = sizeClass.split(' ');
-        for (const cls of individualClasses) {
-          if (breakpoint === 'base') {
-            classes.push(cls);
-          } else {
-            classes.push(`${breakpoint}:${cls}`);
-          }
-        }
-      }
-    }
-  }
-
-  return classes;
+  return generateResponsiveClasses(size, sizeClasses, 'md');
 }
 
 /**
- * Get the base size for spinner selection
+ * Get the base size for spinner selection.
+ * Uses shared utility from @openflow/primitives.
  */
 function getBaseSize(size: ResponsiveValue<ButtonSize>): ButtonSize {
-  if (typeof size === 'string') {
-    return size;
-  }
-  if (typeof size === 'object' && size !== null) {
-    // Get base breakpoint value or default to md
-    return (size as Partial<Record<Breakpoint, ButtonSize>>).base ?? 'md';
-  }
-  return 'md';
+  return getResponsiveBaseValue(size, 'md');
 }
 
 /**

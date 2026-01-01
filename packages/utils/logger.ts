@@ -91,9 +91,22 @@ export interface Logger {
 const isDevelopment =
   typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.MODE === 'development';
 
-// Global configuration with sensible defaults
+/**
+ * Global configuration with sensible defaults.
+ *
+ * IMPORTANT: In production mode (NODE_ENV !== 'development'):
+ * - DEBUG logs are filtered out (minLevel = WARN)
+ * - Only WARN and ERROR logs are shown
+ * - This prevents verbose initialization/function call logs from impacting performance
+ *
+ * In development mode:
+ * - All log levels are shown (minLevel = DEBUG)
+ * - Human-readable format with colors
+ */
 let globalConfig: LoggerConfig = {
-  minLevel: isDevelopment ? LogLevel.DEBUG : LogLevel.INFO,
+  // Production: Only WARN and above to avoid performance impact from verbose logging
+  // Development: Show all logs including DEBUG for detailed debugging
+  minLevel: isDevelopment ? LogLevel.DEBUG : LogLevel.WARN,
   json: !isDevelopment,
   enabled: true,
   persistHandler: undefined,
@@ -130,7 +143,7 @@ export function getLoggerConfig(): Readonly<LoggerConfig> {
  */
 export function resetLoggerConfig(): void {
   globalConfig = {
-    minLevel: isDevelopment ? LogLevel.DEBUG : LogLevel.INFO,
+    minLevel: isDevelopment ? LogLevel.DEBUG : LogLevel.WARN,
     json: !isDevelopment,
     enabled: true,
     persistHandler: undefined,

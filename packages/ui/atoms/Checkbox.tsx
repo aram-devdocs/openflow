@@ -1,7 +1,9 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { BREAKPOINT_ORDER, type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Check, Minus } from 'lucide-react';
-import { type InputHTMLAttributes, forwardRef, useId } from 'react';
+import { type InputHTMLAttributes, forwardRef, useEffect, useId, useRef, useState } from 'react';
+
+import type { Breakpoint } from '@openflow/primitives/types';
 
 export type CheckboxSize = 'sm' | 'md' | 'lg';
 
@@ -46,13 +48,8 @@ const sizeClasses: Record<CheckboxSize, { wrapper: string; checkbox: string; ico
 };
 
 /**
- * Breakpoint order for responsive class generation
- */
-const BREAKPOINT_ORDER = ['base', 'sm', 'md', 'lg', 'xl', '2xl'] as const;
-type Breakpoint = (typeof BREAKPOINT_ORDER)[number];
-
-/**
- * Get size classes for the given size prop
+ * Get size classes for the given size prop.
+ * Uses BREAKPOINT_ORDER from @openflow/primitives.
  */
 function getSizeClasses(size: ResponsiveValue<CheckboxSize>): {
   wrapper: string[];
@@ -157,6 +154,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   const uniqueId = useId();
   const announcementId = `checkbox-state-${uniqueId}`;
 
+  // Track previous state to only announce on changes
+  const prevStateRef = useRef<{ checked?: boolean; indeterminate?: boolean } | null>(null);
+  const [announcement, setAnnouncement] = useState('');
+
   // Get responsive size classes
   const {
     wrapper: wrapperClasses,
@@ -164,12 +165,34 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
     icon: iconClasses,
   } = getSizeClasses(size);
 
-  // Determine current state for screen reader announcement
-  const getStateAnnouncement = () => {
-    if (indeterminate) return 'Partially checked';
-    if (checked) return 'Checked';
-    return 'Not checked';
-  };
+  // Only announce when state actually changes (not on every render)
+  useEffect(() => {
+    const prevState = prevStateRef.current;
+
+    // Skip initial render (no previous state)
+    if (prevState === null) {
+      prevStateRef.current = { checked, indeterminate };
+      return;
+    }
+
+    // Check if state actually changed
+    if (prevState.checked !== checked || prevState.indeterminate !== indeterminate) {
+      // Determine current state for screen reader announcement
+      const stateAnnouncement = indeterminate
+        ? 'Partially checked'
+        : checked
+          ? 'Checked'
+          : 'Not checked';
+
+      setAnnouncement(stateAnnouncement);
+
+      // Clear announcement after a short delay to allow re-announcing if state changes again
+      const timer = setTimeout(() => setAnnouncement(''), 100);
+      prevStateRef.current = { checked, indeterminate };
+
+      return () => clearTimeout(timer);
+    }
+  }, [checked, indeterminate]);
 
   return (
     // Touch target wrapper: 44x44px minimum for accessibility (WCAG 2.5.5)
@@ -181,10 +204,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
       )}
       data-testid={dataTestId}
     >
-      {/* Screen reader state announcement */}
+      {/* Screen reader state announcement - only announces on state changes */}
       <VisuallyHidden>
-        <span id={announcementId} aria-live="polite">
-          {getStateAnnouncement()}
+        <span id={announcementId} aria-live="polite" aria-atomic="true">
+          {announcement}
         </span>
       </VisuallyHidden>
 

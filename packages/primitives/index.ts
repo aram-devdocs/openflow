@@ -124,3 +124,12 @@ export { Main, type MainProps, type MainSpacingProps, DEFAULT_MAIN_ID } from './
 export { Aside, type AsideProps, type AsideSpacingProps } from './Aside';
 export { Header, type HeaderProps, type HeaderSpacingProps } from './Header';
 export { Footer, type FooterProps, type FooterSpacingProps } from './Footer';
+
+// Responsive utilities
+export {
+  BREAKPOINT_ORDER,
+  generateResponsiveClasses,
+  getResponsiveBaseValue,
+  isResponsiveObject,
+  prefixWithBreakpoint,
+} from './responsive-utils';

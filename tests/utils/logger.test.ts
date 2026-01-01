@@ -272,8 +272,10 @@ describe('utils/logger', () => {
       const config = getLoggerConfig();
 
       expect(config.enabled).toBe(true);
-      // Default level depends on environment
-      expect([LogLevel.DEBUG, LogLevel.INFO]).toContain(config.minLevel);
+      // Default level depends on environment:
+      // - Development: DEBUG (show all logs)
+      // - Production: WARN (only warnings and errors to avoid performance impact)
+      expect([LogLevel.DEBUG, LogLevel.WARN]).toContain(config.minLevel);
     });
   });
 
