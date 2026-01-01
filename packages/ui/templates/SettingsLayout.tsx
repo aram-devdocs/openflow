@@ -35,7 +35,12 @@
  */
 
 import {
+  Box,
+  Flex,
+  Header as HeaderPrimitive,
   Heading,
+  List,
+  ListItem,
   Main,
   Nav,
   type ResponsiveValue,
@@ -575,7 +580,7 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
     );
 
     return (
-      <div
+      <Flex
         ref={ref}
         className={cn(SETTINGS_LAYOUT_CONTAINER_CLASSES, className)}
         data-testid={dataTestId}
@@ -586,9 +591,9 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
         {/* Screen reader announcements for navigation changes */}
         {announcement && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite" aria-atomic="true">
+            <Text as="span" role="status" aria-live="polite" aria-atomic="true">
               {announcement}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 
@@ -598,10 +603,10 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
           aria-label={navLabel}
           data-testid={dataTestId ? `${dataTestId}-mobile-nav` : undefined}
         >
-          <div
+          <Flex
             role="tablist"
             aria-orientation="horizontal"
-            className={cn('flex', sizeClasses.mobileNavGap)}
+            className={sizeClasses.mobileNavGap}
             onKeyDown={handleMobileKeyDown}
             data-testid={dataTestId ? `${dataTestId}-mobile-tablist` : undefined}
           >
@@ -645,11 +650,11 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
                       )}
                     />
                   )}
-                  <span>{item.label}</span>
+                  <Text as="span">{item.label}</Text>
                 </button>
               );
             })}
-          </div>
+          </Flex>
         </Nav>
 
         {/* Desktop: Vertical sidebar navigation */}
@@ -659,24 +664,24 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
           aria-label={navLabel}
           data-testid={dataTestId ? `${dataTestId}-desktop-nav` : undefined}
         >
-          <div className="p-4">
-            <ul className={SETTINGS_NAV_LIST_CLASSES} role="list">
+          <Box p="4">
+            <List className={SETTINGS_NAV_LIST_CLASSES}>
               {navigation.map((item) => {
                 // Section headers
                 if (item.isSection) {
                   return (
-                    <li
+                    <ListItem
                       key={item.id}
                       className={SETTINGS_SECTION_HEADER_CLASSES}
                       aria-hidden="true"
                       data-testid={dataTestId ? `${dataTestId}-section-${item.id}` : undefined}
                     >
-                      <span>{item.label}</span>
+                      <Text as="span">{item.label}</Text>
                       {/* Screen reader gets full context */}
                       <VisuallyHidden>
                         {SR_SECTION_HEADER} {item.label}
                       </VisuallyHidden>
-                    </li>
+                    </ListItem>
                   );
                 }
 
@@ -685,7 +690,7 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
                 const clickableIndex = getNavItemIndex(clickableItems, item.id);
 
                 return (
-                  <li key={item.id}>
+                  <ListItem key={item.id}>
                     <button
                       id={getNavItemId(id, item.id)}
                       type="button"
@@ -718,15 +723,15 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
                           )}
                         />
                       )}
-                      <span>{item.label}</span>
+                      <Text as="span">{item.label}</Text>
                       {/* Screen reader announcement for current page */}
                       {isActive && <VisuallyHidden>({SR_CURRENT_PAGE})</VisuallyHidden>}
                     </button>
-                  </li>
+                  </ListItem>
                 );
               })}
-            </ul>
-          </div>
+            </List>
+          </Box>
         </Nav>
 
         {/* Settings Content Area */}
@@ -740,7 +745,7 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
         >
           {/* Header with title and description - responsive padding */}
           {(title || description) && (
-            <header
+            <HeaderPrimitive
               className={cn(SETTINGS_HEADER_CLASSES, sizeClasses.headerPadding)}
               data-testid={dataTestId ? `${dataTestId}-header` : undefined}
             >
@@ -758,18 +763,18 @@ export const SettingsLayout = forwardRef<HTMLDivElement, SettingsLayoutProps>(
                   {description}
                 </Text>
               )}
-            </header>
+            </HeaderPrimitive>
           )}
 
           {/* Main content - responsive padding */}
-          <div
+          <Box
             className={sizeClasses.contentPadding}
             data-testid={dataTestId ? `${dataTestId}-main-content` : undefined}
           >
             {children}
-          </div>
+          </Box>
         </Main>
-      </div>
+      </Flex>
     );
   }
 );

@@ -15,7 +15,16 @@
  */
 
 import type { ExecutorProfile } from '@openflow/generated';
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  List,
+  ListItem,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertCircle, Check, Pencil, Plus, Star, Terminal, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -564,7 +573,7 @@ export const ProfilesPageLayout = forwardRef<HTMLDivElement, ProfilesPageLayoutP
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="region"
         aria-label={ariaLabel}
@@ -575,7 +584,7 @@ export const ProfilesPageLayout = forwardRef<HTMLDivElement, ProfilesPageLayoutP
         {...props}
       >
         {/* Header with create button */}
-        <div
+        <Box
           className={PROFILES_HEADER_CLASSES}
           data-testid={dataTestId ? `${dataTestId}-header` : undefined}
         >
@@ -596,10 +605,10 @@ export const ProfilesPageLayout = forwardRef<HTMLDivElement, ProfilesPageLayoutP
           >
             {DEFAULT_CREATE_LABEL}
           </Button>
-        </div>
+        </Box>
 
         {children}
-      </div>
+      </Box>
     );
   }
 );
@@ -622,11 +631,11 @@ export const ProfilesLoadingSkeleton = forwardRef<HTMLDivElement, ProfilesLoadin
     const gridClasses = getResponsiveSizeClasses(size, PROFILES_GRID_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="status"
         aria-label={SR_LOADING}
-        aria-busy="true"
+        aria-busy={true}
         data-testid={dataTestId}
         data-count={count}
         data-size={baseSize}
@@ -634,7 +643,9 @@ export const ProfilesLoadingSkeleton = forwardRef<HTMLDivElement, ProfilesLoadin
         {...props}
       >
         <VisuallyHidden>
-          <span aria-live="polite">{SR_LOADING}</span>
+          <Text as="span" aria-live="polite">
+            {SR_LOADING}
+          </Text>
         </VisuallyHidden>
         {Array.from({ length: count }).map((_, i) => (
           <SkeletonCard
@@ -644,7 +655,7 @@ export const ProfilesLoadingSkeleton = forwardRef<HTMLDivElement, ProfilesLoadin
             data-testid={dataTestId ? `${dataTestId}-item-${i}` : undefined}
           />
         ))}
-      </div>
+      </Box>
     );
   }
 );
@@ -694,7 +705,7 @@ export const ProfilesErrorState = forwardRef<HTMLDivElement, ProfilesErrorStateP
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -704,15 +715,15 @@ export const ProfilesErrorState = forwardRef<HTMLDivElement, ProfilesErrorStateP
         {...props}
       >
         <VisuallyHidden>
-          <span>Error: {error}</span>
+          <Text as="span">Error: {error}</Text>
         </VisuallyHidden>
-        <div
+        <Box
           className={PROFILES_ERROR_ICON_CLASSES}
-          aria-hidden="true"
+          aria-hidden={true}
           data-testid={dataTestId ? `${dataTestId}-icon` : undefined}
         >
           <Icon icon={AlertCircle} size="lg" className="text-[rgb(var(--destructive))]" />
-        </div>
+        </Box>
         <Heading level={3} size="lg" className="mb-2">
           {DEFAULT_ERROR_TITLE}
         </Heading>
@@ -734,7 +745,7 @@ export const ProfilesErrorState = forwardRef<HTMLDivElement, ProfilesErrorStateP
             {DEFAULT_RETRY_LABEL}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -766,9 +777,8 @@ export const ProfilesList = forwardRef<HTMLUListElement, ProfilesListProps>(func
   const gridClasses = getResponsiveSizeClasses(size, PROFILES_GRID_CLASSES);
 
   return (
-    <ul
+    <List
       ref={ref}
-      role="list"
       aria-label={ariaLabel}
       data-testid={dataTestId}
       data-count={profiles.length}
@@ -777,9 +787,9 @@ export const ProfilesList = forwardRef<HTMLUListElement, ProfilesListProps>(func
       {...props}
     >
       <VisuallyHidden>
-        <span role="status" aria-live="polite">
+        <Text as="span" role="status" aria-live="polite">
           {buildProfilesCountAnnouncement(profiles.length)}
-        </span>
+        </Text>
       </VisuallyHidden>
       {profiles.map((profile) => (
         <ProfileCard
@@ -792,7 +802,7 @@ export const ProfilesList = forwardRef<HTMLUListElement, ProfilesListProps>(func
           data-testid={dataTestId ? `${dataTestId}-item-${profile.id}` : undefined}
         />
       ))}
-    </ul>
+    </List>
   );
 });
 
@@ -824,9 +834,8 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
   const ProfileIcon = getProfileIcon(profile);
 
   return (
-    <li
+    <ListItem
       ref={ref}
-      role="listitem"
       aria-label={accessibleLabel}
       data-testid={dataTestId}
       data-profile-id={profile.id}
@@ -836,11 +845,11 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
       {...props}
     >
       <Card className="relative h-full">
-        <div
+        <Box
           className={cn(PROFILE_CARD_CONTAINER_CLASSES, paddingClasses)}
           data-testid={dataTestId ? `${dataTestId}-content` : undefined}
         >
-          <div className="flex-1 min-w-0">
+          <Box className="flex-1 min-w-0">
             <Flex gap="2" align="center">
               <Icon
                 icon={ProfileIcon}
@@ -867,13 +876,14 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
               )}
             </Flex>
 
-            <code
+            <Text
+              as="code"
               className={PROFILE_CARD_COMMAND_CLASSES}
               data-testid={dataTestId ? `${dataTestId}-command` : undefined}
             >
               {profile.command}
               {profile.args && ` ${profile.args}`}
-            </code>
+            </Text>
 
             {profile.description && (
               <Text
@@ -886,16 +896,18 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
                 {profile.description}
               </Text>
             )}
-          </div>
+          </Box>
 
           {/* Actions */}
-          <nav
+          <Box
+            as="nav"
             className={PROFILE_CARD_ACTIONS_CLASSES}
             aria-label={`Actions for ${profile.name}`}
             data-testid={dataTestId ? `${dataTestId}-actions` : undefined}
           >
             {!profile.isDefault && (
-              <button
+              <Box
+                as="button"
                 type="button"
                 onClick={onSetDefault}
                 className={PROFILE_ACTION_BUTTON_CLASSES}
@@ -903,9 +915,10 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
                 data-testid={dataTestId ? `${dataTestId}-set-default` : undefined}
               >
                 <Icon icon={Check} size={iconSize} />
-              </button>
+              </Box>
             )}
-            <button
+            <Box
+              as="button"
               type="button"
               onClick={onEdit}
               className={PROFILE_ACTION_BUTTON_CLASSES}
@@ -913,8 +926,9 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
               data-testid={dataTestId ? `${dataTestId}-edit` : undefined}
             >
               <Icon icon={Pencil} size={iconSize} />
-            </button>
-            <button
+            </Box>
+            <Box
+              as="button"
               type="button"
               onClick={onDelete}
               className={PROFILE_DELETE_BUTTON_CLASSES}
@@ -922,11 +936,11 @@ export const ProfileCard = forwardRef<HTMLLIElement, ProfileCardProps>(function 
               data-testid={dataTestId ? `${dataTestId}-delete` : undefined}
             >
               <Icon icon={Trash2} size={iconSize} />
-            </button>
-          </nav>
-        </div>
+            </Box>
+          </Box>
+        </Box>
       </Card>
-    </li>
+    </ListItem>
   );
 });
 
@@ -983,14 +997,13 @@ export const ProfileFormDialog = forwardRef<HTMLDivElement, ProfileFormDialogPro
         {...props}
       >
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {isPending ? loadingText : ''}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         <form
           onSubmit={handleSubmit}
-          role="form"
           aria-label={title}
           className={formGapClasses}
           data-testid={dataTestId ? `${dataTestId}-form` : undefined}
@@ -1062,7 +1075,7 @@ export const ProfileFormDialog = forwardRef<HTMLDivElement, ProfileFormDialogPro
             />
           </FormField>
 
-          <div
+          <Box
             className={FORM_CHECKBOX_CONTAINER_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-default-container` : undefined}
           >
@@ -1076,7 +1089,7 @@ export const ProfileFormDialog = forwardRef<HTMLDivElement, ProfileFormDialogPro
             <Label htmlFor={defaultCheckboxId} size="sm">
               Set as default profile
             </Label>
-          </div>
+          </Box>
 
           {error && (
             <Text
@@ -1090,7 +1103,7 @@ export const ProfileFormDialog = forwardRef<HTMLDivElement, ProfileFormDialogPro
             </Text>
           )}
 
-          <div
+          <Box
             className={FORM_FOOTER_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-footer` : undefined}
           >
@@ -1114,7 +1127,7 @@ export const ProfileFormDialog = forwardRef<HTMLDivElement, ProfileFormDialogPro
             >
               {submitLabel}
             </Button>
-          </div>
+          </Box>
         </form>
       </Dialog>
     );
@@ -1205,7 +1218,7 @@ export const ProfilesContent = forwardRef<HTMLDivElement, ProfilesContentProps>(
 
     // List state
     return (
-      <div ref={ref} data-testid={dataTestId} data-size={baseSize} className={className} {...props}>
+      <Box ref={ref} data-testid={dataTestId} data-size={baseSize} className={className} {...props}>
         <ProfilesList
           profiles={profiles}
           onEdit={onEdit}
@@ -1214,7 +1227,7 @@ export const ProfilesContent = forwardRef<HTMLDivElement, ProfilesContentProps>(
           size={size}
           data-testid={dataTestId ? `${dataTestId}-list` : undefined}
         />
-      </div>
+      </Box>
     );
   }
 );

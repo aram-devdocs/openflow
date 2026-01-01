@@ -25,7 +25,7 @@
  */
 
 import type { Project } from '@openflow/generated';
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { forwardRef } from 'react';
 import {
@@ -346,7 +346,7 @@ export const ProjectsSettingsPageSkeleton = forwardRef<
   ref
 ) {
   return (
-    <div
+    <Box
       ref={ref}
       className={PROJECTS_SETTINGS_PAGE_SKELETON_CLASSES}
       aria-hidden="true"
@@ -355,9 +355,9 @@ export const ProjectsSettingsPageSkeleton = forwardRef<
     >
       {/* Screen reader loading announcement */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite">
+        <Box role="status" aria-live="polite">
           {SR_LOADING}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       <ProjectSettingsLoadingSkeleton
@@ -365,7 +365,7 @@ export const ProjectsSettingsPageSkeleton = forwardRef<
         fieldsPerSection={fieldsPerSection}
         size={getBaseSize(size)}
       />
-    </div>
+    </Box>
   );
 });
 
@@ -377,7 +377,7 @@ export const ProjectsSettingsPageError = forwardRef<
   ProjectsSettingsPageErrorStateProps
 >(function ProjectsSettingsPageError({ error, onRetry, size, 'data-testid': testId }, ref) {
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(
         PROJECTS_SETTINGS_PAGE_ERROR_CLASSES,
@@ -387,13 +387,13 @@ export const ProjectsSettingsPageError = forwardRef<
     >
       {/* Screen reader announcement */}
       <VisuallyHidden>
-        <div role="status" aria-live="assertive">
+        <Box role="status" aria-live="assertive">
           {SR_ERROR_PREFIX} {error}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       <ProjectSettingsErrorState error={error} onRetry={onRetry} size={getBaseSize(size)} />
-    </div>
+    </Box>
   );
 });
 
@@ -498,7 +498,7 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
     // Loading projects state
     if (state === 'loading') {
       return (
-        <div
+        <Box
           ref={ref}
           className={PROJECTS_SETTINGS_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -508,14 +508,14 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
           data-size={baseSize}
         >
           <ProjectsSettingsPageSkeleton size={size} />
-        </div>
+        </Box>
       );
     }
 
     // Error state
     if (state === 'error' && error) {
       return (
-        <div
+        <Box
           ref={ref}
           className={PROJECTS_SETTINGS_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -524,14 +524,14 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
           data-size={baseSize}
         >
           <ProjectsSettingsPageError error={error.error} onRetry={error.onRetry} size={size} />
-        </div>
+        </Box>
       );
     }
 
     // Empty state (no projects)
     if (state === 'empty') {
       return (
-        <div
+        <Box
           ref={ref}
           className={PROJECTS_SETTINGS_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -541,13 +541,13 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
         >
           {/* Screen reader announcement */}
           <VisuallyHidden>
-            <div role="status" aria-live="polite" aria-atomic="true">
+            <Box role="status" aria-live="polite" aria-atomic="true">
               {SR_EMPTY}
-            </div>
+            </Box>
           </VisuallyHidden>
 
           <ProjectSettingsEmptyState size={baseSize} />
-        </div>
+        </Box>
       );
     }
 
@@ -555,7 +555,7 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
     if (state === 'loading-project') {
       if (!selector) {
         return (
-          <div
+          <Box
             ref={ref}
             className={PROJECTS_SETTINGS_PAGE_BASE_CLASSES}
             aria-label={computedAriaLabel}
@@ -565,12 +565,12 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
             data-size={baseSize}
           >
             <ProjectsSettingsPageSkeleton size={size} />
-          </div>
+          </Box>
         );
       }
 
       return (
-        <div
+        <Box
           ref={ref}
           className={PROJECTS_SETTINGS_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -582,9 +582,9 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
         >
           {/* Screen reader announcement */}
           <VisuallyHidden>
-            <div role="status" aria-live="polite">
+            <Box role="status" aria-live="polite">
               {SR_LOADING_PROJECT}
-            </div>
+            </Box>
           </VisuallyHidden>
 
           <ProjectSettingsLayout size={baseSize}>
@@ -602,7 +602,7 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
               size={baseSize}
             />
           </ProjectSettingsLayout>
-        </div>
+        </Box>
       );
     }
 
@@ -610,7 +610,7 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
     if (!selector || !project || !form) {
       // Fallback if props are missing in ready state (shouldn't happen in practice)
       return (
-        <div
+        <Box
           ref={ref}
           className={PROJECTS_SETTINGS_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -619,7 +619,7 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
           data-size={baseSize}
         >
           <ProjectSettingsEmptyState size={baseSize} />
-        </div>
+        </Box>
       );
     }
 
@@ -627,7 +627,7 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
     const selectedOption = selector.options.find((opt) => opt.value === selector.selectedProjectId);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={PROJECTS_SETTINGS_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -640,13 +640,13 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
       >
         {/* Screen reader announcements */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite" aria-atomic="true">
+          <Box role="status" aria-live="polite" aria-atomic="true">
             {buildLoadedAnnouncement(
               selectedOption?.label ?? null,
               selector.hasChanges,
               selector.saveSuccess
             )}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         <ProjectSettingsLayout size={baseSize}>
@@ -672,7 +672,7 @@ export const ProjectsSettingsPage = forwardRef<HTMLDivElement, ProjectsSettingsP
             size={baseSize}
           />
         </ProjectSettingsLayout>
-      </div>
+      </Box>
     );
   }
 );

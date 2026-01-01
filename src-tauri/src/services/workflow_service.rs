@@ -298,6 +298,62 @@ impl WorkflowService {
         Ok(template)
     }
 
+    /// Get a template by ID (either built-in or file-based).
+    ///
+    /// For built-in templates (prefixed with "builtin:"), returns the template directly.
+    /// For file-based templates, looks up in the specified workflows folder.
+    ///
+    /// # Arguments
+    /// * `id` - The template ID (e.g., "builtin:feature" or "file:custom")
+    /// * `workflows_folder_path` - Optional path to the workflows folder for file-based templates
+    pub async fn get_template(
+        id: &str,
+        workflows_folder_path: Option<&Path>,
+    ) -> ServiceResult<Option<WorkflowTemplate>> {
+        debug!("Looking up template by id: {}", id);
+
+        // Check if it's a built-in template
+        if id.starts_with("builtin:") {
+            return Self::get_builtin_template(id);
+        }
+
+        // For file-based templates, we need the workflows folder
+        let folder_path = match workflows_folder_path {
+            Some(path) => path,
+            None => {
+                warn!(
+                    "No workflows folder path provided for file-based template: {}",
+                    id
+                );
+                return Ok(None);
+            }
+        };
+
+        debug!(
+            "Searching for file-based template in: {}",
+            folder_path.display()
+        );
+        let templates = Self::list_templates(folder_path).await?;
+
+        let template = templates.into_iter().find(|t| t.id == id);
+
+        match &template {
+            Some(t) => info!(
+                "Found file-based template: id='{}', name='{}', steps={}",
+                t.id,
+                t.name,
+                t.steps.len()
+            ),
+            None => warn!(
+                "Template not found: id='{}' in folder '{}'",
+                id,
+                folder_path.display()
+            ),
+        }
+
+        Ok(template)
+    }
+
     /// Substitute workflow variables in content using a HashMap.
     ///
     /// Variables are in format: {@variable_name}

@@ -14,7 +14,7 @@
  */
 
 import type { Commit } from '@openflow/generated';
-import { Flex, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Flex, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
   ChevronDown,
@@ -384,7 +384,7 @@ const CommitStats = forwardRef<HTMLDivElement, CommitStatsProps>(function Commit
     <Flex ref={ref} align="center" gap={size === 'sm' ? '2' : '3'}>
       <VisuallyHidden>{buildStatsAnnouncement(filesChanged, additions, deletions)}</VisuallyHidden>
 
-      <div
+      <Box
         className="flex items-center gap-1 text-[rgb(var(--muted-foreground))]"
         aria-hidden="true"
       >
@@ -392,20 +392,20 @@ const CommitStats = forwardRef<HTMLDivElement, CommitStatsProps>(function Commit
         <Text size={size === 'sm' ? 'xs' : 'sm'}>
           {filesChanged} {filesChanged === 1 ? 'file' : 'files'}
         </Text>
-      </div>
+      </Box>
 
       {additions > 0 && (
-        <div className="flex items-center gap-0.5 text-addition" aria-hidden="true">
+        <Box className="flex items-center gap-0.5 text-addition" aria-hidden="true">
           <Icon icon={Plus} size={iconSize} />
           <Text size={size === 'sm' ? 'xs' : 'sm'}>{additions}</Text>
-        </div>
+        </Box>
       )}
 
       {deletions > 0 && (
-        <div className="flex items-center gap-0.5 text-deletion" aria-hidden="true">
+        <Box className="flex items-center gap-0.5 text-deletion" aria-hidden="true">
           <Icon icon={Minus} size={iconSize} />
           <Text size={size === 'sm' ? 'xs' : 'sm'}>{deletions}</Text>
-        </div>
+        </Box>
       )}
     </Flex>
   );
@@ -425,7 +425,7 @@ const CommitDetails = forwardRef<HTMLDivElement, CommitDetailsProps>(function Co
   const paddingClasses = COMMIT_LIST_PADDING_CLASSES[size];
 
   return (
-    <div
+    <Box
       ref={ref}
       id={detailsId}
       className={cn(COMMIT_DETAILS_CLASSES, paddingClasses)}
@@ -446,22 +446,29 @@ const CommitDetails = forwardRef<HTMLDivElement, CommitDetailsProps>(function Co
         {/* Full commit hash */}
         <Flex align="center" gap="2" className="text-[rgb(var(--muted-foreground))]">
           <Icon icon={GitCommit} size={iconSize} aria-hidden="true" />
-          <code className={cn(COMMIT_HASH_CLASSES, size === 'sm' ? 'text-[10px]' : 'text-xs')}>
+          <Box
+            as="code"
+            className={cn(COMMIT_HASH_CLASSES, size === 'sm' ? 'text-[10px]' : 'text-xs')}
+          >
             {commit.hash}
-          </code>
+          </Box>
         </Flex>
 
         {/* Date */}
         <Flex align="center" gap="2" className="text-[rgb(var(--muted-foreground))]">
           <Icon icon={Clock} size={iconSize} aria-hidden="true" />
-          <time dateTime={getISODateTime(commit.date)} aria-label={formatDateForSR(commit.date)}>
+          <Box
+            as="time"
+            dateTime={getISODateTime(commit.date)}
+            aria-label={formatDateForSR(commit.date)}
+          >
             <Text size={size === 'sm' ? 'xs' : 'sm'}>{formatFullDate(commit.date)}</Text>
-          </time>
+          </Box>
         </Flex>
 
         {/* View diff button */}
         {onViewCommit && (
-          <div className="mt-2">
+          <Box className="mt-2">
             <Button
               variant="primary"
               size={buttonSize}
@@ -473,10 +480,10 @@ const CommitDetails = forwardRef<HTMLDivElement, CommitDetailsProps>(function Co
             >
               {DEFAULT_VIEW_CHANGES_LABEL}
             </Button>
-          </div>
+          </Box>
         )}
       </Flex>
-    </div>
+    </Box>
   );
 });
 
@@ -512,7 +519,7 @@ const CommitRow = forwardRef<HTMLDivElement, CommitRowProps>(function CommitRow(
   );
 
   return (
-    <div ref={ref} className={COMMIT_ROW_BASE_CLASSES} data-commit-hash={commit.hash}>
+    <Box ref={ref} className={COMMIT_ROW_BASE_CLASSES} data-commit-hash={commit.hash}>
       {/* Screen reader announcement */}
       {announced && (
         <VisuallyHidden>
@@ -523,7 +530,8 @@ const CommitRow = forwardRef<HTMLDivElement, CommitRowProps>(function CommitRow(
       )}
 
       {/* Commit header button */}
-      <button
+      <Box
+        as="button"
         type="button"
         id={rowId}
         className={cn(
@@ -554,14 +562,15 @@ const CommitRow = forwardRef<HTMLDivElement, CommitRowProps>(function CommitRow(
             className="text-[rgb(var(--primary))]"
             aria-hidden="true"
           />
-          <code
+          <Box
+            as="code"
             className={cn(
               'font-mono text-[rgb(var(--primary))]',
               size === 'sm' ? 'text-[10px]' : 'text-xs'
             )}
           >
             {commit.shortHash}
-          </code>
+          </Box>
         </Flex>
 
         {/* Message and meta info */}
@@ -581,11 +590,15 @@ const CommitRow = forwardRef<HTMLDivElement, CommitRowProps>(function CommitRow(
             <Text size="xs" color="muted-foreground">
               {commit.author}
             </Text>
-            <time dateTime={getISODateTime(commit.date)} aria-label={formatDateForSR(commit.date)}>
+            <Box
+              as="time"
+              dateTime={getISODateTime(commit.date)}
+              aria-label={formatDateForSR(commit.date)}
+            >
               <Text size="xs" color="muted-foreground">
                 {formatRelativeTime(commit.date)}
               </Text>
-            </time>
+            </Box>
             <CommitStats
               filesChanged={commit.filesChanged}
               additions={commit.additions}
@@ -594,7 +607,7 @@ const CommitRow = forwardRef<HTMLDivElement, CommitRowProps>(function CommitRow(
             />
           </Flex>
         </Flex>
-      </button>
+      </Box>
 
       {/* Expanded details */}
       {isExpanded && (
@@ -605,7 +618,7 @@ const CommitRow = forwardRef<HTMLDivElement, CommitRowProps>(function CommitRow(
           detailsId={detailsId}
         />
       )}
-    </div>
+    </Box>
   );
 });
 
@@ -627,7 +640,7 @@ export const CommitListSkeleton = forwardRef<HTMLDivElement, CommitListSkeletonP
     const paddingClasses = COMMIT_LIST_PADDING_CLASSES[baseSize];
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(COMMIT_LIST_BASE_CLASSES, className)}
         aria-hidden="true"
@@ -641,18 +654,18 @@ export const CommitListSkeleton = forwardRef<HTMLDivElement, CommitListSkeletonP
         </VisuallyHidden>
 
         {/* Header skeleton */}
-        <div className={cn(COMMIT_LIST_HEADER_CLASSES, paddingClasses)}>
+        <Box className={cn(COMMIT_LIST_HEADER_CLASSES, paddingClasses)}>
           <Skeleton variant="text" width={100} height={16} />
           <Flex gap="3">
             <Skeleton variant="text" width={60} height={14} />
             <Skeleton variant="text" width={40} height={14} />
             <Skeleton variant="text" width={40} height={14} />
           </Flex>
-        </div>
+        </Box>
 
         {/* Row skeletons */}
         {Array.from({ length: count }, (_, i) => (
-          <div key={i} className={cn(SKELETON_ROW_CLASSES, paddingClasses)}>
+          <Box key={i} className={cn(SKELETON_ROW_CLASSES, paddingClasses)}>
             <Skeleton variant="circular" width={16} height={16} />
             <Skeleton variant="text" width={60} height={14} />
             <Flex direction="column" gap="1" className="flex-1">
@@ -663,9 +676,9 @@ export const CommitListSkeleton = forwardRef<HTMLDivElement, CommitListSkeletonP
                 <Skeleton variant="text" width={70} height={12} />
               </Flex>
             </Flex>
-          </div>
+          </Box>
         ))}
-      </div>
+      </Box>
     );
   }
 );
@@ -688,21 +701,21 @@ export const CommitListError = forwardRef<HTMLDivElement, CommitListErrorProps>(
     const buttonSize = COMMIT_LIST_BUTTON_SIZE_MAP[baseSize];
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(ERROR_STATE_CLASSES, className)}
         role="alert"
         aria-live="assertive"
         data-testid={testId}
       >
-        <div className="rounded-full bg-[rgb(var(--destructive))]/10 p-3 mb-4">
+        <Box className="rounded-full bg-[rgb(var(--destructive))]/10 p-3 mb-4">
           <Icon
             icon={GitCommit}
             size="lg"
             className="text-[rgb(var(--destructive))]"
             aria-hidden="true"
           />
-        </div>
+        </Box>
         <Text size="lg" weight="medium" color="foreground" className="mb-1">
           {DEFAULT_ERROR_TITLE}
         </Text>
@@ -716,7 +729,7 @@ export const CommitListError = forwardRef<HTMLDivElement, CommitListErrorProps>(
             {DEFAULT_ERROR_RETRY_LABEL}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -837,7 +850,7 @@ export const CommitList = forwardRef<HTMLDivElement, CommitListProps>(function C
   }
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(COMMIT_LIST_BASE_CLASSES, ...sizeClasses, className)}
       style={{ maxHeight }}
@@ -860,11 +873,11 @@ export const CommitList = forwardRef<HTMLDivElement, CommitListProps>(function C
       </VisuallyHidden>
 
       {/* Summary header */}
-      <header className={cn(COMMIT_LIST_HEADER_CLASSES, headerPaddingClasses)}>
+      <Box as="header" className={cn(COMMIT_LIST_HEADER_CLASSES, headerPaddingClasses)}>
         <Text size={baseSize === 'sm' ? 'xs' : 'sm'} color="foreground">
           {commits.length} {commits.length === 1 ? 'commit' : 'commits'}
         </Text>
-        <div className="flex items-center gap-3" aria-hidden="true">
+        <Box className="flex items-center gap-3" aria-hidden="true">
           <Text size="xs" color="muted-foreground">
             {totals.filesChanged} {totals.filesChanged === 1 ? 'file' : 'files'}
           </Text>
@@ -874,11 +887,11 @@ export const CommitList = forwardRef<HTMLDivElement, CommitListProps>(function C
           <Text size="xs" className="text-deletion">
             -{totals.deletions}
           </Text>
-        </div>
-      </header>
+        </Box>
+      </Box>
 
       {/* Commit list */}
-      <div
+      <Box
         className={COMMIT_LIST_CONTENT_CLASSES}
         role="list"
         aria-label={`${commits.length} ${commits.length === 1 ? 'commit' : 'commits'}`}
@@ -888,7 +901,7 @@ export const CommitList = forwardRef<HTMLDivElement, CommitListProps>(function C
           const detailsId = `${listId}-details-${index}`;
 
           return (
-            <div key={commit.hash} role="listitem">
+            <Box key={commit.hash} role="listitem">
               <CommitRow
                 commit={commit}
                 isExpanded={isExpanded(commit.hash)}
@@ -898,11 +911,11 @@ export const CommitList = forwardRef<HTMLDivElement, CommitListProps>(function C
                 rowId={rowId}
                 detailsId={detailsId}
               />
-            </div>
+            </Box>
           );
         })}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 });
 

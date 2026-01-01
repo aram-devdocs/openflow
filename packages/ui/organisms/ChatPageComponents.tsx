@@ -14,7 +14,7 @@
  */
 
 import type { MessageRole } from '@openflow/generated';
-import { Flex, Heading, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Flex, Heading, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
   AlertCircle,
@@ -234,14 +234,16 @@ export const ChatPageLayout = forwardRef<HTMLDivElement, ChatPageLayoutProps>(
     ref
   ) {
     return (
-      <div ref={ref} className={cn(CHAT_PAGE_LAYOUT_CLASSES, className)} data-testid={testId}>
+      <Box ref={ref} className={cn(CHAT_PAGE_LAYOUT_CLASSES, className)} data-testid={testId}>
         {permissionDialog}
         {header}
-        <div className={CHAT_PAGE_CONTENT_WRAPPER_CLASSES}>
-          <main className={CHAT_PAGE_CONTENT_CONTAINER_CLASSES}>{children}</main>
-        </div>
+        <Box className={CHAT_PAGE_CONTENT_WRAPPER_CLASSES}>
+          <Box as="main" className={CHAT_PAGE_CONTENT_CONTAINER_CLASSES}>
+            {children}
+          </Box>
+        </Box>
         {inputArea}
-      </div>
+      </Box>
     );
   }
 );
@@ -263,7 +265,7 @@ export interface ChatLoadingSkeletonProps {
 export const ChatLoadingSkeleton = forwardRef<HTMLDivElement, ChatLoadingSkeletonProps>(
   function ChatLoadingSkeleton({ className, 'data-testid': testId }, ref) {
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(CHAT_PAGE_LAYOUT_CLASSES, className)}
         role="status"
@@ -274,34 +276,34 @@ export const ChatLoadingSkeleton = forwardRef<HTMLDivElement, ChatLoadingSkeleto
         <VisuallyHidden>{SR_LOADING}</VisuallyHidden>
 
         {/* Skeleton Header */}
-        <div className={SKELETON_HEADER_CLASSES} aria-hidden="true">
+        <Box className={SKELETON_HEADER_CLASSES} aria-hidden="true">
           <Skeleton variant="circular" width={32} height={32} />
-          <div className="flex items-center gap-2.5">
+          <Box className="flex items-center gap-2.5">
             <Skeleton variant="circular" width={32} height={32} />
-            <div className="space-y-1">
+            <Box className="space-y-1">
               <Skeleton variant="text" className="h-4 w-32" />
               <Skeleton variant="text" className="h-3 w-20" />
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Box>
+        </Box>
 
         {/* Skeleton Chat Messages */}
-        <div className={SKELETON_CONTENT_WRAPPER_CLASSES} aria-hidden="true">
-          <div className={SKELETON_CONTENT_CONTAINER_CLASSES}>
+        <Box className={SKELETON_CONTENT_WRAPPER_CLASSES} aria-hidden="true">
+          <Box className={SKELETON_CONTENT_CONTAINER_CLASSES}>
             <SkeletonChat messageCount={4} />
-          </div>
-        </div>
+          </Box>
+        </Box>
 
         {/* Skeleton Input Area */}
-        <div className={SKELETON_INPUT_WRAPPER_CLASSES} aria-hidden="true">
-          <div className={SKELETON_INPUT_CONTAINER_CLASSES}>
-            <div className="flex gap-3">
+        <Box className={SKELETON_INPUT_WRAPPER_CLASSES} aria-hidden="true">
+          <Box className={SKELETON_INPUT_CONTAINER_CLASSES}>
+            <Box className="flex gap-3">
               <Skeleton className="flex-1 h-12 rounded-xl" />
               <Skeleton variant="circular" width={48} height={48} className="rounded-xl" />
-            </div>
-          </div>
-        </div>
-      </div>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
     );
   }
 );
@@ -340,7 +342,7 @@ export const ChatNotFound = forwardRef<HTMLDivElement, ChatNotFoundProps>(functi
   ref
 ) {
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(NOT_FOUND_CLASSES, className)}
       role="status"
@@ -358,7 +360,7 @@ export const ChatNotFound = forwardRef<HTMLDivElement, ChatNotFoundProps>(functi
       <Button variant="primary" className="mt-4" onClick={onBack}>
         {backLabel}
       </Button>
-    </div>
+    </Box>
   );
 });
 
@@ -399,7 +401,7 @@ export const ChatErrorState = forwardRef<HTMLDivElement, ChatErrorStateProps>(
     const errorAnnouncement = `Error: ${title}. ${message ?? ''}`;
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(ERROR_STATE_CLASSES, className)}
         role="alert"
@@ -426,7 +428,7 @@ export const ChatErrorState = forwardRef<HTMLDivElement, ChatErrorStateProps>(
             {retryLabel}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -474,7 +476,8 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
   const accessibleLabel = buildHeaderAccessibleLabel(title, projectName);
 
   return (
-    <header
+    <Box
+      as="header"
       ref={ref}
       className={cn(HEADER_CONTAINER_CLASSES, className)}
       aria-label={accessibleLabel}
@@ -491,15 +494,15 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
       </Button>
 
       <Flex align="center" gap="2" className={HEADER_CONTENT_WRAPPER_CLASSES}>
-        <div className={HEADER_ICON_CONTAINER_CLASSES}>
+        <Box className={HEADER_ICON_CONTAINER_CLASSES}>
           <Icon
             icon={MessageSquare}
             size="sm"
             className="text-[rgb(var(--primary))]"
             aria-hidden="true"
           />
-        </div>
-        <div className={HEADER_TEXT_WRAPPER_CLASSES}>
+        </Box>
+        <Box className={HEADER_TEXT_WRAPPER_CLASSES}>
           <Heading level={1} size="sm" weight="semibold" truncate>
             {title ?? DEFAULT_UNTITLED_CHAT}
           </Heading>
@@ -508,7 +511,7 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
               {projectName}
             </Text>
           )}
-        </div>
+        </Box>
       </Flex>
 
       {/* View toggle */}
@@ -521,9 +524,11 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
         aria-pressed={showRawOutput}
       >
         <Terminal className="h-3.5 w-3.5" aria-hidden="true" />
-        <span className="hidden sm:inline">{showRawOutput ? 'Formatted' : 'Raw'}</span>
+        <Text as="span" className="hidden sm:inline">
+          {showRawOutput ? 'Formatted' : 'Raw'}
+        </Text>
       </Button>
-    </header>
+    </Box>
   );
 });
 
@@ -556,7 +561,7 @@ export const ChatEmptyState = forwardRef<HTMLDivElement, ChatEmptyStateProps>(
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(EMPTY_STATE_CLASSES, className)}
         role="status"
@@ -564,16 +569,16 @@ export const ChatEmptyState = forwardRef<HTMLDivElement, ChatEmptyStateProps>(
         data-testid={testId}
       >
         <VisuallyHidden aria-live="polite">{SR_EMPTY}</VisuallyHidden>
-        <div className={EMPTY_STATE_ICON_CONTAINER_CLASSES}>
+        <Box className={EMPTY_STATE_ICON_CONTAINER_CLASSES}>
           <Bot className="h-8 w-8 text-[rgb(var(--primary))]" aria-hidden="true" />
-        </div>
+        </Box>
         <Heading level={2} size="lg" weight="semibold">
           {title}
         </Heading>
         <Text size="sm" color="muted-foreground" className="mt-2 max-w-sm">
           {description}
         </Text>
-      </div>
+      </Box>
     );
   }
 );
@@ -639,7 +644,7 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
     const listLabel = `Chat messages, ${messageCount} message${messageCount === 1 ? '' : 's'}`;
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(MESSAGE_LIST_CLASSES, className)}
         data-testid={testId}
@@ -647,9 +652,9 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
       >
         {/* Screen reader announcement for processing state */}
         {isRunning && (
-          <span className="sr-only" aria-live="polite" role="status">
+          <Text as="span" className="sr-only" aria-live="polite" role="status">
             {SR_PROCESSING}
-          </span>
+          </Text>
         )}
 
         <BubbleMessageList aria-label={listLabel}>
@@ -682,8 +687,8 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
         )}
 
         {/* Scroll anchor */}
-        {scrollRef && <div ref={scrollRef} className="h-4" aria-hidden="true" />}
-      </div>
+        {scrollRef && <Box ref={scrollRef} className="h-4" aria-hidden="true" />}
+      </Box>
     );
   }
 );
@@ -743,19 +748,20 @@ export const ChatInputArea = forwardRef<HTMLDivElement, ChatInputAreaProps>(func
   const hintId = useId();
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(INPUT_AREA_CONTAINER_CLASSES, className)}
       data-testid={testId}
       data-processing={isProcessing}
     >
-      <div className={INPUT_AREA_INNER_CLASSES}>
+      <Box className={INPUT_AREA_INNER_CLASSES}>
         <Flex gap="2" className={INPUT_AREA_WRAPPER_CLASSES}>
-          <div className="relative flex-1">
-            <label htmlFor={textareaId} className="sr-only">
+          <Box className="relative flex-1">
+            <Box as="label" htmlFor={textareaId} className="sr-only">
               Message input
-            </label>
-            <textarea
+            </Box>
+            <Box
+              as="textarea"
               id={textareaId}
               ref={textareaRef}
               value={inputValue}
@@ -777,7 +783,7 @@ export const ChatInputArea = forwardRef<HTMLDivElement, ChatInputAreaProps>(func
                 target.style.height = `${Math.min(target.scrollHeight, 200)}px`;
               }}
             />
-          </div>
+          </Box>
 
           {/* Action button */}
           {isProcessing ? (
@@ -805,12 +811,19 @@ export const ChatInputArea = forwardRef<HTMLDivElement, ChatInputAreaProps>(func
         </Flex>
 
         {/* Helper text */}
-        <p id={hintId} className={HELPER_TEXT_CLASSES}>
-          Press <kbd className={KBD_CLASSES}>Enter</kbd> to send,{' '}
-          <kbd className={KBD_CLASSES}>Shift+Enter</kbd> for new line
-        </p>
-      </div>
-    </div>
+        <Text as="p" id={hintId} className={HELPER_TEXT_CLASSES}>
+          Press{' '}
+          <Box as="kbd" className={KBD_CLASSES}>
+            Enter
+          </Box>{' '}
+          to send,{' '}
+          <Box as="kbd" className={KBD_CLASSES}>
+            Shift+Enter
+          </Box>{' '}
+          for new line
+        </Text>
+      </Box>
+    </Box>
   );
 });
 

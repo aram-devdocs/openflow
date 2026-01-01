@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { forwardRef, useId } from 'react';
 import { Skeleton } from '../atoms/Skeleton';
@@ -239,7 +239,7 @@ export const PreviewSkeleton = forwardRef<HTMLDivElement, PreviewSkeletonProps>(
     const widthClasses = SKELETON_LINE_WIDTHS;
 
     return (
-      <div
+      <Box
         ref={ref}
         className={ARTIFACT_PREVIEW_SKELETON_CLASSES}
         role="presentation"
@@ -255,7 +255,7 @@ export const PreviewSkeleton = forwardRef<HTMLDivElement, PreviewSkeletonProps>(
             data-testid={dataTestId ? `${dataTestId}-line-${index}` : undefined}
           />
         ))}
-      </div>
+      </Box>
     );
   }
 );
@@ -334,9 +334,9 @@ export const ArtifactPreviewDialog = forwardRef<HTMLDivElement, ArtifactPreviewD
       >
         {/* Screen reader announcement for content state changes */}
         <VisuallyHidden>
-          <span id={descriptionId} role="status" aria-live="polite" aria-atomic="true">
+          <Text as="span" id={descriptionId} role="status" aria-live="polite" aria-atomic="true">
             {announcement}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         <DialogContent
@@ -350,14 +350,15 @@ export const ArtifactPreviewDialog = forwardRef<HTMLDivElement, ArtifactPreviewD
               data-testid={dataTestId ? `${dataTestId}-skeleton` : undefined}
             />
           ) : (
-            <pre
+            <Box
+              as="pre"
               className={cn(ARTIFACT_PREVIEW_CONTENT_CLASSES, paddingClasses)}
               data-testid={dataTestId ? `${dataTestId}-code` : undefined}
               data-empty={!hasContent}
               data-size={baseSize}
             >
               {displayContent}
-            </pre>
+            </Box>
           )}
         </DialogContent>
       </Dialog>

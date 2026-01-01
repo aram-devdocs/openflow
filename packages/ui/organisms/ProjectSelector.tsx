@@ -1,5 +1,5 @@
 import type { Project } from '@openflow/generated';
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
   Check,
@@ -266,7 +266,7 @@ export const ProjectSelectorSkeleton = forwardRef<HTMLDivElement, ProjectSelecto
     const iconSize = ICON_SIZE_MAP[baseSize];
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(SKELETON_CONTAINER_CLASSES, sizeClasses, paddingClasses, className)}
         aria-hidden="true"
@@ -281,7 +281,7 @@ export const ProjectSelectorSkeleton = forwardRef<HTMLDivElement, ProjectSelecto
         />
         <Skeleton variant="text" className="flex-1" height={16} />
         <Skeleton variant="circular" width={16} height={16} />
-      </div>
+      </Box>
     );
   }
 );
@@ -499,7 +499,7 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
     };
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn('relative', className)}
         data-testid={testId ?? 'project-selector'}
@@ -509,13 +509,14 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
       >
         {/* Screen reader announcements */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite" aria-atomic="true">
+          <Box role="status" aria-live="polite" aria-atomic="true">
             {announcement}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         {/* Trigger button */}
-        <button
+        <Box
+          as="button"
           ref={triggerRef}
           type="button"
           role="combobox"
@@ -545,7 +546,8 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
           )}
           data-testid={testId ? `${testId}-trigger` : 'project-selector-trigger'}
         >
-          <span
+          <Text
+            as="span"
             className={cn(
               'flex items-center gap-2 truncate',
               !selectedProject && 'text-[rgb(var(--muted-foreground))]'
@@ -559,7 +561,9 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                   className="shrink-0 text-[rgb(var(--primary))]"
                   aria-hidden="true"
                 />
-                <span className="truncate">{selectedProject.name}</span>
+                <Text as="span" className="truncate">
+                  {selectedProject.name}
+                </Text>
               </>
             ) : (
               <>
@@ -569,10 +573,10 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                   className="shrink-0 text-[rgb(var(--muted-foreground))]"
                   aria-hidden="true"
                 />
-                <span>{placeholder}</span>
+                <Text as="span">{placeholder}</Text>
               </>
             )}
-          </span>
+          </Text>
           <Icon
             icon={ChevronDown}
             size={iconSize}
@@ -582,11 +586,12 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
             )}
             aria-hidden="true"
           />
-        </button>
+        </Box>
 
         {/* Options list */}
         {isOpen && (
-          <ul
+          <Box
+            as="ul"
             ref={listRef}
             id={listboxId}
             role="listbox"
@@ -597,9 +602,9 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
             data-testid={testId ? `${testId}-listbox` : 'project-selector-listbox'}
           >
             {projects.length === 0 ? (
-              <li className={EMPTY_MESSAGE_CLASSES} role="presentation">
+              <Box as="li" className={EMPTY_MESSAGE_CLASSES} role="presentation">
                 {DEFAULT_EMPTY_MESSAGE}
-              </li>
+              </Box>
             ) : (
               projects.map((project, index) => {
                 const isSelected = project.id === selectedProjectId;
@@ -607,7 +612,8 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                 const ProjectIcon = getProjectIcon(project.icon);
 
                 return (
-                  <li
+                  <Box
+                    as="li"
                     key={project.id}
                     id={getOptionId(listboxId, index)}
                     role="option"
@@ -638,7 +644,9 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                       )}
                       aria-hidden="true"
                     />
-                    <span className="flex-1 truncate">{project.name}</span>
+                    <Text as="span" className="flex-1 truncate">
+                      {project.name}
+                    </Text>
                     {isSelected && (
                       <Icon
                         icon={Check}
@@ -647,18 +655,19 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                         aria-hidden="true"
                       />
                     )}
-                  </li>
+                  </Box>
                 );
               })
             )}
 
             {/* Divider */}
             {projects.length > 0 && (
-              <li role="separator" className={DIVIDER_CLASSES} aria-hidden="true" />
+              <Box as="li" role="separator" className={DIVIDER_CLASSES} aria-hidden="true" />
             )}
 
             {/* New Project button */}
-            <li
+            <Box
+              as="li"
               id={getOptionId(listboxId, newProjectIndex)}
               role="option"
               aria-selected={false}
@@ -680,11 +689,13 @@ export const ProjectSelector = forwardRef<HTMLDivElement, ProjectSelectorProps>(
                 className="shrink-0 text-[rgb(var(--primary))]"
                 aria-hidden="true"
               />
-              <span className="flex-1">{DEFAULT_NEW_PROJECT_LABEL}</span>
-            </li>
-          </ul>
+              <Text as="span" className="flex-1">
+                {DEFAULT_NEW_PROJECT_LABEL}
+              </Text>
+            </Box>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );

@@ -15,7 +15,15 @@
  */
 
 import type { Project } from '@openflow/generated';
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Section,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
   AlertCircle,
@@ -751,7 +759,7 @@ export const ProjectSettingsLayout = forwardRef<HTMLDivElement, ProjectSettingsL
     const layoutClasses = getResponsiveSizeClasses(size, PROJECT_SETTINGS_SIZE_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="region"
         aria-label={ariaLabel}
@@ -761,7 +769,7 @@ export const ProjectSettingsLayout = forwardRef<HTMLDivElement, ProjectSettingsL
         {...props}
       >
         {children}
-      </div>
+      </Box>
     );
   }
 );
@@ -792,7 +800,7 @@ export const ProjectSettingsLoadingSkeleton = forwardRef<
   const baseSize = getBaseSize(size);
 
   return (
-    <div
+    <Box
       ref={ref}
       role="status"
       aria-label={SR_LOADING}
@@ -805,7 +813,9 @@ export const ProjectSettingsLoadingSkeleton = forwardRef<
       {...props}
     >
       <VisuallyHidden>
-        <span aria-live="polite">{SR_LOADING}</span>
+        <Text as="span" aria-live="polite">
+          {SR_LOADING}
+        </Text>
       </VisuallyHidden>
       <SkeletonSettings
         sectionCount={sectionCount}
@@ -813,7 +823,7 @@ export const ProjectSettingsLoadingSkeleton = forwardRef<
         size={baseSize}
         data-testid={dataTestId ? `${dataTestId}-skeleton` : undefined}
       />
-    </div>
+    </Box>
   );
 });
 
@@ -830,7 +840,7 @@ export const ProjectSettingsEmptyState = forwardRef<HTMLDivElement, ProjectSetti
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="status"
         aria-label={SR_EMPTY}
@@ -840,7 +850,9 @@ export const ProjectSettingsEmptyState = forwardRef<HTMLDivElement, ProjectSetti
         {...props}
       >
         <VisuallyHidden>
-          <span aria-live="polite">{SR_EMPTY}</span>
+          <Text as="span" aria-live="polite">
+            {SR_EMPTY}
+          </Text>
         </VisuallyHidden>
         <FolderGit2
           className={EMPTY_STATE_ICON_CLASSES}
@@ -857,7 +869,7 @@ export const ProjectSettingsEmptyState = forwardRef<HTMLDivElement, ProjectSetti
         >
           {DEFAULT_EMPTY_DESCRIPTION}
         </Text>
-      </div>
+      </Box>
     );
   }
 );
@@ -875,7 +887,7 @@ export const ProjectSettingsErrorState = forwardRef<HTMLDivElement, ProjectSetti
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -885,15 +897,15 @@ export const ProjectSettingsErrorState = forwardRef<HTMLDivElement, ProjectSetti
         {...props}
       >
         <VisuallyHidden>
-          <span>Error: {error}</span>
+          <Text as="span">Error: {error}</Text>
         </VisuallyHidden>
-        <div
+        <Box
           className={ERROR_STATE_ICON_CLASSES}
           aria-hidden="true"
           data-testid={dataTestId ? `${dataTestId}-icon` : undefined}
         >
           <Icon icon={AlertCircle} size="lg" className="text-[rgb(var(--destructive))]" />
-        </div>
+        </Box>
         <Heading level={3} size="lg" className="mb-2">
           {DEFAULT_ERROR_TITLE}
         </Heading>
@@ -915,7 +927,7 @@ export const ProjectSettingsErrorState = forwardRef<HTMLDivElement, ProjectSetti
             {DEFAULT_RETRY_LABEL}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -959,7 +971,7 @@ export const ProjectSettingsSelector = forwardRef<HTMLDivElement, ProjectSetting
     );
 
     return (
-      <div
+      <Box
         ref={ref}
         data-testid={dataTestId}
         data-size={baseSize}
@@ -970,13 +982,13 @@ export const ProjectSettingsSelector = forwardRef<HTMLDivElement, ProjectSetting
       >
         {/* Screen reader announcements */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {announcement}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         {/* Dropdown */}
-        <div
+        <Box
           className={widthClasses}
           data-testid={dataTestId ? `${dataTestId}-dropdown-container` : undefined}
         >
@@ -989,7 +1001,7 @@ export const ProjectSettingsSelector = forwardRef<HTMLDivElement, ProjectSetting
             aria-label={dropdownLabel}
             data-testid={dataTestId ? `${dataTestId}-dropdown` : undefined}
           />
-        </div>
+        </Box>
 
         {/* Status badges */}
         {hasChanges && (
@@ -1013,7 +1025,7 @@ export const ProjectSettingsSelector = forwardRef<HTMLDivElement, ProjectSetting
             {SAVE_SUCCESS_TEXT}
           </Badge>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -1050,8 +1062,9 @@ export const SettingsSection = forwardRef<HTMLElement, SettingsSectionProps>(
     const accessibleLabel = buildSectionAccessibleLabel(title, description);
 
     return (
-      <section
+      <Section
         ref={ref}
+        aria-label={accessibleLabel}
         aria-labelledby={headerId}
         data-testid={dataTestId}
         data-size={baseSize}
@@ -1060,7 +1073,7 @@ export const SettingsSection = forwardRef<HTMLElement, SettingsSectionProps>(
       >
         <Card className={SECTION_CARD_CLASSES}>
           {/* Header */}
-          <div
+          <Box
             className={cn(SECTION_HEADER_CLASSES, headerPaddingClasses)}
             data-testid={dataTestId ? `${dataTestId}-header` : undefined}
           >
@@ -1092,17 +1105,17 @@ export const SettingsSection = forwardRef<HTMLElement, SettingsSectionProps>(
             >
               {description}
             </Text>
-          </div>
+          </Box>
 
           {/* Content */}
-          <div
+          <Box
             className={cn(contentPaddingClasses, contentGapClasses)}
             data-testid={dataTestId ? `${dataTestId}-content` : undefined}
           >
             {children}
-          </div>
+          </Box>
         </Card>
-      </section>
+      </Section>
     );
   }
 );
@@ -1138,7 +1151,7 @@ export const BasicInfoSection = forwardRef<HTMLElement, BasicInfoSectionProps>(
         className={className}
         {...props}
       >
-        <div
+        <Box
           className={FORM_GRID_CLASSES}
           data-testid={dataTestId ? `${dataTestId}-name-icon-row` : undefined}
         >
@@ -1169,7 +1182,7 @@ export const BasicInfoSection = forwardRef<HTMLElement, BasicInfoSectionProps>(
               data-testid={dataTestId ? `${dataTestId}-icon-input` : undefined}
             />
           </FormField>
-        </div>
+        </Box>
 
         <FormField
           label="Repository Path"
@@ -1447,7 +1460,7 @@ export const SaveFooter = forwardRef<HTMLDivElement, SaveFooterProps>(function S
   const statusAnnouncement = buildStatusAnnouncement(hasChanges, false, isSaving);
 
   return (
-    <div
+    <Box
       ref={ref}
       data-testid={dataTestId}
       data-size={baseSize}
@@ -1459,9 +1472,9 @@ export const SaveFooter = forwardRef<HTMLDivElement, SaveFooterProps>(function S
     >
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <span role="status" aria-live="polite">
+        <Text as="span" role="status" aria-live="polite">
           {statusAnnouncement}
-        </span>
+        </Text>
       </VisuallyHidden>
 
       <Button
@@ -1488,7 +1501,7 @@ export const SaveFooter = forwardRef<HTMLDivElement, SaveFooterProps>(function S
           {saveError}
         </Text>
       )}
-    </div>
+    </Box>
   );
 });
 
@@ -1622,44 +1635,44 @@ export const ProjectSettingsContent = forwardRef<HTMLDivElement, ProjectSettings
     // Loading state
     if (isLoading) {
       return (
-        <div ref={ref} data-testid={dataTestId} className={cn(layoutClasses, className)} {...props}>
+        <Box ref={ref} data-testid={dataTestId} className={cn(layoutClasses, className)} {...props}>
           <ProjectSettingsLoadingSkeleton
             size={size}
             data-testid={dataTestId ? `${dataTestId}-loading` : undefined}
           />
-        </div>
+        </Box>
       );
     }
 
     // Error state
     if (error) {
       return (
-        <div ref={ref} data-testid={dataTestId} className={cn(layoutClasses, className)} {...props}>
+        <Box ref={ref} data-testid={dataTestId} className={cn(layoutClasses, className)} {...props}>
           <ProjectSettingsErrorState
             error={error}
             onRetry={onRetry}
             size={size}
             data-testid={dataTestId ? `${dataTestId}-error` : undefined}
           />
-        </div>
+        </Box>
       );
     }
 
     // Empty state (no projects)
     if (projects.length === 0) {
       return (
-        <div ref={ref} data-testid={dataTestId} className={cn(layoutClasses, className)} {...props}>
+        <Box ref={ref} data-testid={dataTestId} className={cn(layoutClasses, className)} {...props}>
           <ProjectSettingsEmptyState
             size={size}
             data-testid={dataTestId ? `${dataTestId}-empty` : undefined}
           />
-        </div>
+        </Box>
       );
     }
 
     // Selector and form
     return (
-      <div
+      <Box
         ref={ref}
         data-testid={dataTestId}
         data-size={baseSize}
@@ -1691,7 +1704,7 @@ export const ProjectSettingsContent = forwardRef<HTMLDivElement, ProjectSettings
             data-testid={dataTestId ? `${dataTestId}-form` : undefined}
           />
         )}
-      </div>
+      </Box>
     );
   }
 );

@@ -1,4 +1,4 @@
-import { Flex, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Flex, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
   AlertCircle,
@@ -384,10 +384,10 @@ const TextBlock = forwardRef<HTMLDivElement, TextBlockProps>(
         aria-label="Assistant message"
       >
         <Flex className="max-w-[85%] gap-3">
-          <div className={cn(CLAUDE_EVENT_AVATAR_BASE_CLASSES, avatarClasses)} aria-hidden="true">
+          <Box className={cn(CLAUDE_EVENT_AVATAR_BASE_CLASSES, avatarClasses)} aria-hidden={true}>
             <Icon icon={Bot} size="sm" className="text-[rgb(var(--primary-foreground))]" />
-          </div>
-          <div className={cn(CLAUDE_EVENT_TEXT_BUBBLE_CLASSES, paddingClasses)}>
+          </Box>
+          <Box className={cn(CLAUDE_EVENT_TEXT_BUBBLE_CLASSES, paddingClasses)}>
             <Text
               as="p"
               size={size === 'sm' ? 'xs' : size === 'md' ? 'sm' : 'base'}
@@ -396,7 +396,7 @@ const TextBlock = forwardRef<HTMLDivElement, TextBlockProps>(
             >
               {content}
             </Text>
-          </div>
+          </Box>
         </Flex>
       </Flex>
     );
@@ -435,7 +435,7 @@ const ToolCallGroup = forwardRef<HTMLDivElement, ToolCallGroupProps>(
       statusParts.length > 0 ? `${toolSummary}, ${statusParts.join(', ')}` : toolSummary;
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           CLAUDE_EVENT_TOOL_GROUP_CLASSES,
@@ -448,7 +448,8 @@ const ToolCallGroup = forwardRef<HTMLDivElement, ToolCallGroupProps>(
         data-expanded={expanded}
       >
         {/* Header - always visible */}
-        <button
+        <Box
+          as="button"
           type="button"
           className={cn(CLAUDE_EVENT_TOOL_HEADER_CLASSES, paddingClasses)}
           onClick={() => setExpanded(!expanded)}
@@ -489,11 +490,11 @@ const ToolCallGroup = forwardRef<HTMLDivElement, ToolCallGroupProps>(
               </Text>
             </Flex>
           )}
-        </button>
+        </Box>
 
         {/* Expanded content */}
         {expanded && (
-          <div
+          <Box
             id={contentId}
             className="space-y-2 border-t border-[rgb(var(--border))] px-3 py-2"
             role="list"
@@ -507,9 +508,9 @@ const ToolCallGroup = forwardRef<HTMLDivElement, ToolCallGroupProps>(
                 data-testid={testId ? `${testId}-tool-${index}` : undefined}
               />
             ))}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -539,7 +540,7 @@ const ToolCallItem = forwardRef<HTMLDivElement, ToolCallItemProps>(
     const status = isInProgress ? 'running' : tool.isError ? 'error' : 'completed';
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           CLAUDE_EVENT_TOOL_ITEM_CLASSES,
@@ -555,14 +556,15 @@ const ToolCallItem = forwardRef<HTMLDivElement, ToolCallItemProps>(
       >
         {/* Tool name and status */}
         <Flex className="items-center gap-2">
-          <code
+          <Box
+            as="code"
             className={cn(
               'text-xs font-medium',
               tool.isError ? 'text-[rgb(var(--destructive))]' : 'text-[rgb(var(--primary))]'
             )}
           >
             {tool.name}
-          </code>
+          </Box>
           {tool.isError && (
             <>
               <Icon
@@ -596,8 +598,9 @@ const ToolCallItem = forwardRef<HTMLDivElement, ToolCallItemProps>(
 
         {/* Input toggle */}
         {hasInput && (
-          <div className="mt-2">
-            <button
+          <Box className="mt-2">
+            <Box
+              as="button"
               type="button"
               className={CLAUDE_EVENT_TOGGLE_BUTTON_CLASSES}
               onClick={() => setShowInput(!showInput)}
@@ -605,22 +608,24 @@ const ToolCallItem = forwardRef<HTMLDivElement, ToolCallItemProps>(
               aria-controls={inputId}
             >
               {showInput ? DEFAULT_HIDE_INPUT_LABEL : DEFAULT_SHOW_INPUT_LABEL}
-            </button>
+            </Box>
             {showInput && (
-              <pre
+              <Box
+                as="pre"
                 id={inputId}
                 className={cn(CLAUDE_EVENT_CODE_BLOCK_CLASSES, 'mt-1', `text-${textSize}`)}
               >
                 {JSON.stringify(tool.input, null, 2)}
-              </pre>
+              </Box>
             )}
-          </div>
+          </Box>
         )}
 
         {/* Output */}
         {hasOutput && (
-          <div className="mt-2">
-            <button
+          <Box className="mt-2">
+            <Box
+              as="button"
               type="button"
               className={CLAUDE_EVENT_TOGGLE_BUTTON_CLASSES}
               onClick={() => setShowOutput(!showOutput)}
@@ -628,9 +633,10 @@ const ToolCallItem = forwardRef<HTMLDivElement, ToolCallItemProps>(
               aria-controls={outputId}
             >
               {showOutput ? DEFAULT_HIDE_OUTPUT_LABEL : DEFAULT_SHOW_OUTPUT_LABEL}
-            </button>
+            </Box>
             {showOutput && (
-              <pre
+              <Box
+                as="pre"
                 id={outputId}
                 className={cn(
                   'mt-1 max-h-40 overflow-auto rounded p-2 font-mono',
@@ -641,11 +647,11 @@ const ToolCallItem = forwardRef<HTMLDivElement, ToolCallItemProps>(
                 )}
               >
                 {tool.output}
-              </pre>
+              </Box>
             )}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -667,7 +673,7 @@ const SystemEventBlock = forwardRef<HTMLDivElement, SystemEventBlockProps>(
     const hasData = Object.keys(data).length > 0;
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(CLAUDE_EVENT_SYSTEM_CLASSES, CLAUDE_EVENT_TOOL_PADDING_CLASSES[size])}
         role="status"
@@ -679,11 +685,14 @@ const SystemEventBlock = forwardRef<HTMLDivElement, SystemEventBlockProps>(
           System: {subtype}
         </Text>
         {hasData && (
-          <pre className={cn('mt-1 font-mono text-[rgb(var(--warning))]/70', `text-${textSize}`)}>
+          <Box
+            as="pre"
+            className={cn('mt-1 font-mono text-[rgb(var(--warning))]/70', `text-${textSize}`)}
+          >
             {JSON.stringify(data, null, 2)}
-          </pre>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -708,7 +717,7 @@ const ResultEventBlock = forwardRef<HTMLDivElement, ResultEventBlockProps>(
     const announcement = getResultAnnouncement(subtype);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           isError ? CLAUDE_EVENT_RESULT_ERROR_CLASSES : CLAUDE_EVENT_RESULT_SUCCESS_CLASSES,
@@ -736,7 +745,8 @@ const ResultEventBlock = forwardRef<HTMLDivElement, ResultEventBlockProps>(
           </Text>
         </Flex>
         {hasData && (
-          <pre
+          <Box
+            as="pre"
             className={cn(
               'mt-1 font-mono',
               `text-${textSize}`,
@@ -744,9 +754,9 @@ const ResultEventBlock = forwardRef<HTMLDivElement, ResultEventBlockProps>(
             )}
           >
             {JSON.stringify(data, null, 2)}
-          </pre>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -768,14 +778,15 @@ const RawOutputBlock = forwardRef<HTMLDivElement, RawOutputBlockProps>(
     const paddingClasses = CLAUDE_EVENT_TOOL_PADDING_CLASSES[size];
 
     return (
-      <div
+      <Box
         ref={ref}
         className={CLAUDE_EVENT_RAW_OUTPUT_CLASSES}
         data-testid={testId}
         data-expanded={expanded}
         data-line-count={output.length}
       >
-        <button
+        <Box
+          as="button"
           type="button"
           className={cn(
             'flex w-full items-center gap-2 text-left',
@@ -797,16 +808,17 @@ const RawOutputBlock = forwardRef<HTMLDivElement, RawOutputBlockProps>(
           <Text as="span" size="xs" weight="medium" className="text-[rgb(var(--muted-foreground))]">
             Raw output ({output.length} lines)
           </Text>
-        </button>
+        </Box>
         {expanded && (
-          <pre
+          <Box
+            as="pre"
             id={contentId}
             className="max-h-60 overflow-auto border-t border-[rgb(var(--border))] bg-[rgb(var(--background))] p-3 font-mono text-xs text-[rgb(var(--muted-foreground))]"
           >
             {output.join('\n')}
-          </pre>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -862,7 +874,7 @@ export const ClaudeEventRenderer = forwardRef<HTMLDivElement, ClaudeEventRendere
     const textClasses = getResponsiveSizeClasses(size, CLAUDE_EVENT_SIZE_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(CLAUDE_EVENT_BASE_CLASSES, gapClasses, textClasses, className)}
         role="log"
@@ -876,9 +888,9 @@ export const ClaudeEventRenderer = forwardRef<HTMLDivElement, ClaudeEventRendere
       >
         {/* Screen reader announcements for streaming state */}
         {isStreaming && (
-          <span role="status" aria-live="polite" className="sr-only">
+          <Text as="span" role="status" aria-live="polite" className="sr-only">
             {SR_STREAMING_START}
-          </span>
+          </Text>
         )}
 
         {/* Grouped events */}
@@ -970,7 +982,7 @@ export const ClaudeEventRenderer = forwardRef<HTMLDivElement, ClaudeEventRendere
             data-testid={testId ? `${testId}-raw` : undefined}
           />
         )}
-      </div>
+      </Box>
     );
   }
 );

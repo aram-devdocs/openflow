@@ -12,7 +12,7 @@
  */
 
 import type { Message, MessageRole } from '@openflow/generated';
-import { Flex, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Flex, List, ListItem, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { formatCompact } from '@openflow/utils';
 import { Bot, Settings, User, Wrench } from 'lucide-react';
@@ -335,23 +335,25 @@ export const ToolCallItem = forwardRef<HTMLDivElement, ToolCallItemProps>(functi
   ref
 ) {
   return (
-    <li>
-      <div
+    <ListItem>
+      <Box
         ref={ref}
         className={TOOL_CALL_ITEM_CLASSES}
         data-testid={testId ?? `tool-call-${index}`}
         data-tool-name={toolCall.name}
       >
         <Flex align="center" gap="2">
-          <code className={TOOL_CALL_NAME_CLASSES}>{toolCall.name}</code>
+          <Box as="code" className={TOOL_CALL_NAME_CLASSES}>
+            {toolCall.name}
+          </Box>
         </Flex>
         {toolCall.arguments && Object.keys(toolCall.arguments).length > 0 && (
-          <pre className={TOOL_CALL_ARGS_CLASSES}>
+          <Box as="pre" className={TOOL_CALL_ARGS_CLASSES}>
             {JSON.stringify(toolCall.arguments, null, 2)}
-          </pre>
+          </Box>
         )}
-      </div>
-    </li>
+      </Box>
+    </ListItem>
   );
 });
 
@@ -419,7 +421,8 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
   );
 
   return (
-    <article
+    <Box
+      as="article"
       ref={ref}
       className={cn(
         MESSAGE_BASE_CLASSES,
@@ -435,7 +438,7 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
       {...props}
     >
       {/* Avatar */}
-      <div
+      <Box
         className={cn(
           'flex shrink-0 items-center justify-center rounded-full',
           AVATAR_SIZE_CLASSES[baseSize],
@@ -444,10 +447,10 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
         aria-hidden="true"
       >
         <Icon icon={config.icon} size={AVATAR_ICON_SIZE_MAP[baseSize]} />
-      </div>
+      </Box>
 
       {/* Content area */}
-      <div className={cn('min-w-0 flex-1', CONTENT_GAP_CLASSES[baseSize])}>
+      <Box className={cn('min-w-0 flex-1', CONTENT_GAP_CLASSES[baseSize])}>
         {/* Header: Role label and timestamp */}
         <Flex as="header" align="center" gap="2" className="flex-wrap">
           <Text
@@ -460,39 +463,47 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
             {roleLabel}
           </Text>
           {createdAt && (
-            <time
+            <Box
+              as="time"
               dateTime={getISODateTime(createdAt)}
               className="text-xs text-[rgb(var(--muted-foreground))]"
               aria-label={formatTimestampForSR(createdAt)}
             >
               {formatCompact(createdAt)}
-            </time>
+            </Box>
           )}
           {showStreaming && (
-            <span className={STREAMING_INDICATOR_CLASSES} role="status" aria-live="polite">
+            <Text
+              as="span"
+              className={STREAMING_INDICATOR_CLASSES}
+              role="status"
+              aria-live="polite"
+            >
               <Spinner size="xs" announce={false} />
-              <span>{streamingLabel}</span>
-            </span>
+              <Text as="span">{streamingLabel}</Text>
+            </Text>
           )}
         </Flex>
 
         {/* Message content */}
-        <div
+        <Box
           id={contentId}
           className={cn(PROSE_CLASSES, TEXT_SIZE_CLASSES[baseSize])}
           aria-describedby={headingId}
         >
           {/* Render content as text - markdown rendering would be added later */}
           {content ? (
-            <div className="whitespace-pre-wrap">{content}</div>
+            <Box className="whitespace-pre-wrap">{content}</Box>
           ) : showStreaming ? (
-            <span className={STREAMING_TEXT_CLASSES}>{thinkingLabel}</span>
+            <Text as="span" className={STREAMING_TEXT_CLASSES}>
+              {thinkingLabel}
+            </Text>
           ) : null}
-        </div>
+        </Box>
 
         {/* Tool calls section */}
         {hasToolCalls && (
-          <section className={TOOL_CALLS_SECTION_CLASSES} aria-labelledby={toolCallsId}>
+          <Box as="section" className={TOOL_CALLS_SECTION_CLASSES} aria-labelledby={toolCallsId}>
             <Flex
               as="header"
               id={toolCallsId}
@@ -508,7 +519,7 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
                 {`, ${parsedToolCalls.length} tool${parsedToolCalls.length !== 1 ? 's' : ''} used`}
               </VisuallyHidden>
             </Flex>
-            <ul
+            <List
               className={TOOL_CALLS_LIST_CLASSES}
               role="list"
               aria-label={`${toolCallsLabel} list`}
@@ -522,8 +533,8 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
                   data-testid={testId ? `${testId}-tool-${index}` : undefined}
                 />
               ))}
-            </ul>
-          </section>
+            </List>
+          </Box>
         )}
 
         {/* Model info (optional, for assistant messages) */}
@@ -542,15 +553,15 @@ export const ChatMessage = forwardRef<HTMLElement, ChatMessageProps>(function Ch
         {/* Screen reader announcement for streaming state changes */}
         {showStreaming && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite" aria-atomic="true">
+            <Text as="span" role="status" aria-live="polite" aria-atomic="true">
               {content
                 ? `${roleLabel} is generating: ${content.slice(-100)}`
                 : `${roleLabel} is thinking`}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
-      </div>
-    </article>
+      </Box>
+    </Box>
   );
 });
 

@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { X } from 'lucide-react';
 import {
@@ -21,7 +21,8 @@ export type DrawerPosition = 'left' | 'right';
 export type DrawerSize = 'sm' | 'md' | 'lg';
 export type DrawerBreakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export interface DrawerProps extends Omit<HTMLAttributes<HTMLDivElement>, 'role' | 'title'> {
+export interface DrawerProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'role' | 'title' | 'aria-hidden' | 'aria-modal'> {
   /** Whether the drawer is open */
   isOpen: boolean;
   /** Callback when the drawer should close */
@@ -415,7 +416,7 @@ export const Drawer = forwardRef<HTMLDivElement, DrawerProps>(function Drawer(
   const positionClasses = DRAWER_POSITION_CLASSES[position];
 
   return (
-    <div
+    <Box
       id="mobile-nav"
       role="presentation"
       className={DRAWER_CONTAINER_CLASSES}
@@ -423,26 +424,26 @@ export const Drawer = forwardRef<HTMLDivElement, DrawerProps>(function Drawer(
     >
       {/* Screen reader announcement */}
       <VisuallyHidden>
-        <span role="status" aria-live="polite">
+        <Text as="span" role="status" aria-live="polite">
           {getOpenedAnnouncement(accessibleLabel)}
-        </span>
+        </Text>
       </VisuallyHidden>
 
       {/* Backdrop - click is supplementary to keyboard Escape handling
           Note: Backdrop is aria-hidden and not focusable, so onClick is for mouse users only.
           Keyboard users close the drawer via Escape key (handled at document level) */}
-      <div
+      <Box
         className={DRAWER_BACKDROP_CLASSES}
-        aria-hidden="true"
+        aria-hidden={true}
         onClick={handleBackdropClick}
         data-testid={dataTestId ? `${dataTestId}-backdrop` : undefined}
       />
 
       {/* Drawer panel */}
-      <div
+      <Box
         ref={drawerRef}
         role="dialog"
-        aria-modal="true"
+        aria-modal={true}
         aria-label={accessibleLabel}
         aria-labelledby={labelId}
         tabIndex={-1}
@@ -456,11 +457,13 @@ export const Drawer = forwardRef<HTMLDivElement, DrawerProps>(function Drawer(
       >
         {/* Hidden label for aria-labelledby */}
         <VisuallyHidden>
-          <span id={labelId}>{accessibleLabel}</span>
+          <Text as="span" id={labelId}>
+            {accessibleLabel}
+          </Text>
         </VisuallyHidden>
 
         {/* Close button */}
-        <div className={DRAWER_CLOSE_BUTTON_CONTAINER_CLASSES}>
+        <Box className={DRAWER_CLOSE_BUTTON_CONTAINER_CLASSES}>
           <Button
             type="button"
             variant="ghost"
@@ -477,17 +480,17 @@ export const Drawer = forwardRef<HTMLDivElement, DrawerProps>(function Drawer(
           >
             <Icon icon={X} size="md" aria-hidden="true" />
           </Button>
-        </div>
+        </Box>
 
         {/* Drawer content */}
-        <div
+        <Box
           className={DRAWER_CONTENT_CLASSES}
           data-testid={dataTestId ? `${dataTestId}-content` : undefined}
         >
           {children}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 });
 

@@ -1,5 +1,5 @@
 import type { ResponsiveValue } from '@openflow/primitives';
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, Heading, Paragraph, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { FitAddon } from '@xterm/addon-fit';
 import { Terminal as XTerm } from '@xterm/xterm';
@@ -354,7 +354,7 @@ export const TerminalSkeleton = forwardRef<HTMLDivElement, TerminalSkeletonProps
     });
 
     return (
-      <div
+      <Box
         ref={ref}
         role="presentation"
         aria-hidden="true"
@@ -364,10 +364,10 @@ export const TerminalSkeleton = forwardRef<HTMLDivElement, TerminalSkeletonProps
         {...props}
       >
         {/* Prompt skeleton */}
-        <div className="flex items-center gap-2">
+        <Box className="flex items-center gap-2">
           <Skeleton className="h-4 w-4" variant="circular" />
           <Skeleton className="h-4 w-24" />
-        </div>
+        </Box>
 
         {/* Output lines */}
         {lineWidths.map((width, index) => (
@@ -377,7 +377,7 @@ export const TerminalSkeleton = forwardRef<HTMLDivElement, TerminalSkeletonProps
             style={{ width: `${width}%` }}
           />
         ))}
-      </div>
+      </Box>
     );
   }
 );
@@ -415,7 +415,7 @@ export const TerminalError = forwardRef<HTMLDivElement, TerminalErrorProps>(func
   const iconSize = baseSize === 'sm' ? 'md' : baseSize === 'lg' ? 'xl' : 'lg';
 
   return (
-    <div
+    <Box
       ref={ref}
       role="alert"
       aria-live="assertive"
@@ -430,10 +430,12 @@ export const TerminalError = forwardRef<HTMLDivElement, TerminalErrorProps>(func
         className={TERMINAL_ERROR_ICON_CLASSES}
         aria-hidden="true"
       />
-      <div>
-        <h3 className={TERMINAL_ERROR_TITLE_CLASSES}>{title}</h3>
-        <p className={TERMINAL_ERROR_DESCRIPTION_CLASSES}>{description}</p>
-      </div>
+      <Box>
+        <Heading as="h3" className={TERMINAL_ERROR_TITLE_CLASSES}>
+          {title}
+        </Heading>
+        <Paragraph className={TERMINAL_ERROR_DESCRIPTION_CLASSES}>{description}</Paragraph>
+      </Box>
       {showRetry && onRetry && (
         <Button
           variant="secondary"
@@ -448,7 +450,7 @@ export const TerminalError = forwardRef<HTMLDivElement, TerminalErrorProps>(func
           {DEFAULT_RETRY_LABEL}
         </Button>
       )}
-    </div>
+    </Box>
   );
 });
 
@@ -759,7 +761,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(function Termi
   }
 
   return (
-    <div
+    <Box
       id={terminalId}
       className={cn(
         TERMINAL_BASE_CLASSES,
@@ -785,15 +787,15 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(function Termi
     >
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <div id={announcementId} role="status" aria-live="polite" aria-atomic="true">
+        <Box id={announcementId} role="status" aria-live="polite" aria-atomic="true">
           {announcement}
-        </div>
-        {!isReady && <span>{SR_TERMINAL_LOADING}</span>}
-        {readOnly && isReady && <span>{SR_TERMINAL_READ_ONLY}</span>}
+        </Box>
+        {!isReady && <Text as="span">{SR_TERMINAL_LOADING}</Text>}
+        {readOnly && isReady && <Text as="span">{SR_TERMINAL_READ_ONLY}</Text>}
       </VisuallyHidden>
 
       {/* Terminal container */}
-      <div
+      <Box
         ref={containerRef}
         className={cn(TERMINAL_CONTAINER_CLASSES, paddingClasses)}
         style={{
@@ -804,21 +806,23 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(function Termi
 
       {/* Loading indicator (overlay when not ready) */}
       {!isReady && (
-        <div
+        <Box
           className="absolute inset-0 flex items-center justify-center bg-muted/80"
           aria-hidden="true"
         >
-          <div className="flex items-center gap-2 text-muted-foreground">
+          <Box className="flex items-center gap-2 text-muted-foreground">
             <Icon
               icon={TerminalIcon}
               size={baseSize === 'sm' ? 'md' : 'lg'}
               className="motion-safe:animate-pulse"
             />
-            <span className="text-sm">Initializing terminal...</span>
-          </div>
-        </div>
+            <Text as="span" className="text-sm">
+              Initializing terminal...
+            </Text>
+          </Box>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 });
 

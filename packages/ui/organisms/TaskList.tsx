@@ -14,7 +14,7 @@
  */
 
 import type { Task, TaskStatus } from '@openflow/generated';
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, ClipboardList, RefreshCw } from 'lucide-react';
 import {
@@ -386,7 +386,7 @@ function StatusColumn({
   const columnId = `column-${status}`;
 
   return (
-    <div
+    <Box
       className={TASK_LIST_COLUMN_BASE_CLASSES}
       role="group"
       aria-labelledby={`${columnId}-header`}
@@ -395,27 +395,28 @@ function StatusColumn({
       data-task-count={tasks.length}
     >
       {/* Column header */}
-      <div className={TASK_LIST_COLUMN_HEADER_CLASSES} id={`${columnId}-header`}>
+      <Box className={TASK_LIST_COLUMN_HEADER_CLASSES} id={`${columnId}-header`}>
         <Text as="span" className={cn(headerTextClasses, STATUS_COLORS[status])}>
           {STATUS_LABELS[status]}
         </Text>
-        <span
+        <Text
+          as="span"
           className={TASK_LIST_COLUMN_COUNT_CLASSES}
           aria-label={`${tasks.length} ${tasks.length === 1 ? 'task' : 'tasks'}`}
         >
           {tasks.length}
-        </span>
-      </div>
+        </Text>
+      </Box>
 
       {/* Tasks in column */}
-      <div
+      <Box
         className={cn(TASK_LIST_COLUMN_CONTENT_CLASSES, contentGapClasses)}
         role="list"
         aria-label={SR_COLUMN_TEMPLATE(STATUS_LABELS[status], tasks.length)}
       >
         {tasks.length > 0 ? (
           tasks.map((task) => (
-            <div key={task.id} role="listitem" onKeyDown={(e) => onKeyDown?.(e, task.id)}>
+            <Box key={task.id} role="listitem" onKeyDown={(e) => onKeyDown?.(e, task.id)}>
               <TaskCard
                 task={task}
                 isSelected={selectedTaskId === task.id}
@@ -427,19 +428,21 @@ function StatusColumn({
                 {...(onTaskMoreClick && { onMoreClick: onTaskMoreClick })}
                 data-testid={testId ? `${testId}-task-${task.id}` : undefined}
               />
-            </div>
+            </Box>
           ))
         ) : (
-          <div
+          <Box
             className={TASK_LIST_EMPTY_COLUMN_CLASSES}
             role="status"
             aria-label={`No tasks in ${STATUS_LABELS[status]}`}
           >
-            <p className={TASK_LIST_EMPTY_COLUMN_TEXT_CLASSES}>No tasks</p>
-          </div>
+            <Text as="p" className={TASK_LIST_EMPTY_COLUMN_TEXT_CLASSES}>
+              No tasks
+            </Text>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
 
@@ -479,7 +482,7 @@ export const TaskListSkeleton = forwardRef<HTMLDivElement, TaskListSkeletonProps
 
     if (groupByStatus) {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(TASK_LIST_KANBAN_BASE_CLASSES, gapClasses, className)}
           aria-hidden="true"
@@ -490,18 +493,19 @@ export const TaskListSkeleton = forwardRef<HTMLDivElement, TaskListSkeletonProps
           {...props}
         >
           {STATUS_ORDER.map((status) => (
-            <div key={status} className={TASK_LIST_COLUMN_BASE_CLASSES}>
-              <div className={TASK_LIST_COLUMN_HEADER_CLASSES}>
-                <span
+            <Box key={status} className={TASK_LIST_COLUMN_BASE_CLASSES}>
+              <Box className={TASK_LIST_COLUMN_HEADER_CLASSES}>
+                <Text
+                  as="span"
                   className={cn(
                     TASK_LIST_COLUMN_HEADER_TEXT_CLASSES[baseSize],
                     STATUS_COLORS[status]
                   )}
                 >
                   {STATUS_LABELS[status]}
-                </span>
-              </div>
-              <div className={cn(TASK_LIST_COLUMN_CONTENT_CLASSES, columnGapClasses)}>
+                </Text>
+              </Box>
+              <Box className={cn(TASK_LIST_COLUMN_CONTENT_CLASSES, columnGapClasses)}>
                 {Array.from({ length: count }).map((_, i) => (
                   <SkeletonTaskCard
                     key={`${status}-${i}`}
@@ -509,15 +513,15 @@ export const TaskListSkeleton = forwardRef<HTMLDivElement, TaskListSkeletonProps
                     data-testid={testId ? `${testId}-skeleton-${status}-${i}` : undefined}
                   />
                 ))}
-              </div>
-            </div>
+              </Box>
+            </Box>
           ))}
-        </div>
+        </Box>
       );
     }
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(TASK_LIST_BASE_CLASSES, gapClasses, className)}
         aria-hidden="true"
@@ -535,7 +539,7 @@ export const TaskListSkeleton = forwardRef<HTMLDivElement, TaskListSkeletonProps
             data-testid={testId ? `${testId}-skeleton-${i}` : undefined}
           />
         ))}
-      </div>
+      </Box>
     );
   }
 );
@@ -572,7 +576,7 @@ export const TaskListError = forwardRef<HTMLDivElement, TaskListErrorProps>(func
   const messageSize = TASK_LIST_ERROR_MESSAGE_SIZE[baseSize];
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(TASK_LIST_ERROR_BASE_CLASSES, paddingClasses, className)}
       role="alert"
@@ -610,11 +614,11 @@ export const TaskListError = forwardRef<HTMLDivElement, TaskListErrorProps>(func
         </Button>
       )}
       <VisuallyHidden>
-        <span role="status" aria-live="polite">
+        <Text as="span" role="status" aria-live="polite">
           {`Error: ${message}`}
-        </span>
+        </Text>
       </VisuallyHidden>
-    </div>
+    </Box>
   );
 });
 
@@ -768,7 +772,7 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
   // Empty state
   if (tasks.length === 0) {
     return (
-      <div ref={ref} className={className} data-testid={testId} data-empty="true" {...props}>
+      <Box ref={ref} className={className} data-testid={testId} data-empty="true" {...props}>
         <EmptyState
           icon={ClipboardList}
           title={DEFAULT_EMPTY_TITLE}
@@ -776,7 +780,7 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
           size={baseSize}
           data-testid={testId ? `${testId}-empty` : undefined}
         />
-      </div>
+      </Box>
     );
   }
 
@@ -786,7 +790,7 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
     const kanbanGapClasses = getResponsiveSizeClasses(size, TASK_LIST_KANBAN_GAP_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(TASK_LIST_KANBAN_BASE_CLASSES, kanbanGapClasses, className)}
         role="region"
@@ -800,9 +804,9 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
         {/* Screen reader announcement for selection */}
         {selectionAnnouncement && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               {selectionAnnouncement}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 
@@ -822,7 +826,7 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
             data-testid={testId ? `${testId}-column-${status}` : undefined}
           />
         ))}
-      </div>
+      </Box>
     );
   }
 
@@ -830,7 +834,7 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
   const listGapClasses = getResponsiveSizeClasses(size, TASK_LIST_GAP_CLASSES);
 
   return (
-    <div
+    <Box
       ref={(node) => {
         // Handle both refs
         if (typeof ref === 'function') {
@@ -852,19 +856,19 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
       {/* Screen reader announcement for selection */}
       {selectionAnnouncement && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {selectionAnnouncement}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       {/* Navigation hint for screen readers */}
       <VisuallyHidden>
-        <span>{SR_NAVIGATION_HINT}</span>
+        <Text as="span">{SR_NAVIGATION_HINT}</Text>
       </VisuallyHidden>
 
       {tasks.map((task) => (
-        <div key={task.id} role="listitem" onKeyDown={(e) => handleKeyDown(e, task.id)}>
+        <Box key={task.id} role="listitem" onKeyDown={(e) => handleKeyDown(e, task.id)}>
           <TaskCard
             task={task}
             isSelected={selectedTaskId === task.id}
@@ -876,9 +880,9 @@ export const TaskList = forwardRef<HTMLDivElement, TaskListProps>(function TaskL
             {...(onTaskMoreClick && { onMoreClick: onTaskMoreClick })}
             data-testid={testId ? `${testId}-task-${task.id}` : undefined}
           />
-        </div>
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 });
 

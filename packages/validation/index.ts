@@ -43,6 +43,7 @@ export {
   commitSchema,
   diffHunkSchema,
   fileDiffSchema,
+  pullRequestResultSchema,
   // Inferred types - Input types
   type TaskStatusInput,
   type ChatRoleInput,
@@ -72,4 +73,5 @@ export {
   type CommitOutput,
   type DiffHunkOutput,
   type FileDiffOutput,
+  type PullRequestResultOutput,
 } from './schemas';

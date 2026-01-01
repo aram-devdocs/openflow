@@ -18,7 +18,7 @@
 import type { WorkflowStep, WorkflowTemplate } from '@openflow/generated';
 import { WorkflowStepStatus } from '@openflow/generated';
 import type { ResponsiveValue } from '@openflow/primitives';
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, Heading, List, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, CheckCircle, Circle, Loader2, RefreshCw, SkipForward } from 'lucide-react';
 import { type HTMLAttributes, forwardRef, useId } from 'react';
@@ -374,7 +374,8 @@ const StepItem = forwardRef<HTMLLIElement, StepItemProps>(function StepItem(
   const statusLabel = getStatusLabel(step.status);
 
   return (
-    <li
+    <Box
+      as="li"
       ref={ref}
       className="flex items-start gap-2"
       aria-current={isActive ? 'step' : undefined}
@@ -383,42 +384,44 @@ const StepItem = forwardRef<HTMLLIElement, StepItemProps>(function StepItem(
       data-step-status={step.status}
     >
       {/* Status icon */}
-      <div
+      <Box
         className={cn(
           'mt-0.5 flex shrink-0 items-center justify-center',
           getResponsiveSizeClasses(size, 'iconWrapper')
         )}
       >
         <Icon icon={StepIcon} size="sm" className={iconClass} aria-hidden="true" />
-      </div>
+      </Box>
 
       {/* Step content */}
-      <div className="flex-1 min-w-0">
-        <span
+      <Box className="flex-1 min-w-0">
+        <Text
+          as="span"
           className={cn(
             getResponsiveSizeClasses(size, 'stepText'),
             isCompleted ? STEP_TEXT_COMPLETED_CLASSES : STEP_TEXT_DEFAULT_CLASSES
           )}
         >
           {stepNumber}. {step.name}
-        </span>
+        </Text>
 
         {/* Screen reader status announcement */}
         <VisuallyHidden> - {statusLabel}</VisuallyHidden>
 
         {/* Step description (truncated) */}
         {showDescription && step.description && (
-          <p
+          <Text
+            as="p"
             className={cn(
               'text-[hsl(var(--muted-foreground))] line-clamp-2',
               getResponsiveSizeClasses(size, 'stepDescription')
             )}
           >
             {step.description}
-          </p>
+          </Text>
         )}
-      </div>
-    </li>
+      </Box>
+    </Box>
   );
 });
 
@@ -440,7 +443,7 @@ export const WorkflowPreviewSkeleton = forwardRef<HTMLDivElement, WorkflowPrevie
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           WORKFLOW_PREVIEW_BASE_CLASSES,
@@ -460,18 +463,18 @@ export const WorkflowPreviewSkeleton = forwardRef<HTMLDivElement, WorkflowPrevie
         {showDescriptions && <Skeleton className={SKELETON_DESCRIPTION_CLASSES} />}
 
         {/* Steps list skeleton */}
-        <div className={getResponsiveSizeClasses(size, 'stepGap')}>
+        <Box className={getResponsiveSizeClasses(size, 'stepGap')}>
           {Array.from({ length: stepCount }).map((_, index) => (
-            <div key={index} className="flex items-start gap-2">
+            <Box key={index} className="flex items-start gap-2">
               <Skeleton className={SKELETON_STEP_ICON_CLASSES} />
-              <div className="flex-1">
+              <Box className="flex-1">
                 <Skeleton className={SKELETON_STEP_TEXT_CLASSES} />
                 {showDescriptions && <Skeleton className={SKELETON_STEP_DESC_CLASSES} />}
-              </div>
-            </div>
+              </Box>
+            </Box>
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -498,7 +501,7 @@ export const WorkflowPreviewError = forwardRef<HTMLDivElement, WorkflowPreviewEr
     const iconSize = baseSize === 'sm' ? 'md' : baseSize === 'lg' ? 'xl' : 'lg';
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(ERROR_CONTAINER_CLASSES, className)}
         role="alert"
@@ -512,7 +515,9 @@ export const WorkflowPreviewError = forwardRef<HTMLDivElement, WorkflowPreviewEr
           className={ERROR_ICON_CLASSES}
           aria-hidden="true"
         />
-        <p className={ERROR_MESSAGE_CLASSES}>{message}</p>
+        <Text as="p" className={ERROR_MESSAGE_CLASSES}>
+          {message}
+        </Text>
         {onRetry && (
           <Button
             variant="secondary"
@@ -528,7 +533,7 @@ export const WorkflowPreviewError = forwardRef<HTMLDivElement, WorkflowPreviewEr
             {DEFAULT_RETRY_LABEL}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -614,7 +619,7 @@ export const WorkflowPreview = forwardRef<HTMLDivElement, WorkflowPreviewProps>(
     const workflowSummary = buildWorkflowSummary(workflow);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           WORKFLOW_PREVIEW_BASE_CLASSES,
@@ -632,36 +637,38 @@ export const WorkflowPreview = forwardRef<HTMLDivElement, WorkflowPreviewProps>(
       >
         {/* Screen reader summary */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {workflow.name} workflow: {workflowSummary}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         {/* Workflow name */}
-        <h4
+        <Heading
+          level={4}
           id={headingId}
           className={cn('text-[hsl(var(--foreground))]', getResponsiveSizeClasses(size, 'heading'))}
         >
           {workflow.name}
-        </h4>
+        </Heading>
 
         {/* Description if available */}
         {workflow.description && (
-          <p
+          <Text
+            as="p"
             className={cn(
               'text-[hsl(var(--muted-foreground))]',
               getResponsiveSizeClasses(size, 'description')
             )}
           >
             {workflow.description}
-          </p>
+          </Text>
         )}
 
         {/* Steps list */}
-        <ol
+        <List
+          as="ol"
           id={listId}
           className={getResponsiveSizeClasses(size, 'stepGap')}
-          role="list"
           aria-label={`Steps in ${workflow.name}`}
         >
           {visibleSteps.map((step, index) => (
@@ -675,11 +682,12 @@ export const WorkflowPreview = forwardRef<HTMLDivElement, WorkflowPreviewProps>(
               data-testid={testId ? `${testId}-step-${index}` : undefined}
             />
           ))}
-        </ol>
+        </List>
 
         {/* Show remaining count if collapsed */}
         {hasMore && (
-          <p
+          <Text
+            as="p"
             className={cn(
               'text-[hsl(var(--muted-foreground))]',
               getResponsiveSizeClasses(size, 'moreText')
@@ -687,9 +695,9 @@ export const WorkflowPreview = forwardRef<HTMLDivElement, WorkflowPreviewProps>(
             aria-label={`${remainingCount} additional steps not shown`}
           >
             {getMoreStepsText(remainingCount)}
-          </p>
+          </Text>
         )}
-      </div>
+      </Box>
     );
   }
 );

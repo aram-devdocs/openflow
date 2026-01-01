@@ -17,7 +17,14 @@
  */
 
 import type { Chat, Project, Task } from '@openflow/generated';
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { forwardRef, useId } from 'react';
@@ -412,7 +419,7 @@ export const ArchivePageSkeleton = forwardRef<HTMLDivElement, ArchivePageSkeleto
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         className={ARCHIVE_PAGE_SKELETON_CLASSES}
         aria-hidden="true"
@@ -421,21 +428,21 @@ export const ArchivePageSkeleton = forwardRef<HTMLDivElement, ArchivePageSkeleto
       >
         {/* Screen reader loading announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite">
+          <Box role="status" aria-live="polite">
             {SR_LOADING}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         {/* Header skeleton */}
-        <div className={ARCHIVE_PAGE_SKELETON_HEADER_CLASSES}>
+        <Box className={ARCHIVE_PAGE_SKELETON_HEADER_CLASSES}>
           <Flex direction="column" gap="2">
             <Skeleton width={120} height={28} variant="text" />
             <Skeleton width={180} height={16} variant="text" />
           </Flex>
-        </div>
+        </Box>
 
         {/* Tab bar skeleton */}
-        <div className={ARCHIVE_PAGE_SKELETON_TAB_CLASSES}>
+        <Box className={ARCHIVE_PAGE_SKELETON_TAB_CLASSES}>
           <Flex justify="between" align="center">
             <Skeleton width={100} height={32} />
             <Flex gap="2">
@@ -444,13 +451,13 @@ export const ArchivePageSkeleton = forwardRef<HTMLDivElement, ArchivePageSkeleto
               <Skeleton width={80} height={36} />
             </Flex>
           </Flex>
-        </div>
+        </Box>
 
         {/* Content skeleton */}
-        <div className={ARCHIVE_PAGE_SKELETON_CONTENT_CLASSES}>
+        <Box className={ARCHIVE_PAGE_SKELETON_CONTENT_CLASSES}>
           <SkeletonArchiveList count={itemCount} size={size} />
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -464,7 +471,7 @@ export const ArchivePageError = forwardRef<HTMLDivElement, ArchivePageErrorState
     const descriptionId = useId();
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -479,9 +486,9 @@ export const ArchivePageError = forwardRef<HTMLDivElement, ArchivePageErrorState
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="assertive">
+          <Box role="status" aria-live="assertive">
             {SR_ERROR_PREFIX} {error.message}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         <Icon
@@ -506,7 +513,7 @@ export const ArchivePageError = forwardRef<HTMLDivElement, ArchivePageErrorState
         >
           {DEFAULT_RETRY_LABEL}
         </Button>
-      </div>
+      </Box>
     );
   }
 );
@@ -631,7 +638,7 @@ export const ArchivePage = forwardRef<HTMLDivElement, ArchivePageProps>(function
   // Loading state - show skeleton
   if (isLoading) {
     return (
-      <div
+      <Box
         ref={ref}
         className={ARCHIVE_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -640,14 +647,14 @@ export const ArchivePage = forwardRef<HTMLDivElement, ArchivePageProps>(function
         data-state="loading"
       >
         <ArchivePageSkeleton size={size} />
-      </div>
+      </Box>
     );
   }
 
   // Error state - show error UI
   if (hasError && error && onRetry) {
     return (
-      <div
+      <Box
         ref={ref}
         className={ARCHIVE_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -655,13 +662,13 @@ export const ArchivePage = forwardRef<HTMLDivElement, ArchivePageProps>(function
         data-state="error"
       >
         <ArchivePageError error={error} onRetry={onRetry} size={size} />
-      </div>
+      </Box>
     );
   }
 
   // Normal state - show content
   return (
-    <div
+    <Box
       ref={ref}
       className={ARCHIVE_PAGE_BASE_CLASSES}
       aria-label={computedAriaLabel}
@@ -672,9 +679,9 @@ export const ArchivePage = forwardRef<HTMLDivElement, ArchivePageProps>(function
     >
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite" aria-atomic="true">
+        <Box role="status" aria-live="polite" aria-atomic="true">
           {isEmpty ? SR_EMPTY : buildLoadedAnnouncement(header.activeTab, currentItemCount)}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       <ArchiveLayout
@@ -731,6 +738,6 @@ export const ArchivePage = forwardRef<HTMLDivElement, ArchivePageProps>(function
           loading={confirmDialog.loading}
         />
       </ArchiveLayout>
-    </div>
+    </Box>
   );
 });

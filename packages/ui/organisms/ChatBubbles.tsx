@@ -13,7 +13,7 @@
  * - Tool status conveyed beyond color (icons + text)
  */
 
-import { Flex, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Flex, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Bot, ChevronDown, ChevronRight, Code2, User, Wrench } from 'lucide-react';
 import { type ReactNode, forwardRef, useId, useState } from 'react';
@@ -265,7 +265,8 @@ export const UserMessageBubble = forwardRef<HTMLElement, UserMessageBubbleProps>
     const messageId = useId();
 
     return (
-      <article
+      <Box
+        as="article"
         ref={ref}
         className={cn('flex justify-end', className)}
         aria-label={`${userLabel} said`}
@@ -274,33 +275,37 @@ export const UserMessageBubble = forwardRef<HTMLElement, UserMessageBubbleProps>
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <span id={`${messageId}-content`}>
+          <Text as="span" id={`${messageId}-content`}>
             {userLabel} said: {content}
             {timestamp && `. Sent at ${formatTimestampForSR(timestamp)}`}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         {/* Wider on mobile (90%) to maximize space, narrower on desktop (80%) */}
         <Flex className="max-w-[90%] gap-2 md:max-w-[80%] md:gap-3" aria-hidden={true}>
-          <div className={cn(USER_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md, 'order-2')}>
+          <Box className={cn(USER_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md, 'order-2')}>
             <User
               className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-[rgb(var(--primary-foreground))]')}
             />
-          </div>
-          <div className="order-1 min-w-0">
-            <div className={USER_BUBBLE_CLASSES}>
+          </Box>
+          <Box className="order-1 min-w-0">
+            <Box className={USER_BUBBLE_CLASSES}>
               <Text as="p" size="sm" leading="relaxed" className="whitespace-pre-wrap break-words">
                 {content}
               </Text>
-            </div>
+            </Box>
             {timestamp && (
-              <time dateTime={timestamp} className={cn(TIMESTAMP_CLASSES, 'block text-right')}>
+              <Box
+                as="time"
+                dateTime={timestamp}
+                className={cn(TIMESTAMP_CLASSES, 'block text-right')}
+              >
                 {formatTimestamp(timestamp)}
-              </time>
+              </Box>
             )}
-          </div>
+          </Box>
         </Flex>
-      </article>
+      </Box>
     );
   }
 );
@@ -375,7 +380,8 @@ export const AssistantMessageBubble = forwardRef<HTMLElement, AssistantMessageBu
     const toolCount = toolsWithResults.length;
 
     return (
-      <article
+      <Box
+        as="article"
         ref={ref}
         className={cn('flex gap-3', className)}
         aria-label={`${assistantLabel} said`}
@@ -384,21 +390,21 @@ export const AssistantMessageBubble = forwardRef<HTMLElement, AssistantMessageBu
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <span id={`${messageId}-content`}>
+          <Text as="span" id={`${messageId}-content`}>
             {assistantLabel} said: {content}
             {toolCount > 0 && `. Used ${toolCount} tool${toolCount === 1 ? '' : 's'}`}
             {timestamp && `. Sent at ${formatTimestampForSR(timestamp)}`}
-          </span>
+          </Text>
         </VisuallyHidden>
 
-        <div className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden="true">
+        <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden="true">
           <Bot className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-white')} />
-        </div>
+        </Box>
 
-        <div className="min-w-0 flex-1 space-y-3" aria-hidden="true">
+        <Box className="min-w-0 flex-1 space-y-3" aria-hidden="true">
           {/* Text content */}
           {content && (
-            <div className={ASSISTANT_BUBBLE_CLASSES}>
+            <Box className={ASSISTANT_BUBBLE_CLASSES}>
               <Text
                 as="p"
                 size="sm"
@@ -407,28 +413,28 @@ export const AssistantMessageBubble = forwardRef<HTMLElement, AssistantMessageBu
               >
                 {content}
               </Text>
-            </div>
+            </Box>
           )}
 
           {/* Tool calls */}
           {toolsWithResults.length > 0 && (
-            <div role="list" aria-label={`${toolCount} tool call${toolCount === 1 ? '' : 's'}`}>
+            <Box role="list" aria-label={`${toolCount} tool call${toolCount === 1 ? '' : 's'}`}>
               {toolsWithResults.map((tool) => (
-                <div key={tool.id} role="listitem">
+                <Box key={tool.id} role="listitem">
                   <ToolCallCard tool={tool} />
-                </div>
+                </Box>
               ))}
-            </div>
+            </Box>
           )}
 
           {/* Timestamp */}
           {timestamp && (
-            <time dateTime={timestamp} className={TIMESTAMP_CLASSES}>
+            <Box as="time" dateTime={timestamp} className={TIMESTAMP_CLASSES}>
               {formatTimestamp(timestamp)}
-            </time>
+            </Box>
           )}
-        </div>
-      </article>
+        </Box>
+      </Box>
     );
   }
 );
@@ -489,7 +495,8 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
       .join('');
 
     return (
-      <article
+      <Box
+        as="article"
         ref={ref}
         className={cn('flex gap-3', className)}
         aria-label={isStreaming ? `${assistantLabel} is responding` : `${assistantLabel} response`}
@@ -500,22 +507,22 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
       >
         {/* Screen reader live region for streaming updates */}
         <VisuallyHidden>
-          <div id={regionId} role="status" aria-live="polite" aria-atomic="false">
+          <Box id={regionId} role="status" aria-live="polite" aria-atomic="false">
             {isStreaming ? streamingLabel : `${assistantLabel} said: ${textContent}`}
-          </div>
+          </Box>
         </VisuallyHidden>
 
-        <div className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden="true">
+        <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden="true">
           <Bot className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-white')} />
-        </div>
+        </Box>
 
-        <div className="min-w-0 flex-1 space-y-3" aria-hidden="true">
+        <Box className="min-w-0 flex-1 space-y-3" aria-hidden="true">
           {/* Render display items */}
           {displayItems.map((item, index) => {
             if (item.type === 'text') {
               return (
-                <div key={`text-${index}`} className={ASSISTANT_BUBBLE_CLASSES}>
-                  <div className="prose prose-sm prose-invert max-w-none">
+                <Box key={`text-${index}`} className={ASSISTANT_BUBBLE_CLASSES}>
+                  <Box className="prose prose-sm prose-invert max-w-none">
                     <Text
                       as="p"
                       size="sm"
@@ -524,8 +531,8 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
                     >
                       {item.content}
                     </Text>
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               );
             }
 
@@ -538,7 +545,7 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
               const isError = item.subtype === 'error';
 
               return (
-                <div
+                <Box
                   key={`result-${index}`}
                   className={cn(
                     RESULT_BASE_CLASSES,
@@ -549,10 +556,10 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
                   role="status"
                 >
                   <VisuallyHidden>{getResultAnnouncement(item.subtype)}</VisuallyHidden>
-                  <span aria-hidden="true">
+                  <Text as="span" aria-hidden="true">
                     {isSuccess ? '✓ Completed successfully' : `Result: ${item.subtype}`}
-                  </span>
-                </div>
+                  </Text>
+                </Box>
               );
             }
 
@@ -561,16 +568,16 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
 
           {/* Streaming indicator */}
           {isStreaming && (
-            <div className={STREAMING_INDICATOR_CLASSES} role="status">
+            <Box className={STREAMING_INDICATOR_CLASSES} role="status">
               <Spinner size="sm" announce={false} aria-hidden="true" />
-              <span>{streamingLabel}</span>
-            </div>
+              <Text as="span">{streamingLabel}</Text>
+            </Box>
           )}
 
           {/* Raw output toggle */}
           {showRawOutput && rawOutput.length > 0 && <RawOutputSection output={rawOutput} />}
-        </div>
-      </article>
+        </Box>
+      </Box>
     );
   }
 );
@@ -624,7 +631,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
     const status = getToolStatus(tool);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           TOOL_CARD_BASE_CLASSES,
@@ -638,12 +645,13 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
         data-tool-status={status}
       >
         {/* Screen reader announcement */}
-        <div role="status" aria-live="polite">
+        <Box role="status" aria-live="polite">
           <VisuallyHidden>{getToolStatusAnnouncement(tool)}</VisuallyHidden>
-        </div>
+        </Box>
 
         {/* Header */}
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={() => setExpanded(!expanded)}
           className={TOOL_HEADER_CLASSES}
@@ -651,7 +659,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
           aria-controls={hasExpandableContent ? contentId : undefined}
           aria-label={`${tool.name}${tool.isError ? ', error' : isInProgress ? ', running' : ''}. ${expanded ? collapseLabel : expandLabel}`}
         >
-          <div
+          <Box
             className={cn(
               TOOL_ICON_CONTAINER_CLASSES,
               tool.isError && TOOL_ICON_ERROR_CLASSES,
@@ -665,29 +673,33 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
             ) : (
               <Wrench className={cn('h-3.5 w-3.5', tool.isError ? 'text-error' : 'text-primary')} />
             )}
-          </div>
+          </Box>
 
-          <div className="min-w-0 flex-1">
+          <Box className="min-w-0 flex-1">
             <Flex align="center" gap="2">
-              <code className="text-sm font-semibold text-foreground">{tool.name}</code>
+              <Box as="code" className="text-sm font-semibold text-foreground">
+                {tool.name}
+              </Box>
               {tool.isError && (
-                <span
+                <Text
+                  as="span"
                   className={cn(STATUS_BADGE_CLASSES, STATUS_BADGE_ERROR_CLASSES)}
                   aria-hidden="true"
                 >
                   {DEFAULT_TOOL_ERROR_LABEL}
-                </span>
+                </Text>
               )}
               {isInProgress && (
-                <span
+                <Text
+                  as="span"
                   className={cn(STATUS_BADGE_CLASSES, STATUS_BADGE_RUNNING_CLASSES)}
                   aria-hidden="true"
                 >
                   {DEFAULT_TOOL_RUNNING_LABEL}
-                </span>
+                </Text>
               )}
             </Flex>
-          </div>
+          </Box>
 
           <Icon
             icon={expanded ? ChevronDown : ChevronRight}
@@ -695,35 +707,38 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
             className="text-[rgb(var(--muted-foreground))]"
             aria-hidden="true"
           />
-        </button>
+        </Box>
 
         {/* Expanded content */}
         {expanded && hasExpandableContent && (
-          <div id={contentId} className={TOOL_CONTENT_CLASSES}>
+          <Box id={contentId} className={TOOL_CONTENT_CLASSES}>
             {hasInput && (
-              <div>
+              <Box>
                 <Text as="p" size="xs" weight="medium" className={TOOL_SECTION_LABEL_CLASSES}>
                   Input
                 </Text>
-                <pre className={TOOL_PRE_CLASSES}>{JSON.stringify(tool.input, null, 2)}</pre>
-              </div>
+                <Box as="pre" className={TOOL_PRE_CLASSES}>
+                  {JSON.stringify(tool.input, null, 2)}
+                </Box>
+              </Box>
             )}
 
             {hasOutput && (
-              <div>
+              <Box>
                 <Text as="p" size="xs" weight="medium" className={TOOL_SECTION_LABEL_CLASSES}>
                   Output
                 </Text>
-                <pre
+                <Box
+                  as="pre"
                   className={tool.isError ? TOOL_OUTPUT_ERROR_CLASSES : TOOL_OUTPUT_SUCCESS_CLASSES}
                 >
                   {tool.output}
-                </pre>
-              </div>
+                </Box>
+              </Box>
             )}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -765,13 +780,14 @@ export const RawOutputSection = forwardRef<HTMLDivElement, RawOutputSectionProps
     }
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(RAW_OUTPUT_CONTAINER_CLASSES, className)}
         data-testid={testId}
         data-line-count={lineCount}
       >
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={() => setExpanded(!expanded)}
           className={RAW_OUTPUT_HEADER_CLASSES}
@@ -789,14 +805,14 @@ export const RawOutputSection = forwardRef<HTMLDivElement, RawOutputSectionProps
             className="ml-auto text-[rgb(var(--muted-foreground))]"
             aria-hidden="true"
           />
-        </button>
+        </Box>
 
         {expanded && (
-          <div id={contentId} className={RAW_OUTPUT_CONTENT_CLASSES}>
-            <pre>{output.join('\n')}</pre>
-          </div>
+          <Box id={contentId} className={RAW_OUTPUT_CONTENT_CLASSES}>
+            <Box as="pre">{output.join('\n')}</Box>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -831,7 +847,7 @@ export const BubbleMessageList = forwardRef<HTMLDivElement, BubbleMessageListPro
     ref
   ) => {
     return (
-      <div
+      <Box
         ref={ref}
         role="list"
         aria-label={ariaLabel}
@@ -839,7 +855,7 @@ export const BubbleMessageList = forwardRef<HTMLDivElement, BubbleMessageListPro
         data-testid={testId}
       >
         {children}
-      </div>
+      </Box>
     );
   }
 );
@@ -863,9 +879,9 @@ export interface BubbleMessageListItemProps {
 export const BubbleMessageListItem = forwardRef<HTMLDivElement, BubbleMessageListItemProps>(
   ({ children, className }, ref) => {
     return (
-      <div ref={ref} role="listitem" className={className}>
+      <Box ref={ref} role="listitem" className={className}>
         {children}
-      </div>
+      </Box>
     );
   }
 );

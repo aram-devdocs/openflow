@@ -1,4 +1,4 @@
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Keyboard } from 'lucide-react';
 import { type HTMLAttributes, forwardRef, useId } from 'react';
@@ -514,10 +514,10 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
       >
         {/* Screen reader announcement when dialog opens */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite" aria-atomic="true">
+          <Text as="span" role="status" aria-live="polite" aria-atomic="true">
             {SR_DIALOG_OPENED} {buildGroupCountAnnouncement(shortcutGroups.length)} {totalShortcuts}{' '}
             shortcuts total.
-          </span>
+          </Text>
         </VisuallyHidden>
 
         <DialogContent
@@ -525,17 +525,20 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
           data-testid={dataTestId ? `${dataTestId}-content` : undefined}
         >
           {/* Header with icon and toggle hint */}
-          <div
+          <Box
             className={HINT_CONTAINER_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-hint` : undefined}
           >
             <Icon icon={Keyboard} size={ICON_SIZE_MAP[baseSize]} aria-hidden="true" />
             <Text size="sm" color="muted-foreground">
-              Press <kbd className={cn(HINT_KEY_CLASSES, HINT_KEY_SIZE_CLASSES[baseSize])}>⌘/</kbd>{' '}
+              Press{' '}
+              <Box as="kbd" className={cn(HINT_KEY_CLASSES, HINT_KEY_SIZE_CLASSES[baseSize])}>
+                ⌘/
+              </Box>{' '}
               to toggle this dialog
             </Text>
             <VisuallyHidden>{SR_TOGGLE_HINT}</VisuallyHidden>
-          </div>
+          </Box>
 
           {/* Shortcut groups */}
           {shortcutGroups.map((group, groupIndex) => {
@@ -543,25 +546,26 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
             const groupTitleId = `${groupId}-title`;
 
             return (
-              <div
+              <Box
                 key={groupId}
                 role="group"
                 aria-labelledby={groupTitleId}
                 data-testid={dataTestId ? `${dataTestId}-group-${groupIndex}` : undefined}
               >
-                <h3
+                <Heading
+                  as="h3"
                   id={groupTitleId}
                   className={cn(GROUP_TITLE_CLASSES, GROUP_SPACING_CLASSES[baseSize])}
                 >
                   {group.title}
-                </h3>
+                </Heading>
 
                 {/* Screen reader announcement for group shortcut count */}
                 <VisuallyHidden>
                   {buildShortcutsInGroupAnnouncement(group.shortcuts.length, group.title)}
                 </VisuallyHidden>
 
-                <div
+                <Box
                   className={SHORTCUT_LIST_CLASSES}
                   role="list"
                   aria-label={`${group.title} shortcuts`}
@@ -571,7 +575,7 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
                     const keysLabel = formatKeysForSR(shortcut.keys);
 
                     return (
-                      <div
+                      <Box
                         key={shortcutId}
                         role="listitem"
                         className={cn(SHORTCUT_ITEM_BASE_CLASSES, ITEM_PADDING_CLASSES[baseSize])}
@@ -585,43 +589,45 @@ export const KeyboardShortcutsDialog = forwardRef<HTMLDivElement, KeyboardShortc
                           {shortcut.description}
                         </Text>
 
-                        <div className={KEYS_CONTAINER_CLASSES} aria-label={`Keys: ${keysLabel}`}>
+                        <Box className={KEYS_CONTAINER_CLASSES} aria-label={`Keys: ${keysLabel}`}>
                           {shortcut.keys.map((key, keyIndex) => (
-                            <kbd
+                            <Box
+                              as="kbd"
                               key={keyIndex}
                               className={cn(KEY_BASE_CLASSES, KEY_SIZE_CLASSES[baseSize])}
                               aria-hidden="true"
                             >
                               {key}
-                            </kbd>
+                            </Box>
                           ))}
-                        </div>
+                        </Box>
 
                         {/* Screen reader announcement for keys */}
                         <VisuallyHidden>Shortcut: {keysLabel}</VisuallyHidden>
-                      </div>
+                      </Box>
                     );
                   })}
-                </div>
-              </div>
+                </Box>
+              </Box>
             );
           })}
 
           {/* Footer note for platform differences */}
-          <p
+          <Text
+            as="p"
             className={FOOTER_NOTE_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-footer-note` : undefined}
           >
-            <strong>Note:</strong> On Windows/Linux, use{' '}
-            <kbd className={FOOTER_KEY_CLASSES} aria-hidden="true">
+            <Text as="strong">Note:</Text> On Windows/Linux, use{' '}
+            <Box as="kbd" className={FOOTER_KEY_CLASSES} aria-hidden="true">
               Ctrl
-            </kbd>{' '}
+            </Box>{' '}
             instead of{' '}
-            <kbd className={FOOTER_KEY_CLASSES} aria-hidden="true">
+            <Box as="kbd" className={FOOTER_KEY_CLASSES} aria-hidden="true">
               ⌘
-            </kbd>
+            </Box>
             <VisuallyHidden>{SR_PLATFORM_NOTE}</VisuallyHidden>
-          </p>
+          </Text>
         </DialogContent>
       </Dialog>
     );

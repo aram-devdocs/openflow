@@ -49,7 +49,14 @@ export type BoxElement =
   | 'li'
   | 'dl'
   | 'dt'
-  | 'dd';
+  | 'dd'
+  | 'button'
+  | 'pre'
+  | 'code'
+  | 'time'
+  | 'label'
+  | 'kbd'
+  | 'textarea';
 
 /**
  * Box component props
@@ -66,6 +73,10 @@ export interface BoxProps
   id?: string;
   /** Data attributes for testing */
   'data-testid'?: string;
+  /** Button type attribute (only used when as="button") */
+  type?: 'button' | 'submit' | 'reset';
+  /** Label htmlFor attribute (only used when as="label") */
+  htmlFor?: string;
 }
 
 /**

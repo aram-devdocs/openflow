@@ -21,7 +21,7 @@
  */
 
 import type { ResponsiveValue } from '@openflow/primitives';
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, Heading, Paragraph, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import {
@@ -421,10 +421,10 @@ export const TerminalPanelSkeleton = forwardRef<HTMLDivElement, TerminalPanelSke
     const heightClasses = getResponsiveSizeClasses(size, TERMINAL_PANEL_HEIGHT_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="presentation"
-        aria-hidden="true"
+        aria-hidden={true}
         className={cn(TERMINAL_PANEL_SKELETON_BASE_CLASSES, heightClasses, className)}
         data-testid={testId}
         data-lines={lines}
@@ -432,16 +432,16 @@ export const TerminalPanelSkeleton = forwardRef<HTMLDivElement, TerminalPanelSke
         {...props}
       >
         {/* Header skeleton */}
-        <div className={TERMINAL_PANEL_SKELETON_HEADER_CLASSES}>
-          <div className="flex items-center gap-2">
+        <Box className={TERMINAL_PANEL_SKELETON_HEADER_CLASSES}>
+          <Box className="flex items-center gap-2">
             <Skeleton variant="text" width={80} height={16} />
             <Skeleton variant="text" width={60} height={12} />
-          </div>
+          </Box>
           <Skeleton variant="circular" width={24} height={24} />
-        </div>
+        </Box>
 
         {/* Content skeleton */}
-        <div className={TERMINAL_PANEL_SKELETON_CONTENT_CLASSES}>
+        <Box className={TERMINAL_PANEL_SKELETON_CONTENT_CLASSES}>
           {Array.from({ length: lines }).map((_, index) => (
             <Skeleton
               key={index}
@@ -454,8 +454,8 @@ export const TerminalPanelSkeleton = forwardRef<HTMLDivElement, TerminalPanelSke
               height={14}
             />
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -484,7 +484,7 @@ export const TerminalPanelError = forwardRef<HTMLDivElement, TerminalPanelErrorP
     const heightClasses = getResponsiveSizeClasses(size, TERMINAL_PANEL_HEIGHT_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -496,18 +496,18 @@ export const TerminalPanelError = forwardRef<HTMLDivElement, TerminalPanelErrorP
         data-size={getBaseSize(size)}
         {...props}
       >
-        <div className={TERMINAL_PANEL_ERROR_BASE_CLASSES}>
+        <Box className={TERMINAL_PANEL_ERROR_BASE_CLASSES}>
           <Icon
             icon={AlertTriangle}
             aria-hidden="true"
             className={TERMINAL_PANEL_ERROR_ICON_CLASSES}
           />
-          <h3 id={errorId} className={TERMINAL_PANEL_ERROR_TITLE_CLASSES}>
+          <Heading level={3} id={errorId} className={TERMINAL_PANEL_ERROR_TITLE_CLASSES}>
             {title}
-          </h3>
-          <p id={descriptionId} className={TERMINAL_PANEL_ERROR_MESSAGE_CLASSES}>
+          </Heading>
+          <Paragraph id={descriptionId} className={TERMINAL_PANEL_ERROR_MESSAGE_CLASSES}>
             {message}
-          </p>
+          </Paragraph>
           {onRetry && (
             <Button
               variant="primary"
@@ -518,8 +518,8 @@ export const TerminalPanelError = forwardRef<HTMLDivElement, TerminalPanelErrorP
               {retryLabel}
             </Button>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -686,7 +686,7 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
   const accessibleLabel = buildPanelAccessibleLabel(title, processId, isRunning);
 
   return (
-    <div
+    <Box
       ref={(node) => {
         // Handle both refs
         if (typeof ref === 'function') {
@@ -721,24 +721,26 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
     >
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <span role="status" aria-live="polite" aria-atomic="true">
+        <Text as="span" role="status" aria-live="polite" aria-atomic="true">
           {announcement}
-        </span>
-        <span id={descriptionId}>{description}</span>
+        </Text>
+        <Text as="span" id={descriptionId}>
+          {description}
+        </Text>
       </VisuallyHidden>
 
       {/* Header */}
-      <div className={TERMINAL_PANEL_HEADER_CLASSES}>
-        <div className="flex items-center gap-2">
-          <span id={titleId} className={TERMINAL_PANEL_HEADER_TITLE_CLASSES}>
+      <Box className={TERMINAL_PANEL_HEADER_CLASSES}>
+        <Box className="flex items-center gap-2">
+          <Text as="span" id={titleId} className={TERMINAL_PANEL_HEADER_TITLE_CLASSES}>
             {title}
-          </span>
+          </Text>
           {processId && (
-            <span className={statusDisplay.classes} aria-label={statusDisplay.text}>
+            <Text as="span" className={statusDisplay.classes} aria-label={statusDisplay.text}>
               {statusDisplay.indicator} {statusDisplay.text}
-            </span>
+            </Text>
           )}
-        </div>
+        </Box>
         <Button
           variant="ghost"
           size="sm"
@@ -748,21 +750,23 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
         >
           <Icon icon={X} size="sm" aria-hidden="true" />
         </Button>
-      </div>
+      </Box>
 
       {/* Terminal content */}
-      <div className={TERMINAL_PANEL_CONTENT_CLASSES}>
+      <Box className={TERMINAL_PANEL_CONTENT_CLASSES}>
         {hasError ? (
-          <div className={TERMINAL_PANEL_ERROR_BASE_CLASSES}>
+          <Box className={TERMINAL_PANEL_ERROR_BASE_CLASSES}>
             <Icon
               icon={AlertTriangle}
               aria-hidden="true"
               className={TERMINAL_PANEL_ERROR_ICON_CLASSES}
             />
-            <h3 className={TERMINAL_PANEL_ERROR_TITLE_CLASSES}>{DEFAULT_ERROR_TITLE}</h3>
-            <p className={TERMINAL_PANEL_ERROR_MESSAGE_CLASSES}>
+            <Heading level={3} className={TERMINAL_PANEL_ERROR_TITLE_CLASSES}>
+              {DEFAULT_ERROR_TITLE}
+            </Heading>
+            <Paragraph className={TERMINAL_PANEL_ERROR_MESSAGE_CLASSES}>
               {errorMessage ?? DEFAULT_ERROR_MESSAGE}
-            </p>
+            </Paragraph>
             {onRetry && (
               <Button
                 variant="primary"
@@ -773,14 +777,16 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
                 {DEFAULT_RETRY_LABEL}
               </Button>
             )}
-          </div>
+          </Box>
         ) : isLoading ? (
-          <div className={TERMINAL_PANEL_LOADING_CLASSES} role="status" aria-busy="true">
-            <div className={TERMINAL_PANEL_LOADING_CONTAINER_CLASSES}>
+          <Box className={TERMINAL_PANEL_LOADING_CLASSES} role="status" aria-busy={true}>
+            <Box className={TERMINAL_PANEL_LOADING_CONTAINER_CLASSES}>
               <Spinner size="md" label={loadingLabel} />
-              <span className={TERMINAL_PANEL_LOADING_TEXT_CLASSES}>{loadingLabel}</span>
-            </div>
-          </div>
+              <Text as="span" className={TERMINAL_PANEL_LOADING_TEXT_CLASSES}>
+                {loadingLabel}
+              </Text>
+            </Box>
+          </Box>
         ) : processId ? (
           <Terminal
             ref={terminalRef}
@@ -795,12 +801,14 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(func
             cursorBlink
           />
         ) : (
-          <div className={TERMINAL_PANEL_NO_SESSION_CLASSES} role="status">
-            <span className={TERMINAL_PANEL_NO_SESSION_TEXT_CLASSES}>{noSessionLabel}</span>
-          </div>
+          <Box className={TERMINAL_PANEL_NO_SESSION_CLASSES} role="status">
+            <Text as="span" className={TERMINAL_PANEL_NO_SESSION_TEXT_CLASSES}>
+              {noSessionLabel}
+            </Text>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 });
 

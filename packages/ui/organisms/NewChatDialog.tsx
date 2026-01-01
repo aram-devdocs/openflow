@@ -1,6 +1,6 @@
 import type { ExecutorProfile, Project } from '@openflow/generated';
 import type { ResponsiveValue } from '@openflow/primitives';
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Bot, MessageSquarePlus, Terminal } from 'lucide-react';
 import type { HTMLAttributes } from 'react';
@@ -511,31 +511,31 @@ export const NewChatDialog = forwardRef<HTMLDivElement, NewChatDialogProps>(func
     >
       {/* Screen reader announcement for dialog open */}
       <VisuallyHidden>
-        <span role="status" aria-live="polite">
+        <Text as="span" role="status" aria-live="polite">
           {SR_DIALOG_OPENED}
-        </span>
+        </Text>
       </VisuallyHidden>
 
       {/* Screen reader announcement for submitting state */}
       {isSubmitting && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {SR_SUBMITTING}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       {/* Validation error announcement */}
       {showValidationError && !isValid && (
         <VisuallyHidden>
-          <span role="alert" aria-live="assertive">
+          <Text as="span" role="alert" aria-live="assertive">
             {errorMessage}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       <DialogContent data-testid={dataTestId ? `${dataTestId}-content` : undefined}>
-        <div
+        <Box
           className={formGapClasses}
           onKeyDown={handleKeyDown}
           role="form"
@@ -544,7 +544,7 @@ export const NewChatDialog = forwardRef<HTMLDivElement, NewChatDialogProps>(func
         >
           {/* Project selector (if not pre-selected) */}
           {showProjectSelector && (
-            <div
+            <Box
               className={FORM_FIELD_CONTAINER_CLASSES}
               data-testid={dataTestId ? `${dataTestId}-project-field` : undefined}
             >
@@ -563,51 +563,55 @@ export const NewChatDialog = forwardRef<HTMLDivElement, NewChatDialogProps>(func
                 }
               />
               {showValidationError && !projectId && (
-                <p
+                <Text
+                  as="p"
                   id={`${projectFieldId}-error`}
                   className="text-xs text-[rgb(var(--destructive))]"
                   role="alert"
                 >
                   {errorMessage}
-                </p>
+                </Text>
               )}
-            </div>
+            </Box>
           )}
 
           {/* Pre-selected project info */}
           {!showProjectSelector && projectId && (
-            <div
+            <Box
               className={FORM_FIELD_CONTAINER_CLASSES}
               data-testid={dataTestId ? `${dataTestId}-project-info` : undefined}
             >
-              <span
+              <Text
+                as="span"
                 id={projectFieldId}
                 className="text-sm font-medium text-[rgb(var(--foreground))]"
               >
                 {DEFAULT_PROJECT_LABEL}
-              </span>
-              <div className={PROJECT_INFO_CONTAINER_CLASSES} aria-labelledby={projectFieldId}>
+              </Text>
+              <Box className={PROJECT_INFO_CONTAINER_CLASSES} aria-labelledby={projectFieldId}>
                 <Icon
                   icon={Bot}
                   size="sm"
                   className="shrink-0 text-[rgb(var(--muted-foreground))]"
                   aria-hidden="true"
                 />
-                <span className="truncate">{selectedProject?.name ?? 'Unknown Project'}</span>
-              </div>
-            </div>
+                <Text as="span" className="truncate">
+                  {selectedProject?.name ?? 'Unknown Project'}
+                </Text>
+              </Box>
+            </Box>
           )}
 
           {/* Executor profile selector */}
-          <div
+          <Box
             className={FORM_FIELD_CONTAINER_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-agent-field` : undefined}
           >
             <Label htmlFor={agentFieldId} size={labelSize}>
               {DEFAULT_AGENT_LABEL}
-              <span className="ml-1 text-xs text-[rgb(var(--muted-foreground))]">
+              <Text as="span" className="ml-1 text-xs text-[rgb(var(--muted-foreground))]">
                 {DEFAULT_OPTIONAL_TEXT}
-              </span>
+              </Text>
             </Label>
             {executorOptions.length > 0 ? (
               <Dropdown
@@ -623,32 +627,32 @@ export const NewChatDialog = forwardRef<HTMLDivElement, NewChatDialogProps>(func
                 data-testid={dataTestId ? `${dataTestId}-agent-dropdown` : undefined}
               />
             ) : (
-              <div
+              <Box
                 className={NO_AGENTS_CONTAINER_CLASSES}
                 role="status"
                 aria-label={DEFAULT_NO_AGENTS_MESSAGE}
               >
                 <Icon icon={Bot} size="sm" className="shrink-0" aria-hidden="true" />
-                <span>{DEFAULT_NO_AGENTS_MESSAGE}</span>
-              </div>
+                <Text as="span">{DEFAULT_NO_AGENTS_MESSAGE}</Text>
+              </Box>
             )}
             {defaultProfile && !executorProfileId && (
-              <p id={defaultAgentHelperId} className={DEFAULT_AGENT_HELPER_CLASSES}>
+              <Text as="p" id={defaultAgentHelperId} className={DEFAULT_AGENT_HELPER_CLASSES}>
                 {SR_DEFAULT_AGENT_MESSAGE} {defaultProfile.name}
-              </p>
+              </Text>
             )}
-          </div>
+          </Box>
 
           {/* Title input (optional) */}
-          <div
+          <Box
             className={FORM_FIELD_CONTAINER_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-title-field` : undefined}
           >
             <Label htmlFor={titleFieldId} size={labelSize}>
               {DEFAULT_TITLE_LABEL}
-              <span className="ml-1 text-xs text-[rgb(var(--muted-foreground))]">
+              <Text as="span" className="ml-1 text-xs text-[rgb(var(--muted-foreground))]">
                 {DEFAULT_OPTIONAL_TEXT}
-              </span>
+              </Text>
             </Label>
             <Input
               id={titleFieldId}
@@ -660,8 +664,8 @@ export const NewChatDialog = forwardRef<HTMLDivElement, NewChatDialogProps>(func
               maxLength={MAX_TITLE_LENGTH}
               data-testid={dataTestId ? `${dataTestId}-title-input` : undefined}
             />
-          </div>
-        </div>
+          </Box>
+        </Box>
       </DialogContent>
 
       <DialogFooter

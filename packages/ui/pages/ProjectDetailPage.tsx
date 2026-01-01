@@ -26,7 +26,7 @@
 
 import type { Project, Task, TaskStatus, WorkflowTemplate } from '@openflow/generated';
 import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type HTMLAttributes, forwardRef } from 'react';
 
@@ -547,7 +547,7 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
     // Loading state
     if (state === 'loading') {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(PROJECT_DETAIL_PAGE_BASE_CLASSES, className)}
           data-testid={testId ?? 'project-detail-page'}
@@ -557,19 +557,19 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
           {...props}
         >
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Box as="span" role="status" aria-live="polite">
               {SR_LOADING}
-            </span>
+            </Box>
           </VisuallyHidden>
           <ProjectDetailLoadingSkeleton onSearch={onSearch} size={baseSize} />
-        </div>
+        </Box>
       );
     }
 
     // Error state
     if (state === 'error') {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(PROJECT_DETAIL_PAGE_BASE_CLASSES, className)}
           data-testid={testId ?? 'project-detail-page'}
@@ -579,9 +579,9 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
           {...props}
         >
           <VisuallyHidden>
-            <span role="status" aria-live="assertive">
+            <Box as="span" role="status" aria-live="assertive">
               {SR_ERROR_PREFIX} {errorMessage || DEFAULT_ERROR_DESCRIPTION}
-            </span>
+            </Box>
           </VisuallyHidden>
           <ProjectDetailErrorState
             message={errorMessage}
@@ -590,14 +590,14 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
             onSearch={onSearch}
             size={baseSize}
           />
-        </div>
+        </Box>
       );
     }
 
     // Not found state
     if (state === 'not-found') {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(PROJECT_DETAIL_PAGE_BASE_CLASSES, className)}
           data-testid={testId ?? 'project-detail-page'}
@@ -607,16 +607,16 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
           {...props}
         >
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Box as="span" role="status" aria-live="polite">
               {SR_NOT_FOUND}
-            </span>
+            </Box>
           </VisuallyHidden>
           <ProjectNotFound
             onBack={onNotFoundBack ?? (() => {})}
             onSearch={onSearch ?? (() => {})}
             size={baseSize}
           />
-        </div>
+        </Box>
       );
     }
 
@@ -624,7 +624,7 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
     if (!project || !sidebar || !header || !infoBar || !content) {
       // Fallback if props are missing in ready state (shouldn't happen in practice)
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(PROJECT_DETAIL_PAGE_BASE_CLASSES, className)}
           data-testid={testId ?? 'project-detail-page'}
@@ -638,12 +638,12 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
             onSearch={onSearch ?? (() => {})}
             size={baseSize}
           />
-        </div>
+        </Box>
       );
     }
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(PROJECT_DETAIL_PAGE_BASE_CLASSES, className)}
         data-testid={testId ?? 'project-detail-page'}
@@ -656,9 +656,9 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
         {...props}
       >
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Box as="span" role="status" aria-live="polite">
             {buildLoadedAnnouncement(project, taskCount)}
-          </span>
+          </Box>
         </VisuallyHidden>
         <ProjectDetailLayout
           sidebarCollapsed={sidebarCollapsed ?? false}
@@ -691,7 +691,7 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
             />
           }
         >
-          <div className="flex h-full flex-col">
+          <Box className="flex h-full flex-col">
             <ProjectDetailInfoBar
               project={project}
               onBack={infoBar.onBack}
@@ -709,7 +709,7 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
               onRetry={content.onRetry}
               size={baseSize}
             />
-          </div>
+          </Box>
 
           {createTaskDialog && (
             <ProjectCreateTaskDialog
@@ -730,7 +730,7 @@ export const ProjectDetailPage = forwardRef<HTMLDivElement, ProjectDetailPagePro
             />
           )}
         </ProjectDetailLayout>
-      </div>
+      </Box>
     );
   }
 );

@@ -26,7 +26,7 @@
  */
 
 import type { ExecutorProfile } from '@openflow/generated';
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { forwardRef, useId } from 'react';
 import type { ConfirmDialogProps } from '../organisms/ConfirmDialog';
@@ -317,7 +317,7 @@ export const ProfilesSettingsPageSkeleton = forwardRef<
   ref
 ) {
   return (
-    <div
+    <Box
       ref={ref}
       className={PROFILES_SETTINGS_PAGE_SKELETON_CLASSES}
       aria-hidden="true"
@@ -326,13 +326,13 @@ export const ProfilesSettingsPageSkeleton = forwardRef<
     >
       {/* Screen reader loading announcement */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite">
+        <Box role="status" aria-live="polite">
           {SR_LOADING}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       <ProfilesLoadingSkeleton count={itemCount} size={size} />
-    </div>
+    </Box>
   );
 });
 
@@ -344,7 +344,7 @@ export const ProfilesSettingsPageError = forwardRef<
   ProfilesSettingsPageErrorStateProps
 >(function ProfilesSettingsPageError({ error, onRetry, size, 'data-testid': testId }, ref) {
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(
         PROFILES_SETTINGS_PAGE_ERROR_CLASSES,
@@ -354,13 +354,13 @@ export const ProfilesSettingsPageError = forwardRef<
     >
       {/* Screen reader announcement */}
       <VisuallyHidden>
-        <div role="status" aria-live="assertive">
+        <Box role="status" aria-live="assertive">
           {SR_ERROR_PREFIX} {error.message}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       <ProfilesErrorState error={error.message} onRetry={onRetry} size={size} />
-    </div>
+    </Box>
   );
 });
 
@@ -488,7 +488,7 @@ export const ProfilesSettingsPage = forwardRef<HTMLDivElement, ProfilesSettingsP
     // Loading state - show skeleton
     if (isLoading) {
       return (
-        <div
+        <Box
           ref={ref}
           className={PROFILES_SETTINGS_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -497,14 +497,14 @@ export const ProfilesSettingsPage = forwardRef<HTMLDivElement, ProfilesSettingsP
           data-state="loading"
         >
           <ProfilesSettingsPageSkeleton size={size} />
-        </div>
+        </Box>
       );
     }
 
     // Error state - show error UI
     if (hasError && error && onRetry) {
       return (
-        <div
+        <Box
           ref={ref}
           className={PROFILES_SETTINGS_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -512,13 +512,13 @@ export const ProfilesSettingsPage = forwardRef<HTMLDivElement, ProfilesSettingsP
           data-state="error"
         >
           <ProfilesSettingsPageError error={error} onRetry={onRetry} size={size} />
-        </div>
+        </Box>
       );
     }
 
     // Normal state - show content
     return (
-      <div
+      <Box
         ref={ref}
         className={PROFILES_SETTINGS_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -528,9 +528,9 @@ export const ProfilesSettingsPage = forwardRef<HTMLDivElement, ProfilesSettingsP
       >
         {/* Screen reader announcements */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite" aria-atomic="true">
+          <Box role="status" aria-live="polite" aria-atomic="true">
             {isEmpty ? SR_EMPTY : buildLoadedAnnouncement(profileCount)}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         <ProfilesPageLayout description={description} onCreateClick={onCreateClick} size={size}>
@@ -561,7 +561,7 @@ export const ProfilesSettingsPage = forwardRef<HTMLDivElement, ProfilesSettingsP
           {/* Confirm delete dialog */}
           <ProfilesConfirmDialog {...confirmDialog} />
         </ProfilesPageLayout>
-      </div>
+      </Box>
     );
   }
 );

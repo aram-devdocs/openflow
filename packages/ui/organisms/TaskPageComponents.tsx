@@ -597,9 +597,9 @@ export const TaskNotFound = forwardRef<HTMLDivElement, TaskNotFoundProps>(
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {SR_NOT_FOUND_ANNOUNCEMENT}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         <Icon
@@ -679,9 +679,9 @@ export const TaskPageError = forwardRef<HTMLDivElement, TaskPageErrorProps>(
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <span role="status" aria-live="assertive">
+          <Text as="span" role="status" aria-live="assertive">
             {SR_ERROR_ANNOUNCEMENT}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         <Icon
@@ -1023,9 +1023,9 @@ export const AddStepDialog = forwardRef<HTMLDivElement, AddStepDialogProps>(
         {/* Screen reader announcement for state changes */}
         {announcement && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               {announcement}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 

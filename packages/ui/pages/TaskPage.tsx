@@ -42,7 +42,7 @@ import type {
   WorkflowStep,
 } from '@openflow/generated';
 import type { Breakpoint, ResponsiveValue } from '@openflow/primitives';
-import { Flex, Heading, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Flex, Heading, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, type LucideIcon, RefreshCw } from 'lucide-react';
 import { type HTMLAttributes, forwardRef, useId } from 'react';
@@ -630,9 +630,9 @@ export const TaskPageSkeleton = forwardRef<HTMLDivElement, TaskPageSkeletonProps
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Box as="span" role="status" aria-live="polite">
             {SR_LOADING}
-          </span>
+          </Box>
         </VisuallyHidden>
 
         <SkeletonTaskDetail
@@ -689,9 +689,9 @@ export const TaskPageError = forwardRef<HTMLDivElement, TaskPageErrorProps>(
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <span role="status" aria-live="assertive">
+          <Box as="span" role="status" aria-live="assertive">
             {SR_ERROR_PREFIX} {message}
-          </span>
+          </Box>
         </VisuallyHidden>
 
         <Icon
@@ -901,9 +901,9 @@ export const TaskPage = forwardRef<HTMLDivElement, TaskPageProps>(
         >
           {/* Screen reader announcement */}
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Box as="span" role="status" aria-live="polite">
               {SR_NOT_FOUND}
-            </span>
+            </Box>
           </VisuallyHidden>
 
           <TaskNotFound onBack={onNotFoundBack ?? (() => {})} size={size} />
@@ -982,26 +982,26 @@ export const TaskPage = forwardRef<HTMLDivElement, TaskPageProps>(
       >
         {/* Screen reader announcement for loaded state */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Box as="span" role="status" aria-live="polite">
             {loadedAnnouncement}
-          </span>
+          </Box>
         </VisuallyHidden>
 
         {/* Screen reader announcement for running state */}
         {mainPanel.isRunning && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Box as="span" role="status" aria-live="polite">
               {SR_RUNNING}
-            </span>
+            </Box>
           </VisuallyHidden>
         )}
 
         {/* Screen reader announcement for processing state */}
         {mainPanel.isProcessing && !mainPanel.isRunning && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Box as="span" role="status" aria-live="polite">
               {SR_PROCESSING}
-            </span>
+            </Box>
           </VisuallyHidden>
         )}
 

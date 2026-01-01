@@ -35,9 +35,13 @@ import type {
 } from '@openflow/generated';
 import { SearchResultType } from '@openflow/generated';
 import {
+  type A11yProps,
+  Box,
   type Breakpoint,
   Flex,
   Heading,
+  List,
+  ListItem,
   type ResponsiveValue,
   Text,
   VisuallyHidden,
@@ -80,8 +84,14 @@ export type DashboardBreakpoint = Breakpoint;
 /** Size variants for dashboard components */
 export type DashboardSize = 'sm' | 'md' | 'lg';
 
+/** Helper type to omit conflicting aria and children props when using primitives */
+type SafeHTMLDivAttributes = Omit<HTMLAttributes<HTMLDivElement>, 'children' | keyof A11yProps>;
+
+/** Helper type for span elements */
+type SafeHTMLSpanAttributes = Omit<HTMLAttributes<HTMLSpanElement>, 'children' | keyof A11yProps>;
+
 /** Props for StatCard component */
-export interface StatCardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+export interface StatCardProps extends SafeHTMLDivAttributes {
   /** Label displayed above the value */
   label: string;
   /** Numeric value to display */
@@ -95,7 +105,7 @@ export interface StatCardProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
 }
 
 /** Props for StatusBadge component */
-export interface StatusBadgeProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
+export interface StatusBadgeProps extends SafeHTMLSpanAttributes {
   /** Task status to display */
   status: TaskStatus;
   /** Size variant for responsive sizing */
@@ -183,7 +193,7 @@ export interface DashboardHeaderProps {
 }
 
 /** Props for DashboardEmptyState component */
-export interface DashboardEmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+export interface DashboardEmptyStateProps extends SafeHTMLDivAttributes {
   /** Callback for creating new project */
   onNewProject: () => void;
   /** Size variant for responsive sizing */
@@ -193,8 +203,7 @@ export interface DashboardEmptyStateProps extends Omit<HTMLAttributes<HTMLDivEle
 }
 
 /** Props for DashboardLoadingSkeleton component */
-export interface DashboardLoadingSkeletonProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+export interface DashboardLoadingSkeletonProps extends SafeHTMLDivAttributes {
   /** Size variant for responsive sizing */
   size?: ResponsiveValue<DashboardSize>;
   /** Data test ID for automated testing */
@@ -202,7 +211,7 @@ export interface DashboardLoadingSkeletonProps
 }
 
 /** Props for DashboardErrorState component */
-export interface DashboardErrorStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+export interface DashboardErrorStateProps extends SafeHTMLDivAttributes {
   /** Error message to display */
   message?: string;
   /** Callback to retry loading */
@@ -218,7 +227,7 @@ export interface DashboardErrorStateProps extends Omit<HTMLAttributes<HTMLDivEle
 }
 
 /** Props for DashboardStatsGrid component */
-export interface DashboardStatsGridProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+export interface DashboardStatsGridProps extends SafeHTMLDivAttributes {
   /** All tasks for the project */
   tasks: Task[];
   /** Size variant for responsive sizing */
@@ -230,7 +239,7 @@ export interface DashboardStatsGridProps extends Omit<HTMLAttributes<HTMLDivElem
 }
 
 /** Props for RecentTasksList component */
-export interface RecentTasksListProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+export interface RecentTasksListProps extends SafeHTMLDivAttributes {
   /** Tasks to display (up to 5) */
   tasks: Task[];
   /** Callback when task is clicked */
@@ -328,7 +337,7 @@ export interface DashboardCommandPaletteProps {
 }
 
 /** Props for DashboardContent component */
-export interface DashboardContentProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+export interface DashboardContentProps extends SafeHTMLDivAttributes {
   /** Whether projects are loading */
   isLoadingProjects: boolean;
   /** Whether tasks are loading */
@@ -572,7 +581,7 @@ export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(function StatC
   const valueSizeClasses = getResponsiveSizeClasses(size, STAT_CARD_VALUE_SIZE_CLASSES);
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(
         STAT_CARD_BASE_CLASSES,
@@ -603,7 +612,7 @@ export const StatCard = forwardRef<HTMLDivElement, StatCardProps>(function StatC
         {value}
       </Text>
       <VisuallyHidden>{`${label}: ${value}`}</VisuallyHidden>
-    </div>
+    </Box>
   );
 });
 
@@ -625,7 +634,8 @@ export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(functio
   const sizeClasses = getResponsiveSizeClasses(size, STATUS_BADGE_SIZE_CLASSES);
 
   return (
-    <span
+    <Text
+      as="span"
       ref={ref}
       className={cn(STATUS_BADGE_BASE_CLASSES, STATUS_STYLES[status], sizeClasses, className)}
       data-testid={testId}
@@ -636,7 +646,7 @@ export const StatusBadge = forwardRef<HTMLSpanElement, StatusBadgeProps>(functio
       {...props}
     >
       {STATUS_LABELS[status]}
-    </span>
+    </Text>
   );
 });
 
@@ -761,7 +771,7 @@ export const DashboardEmptyState = forwardRef<HTMLDivElement, DashboardEmptyStat
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(EMPTY_STATE_CONTAINER_CLASSES, className)}
         data-testid={testId}
@@ -771,9 +781,9 @@ export const DashboardEmptyState = forwardRef<HTMLDivElement, DashboardEmptyStat
         {...props}
       >
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {SR_EMPTY}
-          </span>
+          </Text>
         </VisuallyHidden>
         <EmptyState
           icon={FolderPlus}
@@ -785,7 +795,7 @@ export const DashboardEmptyState = forwardRef<HTMLDivElement, DashboardEmptyStat
           }}
           size={baseSize}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -802,38 +812,40 @@ export const DashboardLoadingSkeleton = forwardRef<HTMLDivElement, DashboardLoad
     const paddingClasses = getResponsiveSizeClasses(size, DASHBOARD_PADDING_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(LOADING_CONTAINER_CLASSES, paddingClasses, className)}
         data-testid={testId}
         data-size={baseSize}
         role="status"
-        aria-busy="true"
+        aria-busy={true}
         aria-label={SR_LOADING}
         {...props}
       >
         <VisuallyHidden>
-          <span aria-live="polite">{SR_LOADING}</span>
+          <Text as="span" aria-live="polite">
+            {SR_LOADING}
+          </Text>
         </VisuallyHidden>
 
         {/* Stats skeleton */}
-        <SkeletonStats className="mb-6" aria-hidden="true" />
+        <SkeletonStats className="mb-6" aria-hidden={true} />
 
         {/* Recent tasks skeleton */}
-        <div
+        <Box
           className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))]"
-          aria-hidden="true"
+          aria-hidden={true}
         >
-          <div className="border-b border-[rgb(var(--border))] px-4 py-3">
+          <Box className="border-b border-[rgb(var(--border))] px-4 py-3">
             <Skeleton variant="text" width={96} height={20} />
-          </div>
-          <div className="p-4 space-y-2">
+          </Box>
+          <Box className="p-4 space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
               <SkeletonTaskCard key={`dashboard-skeleton-${i}`} />
             ))}
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Box>
+      </Box>
     );
   }
 );
@@ -858,7 +870,7 @@ export const DashboardErrorState = forwardRef<HTMLDivElement, DashboardErrorStat
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(ERROR_STATE_CLASSES, className)}
         data-testid={testId}
@@ -868,11 +880,11 @@ export const DashboardErrorState = forwardRef<HTMLDivElement, DashboardErrorStat
         {...props}
       >
         <VisuallyHidden>
-          <span>{SR_ERROR}</span>
+          <Text as="span">{SR_ERROR}</Text>
         </VisuallyHidden>
-        <div className={ERROR_ICON_CONTAINER_CLASSES}>
-          <Icon icon={AlertCircle} size="lg" aria-hidden="true" />
-        </div>
+        <Box className={ERROR_ICON_CONTAINER_CLASSES}>
+          <Icon icon={AlertCircle} size="lg" aria-hidden={true} />
+        </Box>
         <Heading level={2} size="lg" weight="semibold" className="mb-2">
           {errorTitle}
         </Heading>
@@ -886,7 +898,7 @@ export const DashboardErrorState = forwardRef<HTMLDivElement, DashboardErrorStat
             {retryLabel}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -919,7 +931,7 @@ export const DashboardStatsGrid = forwardRef<HTMLDivElement, DashboardStatsGridP
     const doneCount = tasks.filter((t) => t.status === 'done').length;
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn('mb-6 grid sm:grid-cols-2 lg:grid-cols-4', gapClasses, className)}
         data-testid={testId}
@@ -929,10 +941,12 @@ export const DashboardStatsGrid = forwardRef<HTMLDivElement, DashboardStatsGridP
         {...props}
       >
         <VisuallyHidden>
-          <h2 id={statsId}>{statsLabel}</h2>
-          <span role="status" aria-live="polite">
+          <Heading level={2} id={statsId}>
+            {statsLabel}
+          </Heading>
+          <Text as="span" role="status" aria-live="polite">
             {buildStatsAnnouncement(tasks)}
-          </span>
+          </Text>
         </VisuallyHidden>
         <StatCard
           label="Total Tasks"
@@ -962,7 +976,7 @@ export const DashboardStatsGrid = forwardRef<HTMLDivElement, DashboardStatsGridP
           size={size}
           data-testid={testId ? `${testId}-done` : undefined}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -990,7 +1004,7 @@ export const RecentTasksList = forwardRef<HTMLDivElement, RecentTasksListProps>(
     const listId = useId();
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(RECENT_TASKS_CONTAINER_CLASSES, className)}
         data-testid={testId}
@@ -1000,23 +1014,24 @@ export const RecentTasksList = forwardRef<HTMLDivElement, RecentTasksListProps>(
         aria-labelledby={headingId}
         {...props}
       >
-        <div className={RECENT_TASKS_HEADER_CLASSES}>
+        <Box className={RECENT_TASKS_HEADER_CLASSES}>
           <Heading level={3} size="sm" weight="medium" id={headingId}>
             {listLabel}
           </Heading>
-        </div>
-        <div className="p-4">
+        </Box>
+        <Box className="p-4">
           {tasks.length === 0 ? (
-            <div className="py-8 text-center">
+            <Box className="py-8 text-center">
               <Text color="muted-foreground" size="sm">
                 {emptyMessage}
               </Text>
-            </div>
+            </Box>
           ) : (
-            <ul id={listId} role="list" aria-label={`${listLabel} list`} className="space-y-2">
+            <List id={listId} role="list" aria-label={`${listLabel} list`} className="space-y-2">
               {tasks.slice(0, 5).map((task) => (
-                <li key={task.id} role="listitem">
-                  <button
+                <ListItem key={task.id} role="listitem">
+                  <Box
+                    as="button"
                     type="button"
                     onClick={() => onSelectTask(task.id)}
                     className={cn(TASK_ITEM_BASE_CLASSES, itemSizeClasses)}
@@ -1027,13 +1042,13 @@ export const RecentTasksList = forwardRef<HTMLDivElement, RecentTasksListProps>(
                       {task.title}
                     </Text>
                     <StatusBadge status={task.status} size={size} />
-                  </button>
-                </li>
+                  </Box>
+                </ListItem>
               ))}
-            </ul>
+            </List>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -1107,7 +1122,7 @@ export const DashboardContent = forwardRef<HTMLDivElement, DashboardContentProps
     // Project overview
     if (activeProjectId && !isLoadingTasks) {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn('flex-1 overflow-auto', paddingClasses, className)}
           data-testid={testId}
@@ -1116,9 +1131,9 @@ export const DashboardContent = forwardRef<HTMLDivElement, DashboardContentProps
           {...props}
         >
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               {SR_PROJECT_LOADED}
-            </span>
+            </Text>
           </VisuallyHidden>
           <DashboardStatsGrid
             tasks={tasks}
@@ -1131,7 +1146,7 @@ export const DashboardContent = forwardRef<HTMLDivElement, DashboardContentProps
             size={size}
             data-testid={testId ? `${testId}-tasks` : undefined}
           />
-        </div>
+        </Box>
       );
     }
 
@@ -1164,12 +1179,12 @@ export function CreateProjectDialog({
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} title="Create New Project">
-      <div className="space-y-4" data-size={baseSize}>
+      <Box className="space-y-4" data-size={baseSize}>
         {/* Screen reader announcement for dialog */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             Create new project dialog. Enter project name and repository path.
-          </span>
+          </Text>
         </VisuallyHidden>
 
         <FormField
@@ -1205,7 +1220,7 @@ export function CreateProjectDialog({
               type="button"
               aria-label="Browse for folder"
             >
-              <Icon icon={FolderOpen} size="sm" aria-hidden="true" />
+              <Icon icon={FolderOpen} size="sm" aria-hidden={true} />
             </Button>
           </Flex>
         </FormField>
@@ -1230,7 +1245,7 @@ export function CreateProjectDialog({
             Create Project
           </Button>
         </Flex>
-      </div>
+      </Box>
     </Dialog>
   );
 }
@@ -1259,12 +1274,12 @@ export function CreateTaskDialog({
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} title="Create New Task">
-      <div className="space-y-4" data-size={baseSize}>
+      <Box className="space-y-4" data-size={baseSize}>
         {/* Screen reader announcement for dialog */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             Create new task dialog. Enter task title and optional description.
-          </span>
+          </Text>
         </VisuallyHidden>
 
         <FormField
@@ -1322,7 +1337,7 @@ export function CreateTaskDialog({
             Create Task
           </Button>
         </Flex>
-      </div>
+      </Box>
     </Dialog>
   );
 }

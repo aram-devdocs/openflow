@@ -1,5 +1,5 @@
 import type { WorkflowTemplate } from '@openflow/generated';
-import { VisuallyHidden } from '@openflow/primitives';
+import { Box, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertCircle, Check, ChevronRight, FileText, type LucideIcon } from 'lucide-react';
 import { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -290,7 +290,7 @@ export const WorkflowSelectorSkeleton = forwardRef<HTMLDivElement, WorkflowSelec
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(WORKFLOW_SELECTOR_BASE_CLASSES, className)}
         aria-hidden="true"
@@ -303,7 +303,7 @@ export const WorkflowSelectorSkeleton = forwardRef<HTMLDivElement, WorkflowSelec
         {Array.from({ length: count }).map((_, i) => (
           <Skeleton key={`workflow-skeleton-${i}`} className={WORKFLOW_SKELETON_CLASSES} />
         ))}
-      </div>
+      </Box>
     );
   }
 );
@@ -326,7 +326,7 @@ export const WorkflowSelectorError = forwardRef<HTMLDivElement, WorkflowSelector
     const paddingClasses = getResponsiveSizeClasses(size, WORKFLOW_ERROR_PADDING_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -335,9 +335,9 @@ export const WorkflowSelectorError = forwardRef<HTMLDivElement, WorkflowSelector
         data-size={baseSize}
       >
         <VisuallyHidden>
-          <span role="status" aria-live="assertive">
+          <Text as="span" role="status" aria-live="assertive">
             {message}
-          </span>
+          </Text>
         </VisuallyHidden>
         <Icon
           icon={AlertCircle}
@@ -345,7 +345,9 @@ export const WorkflowSelectorError = forwardRef<HTMLDivElement, WorkflowSelector
           className="text-[rgb(var(--destructive))]"
           aria-hidden="true"
         />
-        <p className="text-sm text-[rgb(var(--destructive))]">{message}</p>
+        <Text as="p" className="text-sm text-[rgb(var(--destructive))]">
+          {message}
+        </Text>
         {onRetry && (
           <Button
             variant="secondary"
@@ -357,7 +359,7 @@ export const WorkflowSelectorError = forwardRef<HTMLDivElement, WorkflowSelector
             {DEFAULT_ERROR_RETRY_LABEL}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -427,7 +429,8 @@ const WorkflowOption = forwardRef<HTMLButtonElement, WorkflowOptionProps>(functi
     : DEFAULT_NO_TEMPLATE_DESCRIPTION;
 
   return (
-    <button
+    <Box
+      as="button"
       ref={ref}
       type="button"
       id={id}
@@ -470,12 +473,14 @@ const WorkflowOption = forwardRef<HTMLButtonElement, WorkflowOptionProps>(functi
       )}
 
       {/* Content */}
-      <div className="flex-1 min-w-0">
-        <span className={cn(WORKFLOW_TITLE_BASE_CLASSES, titleSizeClasses)}>{title}</span>
-        <p className={cn(WORKFLOW_DESCRIPTION_BASE_CLASSES, descriptionSizeClasses)}>
+      <Box className="flex-1 min-w-0">
+        <Text as="span" className={cn(WORKFLOW_TITLE_BASE_CLASSES, titleSizeClasses)}>
+          {title}
+        </Text>
+        <Text as="p" className={cn(WORKFLOW_DESCRIPTION_BASE_CLASSES, descriptionSizeClasses)}>
           {description}
-        </p>
-      </div>
+        </Text>
+      </Box>
 
       {/* Selection indicator or arrow */}
       {isSelected ? (
@@ -493,7 +498,7 @@ const WorkflowOption = forwardRef<HTMLButtonElement, WorkflowOptionProps>(functi
           aria-hidden="true"
         />
       )}
-    </button>
+    </Box>
   );
 });
 
@@ -668,7 +673,7 @@ export const WorkflowSelector = forwardRef<HTMLDivElement, WorkflowSelectorProps
     // Empty state when no workflows available (still show "no template" option)
     if (workflows.length === 0) {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(WORKFLOW_SELECTOR_BASE_CLASSES, className)}
           role="listbox"
@@ -684,9 +689,9 @@ export const WorkflowSelector = forwardRef<HTMLDivElement, WorkflowSelectorProps
         >
           {/* Screen reader announcements */}
           <VisuallyHidden>
-            <div role="status" aria-live="polite" aria-atomic="true">
+            <Box role="status" aria-live="polite" aria-atomic="true">
               {announcement}
-            </div>
+            </Box>
           </VisuallyHidden>
 
           {/* No template option */}
@@ -716,12 +721,12 @@ export const WorkflowSelector = forwardRef<HTMLDivElement, WorkflowSelectorProps
             className="mt-4"
             data-testid={testId ? `${testId}-empty` : 'workflow-selector-empty'}
           />
-        </div>
+        </Box>
       );
     }
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(WORKFLOW_SELECTOR_BASE_CLASSES, className)}
         role="listbox"
@@ -739,16 +744,16 @@ export const WorkflowSelector = forwardRef<HTMLDivElement, WorkflowSelectorProps
       >
         {/* Screen reader announcements */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite" aria-atomic="true">
+          <Box role="status" aria-live="polite" aria-atomic="true">
             {announcement}
-          </div>
-          <div>
+          </Box>
+          <Box>
             {buildCountAnnouncement(workflows.length)}. {SR_NAVIGATION_HINT}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         {/* Workflow options */}
-        <div ref={listRef}>
+        <Box ref={listRef}>
           {options.map((workflow, index) => (
             <WorkflowOption
               key={workflow?.id ?? 'no-template'}
@@ -771,8 +776,8 @@ export const WorkflowSelector = forwardRef<HTMLDivElement, WorkflowSelectorProps
               testIdPrefix={testId}
             />
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );

@@ -1,4 +1,4 @@
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, FileText, Shield, Terminal, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -25,7 +25,23 @@ export interface PermissionRequest {
 }
 
 export interface PermissionDialogProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, 'role' | 'title'> {
+  extends Omit<
+    HTMLAttributes<HTMLDivElement>,
+    | 'role'
+    | 'title'
+    | 'aria-hidden'
+    | 'aria-modal'
+    | 'aria-busy'
+    | 'aria-expanded'
+    | 'aria-pressed'
+    | 'aria-selected'
+    | 'aria-checked'
+    | 'aria-disabled'
+    | 'aria-required'
+    | 'aria-invalid'
+    | 'aria-haspopup'
+    | 'aria-current'
+  > {
   /** The permission request to display */
   request: PermissionRequest;
   /** Called when user approves the permission */
@@ -432,10 +448,14 @@ export const PermissionDialog = forwardRef<HTMLDivElement, PermissionDialogProps
       closeOnBackdropClick = true,
       className,
       'data-testid': dataTestId,
-      ...props
+      ...restProps
     },
     ref
   ) {
+    // Filter out aria-* attributes to avoid type conflicts
+    const props = Object.fromEntries(
+      Object.entries(restProps).filter(([key]) => !key.startsWith('aria-'))
+    ) as typeof restProps;
     const internalRef = useRef<HTMLDivElement>(null);
     const dialogRef = (ref as React.RefObject<HTMLDivElement>) || internalRef;
     const previousActiveElement = useRef<HTMLElement | null>(null);
@@ -531,31 +551,30 @@ export const PermissionDialog = forwardRef<HTMLDivElement, PermissionDialogProps
     };
 
     return (
-      <div
+      <Box
         role="presentation"
         className={PERMISSION_DIALOG_CONTAINER_CLASSES}
         data-testid={dataTestId ? `${dataTestId}-container` : undefined}
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <span role="status" aria-live="assertive" aria-atomic="true">
+          <Text as="span" role="status" aria-live="assertive" aria-atomic="true">
             {buildDialogAnnouncement(request, approving, denying)}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         {/* Backdrop */}
-        <div
+        <Box
           className={PERMISSION_DIALOG_BACKDROP_CLASSES}
-          aria-hidden="true"
+          aria-hidden={true}
           onClick={handleBackdropClick}
           data-testid={dataTestId ? `${dataTestId}-backdrop` : undefined}
         />
 
         {/* Dialog panel */}
-        <div
+        <Box
           ref={dialogRef}
           role="alertdialog"
-          aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={descriptionId}
           tabIndex={-1}
@@ -568,21 +587,25 @@ export const PermissionDialog = forwardRef<HTMLDivElement, PermissionDialogProps
           {...props}
         >
           {/* Header */}
-          <div
+          <Box
             className={PERMISSION_DIALOG_HEADER_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-header` : undefined}
           >
-            <div className={PERMISSION_DIALOG_WARNING_ICON_CLASSES} aria-hidden="true">
+            <Box className={PERMISSION_DIALOG_WARNING_ICON_CLASSES} aria-hidden={true}>
               <Icon icon={AlertTriangle} size="md" className="text-warning" />
-            </div>
-            <div className="flex-1">
-              <h2 id={titleId} className="text-sm font-semibold text-[rgb(var(--foreground))]">
+            </Box>
+            <Box className="flex-1">
+              <Heading
+                level={2}
+                id={titleId}
+                className="text-sm font-semibold text-[rgb(var(--foreground))]"
+              >
                 Permission Required
-              </h2>
+              </Heading>
               <Text size="xs" color="muted-foreground">
                 Claude is requesting access
               </Text>
-            </div>
+            </Box>
             <Button
               variant="ghost"
               size="sm"
@@ -594,34 +617,39 @@ export const PermissionDialog = forwardRef<HTMLDivElement, PermissionDialogProps
             >
               <Icon icon={X} size="sm" />
             </Button>
-          </div>
+          </Box>
 
           {/* Content */}
-          <div
+          <Box
             id={descriptionId}
             className={PERMISSION_DIALOG_CONTENT_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-content` : undefined}
           >
-            <div className="flex items-start gap-3">
-              <div className={PERMISSION_DIALOG_TOOL_ICON_CLASSES} aria-hidden="true">
+            <Box className="flex items-start gap-3">
+              <Box className={PERMISSION_DIALOG_TOOL_ICON_CLASSES} aria-hidden={true}>
                 <Icon icon={ToolIcon} size="sm" className="text-[rgb(var(--primary))]" />
-              </div>
-              <div className="flex-1">
+              </Box>
+              <Box className="flex-1">
                 <Text size="sm" color="foreground">
-                  Claude wants to <span className="font-medium">{actionDesc}</span>
+                  Claude wants to{' '}
+                  <Text as="span" className="font-medium">
+                    {actionDesc}
+                  </Text>
                 </Text>
                 {request.filePath && (
-                  <code className={PERMISSION_DIALOG_FILEPATH_CLASSES}>{request.filePath}</code>
+                  <Text as="code" className={PERMISSION_DIALOG_FILEPATH_CLASSES}>
+                    {request.filePath}
+                  </Text>
                 )}
                 <Text as="p" size="xs" color="muted-foreground" className="mt-2">
                   {request.description}
                 </Text>
-              </div>
-            </div>
-          </div>
+              </Box>
+            </Box>
+          </Box>
 
           {/* Footer - Deny first for safety (platform convention) */}
-          <div
+          <Box
             className={PERMISSION_DIALOG_FOOTER_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-footer` : undefined}
           >
@@ -649,9 +677,9 @@ export const PermissionDialog = forwardRef<HTMLDivElement, PermissionDialogProps
             >
               {approveLabel}
             </Button>
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Box>
+      </Box>
     );
   }
 );

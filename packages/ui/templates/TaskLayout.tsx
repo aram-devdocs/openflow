@@ -33,9 +33,14 @@
 
 import type { Chat, Task, TaskStatus } from '@openflow/generated';
 import {
+  Aside,
+  Box,
+  Flex,
   Header as HeaderPrimitive,
+  Heading,
   Main,
   type ResponsiveValue,
+  Text,
   VisuallyHidden,
 } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
@@ -54,6 +59,7 @@ import {
   type ReactNode,
   forwardRef,
   useCallback,
+  useEffect,
   useId,
   useRef,
   useState,
@@ -552,8 +558,9 @@ export const TaskLayoutSkeleton = forwardRef<HTMLDivElement, TaskLayoutSkeletonP
     const sizeClasses = TASK_LAYOUT_SIZE_CLASSES[baseSize];
 
     return (
-      <div
+      <Flex
         ref={ref}
+        direction="column"
         className={cn(TASK_LAYOUT_CONTAINER_CLASSES, className)}
         role="status"
         aria-busy="true"
@@ -564,18 +571,20 @@ export const TaskLayoutSkeleton = forwardRef<HTMLDivElement, TaskLayoutSkeletonP
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <span aria-live="polite">{loadingLabel}</span>
+          <Text as="span" aria-live="polite">
+            {loadingLabel}
+          </Text>
         </VisuallyHidden>
 
         {/* Header skeleton */}
-        <div className={cn(TASK_LAYOUT_HEADER_CLASSES, sizeClasses.headerPadding)}>
-          <div className={TASK_LAYOUT_HEADER_ROW_CLASSES}>
-            <div className={TASK_LAYOUT_HEADER_LEFT_CLASSES}>
+        <Box className={cn(TASK_LAYOUT_HEADER_CLASSES, sizeClasses.headerPadding)}>
+          <Flex className={TASK_LAYOUT_HEADER_ROW_CLASSES}>
+            <Flex className={TASK_LAYOUT_HEADER_LEFT_CLASSES}>
               <Skeleton variant="rectangular" width={32} height={32} className="rounded-md" />
               <Skeleton variant="text" width="40%" height={24} />
               <Skeleton variant="rectangular" width={100} height={32} className="rounded-md" />
-            </div>
-            <div className={TASK_LAYOUT_HEADER_RIGHT_CLASSES}>
+            </Flex>
+            <Flex className={TASK_LAYOUT_HEADER_RIGHT_CLASSES}>
               <Skeleton
                 variant="rectangular"
                 width={120}
@@ -584,60 +593,60 @@ export const TaskLayoutSkeleton = forwardRef<HTMLDivElement, TaskLayoutSkeletonP
               />
               <Skeleton variant="rectangular" width={80} height={32} className="rounded-md" />
               <Skeleton variant="rectangular" width={32} height={32} className="rounded-md" />
-            </div>
-          </div>
-        </div>
+            </Flex>
+          </Flex>
+        </Box>
 
         {/* Tabs skeleton */}
-        <div className={cn(TASK_LAYOUT_TABS_CLASSES, sizeClasses.tabsPadding)}>
-          <div className="flex gap-4 py-2">
+        <Box className={cn(TASK_LAYOUT_TABS_CLASSES, sizeClasses.tabsPadding)}>
+          <Flex className="gap-4 py-2">
             <Skeleton variant="text" width={60} height={24} />
             <Skeleton variant="text" width={80} height={24} />
             <Skeleton variant="text" width={70} height={24} />
-          </div>
-        </div>
+          </Flex>
+        </Box>
 
         {/* Main content skeleton */}
-        <div className={TASK_LAYOUT_MAIN_CLASSES}>
+        <Flex className={TASK_LAYOUT_MAIN_CLASSES}>
           {/* Steps panel skeleton (desktop) */}
-          <div
+          <Box
             className={TASK_LAYOUT_DESKTOP_STEPS_PANEL_CLASSES}
             style={{ width: sizeClasses.stepsPanelWidth }}
           >
-            <div className="p-4 space-y-3">
+            <Box className="p-4 space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-3">
+                <Flex key={i} className="items-start gap-3">
                   <Skeleton variant="circular" width={24} height={24} />
-                  <div className="flex-1 space-y-1">
+                  <Box className="flex-1 space-y-1">
                     <Skeleton variant="text" width="80%" height={16} />
                     <Skeleton variant="text" width="60%" height={12} />
-                  </div>
-                </div>
+                  </Box>
+                </Flex>
               ))}
-            </div>
-          </div>
+            </Box>
+          </Box>
 
           {/* Main panel skeleton */}
-          <div className={TASK_LAYOUT_MAIN_PANEL_CLASSES}>
-            <div className="flex-1 p-4 space-y-4">
+          <Flex direction="column" className={TASK_LAYOUT_MAIN_PANEL_CLASSES}>
+            <Box className="flex-1 p-4 space-y-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className={i % 2 === 0 ? 'flex justify-end' : 'flex justify-start'}>
+                <Flex key={i} className={i % 2 === 0 ? 'justify-end' : 'justify-start'}>
                   <Skeleton
                     variant="rectangular"
                     width="70%"
                     height={i % 2 === 0 ? 60 : 100}
                     className="rounded-lg"
                   />
-                </div>
+                </Flex>
               ))}
-            </div>
+            </Box>
             {/* Input skeleton */}
-            <div className="border-t border-[rgb(var(--border))] p-4">
+            <Box className="border-t border-[rgb(var(--border))] p-4">
               <Skeleton variant="rectangular" width="100%" height={44} className="rounded-md" />
-            </div>
-          </div>
-        </div>
-      </div>
+            </Box>
+          </Flex>
+        </Flex>
+      </Flex>
     );
   }
 );
@@ -773,6 +782,15 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
     }
   }, [onTitleEditToggle, isTitleEditing]);
 
+  // Focus title input when editing starts (programmatic focus is more accessible than autoFocus)
+  useEffect(() => {
+    if (isTitleEditing && titleInputRef.current) {
+      titleInputRef.current.focus();
+      // Select all text for easy replacement
+      titleInputRef.current.select();
+    }
+  }, [isTitleEditing]);
+
   // Clear announcement after it's been read
   if (announcement) {
     setTimeout(() => setAnnouncement(null), 1000);
@@ -791,8 +809,9 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
   );
 
   return (
-    <div
+    <Flex
       ref={ref}
+      direction="column"
       className={cn(TASK_LAYOUT_CONTAINER_CLASSES, className)}
       data-testid={dataTestId}
       data-size={baseSize}
@@ -804,9 +823,9 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
       {/* Screen reader announcements */}
       {announcement && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite" aria-atomic="true">
+          <Text as="span" role="status" aria-live="polite" aria-atomic="true">
             {announcement}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
@@ -819,9 +838,9 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
         {/* Accessible description for screen readers */}
         <VisuallyHidden>{headerAccessibleLabel}</VisuallyHidden>
 
-        <div className={TASK_LAYOUT_HEADER_ROW_CLASSES}>
+        <Flex className={TASK_LAYOUT_HEADER_ROW_CLASSES}>
           {/* Left side: Back button, Title and status */}
-          <div className={TASK_LAYOUT_HEADER_LEFT_CLASSES}>
+          <Flex className={TASK_LAYOUT_HEADER_LEFT_CLASSES}>
             {/* Back button */}
             {onBack && (
               <Tooltip content="Go back">
@@ -849,38 +868,38 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                   onChange={(e) => onTitleInputChange?.(e.target.value)}
                   onKeyDown={handleTitleKeyDown}
                   onBlur={() => onTitleEditCancel?.()}
-                  // biome-ignore lint/a11y/noAutofocus: Required for edit mode UX
-                  autoFocus
                   className={TASK_LAYOUT_TITLE_INPUT_CLASSES}
                   aria-label="Task title"
                   aria-describedby={`${titleInputId}-instructions`}
                   data-testid={dataTestId ? `${dataTestId}-title-input` : undefined}
                 />
-                <span id={`${titleInputId}-instructions`} className="sr-only">
+                <Text as="span" id={`${titleInputId}-instructions`} className="sr-only">
                   Press Enter to save, Escape to cancel
-                </span>
+                </Text>
               </>
             ) : (
-              <div className="flex min-w-0 items-center gap-2 group">
-                <h1
+              <Flex className="min-w-0 items-center gap-2 group">
+                <Heading
+                  level={1}
                   className={TASK_LAYOUT_TITLE_CLASSES}
                   title={task.title}
                   data-testid={dataTestId ? `${dataTestId}-title` : undefined}
                 >
                   {task.title}
-                </h1>
+                </Heading>
                 {onTitleEditToggle && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={handleTitleEditToggle}
                     className={TASK_LAYOUT_EDIT_TITLE_BUTTON_CLASSES}
                     aria-label={DEFAULT_EDIT_TITLE_LABEL}
                     data-testid={dataTestId ? `${dataTestId}-edit-title-button` : undefined}
                   >
                     <Icon icon={Pencil} size="sm" aria-hidden="true" />
-                  </button>
+                  </Button>
                 )}
-              </div>
+              </Flex>
             )}
 
             {/* Status dropdown - shrink on mobile */}
@@ -917,14 +936,14 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                 </Badge>
               </Tooltip>
             )}
-          </div>
+          </Flex>
 
           {/* Right side: Branch and actions */}
-          <div className={TASK_LAYOUT_HEADER_RIGHT_CLASSES}>
+          <Flex className={TASK_LAYOUT_HEADER_RIGHT_CLASSES}>
             {/* Branch indicator - hidden on mobile, shown on tablet+ */}
             {currentBranch && (
               <Tooltip content={`Branch: ${currentBranch}`}>
-                <div
+                <Flex
                   className={TASK_LAYOUT_BRANCH_CLASSES}
                   data-testid={dataTestId ? `${dataTestId}-branch` : undefined}
                 >
@@ -934,13 +953,14 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                     aria-hidden="true"
                     className="text-[rgb(var(--muted-foreground))]"
                   />
-                  <span
+                  <Text
+                    as="span"
                     className="max-w-[100px] truncate text-[rgb(var(--foreground))] md:max-w-[150px]"
                     aria-label={`Git branch: ${currentBranch}`}
                   >
                     {currentBranch}
-                  </span>
-                </div>
+                  </Text>
+                </Flex>
               </Tooltip>
             )}
 
@@ -955,7 +975,9 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                   data-testid={dataTestId ? `${dataTestId}-create-pr-button` : undefined}
                 >
                   <Icon icon={ExternalLink} size="sm" aria-hidden="true" />
-                  <span className="hidden sm:inline">Create PR</span>
+                  <Text as="span" className="hidden sm:inline">
+                    Create PR
+                  </Text>
                 </Button>
               </Tooltip>
             )}
@@ -975,12 +997,12 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                 </Button>
               </Tooltip>
             )}
-          </div>
-        </div>
+          </Flex>
+        </Flex>
       </HeaderPrimitive>
 
       {/* Tabs */}
-      <div
+      <Box
         className={cn(TASK_LAYOUT_TABS_CLASSES, sizeClasses.tabsPadding)}
         data-testid={dataTestId ? `${dataTestId}-tabs-container` : undefined}
       >
@@ -992,7 +1014,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
           size="sm"
           data-testid={dataTestId ? `${dataTestId}-tabs` : undefined}
         />
-      </div>
+      </Box>
 
       {/* Main content area */}
       <Main
@@ -1004,27 +1026,27 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
         {activeTab === 'steps' && (
           <>
             {/* Mobile: Collapsible steps header */}
-            <div className="lg:hidden">
-              <button
-                type="button"
+            <Box className="lg:hidden">
+              <Button
+                variant="ghost"
                 onClick={handleStepsPanelToggle}
                 className={TASK_LAYOUT_MOBILE_STEPS_TOGGLE_CLASSES}
                 aria-expanded={!isStepsPanelCollapsed}
                 aria-controls={stepsPanelId}
                 data-testid={dataTestId ? `${dataTestId}-mobile-steps-toggle` : undefined}
               >
-                <span>{stepsPanelLabel}</span>
+                <Text as="span">{stepsPanelLabel}</Text>
                 <Icon
                   icon={isStepsPanelCollapsed ? ChevronDown : ChevronUp}
                   size="sm"
                   aria-hidden="true"
                   className="text-[rgb(var(--muted-foreground))]"
                 />
-              </button>
+              </Button>
 
               {/* Mobile steps panel - collapsible */}
               {!isStepsPanelCollapsed && (
-                <div
+                <Box
                   id={stepsPanelId}
                   role="region"
                   aria-label={stepsPanelLabel}
@@ -1032,12 +1054,12 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
                   data-testid={dataTestId ? `${dataTestId}-mobile-steps-panel` : undefined}
                 >
                   {stepsPanel}
-                </div>
+                </Box>
               )}
-            </div>
+            </Box>
 
             {/* Desktop: Fixed sidebar */}
-            <aside
+            <Aside
               id={`${stepsPanelId}-desktop`}
               aria-label={stepsPanelLabel}
               className={TASK_LAYOUT_DESKTOP_STEPS_PANEL_CLASSES}
@@ -1045,49 +1067,50 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
               data-testid={dataTestId ? `${dataTestId}-desktop-steps-panel` : undefined}
             >
               {stepsPanel}
-            </aside>
+            </Aside>
 
             {/* Main panel (right side on desktop, below steps on mobile) */}
-            <div
+            <Flex
+              direction="column"
               id={mainPanelId}
               className={TASK_LAYOUT_MAIN_PANEL_CLASSES}
               data-testid={dataTestId ? `${dataTestId}-main-panel` : undefined}
             >
               {mainPanel}
-            </div>
+            </Flex>
           </>
         )}
 
         {/* Tab content for other tabs (Changes, Commits) */}
         {activeTab !== 'steps' && (
-          <div
+          <Box
             role="tabpanel"
             aria-labelledby={`tab-${activeTab}`}
             className={TASK_LAYOUT_TAB_CONTENT_CLASSES}
             data-testid={dataTestId ? `${dataTestId}-tab-content` : undefined}
           >
             {tabContent}
-          </div>
+          </Box>
         )}
       </Main>
 
       {/* Loading overlay */}
       {isLoading && (
-        <div
+        <Flex
           className={TASK_LAYOUT_LOADING_OVERLAY_CLASSES}
           role="status"
           aria-live="polite"
           data-testid={dataTestId ? `${dataTestId}-loading-overlay` : undefined}
         >
-          <div className="flex items-center gap-2 text-[rgb(var(--muted-foreground))]">
-            <div className={TASK_LAYOUT_LOADING_SPINNER_CLASSES} aria-hidden="true" />
-            <span>Loading task...</span>
-          </div>
+          <Flex className="items-center gap-2 text-[rgb(var(--muted-foreground))]">
+            <Box className={TASK_LAYOUT_LOADING_SPINNER_CLASSES} aria-hidden="true" />
+            <Text as="span">Loading task...</Text>
+          </Flex>
           {/* Screen reader announcement */}
           <VisuallyHidden>{SR_LOADING}</VisuallyHidden>
-        </div>
+        </Flex>
       )}
-    </div>
+    </Flex>
   );
 });
 

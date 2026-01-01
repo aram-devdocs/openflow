@@ -149,28 +149,15 @@ pub struct UserMessage {
     pub extra: serde_json::Value,
 }
 
-/// Run an executor (AI coding CLI) for a chat session.
+/// Prepare and start an executor process.
 ///
-/// This command spawns a CLI process using the specified executor profile
-/// and sends the prompt to the AI coding agent. Output is streamed via
-/// Tauri events in JSON format.
-///
-/// # Arguments
-/// * `chat_id` - The chat session to associate the execution with
-/// * `prompt` - The prompt/instructions to send to the AI agent
-/// * `executor_profile_id` - Optional profile ID; uses default if not specified
-///
-/// # Returns
-/// The ExecutionProcess record tracking this execution.
-#[tauri::command]
-pub async fn run_executor(
-    state: State<'_, AppState>,
-    app_handle: tauri::AppHandle,
+/// This helper encapsulates the prepare and start steps for cleaner command handlers.
+async fn prepare_and_start_executor(
+    state: &State<'_, AppState>,
     chat_id: String,
     prompt: String,
     executor_profile_id: Option<String>,
 ) -> Result<ExecutionProcess, String> {
-    // Prepare the executor context (validates inputs, resolves profile, builds args)
     let pool = state.db.lock().await;
     let context = ExecutorService::prepare(
         &pool,
@@ -183,18 +170,29 @@ pub async fn run_executor(
     .await
     .map_err(|e| e.to_string())?;
 
-    // Start the process
-    let process = ExecutorService::start(&pool, &state.process_service, context)
+    ExecutorService::start(&pool, &state.process_service, context)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| e.to_string())
+}
 
-    // Spawn background task to stream JSON output
+/// Run an executor (AI coding CLI) for a chat session.
+///
+/// Spawns a CLI process using the specified executor profile and sends the
+/// prompt to the AI coding agent. Output is streamed via Tauri events.
+#[tauri::command]
+pub async fn run_executor(
+    state: State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    chat_id: String,
+    prompt: String,
+    executor_profile_id: Option<String>,
+) -> Result<ExecutionProcess, String> {
+    let process = prepare_and_start_executor(&state, chat_id, prompt, executor_profile_id).await?;
     spawn_json_output_streamer(
         Arc::clone(&state.process_service),
         app_handle,
         process.id.clone(),
     );
-
     Ok(process)
 }
 

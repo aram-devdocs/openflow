@@ -1,4 +1,11 @@
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn, createLogger } from '@openflow/utils';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Component, type ErrorInfo, type ReactNode, forwardRef, useId, useState } from 'react';
@@ -304,15 +311,15 @@ export const DefaultFallback = forwardRef<HTMLDivElement, DefaultFallbackProps>(
         <VisuallyHidden aria-live="polite">{resetAnnouncement}</VisuallyHidden>
 
         {/* Error icon */}
-        <div
+        <Box
           className={cn(ERROR_ICON_CONTAINER_BASE_CLASSES, iconContainerClasses)}
           aria-hidden="true"
         >
           <Icon icon={AlertTriangle} size={iconSize} className="text-[rgb(var(--destructive))]" />
-        </div>
+        </Box>
 
         {/* Error message */}
-        <div className={ERROR_TEXT_CONTAINER_CLASSES}>
+        <Box className={ERROR_TEXT_CONTAINER_CLASSES}>
           <Heading
             id={titleId}
             level={headingConfig.level}
@@ -325,7 +332,7 @@ export const DefaultFallback = forwardRef<HTMLDivElement, DefaultFallbackProps>(
           <Text id={descriptionId} size={descriptionSize} color="muted-foreground">
             {DEFAULT_ERROR_DESCRIPTION}
           </Text>
-        </div>
+        </Box>
 
         {/* Retry button - 44px touch target on mobile */}
         <Button

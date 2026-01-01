@@ -25,6 +25,7 @@
 
 import type { ExecutorProfile, Message } from '@openflow/generated';
 import {
+  Box,
   type Breakpoint,
   Flex,
   type ResponsiveValue,
@@ -331,7 +332,7 @@ export const ChatPanelSkeleton = forwardRef<HTMLDivElement, ChatPanelSkeletonPro
     const avatarDimensions = getSkeletonAvatarDimensions(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(CHAT_PANEL_BASE_CLASSES, className)}
         aria-hidden="true"
@@ -341,12 +342,12 @@ export const ChatPanelSkeleton = forwardRef<HTMLDivElement, ChatPanelSkeletonPro
         {...props}
       >
         {/* Skeleton messages area */}
-        <div className={cn('flex-1 overflow-hidden', paddingClasses)}>
-          <div className={cn('flex flex-col', gapClasses)}>
+        <Box className={cn('flex-1 overflow-hidden', paddingClasses)}>
+          <Box className={cn('flex flex-col', gapClasses)}>
             {Array.from({ length: messageCount }).map((_, index) => {
               const isUser = index % 2 !== 0;
               return (
-                <div
+                <Box
                   key={`skeleton-message-${index}`}
                   className={cn(SKELETON_MESSAGE_CLASSES, isUser && 'flex-row-reverse')}
                   data-testid={testId ? `${testId}-message-${index}` : undefined}
@@ -356,7 +357,7 @@ export const ChatPanelSkeleton = forwardRef<HTMLDivElement, ChatPanelSkeletonPro
                     width={avatarDimensions.width}
                     height={avatarDimensions.height}
                   />
-                  <div
+                  <Box
                     className={cn(
                       bubbleClasses,
                       'flex-1',
@@ -366,21 +367,21 @@ export const ChatPanelSkeleton = forwardRef<HTMLDivElement, ChatPanelSkeletonPro
                     <Skeleton variant="text" className="h-4 w-3/4" />
                     <Skeleton variant="text" className="h-4 w-1/2" />
                     {!isUser && <Skeleton variant="text" className="h-4 w-2/3" />}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               );
             })}
-          </div>
-        </div>
+          </Box>
+        </Box>
 
         {/* Skeleton input area */}
-        <div className={cn(INPUT_AREA_CONTAINER_CLASSES, paddingClasses)}>
-          <div className={INPUT_ROW_CLASSES}>
+        <Box className={cn(INPUT_AREA_CONTAINER_CLASSES, paddingClasses)}>
+          <Box className={INPUT_ROW_CLASSES}>
             <Skeleton variant="rectangular" className="h-[44px] flex-1 rounded-md" />
             <Skeleton variant="rectangular" className="h-[44px] w-[44px] rounded-md" />
-          </div>
-        </div>
-      </div>
+          </Box>
+        </Box>
+      </Box>
     );
   }
 );
@@ -405,7 +406,7 @@ export const ChatPanelError = forwardRef<HTMLDivElement, ChatPanelErrorProps>(
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(CHAT_PANEL_BASE_CLASSES, ERROR_STATE_CLASSES, className)}
         role="alert"
@@ -413,10 +414,10 @@ export const ChatPanelError = forwardRef<HTMLDivElement, ChatPanelErrorProps>(
         data-testid={testId}
         {...props}
       >
-        <div className="flex flex-col items-center text-center">
-          <div className={ERROR_ICON_CONTAINER_CLASSES}>
+        <Box className="flex flex-col items-center text-center">
+          <Box className={ERROR_ICON_CONTAINER_CLASSES}>
             <Icon icon={AlertCircle} className={ERROR_ICON_CLASSES} aria-hidden="true" />
-          </div>
+          </Box>
           <Text as="strong" size="base" weight="medium" color="foreground" className="mb-1">
             {errorTitle}
           </Text>
@@ -430,8 +431,8 @@ export const ChatPanelError = forwardRef<HTMLDivElement, ChatPanelErrorProps>(
               {retryLabel}
             </Button>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -609,7 +610,7 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
   const isLastMessageStreaming = hasMessages && messages[messages.length - 1]?.isStreaming;
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(CHAT_PANEL_BASE_CLASSES, className)}
       data-testid={testId}
@@ -619,13 +620,13 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
     >
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite" aria-atomic="true">
+        <Box role="status" aria-live="polite" aria-atomic="true">
           {announcement}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       {/* Messages area */}
-      <div
+      <Box
         ref={messagesContainerRef}
         onScroll={handleScroll}
         className={MESSAGES_CONTAINER_CLASSES}
@@ -636,10 +637,10 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
         id={messagesRegionId}
         tabIndex={0}
       >
-        <div className={cn(paddingClasses, gapClasses)}>
+        <Box className={cn(paddingClasses, gapClasses)}>
           {/* Empty state */}
           {!hasMessages && (
-            <div className={EMPTY_STATE_CONTAINER_CLASSES}>
+            <Box className={EMPTY_STATE_CONTAINER_CLASSES}>
               <EmptyState
                 icon={MessageSquare}
                 title={emptyTitle}
@@ -647,7 +648,7 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
                 size={baseSize}
                 data-testid={testId ? `${testId}-empty` : undefined}
               />
-            </div>
+            </Box>
           )}
 
           {/* Message list */}
@@ -663,7 +664,7 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
 
           {/* Processing indicator when no streaming message */}
           {isProcessing && !isLastMessageStreaming && (
-            <div
+            <Box
               className={PROCESSING_INDICATOR_CLASSES}
               role="status"
               aria-label={DEFAULT_PROCESSING_LABEL}
@@ -672,17 +673,17 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
               <Text as="span" size="sm" color="muted-foreground">
                 {DEFAULT_PROCESSING_LABEL}
               </Text>
-            </div>
+            </Box>
           )}
 
           {/* Scroll anchor */}
-          <div ref={messagesEndRef} aria-hidden="true" />
-        </div>
-      </div>
+          <Box ref={messagesEndRef} aria-hidden="true" />
+        </Box>
+      </Box>
 
       {/* Scroll to bottom button */}
       {showScrollButton && (
-        <div className={SCROLL_BUTTON_CONTAINER_CLASSES}>
+        <Box className={SCROLL_BUTTON_CONTAINER_CLASSES}>
           <Button
             variant="secondary"
             size="sm"
@@ -691,13 +692,13 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
             aria-label={scrollLabel}
           >
             <Icon icon={ChevronDown} size="sm" aria-hidden="true" />
-            <span>New messages</span>
+            <Text as="span">New messages</Text>
           </Button>
-        </div>
+        </Box>
       )}
 
       {/* Input area */}
-      <div
+      <Box
         className={cn(INPUT_AREA_CONTAINER_CLASSES, paddingClasses)}
         id={inputAreaId}
         role="region"
@@ -705,7 +706,7 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
       >
         {/* Executor profile selector */}
         {showExecutorSelector && executorProfiles.length > 0 && (
-          <div className="mb-3">
+          <Box className="mb-3">
             <Dropdown
               options={executorOptions}
               value={selectedExecutorProfileId}
@@ -715,11 +716,11 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
               className="max-w-xs"
               data-testid={testId ? `${testId}-executor-dropdown` : undefined}
             />
-          </div>
+          </Box>
         )}
 
         {/* Input row */}
-        <div className={INPUT_ROW_CLASSES}>
+        <Box className={INPUT_ROW_CLASSES}>
           <Textarea
             ref={textareaRef}
             value={inputValue}
@@ -761,15 +762,22 @@ export const ChatPanel = forwardRef<HTMLDivElement, ChatPanelProps>(function Cha
               </Button>
             )}
           </Flex>
-        </div>
+        </Box>
 
         {/* Helper text */}
         <Text as="p" id={`${inputAreaId}-helper`} className={HELPER_TEXT_CLASSES}>
-          Press <kbd className={KBD_CLASSES}>Enter</kbd> to send,{' '}
-          <kbd className={KBD_CLASSES}>Shift+Enter</kbd> for new line
+          Press{' '}
+          <Box as="kbd" className={KBD_CLASSES}>
+            Enter
+          </Box>{' '}
+          to send,{' '}
+          <Box as="kbd" className={KBD_CLASSES}>
+            Shift+Enter
+          </Box>{' '}
+          for new line
         </Text>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 });
 

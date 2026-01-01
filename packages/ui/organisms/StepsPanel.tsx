@@ -1,6 +1,6 @@
 import type { WorkflowStep } from '@openflow/generated';
 import { WorkflowStepStatus } from '@openflow/generated';
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
   AlertTriangle,
@@ -526,7 +526,7 @@ export const StepsPanelSkeleton = forwardRef<HTMLDivElement, StepsPanelSkeletonP
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         role="status"
         aria-label={DEFAULT_LOADING_LABEL}
@@ -539,36 +539,36 @@ export const StepsPanelSkeleton = forwardRef<HTMLDivElement, StepsPanelSkeletonP
         <VisuallyHidden>{DEFAULT_LOADING_LABEL}</VisuallyHidden>
 
         {/* Header skeleton */}
-        <div className={STEPS_PANEL_HEADER_CLASSES}>
+        <Box className={STEPS_PANEL_HEADER_CLASSES}>
           <Skeleton variant="text" width={120} height={16} />
           <Skeleton variant="text" width={80} height={14} />
-        </div>
+        </Box>
 
         {/* Steps list skeleton */}
-        <div className={STEPS_PANEL_LIST_CONTAINER_CLASSES}>
-          <ul className={STEPS_PANEL_LIST_CLASSES} role="list" aria-hidden="true">
+        <Box className={STEPS_PANEL_LIST_CONTAINER_CLASSES}>
+          <Box as="ul" className={STEPS_PANEL_LIST_CLASSES} role="list" aria-hidden="true">
             {Array.from({ length: stepCount }, (_, i) => (
-              <li key={i} className="px-4 py-3">
-                <div className="flex items-start gap-3">
+              <Box as="li" key={i} className="px-4 py-3">
+                <Box className="flex items-start gap-3">
                   <Skeleton variant="rectangular" width={16} height={16} className="mt-0.5" />
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2">
+                  <Box className="flex-1 space-y-2">
+                    <Box className="flex items-center gap-2">
                       <Skeleton variant="circular" width={16} height={16} />
                       <Skeleton variant="text" width={`${60 + i * 10}%`} height={16} />
-                    </div>
+                    </Box>
                     <Skeleton variant="text" width="90%" height={14} />
-                  </div>
-                </div>
-              </li>
+                  </Box>
+                </Box>
+              </Box>
             ))}
-          </ul>
-        </div>
+          </Box>
+        </Box>
 
         {/* Footer skeleton */}
-        <div className={STEPS_PANEL_FOOTER_CLASSES}>
+        <Box className={STEPS_PANEL_FOOTER_CLASSES}>
           <Skeleton variant="rectangular" width="100%" height={32} />
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -590,7 +590,7 @@ export const StepsPanelError = forwardRef<HTMLDivElement, StepsPanelErrorProps>(
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -600,12 +600,16 @@ export const StepsPanelError = forwardRef<HTMLDivElement, StepsPanelErrorProps>(
         data-error="true"
         {...props}
       >
-        <div className={STEPS_PANEL_ERROR_CONTAINER_CLASSES}>
-          <div className={STEPS_PANEL_ERROR_ICON_CLASSES}>
+        <Box className={STEPS_PANEL_ERROR_CONTAINER_CLASSES}>
+          <Box className={STEPS_PANEL_ERROR_ICON_CLASSES}>
             <Icon icon={AlertTriangle} size="lg" className="text-[rgb(var(--destructive))]" />
-          </div>
-          <h3 className={STEPS_PANEL_ERROR_TITLE_CLASSES}>{DEFAULT_ERROR_TITLE}</h3>
-          <p className={STEPS_PANEL_ERROR_MESSAGE_CLASSES}>{message}</p>
+          </Box>
+          <Text as="h3" className={STEPS_PANEL_ERROR_TITLE_CLASSES}>
+            {DEFAULT_ERROR_TITLE}
+          </Text>
+          <Text as="p" className={STEPS_PANEL_ERROR_MESSAGE_CLASSES}>
+            {message}
+          </Text>
           {onRetry && (
             <Button
               variant="secondary"
@@ -619,8 +623,8 @@ export const StepsPanelError = forwardRef<HTMLDivElement, StepsPanelErrorProps>(
               {DEFAULT_RETRY_LABEL}
             </Button>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -827,7 +831,8 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
   const progressSummary = getProgressSummary(completedCount, steps.length);
 
   return (
-    <aside
+    <Box
+      as="aside"
       ref={ref}
       role="complementary"
       aria-label={ariaLabel}
@@ -845,18 +850,19 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
       </VisuallyHidden>
 
       {/* Header */}
-      <div className={STEPS_PANEL_HEADER_CLASSES}>
-        <h3 id={headingId} className={STEPS_PANEL_TITLE_CLASSES}>
+      <Box className={STEPS_PANEL_HEADER_CLASSES}>
+        <Text as="h3" id={headingId} className={STEPS_PANEL_TITLE_CLASSES}>
           Workflow Steps
-        </h3>
-        <span className={STEPS_PANEL_COUNTER_CLASSES} aria-label={progressSummary}>
+        </Text>
+        <Text as="span" className={STEPS_PANEL_COUNTER_CLASSES} aria-label={progressSummary}>
           {completedCount}/{steps.length} completed
-        </span>
-      </div>
+        </Text>
+      </Box>
 
       {/* Steps list */}
-      <div className={STEPS_PANEL_LIST_CONTAINER_CLASSES}>
-        <ul
+      <Box className={STEPS_PANEL_LIST_CONTAINER_CLASSES}>
+        <Box
+          as="ul"
           id={listId}
           className={STEPS_PANEL_LIST_CLASSES}
           role="list"
@@ -877,7 +883,8 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
             const stepContentId = `${baseId}-step-${index}-content`;
 
             return (
-              <li
+              <Box
+                as="li"
                 key={step.index}
                 role="listitem"
                 className={cn(
@@ -891,10 +898,10 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                 data-active={isActive || undefined}
               >
                 {/* Current step indicator bar */}
-                {isActive && <div className={STEP_INDICATOR_BAR_CLASSES} aria-hidden="true" />}
+                {isActive && <Box className={STEP_INDICATOR_BAR_CLASSES} aria-hidden="true" />}
 
                 {/* Step header row */}
-                <div
+                <Box
                   id={stepRowId}
                   className={cn(
                     STEP_ROW_CLASSES,
@@ -912,7 +919,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                   aria-controls={step.description ? stepContentId : undefined}
                 >
                   {/* Checkbox */}
-                  <div className="pt-0.5">
+                  <Box className="pt-0.5">
                     <Checkbox
                       checked={isCompleted}
                       indeterminate={isSkipped}
@@ -921,11 +928,11 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                       onClick={(e) => e.stopPropagation()}
                       aria-label={`Mark step ${index + 1} as ${isCompleted ? 'pending' : 'completed'}`}
                     />
-                  </div>
+                  </Box>
 
                   {/* Step content */}
-                  <div className={STEP_CONTENT_CLASSES}>
-                    <div className="flex items-center gap-2">
+                  <Box className={STEP_CONTENT_CLASSES}>
+                    <Box className="flex items-center gap-2">
                       {/* Status icon */}
                       <Icon
                         icon={StepIcon}
@@ -943,7 +950,8 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                       />
 
                       {/* Step name */}
-                      <span
+                      <Text
+                        as="span"
                         className={cn(
                           STEP_NAME_SIZE_CLASSES[getBaseSize(size)],
                           isCompleted && STEP_NAME_COMPLETED_CLASSES,
@@ -952,34 +960,42 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                         )}
                       >
                         {step.name}
-                      </span>
-                    </div>
+                      </Text>
+                    </Box>
 
                     {/* Step description preview (truncated) */}
                     {step.description && !isExpanded && (
-                      <p className={STEP_DESCRIPTION_CLASSES}>{step.description}</p>
+                      <Text as="p" className={STEP_DESCRIPTION_CLASSES}>
+                        {step.description}
+                      </Text>
                     )}
 
                     {/* In progress indicator */}
                     {isInProgress && (
-                      <div
+                      <Box
                         className={STEP_PROGRESS_INDICATOR_CLASSES}
                         role="status"
                         aria-label="Step in progress"
                       >
-                        <span className="relative flex h-2 w-2" aria-hidden="true">
-                          <span className="absolute inline-flex h-full w-full motion-safe:animate-ping rounded-full bg-[rgb(var(--primary))] opacity-75" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-[rgb(var(--primary))]" />
-                        </span>
-                        <span>Running...</span>
-                      </div>
+                        <Text as="span" className="relative flex h-2 w-2" aria-hidden="true">
+                          <Text
+                            as="span"
+                            className="absolute inline-flex h-full w-full motion-safe:animate-ping rounded-full bg-[rgb(var(--primary))] opacity-75"
+                          />
+                          <Text
+                            as="span"
+                            className="relative inline-flex h-2 w-2 rounded-full bg-[rgb(var(--primary))]"
+                          />
+                        </Text>
+                        <Text as="span">Running...</Text>
+                      </Box>
                     )}
-                  </div>
+                  </Box>
 
                   {/* Expand/collapse toggle and actions */}
-                  <div className="flex items-center gap-1">
+                  <Box className="flex items-center gap-1">
                     {/* Quick actions (visible on hover) */}
-                    <div className={STEP_ACTIONS_CONTAINER_CLASSES}>
+                    <Box className={STEP_ACTIONS_CONTAINER_CLASSES}>
                       {canStart && onStartStep && (
                         <Tooltip content={DEFAULT_START_STEP_LABEL} position="left">
                           <Button
@@ -997,7 +1013,7 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                           </Button>
                         </Tooltip>
                       )}
-                    </div>
+                    </Box>
 
                     {/* Expand toggle */}
                     {step.description && (
@@ -1021,21 +1037,23 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                         />
                       </Button>
                     )}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
 
                 {/* Expanded content */}
                 {isExpanded && step.description && (
-                  <div
+                  <Box
                     id={stepContentId}
                     className={STEP_EXPANDED_CONTENT_CLASSES}
                     aria-labelledby={stepRowId}
                   >
                     {/* Full description */}
-                    <p className={STEP_EXPANDED_DESCRIPTION_CLASSES}>{step.description}</p>
+                    <Text as="p" className={STEP_EXPANDED_DESCRIPTION_CLASSES}>
+                      {step.description}
+                    </Text>
 
                     {/* Action buttons */}
-                    <div className="flex flex-wrap gap-2" role="group" aria-label="Step actions">
+                    <Box className="flex flex-wrap gap-2" role="group" aria-label="Step actions">
                       {canStart && onStartStep && (
                         <Button
                           size="sm"
@@ -1104,42 +1122,42 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
                           View Chat
                         </Button>
                       )}
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                 )}
-              </li>
+              </Box>
             );
           })}
 
           {/* Empty state */}
           {steps.length === 0 && (
-            <li role="listitem">
+            <Box as="li" role="listitem">
               <EmptyState
                 icon={ListTodo}
                 title="No steps defined"
                 description="Add a step to get started."
                 size="sm"
               />
-            </li>
+            </Box>
           )}
-        </ul>
-      </div>
+        </Box>
+      </Box>
 
       {/* Footer with actions */}
-      <div className={STEPS_PANEL_FOOTER_CLASSES}>
+      <Box className={STEPS_PANEL_FOOTER_CLASSES}>
         {/* Auto-start toggle */}
         {onAutoStartChange && (
-          <label className={AUTO_START_LABEL_CLASSES}>
+          <Box as="label" className={AUTO_START_LABEL_CLASSES}>
             <Checkbox
               checked={autoStart}
               onChange={(e) => onAutoStartChange(e.target.checked)}
               disabled={disabled}
               aria-describedby={`${baseId}-auto-start-desc`}
             />
-            <span id={`${baseId}-auto-start-desc`} className={AUTO_START_TEXT_CLASSES}>
+            <Text as="span" id={`${baseId}-auto-start-desc`} className={AUTO_START_TEXT_CLASSES}>
               Auto-start next step when complete
-            </span>
-          </label>
+            </Text>
+          </Box>
         )}
 
         {/* Add step button */}
@@ -1153,11 +1171,11 @@ export const StepsPanel = forwardRef<HTMLElement, StepsPanelProps>(function Step
             aria-label={DEFAULT_ADD_STEP_LABEL}
           >
             <Icon icon={Plus} size="sm" aria-hidden="true" />
-            <span>Add Step</span>
+            <Text as="span">Add Step</Text>
           </Button>
         )}
-      </div>
-    </aside>
+      </Box>
+    </Box>
   );
 });
 

@@ -1,4 +1,11 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Heading,
+  Paragraph,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Menu, MessageSquarePlus, Search, TerminalSquare, X } from 'lucide-react';
 import { type HTMLAttributes, forwardRef, useCallback, useId, useState } from 'react';
@@ -399,7 +406,8 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
   const effectiveAriaLabel = ariaLabel || DEFAULT_HEADER_LABEL;
 
   return (
-    <header
+    <Box
+      as="header"
       ref={ref}
       role="banner"
       aria-label={effectiveAriaLabel}
@@ -413,46 +421,48 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
       {/* Screen reader announcement for menu state changes */}
       {announcement && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite" aria-atomic="true">
+          <Text as="span" role="status" aria-live="polite" aria-atomic="true">
             {announcement}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       {/* Left section: Title and subtitle */}
-      <div className={HEADER_TITLE_CONTAINER_CLASSES}>
+      <Box className={HEADER_TITLE_CONTAINER_CLASSES}>
         {title ? (
-          <h1
+          <Heading
+            as="h1"
             id={titleId}
             className={cn(HEADER_TITLE_CLASSES, titleSizeClasses)}
             data-testid={testId ? `${testId}-title` : undefined}
           >
             {title}
-          </h1>
+          </Heading>
         ) : null}
         {subtitle ? (
-          <p
+          <Paragraph
             className={cn(HEADER_SUBTITLE_CLASSES, subtitleSizeClasses)}
             data-testid={testId ? `${testId}-subtitle` : undefined}
           >
             {subtitle}
-          </p>
+          </Paragraph>
         ) : null}
         {!title && !subtitle && (
-          <span
+          <Text
+            as="span"
             className={cn('font-medium text-[rgb(var(--foreground))]', titleSizeClasses)}
             data-testid={testId ? `${testId}-app-name` : undefined}
           >
             {DEFAULT_APP_NAME}
-          </span>
+          </Text>
         )}
-      </div>
+      </Box>
 
       {/* Right section: Action buttons */}
-      <div className={cn(HEADER_ACTIONS_CONTAINER_CLASSES, buttonGapClasses)}>
+      <Box className={cn(HEADER_ACTIONS_CONTAINER_CLASSES, buttonGapClasses)}>
         {/* Mobile hamburger menu button */}
         {showMenuButton && onMenuToggle && (
-          <div className={HEADER_MENU_BUTTON_CONTAINER_CLASSES}>
+          <Box className={HEADER_MENU_BUTTON_CONTAINER_CLASSES}>
             <Button
               variant="ghost"
               size={buttonSize}
@@ -466,11 +476,12 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
             >
               <Icon icon={isMenuOpen ? X : Menu} size={iconSize} aria-hidden="true" />
             </Button>
-          </div>
+          </Box>
         )}
 
         {/* Desktop navigation actions */}
-        <nav
+        <Box
+          as="nav"
           aria-label="Quick actions"
           className={cn(HEADER_DESKTOP_NAV_CLASSES, buttonGapClasses)}
           data-testid={testId ? `${testId}-nav` : undefined}
@@ -486,11 +497,15 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
               data-testid={testId ? `${testId}-search-button` : undefined}
             >
               <Icon icon={Search} size={iconSize} aria-hidden="true" />
-              <span className="hidden sm:inline">Search</span>
-              <kbd className={HEADER_KBD_CLASSES} aria-hidden="true">
-                <span className="text-xs">{KEYBOARD_SHORTCUT_TEXT.charAt(0)}</span>
+              <Text as="span" className="hidden sm:inline">
+                Search
+              </Text>
+              <Box as="kbd" className={HEADER_KBD_CLASSES} aria-hidden="true">
+                <Text as="span" className="text-xs">
+                  {KEYBOARD_SHORTCUT_TEXT.charAt(0)}
+                </Text>
                 {KEYBOARD_SHORTCUT_TEXT.slice(1)}
-              </kbd>
+              </Box>
               <VisuallyHidden>, keyboard shortcut Command K</VisuallyHidden>
             </Button>
           )}
@@ -505,7 +520,9 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
               data-testid={testId ? `${testId}-new-chat-button` : undefined}
             >
               <Icon icon={MessageSquarePlus} size={iconSize} aria-hidden="true" />
-              <span className="hidden sm:inline">New Chat</span>
+              <Text as="span" className="hidden sm:inline">
+                New Chat
+              </Text>
             </Button>
           )}
 
@@ -519,10 +536,12 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
               data-testid={testId ? `${testId}-new-terminal-button` : undefined}
             >
               <Icon icon={TerminalSquare} size={iconSize} aria-hidden="true" />
-              <span className="hidden sm:inline">Terminal</span>
+              <Text as="span" className="hidden sm:inline">
+                Terminal
+              </Text>
             </Button>
           )}
-        </nav>
+        </Box>
 
         {/* Theme toggle - always visible */}
         {resolvedTheme && onThemeToggle && (
@@ -533,8 +552,8 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
             data-testid={testId ? `${testId}-theme-toggle` : undefined}
           />
         )}
-      </div>
-    </header>
+      </Box>
+    </Box>
   );
 });
 

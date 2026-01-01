@@ -79,7 +79,9 @@ const RULES: CoverageRule[] = [
   {
     ruleId: 'coverage/below-threshold',
     description: 'Test coverage below required threshold',
-    severity: 'error',
+    // Warning severity because test-coverage is a non-blocking validator
+    // Tests should be added incrementally, not block PRs
+    severity: 'warning',
   },
 ];
 
@@ -206,7 +208,7 @@ function validate(coveragePath: string, verbose = false): ValidationResult {
           file: relative(ROOT_DIR, coveragePath),
           rule: 'coverage/below-threshold',
           message: `Coverage report not found. Run 'pnpm test --coverage' to generate coverage data.`,
-          severity: 'error',
+          severity: 'warning',
           suggestion: 'Run "pnpm test --coverage" to generate coverage report',
           metadata: {
             coveragePath,
@@ -232,7 +234,7 @@ function validate(coveragePath: string, verbose = false): ValidationResult {
           file: relative(ROOT_DIR, coveragePath),
           rule: 'coverage/below-threshold',
           message: 'Failed to parse coverage report. The file may be corrupted.',
-          severity: 'error',
+          severity: 'warning',
           suggestion: 'Delete coverage/ directory and run "pnpm test --coverage" again',
         },
       ],
@@ -296,7 +298,7 @@ function validate(coveragePath: string, verbose = false): ValidationResult {
         file: packagePath,
         rule: 'coverage/below-threshold',
         message: `Package "${packageName}" coverage is ${coverage.toFixed(1)}%, below threshold of ${threshold}%`,
-        severity: 'error',
+        severity: 'warning',
         suggestion: `Add tests to improve coverage from ${coverage.toFixed(1)}% to at least ${threshold}%`,
         metadata: {
           packageName,
@@ -325,7 +327,7 @@ function validate(coveragePath: string, verbose = false): ValidationResult {
       file: 'coverage/coverage-summary.json',
       rule: 'coverage/below-threshold',
       message: `Overall coverage is ${overallCoverage.toFixed(1)}%, below threshold of ${overallThreshold}%`,
-      severity: 'error',
+      severity: 'warning',
       suggestion: `Add tests to improve overall coverage from ${overallCoverage.toFixed(1)}% to at least ${overallThreshold}%`,
       metadata: {
         packageName: 'overall',

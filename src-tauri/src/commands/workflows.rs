@@ -11,6 +11,26 @@ use crate::types::WorkflowTemplate;
 
 use super::AppState;
 
+/// Resolve the workflows folder path for a project.
+///
+/// Returns the path to the workflows folder if project_id is provided.
+async fn resolve_workflows_path(
+    state: &State<'_, AppState>,
+    project_id: Option<&str>,
+) -> Result<Option<std::path::PathBuf>, String> {
+    let pid = match project_id {
+        Some(p) => p,
+        None => return Ok(None),
+    };
+    let pool = state.db.lock().await;
+    let project = ProjectService::get(&pool, pid)
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(Some(
+        Path::new(&project.git_repo_path).join(&project.workflows_folder),
+    ))
+}
+
 /// List all workflow templates for a project.
 ///
 /// Returns both built-in templates and project-specific templates
@@ -54,35 +74,17 @@ pub async fn get_builtin_workflow_templates() -> Result<Vec<WorkflowTemplate>, S
 /// Get a specific workflow template by ID.
 ///
 /// Supports both built-in (e.g., "builtin:feature") and file-based templates.
+/// For file-based templates, project_id is required to locate the workflows folder.
 #[tauri::command]
 pub async fn get_workflow_template(
     state: State<'_, AppState>,
     id: String,
     project_id: Option<String>,
 ) -> Result<WorkflowTemplate, String> {
-    // Check if it's a built-in template
-    if id.starts_with("builtin:") {
-        return WorkflowService::get_builtin_template(&id)
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| format!("Built-in template not found: {}", id));
-    }
-
-    // For file-based templates, we need the project
-    let project_id = project_id.ok_or("project_id is required for file-based templates")?;
-    let pool = state.db.lock().await;
-
-    let project = ProjectService::get(&pool, &project_id)
+    let workflows_path = resolve_workflows_path(&state, project_id.as_deref()).await?;
+    WorkflowService::get_template(&id, workflows_path.as_deref())
         .await
-        .map_err(|e| e.to_string())?;
-
-    let workflows_path = Path::new(&project.git_repo_path).join(&project.workflows_folder);
-    let templates = WorkflowService::list_templates(&workflows_path)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    templates
-        .into_iter()
-        .find(|t| t.id == id)
+        .map_err(|e| e.to_string())?
         .ok_or_else(|| format!("Template not found: {}", id))
 }
 

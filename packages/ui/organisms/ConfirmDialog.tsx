@@ -1,4 +1,4 @@
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -401,18 +401,18 @@ export const ConfirmDialog = forwardRef<HTMLDivElement, ConfirmDialogProps>(func
       {/* Screen reader announcement for variant-specific warnings */}
       {config.srAnnouncement && (
         <VisuallyHidden>
-          <span role="status" aria-live="assertive">
+          <Text as="span" role="status" aria-live="assertive">
             {config.srAnnouncement}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       {/* Loading state announcement */}
       {loading && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {SR_PROCESSING}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
@@ -420,18 +420,18 @@ export const ConfirmDialog = forwardRef<HTMLDivElement, ConfirmDialogProps>(func
         className="pt-2"
         data-testid={dataTestId ? `${dataTestId}-content` : undefined}
       >
-        <div
+        <Box
           className={CONFIRM_DIALOG_CONTENT_CLASSES}
           data-testid={dataTestId ? `${dataTestId}-body` : undefined}
         >
           {/* Icon */}
-          <div
+          <Box
             className={cn(ICON_CONTAINER_BASE_CLASSES, iconContainerClasses, config.iconClass)}
             aria-hidden="true"
             data-testid={dataTestId ? `${dataTestId}-icon` : undefined}
           >
             <Icon icon={IconComponent} size={ICON_SIZE_MAP[baseSize]} />
-          </div>
+          </Box>
 
           {/* Description */}
           <Text
@@ -441,7 +441,7 @@ export const ConfirmDialog = forwardRef<HTMLDivElement, ConfirmDialogProps>(func
           >
             {description}
           </Text>
-        </div>
+        </Box>
       </DialogContent>
 
       <DialogFooter

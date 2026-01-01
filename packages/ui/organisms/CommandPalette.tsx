@@ -1,5 +1,5 @@
 import type { SearchResult, SearchResultType } from '@openflow/generated';
-import { Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -313,17 +313,17 @@ export function CommandPaletteSkeleton({
   'data-testid': testId,
 }: CommandPaletteSkeletonProps) {
   return (
-    <div aria-hidden="true" role="presentation" data-testid={testId}>
+    <Box aria-hidden="true" role="presentation" data-testid={testId}>
       {Array.from({ length: count }).map((_, index) => (
-        <div key={`skeleton-${index}`} className={COMMAND_PALETTE_SKELETON_CLASSES}>
+        <Box key={`skeleton-${index}`} className={COMMAND_PALETTE_SKELETON_CLASSES}>
           <Skeleton variant="circular" width={24} height={24} />
-          <div className="flex-1 space-y-1">
+          <Box className="flex-1 space-y-1">
             <Skeleton variant="text" width="60%" height={16} />
             <Skeleton variant="text" width="40%" height={12} />
-          </div>
-        </div>
+          </Box>
+        </Box>
       ))}
-    </div>
+    </Box>
   );
 }
 
@@ -589,7 +589,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handling is done on the inner dialog
-    <div
+    <Box
       ref={ref}
       role="presentation"
       className={COMMAND_PALETTE_BACKDROP_CLASSES}
@@ -598,17 +598,17 @@ export const CommandPalette = forwardRef(function CommandPalette(
       data-state={isOpen ? 'open' : 'closed'}
     >
       {/* Backdrop */}
-      <div className={COMMAND_PALETTE_OVERLAY_CLASSES} aria-hidden="true" />
+      <Box className={COMMAND_PALETTE_OVERLAY_CLASSES} aria-hidden="true" />
 
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite" aria-atomic="true">
+        <Box role="status" aria-live="polite" aria-atomic="true">
           {announcement}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       {/* Command palette panel */}
-      <div
+      <Box
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelId}
@@ -621,11 +621,13 @@ export const CommandPalette = forwardRef(function CommandPalette(
       >
         {/* Hidden label for the dialog */}
         <VisuallyHidden>
-          <span id={labelId}>{ariaLabel}</span>
+          <Text as="span" id={labelId}>
+            {ariaLabel}
+          </Text>
         </VisuallyHidden>
 
         {/* Search input */}
-        <div className={COMMAND_PALETTE_INPUT_CONTAINER_CLASSES}>
+        <Box className={COMMAND_PALETTE_INPUT_CONTAINER_CLASSES}>
           <Icon
             icon={Search}
             size={COMMAND_PALETTE_ICON_SIZE_MAP[baseSize]}
@@ -659,14 +661,14 @@ export const CommandPalette = forwardRef(function CommandPalette(
               aria-label={SR_SEARCHING}
             />
           )}
-          <div className="flex items-center gap-1 text-xs text-[rgb(var(--muted-foreground))]">
-            <kbd className={COMMAND_PALETTE_KBD_CLASSES} aria-hidden="true">
+          <Box className="flex items-center gap-1 text-xs text-[rgb(var(--muted-foreground))]">
+            <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES} aria-hidden="true">
               esc
-            </kbd>
+            </Box>
             <Text as="span" size="xs" color="muted-foreground">
               to close
             </Text>
-          </div>
+          </Box>
           <Button
             variant="ghost"
             size="sm"
@@ -677,10 +679,10 @@ export const CommandPalette = forwardRef(function CommandPalette(
           >
             <Icon icon={X} size="sm" aria-hidden="true" />
           </Button>
-        </div>
+        </Box>
 
         {/* Results list */}
-        <div
+        <Box
           ref={listRef}
           id={listboxId}
           role="listbox"
@@ -707,19 +709,20 @@ export const CommandPalette = forwardRef(function CommandPalette(
 
           {/* Recent items section */}
           {showRecent && (
-            <div className="mb-2" role="group" aria-label={DEFAULT_RECENT_LABEL}>
-              <div className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
+            <Box className="mb-2" role="group" aria-label={DEFAULT_RECENT_LABEL}>
+              <Box className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
                 <Clock className="h-3 w-3" aria-hidden="true" />
                 <Text as="span" size="xs" weight="medium">
                   Recent
                 </Text>
-              </div>
+              </Box>
               {recentItems.map((item, index) => {
                 const ItemIcon = getItemIcon(item.type);
                 const isSelected = index === selectedIndex;
                 const optionId = getOptionId(uniqueId, 'recent', index);
                 return (
-                  <button
+                  <Box
+                    as="button"
                     key={item.id}
                     id={optionId}
                     type="button"
@@ -744,7 +747,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
                       className="text-[rgb(var(--muted-foreground))]"
                       aria-hidden="true"
                     />
-                    <div className="flex-1 truncate">
+                    <Box className="flex-1 truncate">
                       <Text as="span" size="sm" weight="medium" truncate className="block">
                         {item.title}
                       </Text>
@@ -759,32 +762,33 @@ export const CommandPalette = forwardRef(function CommandPalette(
                           {item.subtitle}
                         </Text>
                       )}
-                    </div>
+                    </Box>
                     <Text as="span" size="xs" color="muted-foreground" className="shrink-0">
                       {getItemTypeLabel(item.type)}
                     </Text>
-                  </button>
+                  </Box>
                 );
               })}
-            </div>
+            </Box>
           )}
 
           {/* Actions section */}
           {showActions && (
-            <div className="mb-2" role="group" aria-label={DEFAULT_ACTIONS_LABEL}>
-              <div className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
+            <Box className="mb-2" role="group" aria-label={DEFAULT_ACTIONS_LABEL}>
+              <Box className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
                 <Command className="h-3 w-3" aria-hidden="true" />
                 <Text as="span" size="xs" weight="medium">
                   Actions
                 </Text>
-              </div>
+              </Box>
               {actions.map((action, index) => {
                 const actualIndex = showRecent ? recentItems.length + index : index;
                 const isSelected = actualIndex === selectedIndex;
                 const ActionIcon = action.icon || ArrowRight;
                 const optionId = getOptionId(uniqueId, 'action', index);
                 return (
-                  <button
+                  <Box
+                    as="button"
                     key={action.id}
                     id={optionId}
                     type="button"
@@ -813,23 +817,24 @@ export const CommandPalette = forwardRef(function CommandPalette(
                       {action.label}
                     </Text>
                     {action.shortcut && (
-                      <kbd
+                      <Box
+                        as="kbd"
                         className={COMMAND_PALETTE_KBD_CLASSES}
                         aria-label={`Keyboard shortcut: ${action.shortcut}`}
                       >
                         {action.shortcut}
-                      </kbd>
+                      </Box>
                     )}
-                  </button>
+                  </Box>
                 );
               })}
-            </div>
+            </Box>
           )}
 
           {/* Search results */}
           {showResults && (
-            <div role="group" aria-label={DEFAULT_RESULTS_LABEL}>
-              <div className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
+            <Box role="group" aria-label={DEFAULT_RESULTS_LABEL}>
+              <Box className={COMMAND_PALETTE_SECTION_HEADER_CLASSES}>
                 <Search className="h-3 w-3" aria-hidden="true" />
                 <Text as="span" size="xs" weight="medium">
                   Results
@@ -837,13 +842,14 @@ export const CommandPalette = forwardRef(function CommandPalette(
                 <Text as="span" size="xs" color="muted-foreground" className="ml-auto">
                   {searchResults.length} found
                 </Text>
-              </div>
+              </Box>
               {searchResults.map((result, index) => {
                 const ResultIcon = getItemIcon(result.resultType);
                 const isSelected = index === selectedIndex;
                 const optionId = getOptionId(uniqueId, 'result', index);
                 return (
-                  <button
+                  <Box
+                    as="button"
                     key={result.id}
                     id={optionId}
                     type="button"
@@ -868,7 +874,7 @@ export const CommandPalette = forwardRef(function CommandPalette(
                       className="text-[rgb(var(--muted-foreground))]"
                       aria-hidden="true"
                     />
-                    <div className="flex-1 truncate">
+                    <Box className="flex-1 truncate">
                       <Text as="span" size="sm" weight="medium" truncate className="block">
                         {result.title}
                       </Text>
@@ -883,14 +889,14 @@ export const CommandPalette = forwardRef(function CommandPalette(
                           {result.subtitle}
                         </Text>
                       )}
-                    </div>
+                    </Box>
                     <Text as="span" size="xs" color="muted-foreground" className="shrink-0">
                       {getItemTypeLabel(result.resultType)}
                     </Text>
-                  </button>
+                  </Box>
                 );
               })}
-            </div>
+            </Box>
           )}
 
           {/* Empty state when no query and no recent items */}
@@ -903,33 +909,43 @@ export const CommandPalette = forwardRef(function CommandPalette(
               data-testid={testId ? `${testId}-empty` : undefined}
             />
           )}
-        </div>
+        </Box>
 
         {/* Footer with keyboard hints */}
-        <div className={COMMAND_PALETTE_FOOTER_CLASSES} aria-hidden="true">
-          <div className="flex items-center gap-1">
-            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>↑</kbd>
-            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>↓</kbd>
+        <Box className={COMMAND_PALETTE_FOOTER_CLASSES} aria-hidden="true">
+          <Box className="flex items-center gap-1">
+            <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES}>
+              ↑
+            </Box>
+            <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES}>
+              ↓
+            </Box>
             <Text as="span" size="xs" color="muted-foreground">
               to navigate
             </Text>
-          </div>
-          <div className="flex items-center gap-1">
-            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>↵</kbd>
+          </Box>
+          <Box className="flex items-center gap-1">
+            <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES}>
+              ↵
+            </Box>
             <Text as="span" size="xs" color="muted-foreground">
               to select
             </Text>
-          </div>
-          <div className="flex items-center gap-1">
-            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>Home</kbd>
-            <kbd className={COMMAND_PALETTE_KBD_CLASSES}>End</kbd>
+          </Box>
+          <Box className="flex items-center gap-1">
+            <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES}>
+              Home
+            </Box>
+            <Box as="kbd" className={COMMAND_PALETTE_KBD_CLASSES}>
+              End
+            </Box>
             <Text as="span" size="xs" color="muted-foreground">
               to jump
             </Text>
-          </div>
-        </div>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 });
 

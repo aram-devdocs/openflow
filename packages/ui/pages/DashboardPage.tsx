@@ -35,7 +35,14 @@ import type {
   TaskStatus,
   WorkflowTemplate,
 } from '@openflow/generated';
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { forwardRef, useId } from 'react';
@@ -591,7 +598,7 @@ export const DashboardPageSkeleton = forwardRef<HTMLDivElement, DashboardPageSke
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         className={DASHBOARD_PAGE_SKELETON_CLASSES}
         aria-hidden="true"
@@ -600,13 +607,13 @@ export const DashboardPageSkeleton = forwardRef<HTMLDivElement, DashboardPageSke
       >
         {/* Screen reader loading announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite">
+          <Box role="status" aria-live="polite">
             {SR_LOADING}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         {/* Header skeleton */}
-        <div className={DASHBOARD_PAGE_SKELETON_HEADER_CLASSES}>
+        <Box className={DASHBOARD_PAGE_SKELETON_HEADER_CLASSES}>
           <Flex gap="4" align="center">
             <Skeleton width={40} height={40} variant="circular" />
             <Flex direction="column" gap="1">
@@ -619,12 +626,12 @@ export const DashboardPageSkeleton = forwardRef<HTMLDivElement, DashboardPageSke
             <Skeleton width={36} height={36} />
             <Skeleton width={36} height={36} />
           </Flex>
-        </div>
+        </Box>
 
         {/* Main content area with sidebar */}
         <Flex className="flex-1">
           {/* Sidebar skeleton */}
-          <div className={DASHBOARD_PAGE_SKELETON_SIDEBAR_CLASSES}>
+          <Box className={DASHBOARD_PAGE_SKELETON_SIDEBAR_CLASSES}>
             <Flex direction="column" gap="4">
               {/* Projects section */}
               <Flex direction="column" gap="2">
@@ -640,10 +647,10 @@ export const DashboardPageSkeleton = forwardRef<HTMLDivElement, DashboardPageSke
                 <SkeletonList count={taskCount} size={size} lines={2} showAvatar={false} />
               </Flex>
             </Flex>
-          </div>
+          </Box>
 
           {/* Main content skeleton */}
-          <div className={DASHBOARD_PAGE_SKELETON_MAIN_CLASSES}>
+          <Box className={DASHBOARD_PAGE_SKELETON_MAIN_CLASSES}>
             <Flex direction="column" gap="6">
               {/* Stats skeleton */}
               <SkeletonStats count={4} size={size} showIcon showTrend />
@@ -654,9 +661,9 @@ export const DashboardPageSkeleton = forwardRef<HTMLDivElement, DashboardPageSke
                 <SkeletonList count={taskCount} size={size} lines={2} showAvatar />
               </Flex>
             </Flex>
-          </div>
+          </Box>
         </Flex>
-      </div>
+      </Box>
     );
   }
 );
@@ -670,7 +677,7 @@ export const DashboardPageError = forwardRef<HTMLDivElement, DashboardPageErrorS
     const descriptionId = useId();
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -685,9 +692,9 @@ export const DashboardPageError = forwardRef<HTMLDivElement, DashboardPageErrorS
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="assertive">
+          <Box role="status" aria-live="assertive">
             {SR_ERROR_PREFIX} {error.message}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         <Icon
@@ -712,7 +719,7 @@ export const DashboardPageError = forwardRef<HTMLDivElement, DashboardPageErrorS
         >
           {DEFAULT_RETRY_LABEL}
         </Button>
-      </div>
+      </Box>
     );
   }
 );
@@ -822,7 +829,7 @@ export const DashboardPage = forwardRef<HTMLDivElement, DashboardPageProps>(func
   // Loading state - show skeleton
   if (isLoading) {
     return (
-      <div
+      <Box
         ref={ref}
         className={DASHBOARD_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -831,14 +838,14 @@ export const DashboardPage = forwardRef<HTMLDivElement, DashboardPageProps>(func
         data-state="loading"
       >
         <DashboardPageSkeleton size={size} />
-      </div>
+      </Box>
     );
   }
 
   // Error state - show error UI
   if (hasError && error && onRetry) {
     return (
-      <div
+      <Box
         ref={ref}
         className={DASHBOARD_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -846,13 +853,13 @@ export const DashboardPage = forwardRef<HTMLDivElement, DashboardPageProps>(func
         data-state="error"
       >
         <DashboardPageError error={error} onRetry={onRetry} size={size} />
-      </div>
+      </Box>
     );
   }
 
   // Normal state - show content
   return (
-    <div
+    <Box
       ref={ref}
       className={DASHBOARD_PAGE_BASE_CLASSES}
       aria-label={computedAriaLabel}
@@ -865,9 +872,9 @@ export const DashboardPage = forwardRef<HTMLDivElement, DashboardPageProps>(func
     >
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite" aria-atomic="true">
+        <Box role="status" aria-live="polite" aria-atomic="true">
           {buildLoadedAnnouncement(projectCount, taskCount, hasActiveProject)}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       <DashboardLayout
@@ -911,7 +918,7 @@ export const DashboardPage = forwardRef<HTMLDivElement, DashboardPageProps>(func
         }
       >
         {/* Main content area - switches between empty/loading/content states */}
-        <div className="flex h-full flex-col">
+        <Box className="flex h-full flex-col">
           <DashboardContent
             isLoadingProjects={content.isLoadingProjects}
             isLoadingTasks={content.isLoadingTasks}
@@ -920,7 +927,7 @@ export const DashboardPage = forwardRef<HTMLDivElement, DashboardPageProps>(func
             onSelectTask={content.onSelectTask}
             onNewProject={content.onNewProject}
           />
-        </div>
+        </Box>
 
         {/* Command palette overlay */}
         <DashboardCommandPalette
@@ -1021,6 +1028,6 @@ export const DashboardPage = forwardRef<HTMLDivElement, DashboardPageProps>(func
           />
         )}
       </DashboardLayout>
-    </div>
+    </Box>
   );
 });

@@ -26,6 +26,7 @@
 
 import type { Project } from '@openflow/generated';
 import {
+  Box,
   type Breakpoint,
   Heading,
   type ResponsiveValue,
@@ -412,7 +413,23 @@ export function ProjectsListLayout({ projectCount, onSearch, children }: Project
  */
 export const ProjectsListHeader = forwardRef<HTMLDivElement, ProjectsListHeaderProps>(
   function ProjectsListHeader(
-    { onCreateProject, size = 'md', className, 'data-testid': testId, ...props },
+    {
+      onCreateProject,
+      size = 'md',
+      className,
+      'data-testid': testId,
+      'aria-hidden': _,
+      'aria-busy': __,
+      'aria-expanded': ___,
+      'aria-pressed': ____,
+      'aria-selected': _____,
+      'aria-checked': ______,
+      'aria-disabled': _______,
+      'aria-required': ________,
+      'aria-invalid': _________,
+      'aria-haspopup': __________,
+      ...props
+    },
     ref
   ) {
     const baseSize = getBaseSize(size);
@@ -421,7 +438,7 @@ export const ProjectsListHeader = forwardRef<HTMLDivElement, ProjectsListHeaderP
     const buttonSize = BUTTON_SIZE_MAP[baseSize];
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(HEADER_CONTAINER_CLASSES, marginClasses, className)}
         data-testid={testId}
@@ -435,13 +452,13 @@ export const ProjectsListHeader = forwardRef<HTMLDivElement, ProjectsListHeaderP
           variant="primary"
           size={buttonSize}
           onClick={onCreateProject}
-          icon={<Icon icon={Plus} size="sm" aria-hidden="true" />}
+          icon={<Icon icon={Plus} size="sm" aria-hidden={true} />}
           aria-label={DEFAULT_NEW_PROJECT_LABEL}
           data-testid={testId ? `${testId}-create-button` : undefined}
         >
           {DEFAULT_NEW_PROJECT_LABEL}
         </Button>
-      </div>
+      </Box>
     );
   }
 );
@@ -457,17 +474,33 @@ export const ProjectsListLoadingSkeleton = forwardRef<
   HTMLDivElement,
   ProjectsListLoadingSkeletonProps
 >(function ProjectsListLoadingSkeleton(
-  { count = DEFAULT_SKELETON_COUNT, size = 'md', className, 'data-testid': testId, ...props },
+  {
+    count = DEFAULT_SKELETON_COUNT,
+    size = 'md',
+    className,
+    'data-testid': testId,
+    'aria-hidden': _,
+    'aria-busy': __,
+    'aria-expanded': ___,
+    'aria-pressed': ____,
+    'aria-selected': _____,
+    'aria-checked': ______,
+    'aria-disabled': _______,
+    'aria-required': ________,
+    'aria-invalid': _________,
+    'aria-haspopup': __________,
+    ...props
+  },
   ref
 ) {
   const baseSize = getBaseSize(size);
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(LOADING_CONTAINER_CLASSES, className)}
       role="status"
-      aria-busy="true"
+      aria-busy={true}
       aria-label={SR_LOADING}
       data-testid={testId}
       data-size={baseSize}
@@ -475,14 +508,16 @@ export const ProjectsListLoadingSkeleton = forwardRef<
       {...props}
     >
       <VisuallyHidden>
-        <span aria-live="polite">{SR_LOADING}</span>
+        <Text as="span" aria-live="polite">
+          {SR_LOADING}
+        </Text>
       </VisuallyHidden>
-      <div className={SKELETON_GRID_CLASSES} aria-hidden="true">
+      <Box className={SKELETON_GRID_CLASSES} aria-hidden={true}>
         {Array.from({ length: count }).map((_, i) => (
           <SkeletonProjectCard key={`skeleton-project-card-${i}`} />
         ))}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 });
 
@@ -495,13 +530,29 @@ export const ProjectsListLoadingSkeleton = forwardRef<
  */
 export const ProjectsListEmptyState = forwardRef<HTMLDivElement, ProjectsListEmptyStateProps>(
   function ProjectsListEmptyState(
-    { onCreateProject, size = 'md', className, 'data-testid': testId, ...props },
+    {
+      onCreateProject,
+      size = 'md',
+      className,
+      'data-testid': testId,
+      'aria-hidden': _,
+      'aria-busy': __,
+      'aria-expanded': ___,
+      'aria-pressed': ____,
+      'aria-selected': _____,
+      'aria-checked': ______,
+      'aria-disabled': _______,
+      'aria-required': ________,
+      'aria-invalid': _________,
+      'aria-haspopup': __________,
+      ...props
+    },
     ref
   ) {
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn('flex flex-1 flex-col', className)}
         role="region"
@@ -511,9 +562,9 @@ export const ProjectsListEmptyState = forwardRef<HTMLDivElement, ProjectsListEmp
         {...props}
       >
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {SR_EMPTY}
-          </span>
+          </Text>
         </VisuallyHidden>
         <EmptyState
           icon={FolderGit2}
@@ -527,7 +578,7 @@ export const ProjectsListEmptyState = forwardRef<HTMLDivElement, ProjectsListEmp
           size={baseSize}
           className="flex-1"
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -549,6 +600,16 @@ export const ProjectsListErrorState = forwardRef<HTMLDivElement, ProjectsListErr
       'data-testid': testId,
       errorTitle = DEFAULT_ERROR_TITLE,
       retryLabel = DEFAULT_ERROR_RETRY_LABEL,
+      'aria-hidden': _,
+      'aria-busy': __,
+      'aria-expanded': ___,
+      'aria-pressed': ____,
+      'aria-selected': _____,
+      'aria-checked': ______,
+      'aria-disabled': _______,
+      'aria-required': ________,
+      'aria-invalid': _________,
+      'aria-haspopup': __________,
       ...props
     },
     ref
@@ -556,7 +617,7 @@ export const ProjectsListErrorState = forwardRef<HTMLDivElement, ProjectsListErr
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(ERROR_STATE_CLASSES, className)}
         data-testid={testId}
@@ -566,11 +627,11 @@ export const ProjectsListErrorState = forwardRef<HTMLDivElement, ProjectsListErr
         {...props}
       >
         <VisuallyHidden>
-          <span>{SR_ERROR}</span>
+          <Text as="span">{SR_ERROR}</Text>
         </VisuallyHidden>
-        <div className={ERROR_ICON_CONTAINER_CLASSES}>
-          <Icon icon={AlertCircle} size="lg" aria-hidden="true" />
-        </div>
+        <Box className={ERROR_ICON_CONTAINER_CLASSES}>
+          <Icon icon={AlertCircle} size="lg" aria-hidden={true} />
+        </Box>
         <Heading level={2} size="lg" weight="semibold" className="mb-2">
           {errorTitle}
         </Heading>
@@ -589,7 +650,7 @@ export const ProjectsListErrorState = forwardRef<HTMLDivElement, ProjectsListErr
             {retryLabel}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -612,6 +673,16 @@ export const ProjectCard = forwardRef<HTMLButtonElement, ProjectCardProps>(funct
     size = 'md',
     className,
     'data-testid': testId,
+    'aria-hidden': _,
+    'aria-busy': __,
+    'aria-expanded': ___,
+    'aria-pressed': ____,
+    'aria-selected': _____,
+    'aria-checked': ______,
+    'aria-disabled': _______,
+    'aria-required': ________,
+    'aria-invalid': _________,
+    'aria-haspopup': __________,
     ...props
   },
   ref
@@ -625,7 +696,8 @@ export const ProjectCard = forwardRef<HTMLButtonElement, ProjectCardProps>(funct
   const accessibleLabel = buildProjectCardAccessibleLabel(name, path);
 
   return (
-    <button
+    <Box
+      as="button"
       ref={ref}
       type="button"
       onClick={onSelect}
@@ -637,16 +709,18 @@ export const ProjectCard = forwardRef<HTMLButtonElement, ProjectCardProps>(funct
       {...props}
     >
       {/* Icon */}
-      <div
+      <Box
         className={cn(CARD_ICON_CONTAINER_BASE_CLASSES, iconContainerClasses)}
-        aria-hidden="true"
+        aria-hidden={true}
       >
         {icon === 'folder' ? (
           <FolderGit2 className={cn('text-[rgb(var(--primary))]', iconSizeClasses)} />
         ) : (
-          <span className={cn('text-lg', iconSizeClasses)}>{icon}</span>
+          <Text as="span" className={cn('text-lg', iconSizeClasses)}>
+            {icon}
+          </Text>
         )}
-      </div>
+      </Box>
 
       {/* Name */}
       <Text as="span" size={titleSize} weight="medium" className="text-[rgb(var(--foreground))]">
@@ -666,8 +740,9 @@ export const ProjectCard = forwardRef<HTMLButtonElement, ProjectCardProps>(funct
       </Text>
 
       {/* Actions */}
-      <div className={CARD_ACTIONS_CONTAINER_CLASSES} role="group" aria-label="Project actions">
-        <button
+      <Box className={CARD_ACTIONS_CONTAINER_CLASSES} role="group" aria-label="Project actions">
+        <Box
+          as="button"
           id={settingsId}
           type="button"
           onClick={(e) => {
@@ -678,13 +753,13 @@ export const ProjectCard = forwardRef<HTMLButtonElement, ProjectCardProps>(funct
           aria-label={buildSettingsAccessibleLabel(name)}
           data-testid={testId ? `${testId}-settings` : undefined}
         >
-          <Settings className="h-4 w-4" aria-hidden="true" />
-        </button>
-      </div>
+          <Settings className="h-4 w-4" aria-hidden={true} />
+        </Box>
+      </Box>
 
       {/* Chevron indicator */}
-      <ChevronRight className={CARD_CHEVRON_CLASSES} aria-hidden="true" />
-    </button>
+      <ChevronRight className={CARD_CHEVRON_CLASSES} aria-hidden={true} />
+    </Box>
   );
 });
 
@@ -704,6 +779,16 @@ export const ProjectsGrid = forwardRef<HTMLDivElement, ProjectsGridProps>(functi
     className,
     'data-testid': testId,
     gridLabel = DEFAULT_GRID_LABEL,
+    'aria-hidden': _,
+    'aria-busy': __,
+    'aria-expanded': ___,
+    'aria-pressed': ____,
+    'aria-selected': _____,
+    'aria-checked': ______,
+    'aria-disabled': _______,
+    'aria-required': ________,
+    'aria-invalid': _________,
+    'aria-haspopup': __________,
     ...props
   },
   ref
@@ -714,7 +799,7 @@ export const ProjectsGrid = forwardRef<HTMLDivElement, ProjectsGridProps>(functi
   const headingId = useId();
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn('flex-1', className)}
       data-testid={testId}
@@ -725,19 +810,22 @@ export const ProjectsGrid = forwardRef<HTMLDivElement, ProjectsGridProps>(functi
       {...props}
     >
       <VisuallyHidden>
-        <h2 id={headingId}>{gridLabel}</h2>
-        <span role="status" aria-live="polite">
+        <Heading level={2} id={headingId}>
+          {gridLabel}
+        </Heading>
+        <Text as="span" role="status" aria-live="polite">
           {buildProjectCountAnnouncement(projects.length)}
-        </span>
+        </Text>
       </VisuallyHidden>
-      <ul
+      <Box
+        as="ul"
         id={listId}
         role="list"
         aria-label={gridLabel}
         className={cn(GRID_BASE_CLASSES, gapClasses)}
       >
         {projects.map((project) => (
-          <li key={project.id} role="listitem">
+          <Box as="li" key={project.id} role="listitem">
             <ProjectCard
               projectId={project.id}
               name={project.name}
@@ -748,10 +836,10 @@ export const ProjectsGrid = forwardRef<HTMLDivElement, ProjectsGridProps>(functi
               size={size}
               data-testid={testId ? `${testId}-card-${project.id}` : undefined}
             />
-          </li>
+          </Box>
         ))}
-      </ul>
-    </div>
+      </Box>
+    </Box>
   );
 });
 
@@ -776,6 +864,16 @@ export const ProjectsListContent = forwardRef<HTMLDivElement, ProjectsListConten
       size = 'md',
       className,
       'data-testid': testId,
+      'aria-hidden': _,
+      'aria-busy': __,
+      'aria-expanded': ___,
+      'aria-pressed': ____,
+      'aria-selected': _____,
+      'aria-checked': ______,
+      'aria-disabled': _______,
+      'aria-required': ________,
+      'aria-invalid': _________,
+      'aria-haspopup': __________,
       ...props
     },
     ref
@@ -826,7 +924,7 @@ export const ProjectsListContent = forwardRef<HTMLDivElement, ProjectsListConten
 
     // Projects grid
     return (
-      <div
+      <Box
         ref={ref}
         className={cn('flex-1', className)}
         data-testid={testId}
@@ -834,9 +932,9 @@ export const ProjectsListContent = forwardRef<HTMLDivElement, ProjectsListConten
         {...props}
       >
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {SR_PROJECTS_LOADED}. {buildProjectCountAnnouncement(projects.length)}
-          </span>
+          </Text>
         </VisuallyHidden>
         <ProjectsGrid
           projects={projects}
@@ -846,7 +944,7 @@ export const ProjectsListContent = forwardRef<HTMLDivElement, ProjectsListConten
           size={size}
           data-testid={testId ? `${testId}-grid` : undefined}
         />
-      </div>
+      </Box>
     );
   }
 );

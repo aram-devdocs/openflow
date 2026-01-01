@@ -23,7 +23,13 @@
  */
 
 import type { Chat } from '@openflow/generated';
-import { type Breakpoint, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  type Breakpoint,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertCircle, MessageSquare } from 'lucide-react';
 import {
@@ -330,7 +336,7 @@ export const ChatsListSkeleton = forwardRef<HTMLDivElement, ChatsListSkeletonPro
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="status"
         aria-label={SR_LOADING}
@@ -348,15 +354,15 @@ export const ChatsListSkeleton = forwardRef<HTMLDivElement, ChatsListSkeletonPro
 
         {/* Filter tabs skeleton */}
         {showFilterSkeleton && (
-          <div aria-hidden="true" className="flex gap-1 rounded-lg bg-[rgb(var(--muted))] p-1">
+          <Box aria-hidden="true" className="flex gap-1 rounded-lg bg-[rgb(var(--muted))] p-1">
             {FILTER_OPTIONS.map((option) => (
               <Skeleton key={option.value} className="h-9 flex-1 rounded-md" aria-hidden="true" />
             ))}
-          </div>
+          </Box>
         )}
 
         {/* Chat cards skeleton */}
-        <div
+        <Box
           aria-hidden="true"
           className={cn(
             LIST_CONTAINER_CLASSES,
@@ -364,26 +370,26 @@ export const ChatsListSkeleton = forwardRef<HTMLDivElement, ChatsListSkeletonPro
           )}
         >
           {Array.from({ length: count }).map((_, index) => (
-            <div
+            <Box
               key={index}
               className={cn(
                 SKELETON_CARD_CLASSES,
                 getResponsiveSizeClasses(size, SKELETON_CARD_HEIGHT_CLASSES)
               )}
             >
-              <div className="flex items-start gap-3">
+              <Box className="flex items-start gap-3">
                 {/* Icon skeleton */}
                 <Skeleton className="h-10 w-10 shrink-0 rounded-lg" aria-hidden="true" />
                 {/* Content skeleton */}
-                <div className="flex-1 space-y-2">
+                <Box className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-2/3" aria-hidden="true" />
                   <Skeleton className="h-3 w-1/2" aria-hidden="true" />
-                </div>
-              </div>
-            </div>
+                </Box>
+              </Box>
+            </Box>
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -414,7 +420,7 @@ export const ChatsListError = forwardRef<HTMLDivElement, ChatsListErrorProps>(
     const baseSize = getBaseSize(size);
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -423,9 +429,9 @@ export const ChatsListError = forwardRef<HTMLDivElement, ChatsListErrorProps>(
         data-size={baseSize}
         {...props}
       >
-        <div className={ERROR_ICON_CONTAINER_CLASSES}>
+        <Box className={ERROR_ICON_CONTAINER_CLASSES}>
           <Icon icon={AlertCircle} size="lg" aria-hidden="true" />
-        </div>
+        </Box>
         <Text size="base" weight="semibold" color="foreground" className="text-center">
           {errorTitle}
         </Text>
@@ -439,7 +445,7 @@ export const ChatsListError = forwardRef<HTMLDivElement, ChatsListErrorProps>(
             {retryLabel}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -583,7 +589,7 @@ export const ChatsList = forwardRef<HTMLDivElement, ChatsListProps>(
     const selectedTabId = `${componentId}-tab-${filter}`;
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           CHATS_LIST_BASE_CLASSES,
@@ -598,14 +604,14 @@ export const ChatsList = forwardRef<HTMLDivElement, ChatsListProps>(
       >
         {/* Screen reader announcements */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite" aria-atomic="true">
+          <Box role="status" aria-live="polite" aria-atomic="true">
             {announcement}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         {/* Filter tabs */}
         {onFilterChange && (
-          <div
+          <Box
             ref={tabsRef}
             role="tablist"
             aria-label={filterLabel}
@@ -615,7 +621,8 @@ export const ChatsList = forwardRef<HTMLDivElement, ChatsListProps>(
             {FILTER_OPTIONS.map((option, index) => {
               const isSelected = filter === option.value;
               return (
-                <button
+                <Box
+                  as="button"
                   key={option.value}
                   type="button"
                   role="tab"
@@ -634,15 +641,15 @@ export const ChatsList = forwardRef<HTMLDivElement, ChatsListProps>(
                   data-selected={isSelected}
                 >
                   {option.label}
-                </button>
+                </Box>
               );
             })}
-          </div>
+          </Box>
         )}
 
         {/* Chat list or empty state */}
         {filteredChats.length === 0 ? (
-          <div className={EMPTY_STATE_CONTAINER_CLASSES}>
+          <Box className={EMPTY_STATE_CONTAINER_CLASSES}>
             <EmptyState
               icon={MessageSquare}
               title={getEmptyStateContent(filter).title}
@@ -650,9 +657,9 @@ export const ChatsList = forwardRef<HTMLDivElement, ChatsListProps>(
               aria-label={getEmptyStateContent(filter).title}
               data-testid={testId ? `${testId}-empty` : undefined}
             />
-          </div>
+          </Box>
         ) : (
-          <div
+          <Box
             role="list"
             id={listId}
             aria-labelledby={onFilterChange ? selectedTabId : undefined}
@@ -664,7 +671,7 @@ export const ChatsList = forwardRef<HTMLDivElement, ChatsListProps>(
             data-testid={testId ? `${testId}-list` : undefined}
           >
             {filteredChats.map((chat) => (
-              <div
+              <Box
                 key={chat.id}
                 role="listitem"
                 data-testid={testId ? `${testId}-item-${chat.id}` : undefined}
@@ -679,11 +686,11 @@ export const ChatsList = forwardRef<HTMLDivElement, ChatsListProps>(
                   onContextMenu={onChatContextMenu}
                   size={size}
                 />
-              </div>
+              </Box>
             ))}
-          </div>
+          </Box>
         )}
-      </div>
+      </Box>
     );
   }
 );

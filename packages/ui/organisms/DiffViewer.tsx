@@ -19,7 +19,7 @@
  */
 
 import type { DiffHunk, FileDiff } from '@openflow/generated';
-import { Flex, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Flex, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
   AlertCircle,
@@ -481,14 +481,14 @@ const DiffLineComponent = forwardRef<HTMLDivElement, DiffLineComponentProps>(
     // Hunk header rendering
     if (line.type === 'header') {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(DIFF_HUNK_HEADER_CLASSES, DIFF_VIEWER_SIZE_CLASSES[size])}
           role="separator"
           aria-label="Diff hunk header"
         >
-          <code>{line.content}</code>
-        </div>
+          <Box as="code">{line.content}</Box>
+        </Box>
       );
     }
 
@@ -513,7 +513,7 @@ const DiffLineComponent = forwardRef<HTMLDivElement, DiffLineComponentProps>(
     const srAnnouncement = getLineTypeAnnouncement(line.type);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           DIFF_LINE_BASE_CLASSES,
@@ -528,7 +528,8 @@ const DiffLineComponent = forwardRef<HTMLDivElement, DiffLineComponentProps>(
       >
         {showLineNumbers && (
           <>
-            <span
+            <Text
+              as="span"
               className={cn(DIFF_LINE_NUMBER_CLASSES, lineNumberWidthClasses)}
               role="cell"
               aria-label={
@@ -538,8 +539,9 @@ const DiffLineComponent = forwardRef<HTMLDivElement, DiffLineComponentProps>(
               }
             >
               {line.type !== 'addition' ? line.oldLineNumber : ''}
-            </span>
-            <span
+            </Text>
+            <Text
+              as="span"
               className={cn(DIFF_LINE_NUMBER_CLASSES, lineNumberWidthClasses)}
               role="cell"
               aria-label={
@@ -549,17 +551,17 @@ const DiffLineComponent = forwardRef<HTMLDivElement, DiffLineComponentProps>(
               }
             >
               {line.type !== 'deletion' ? line.newLineNumber : ''}
-            </span>
+            </Text>
           </>
         )}
         {/* Visual prefix for color-blind users - always shown */}
-        <span className={cn(DIFF_LINE_PREFIX_CLASSES, textClass)} aria-hidden="true">
+        <Text as="span" className={cn(DIFF_LINE_PREFIX_CLASSES, textClass)} aria-hidden={true}>
           {prefix}
-        </span>
-        <pre className={cn(DIFF_LINE_CONTENT_CLASSES, textClass)} role="cell">
-          <code>{line.content || ' '}</code>
-        </pre>
-      </div>
+        </Text>
+        <Box as="pre" className={cn(DIFF_LINE_CONTENT_CLASSES, textClass)} role="cell">
+          <Box as="code">{line.content || ' '}</Box>
+        </Box>
+      </Box>
     );
   }
 );
@@ -579,25 +581,25 @@ const FileDiffContent = forwardRef<HTMLDivElement, FileDiffContentProps>(functio
 
   if (diff.isBinary) {
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(DIFF_BINARY_MESSAGE_CLASSES, DIFF_VIEWER_SIZE_CLASSES[size])}
         role="status"
       >
         {DEFAULT_BINARY_MESSAGE}
-      </div>
+      </Box>
     );
   }
 
   if (allLines.length === 0) {
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(DIFF_BINARY_MESSAGE_CLASSES, DIFF_VIEWER_SIZE_CLASSES[size])}
         role="status"
       >
         {DEFAULT_NO_CHANGES_MESSAGE}
-      </div>
+      </Box>
     );
   }
 
@@ -611,13 +613,13 @@ const FileDiffContent = forwardRef<HTMLDivElement, FileDiffContentProps>(functio
   }));
 
   return (
-    <div
+    <Box
       ref={ref}
       className={FILE_CONTENT_CONTAINER_CLASSES}
       role="table"
       aria-label={`Diff for ${diff.path}`}
     >
-      <div role="rowgroup">
+      <Box role="rowgroup">
         {linesWithKeys.map((line) => (
           <DiffLineComponent
             key={line.key}
@@ -626,8 +628,8 @@ const FileDiffContent = forwardRef<HTMLDivElement, FileDiffContentProps>(functio
             size={size}
           />
         ))}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 });
 
@@ -676,7 +678,8 @@ const FileHeader = forwardRef<HTMLButtonElement, FileHeaderProps>(function FileH
         </VisuallyHidden>
       )}
 
-      <button
+      <Box
+        as="button"
         ref={ref}
         type="button"
         id={headerId}
@@ -709,10 +712,12 @@ const FileHeader = forwardRef<HTMLButtonElement, FileHeaderProps>(function FileH
         />
 
         {/* File path */}
-        <span className="flex-1 min-w-0 font-mono truncate text-[rgb(var(--foreground))]">
+        <Text as="span" className="flex-1 min-w-0 font-mono truncate text-[rgb(var(--foreground))]">
           {diff.isRenamed && diff.oldPath ? (
             <>
-              <span className="text-[rgb(var(--muted-foreground))]">{diff.oldPath}</span>
+              <Text as="span" className="text-[rgb(var(--muted-foreground))]">
+                {diff.oldPath}
+              </Text>
               <Icon
                 icon={ArrowRight}
                 size={iconSize}
@@ -724,7 +729,7 @@ const FileHeader = forwardRef<HTMLButtonElement, FileHeaderProps>(function FileH
           ) : (
             diff.path
           )}
-        </span>
+        </Text>
 
         {/* Status badges */}
         <Flex align="center" gap="2" className="flex-shrink-0" aria-hidden>
@@ -763,7 +768,7 @@ const FileHeader = forwardRef<HTMLButtonElement, FileHeaderProps>(function FileH
             </Text>
           )}
         </Flex>
-      </button>
+      </Box>
     </>
   );
 });
@@ -787,10 +792,10 @@ export const DiffViewerSkeleton = forwardRef<HTMLDivElement, DiffViewerSkeletonP
     const headerPaddingClasses = DIFF_VIEWER_HEADER_PADDING_CLASSES[baseSize];
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(DIFF_VIEWER_BASE_CLASSES, className)}
-        aria-hidden="true"
+        aria-hidden={true}
         role="presentation"
         data-testid={testId}
         data-skeleton-count={count}
@@ -802,17 +807,17 @@ export const DiffViewerSkeleton = forwardRef<HTMLDivElement, DiffViewerSkeletonP
         </VisuallyHidden>
 
         {/* Summary header skeleton */}
-        <div className={cn(DIFF_VIEWER_SUMMARY_CLASSES, headerPaddingClasses)}>
+        <Box className={cn(DIFF_VIEWER_SUMMARY_CLASSES, headerPaddingClasses)}>
           <Skeleton variant="text" width={120} height={16} />
           <Flex gap="3">
             <Skeleton variant="text" width={50} height={14} />
             <Skeleton variant="text" width={40} height={14} />
           </Flex>
-        </div>
+        </Box>
 
         {/* File skeletons */}
         {Array.from({ length: count }, (_, i) => (
-          <div key={i} className={cn(SKELETON_FILE_CLASSES, paddingClasses)}>
+          <Box key={i} className={cn(SKELETON_FILE_CLASSES, paddingClasses)}>
             <Skeleton variant="circular" width={16} height={16} />
             <Skeleton variant="circular" width={16} height={16} />
             <Flex direction="column" gap="1" className="flex-1">
@@ -820,9 +825,9 @@ export const DiffViewerSkeleton = forwardRef<HTMLDivElement, DiffViewerSkeletonP
             </Flex>
             <Skeleton variant="text" width={40} height={14} />
             <Skeleton variant="text" width={40} height={14} />
-          </div>
+          </Box>
         ))}
-      </div>
+      </Box>
     );
   }
 );
@@ -845,21 +850,21 @@ export const DiffViewerError = forwardRef<HTMLDivElement, DiffViewerErrorProps>(
     const buttonSize = DIFF_VIEWER_BUTTON_SIZE_MAP[baseSize];
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(ERROR_STATE_CLASSES, className)}
         role="alert"
         aria-live="assertive"
         data-testid={testId}
       >
-        <div className={ERROR_ICON_CONTAINER_CLASSES}>
+        <Box className={ERROR_ICON_CONTAINER_CLASSES}>
           <Icon
             icon={AlertCircle}
             size="lg"
             className="text-[rgb(var(--destructive))]"
             aria-hidden="true"
           />
-        </div>
+        </Box>
         <Text size="lg" weight="medium" color="foreground" className="mb-1">
           {DEFAULT_ERROR_TITLE}
         </Text>
@@ -873,7 +878,7 @@ export const DiffViewerError = forwardRef<HTMLDivElement, DiffViewerErrorProps>(
             {DEFAULT_ERROR_RETRY_LABEL}
           </Button>
         )}
-      </div>
+      </Box>
     );
   }
 );
@@ -994,7 +999,7 @@ export const DiffViewer = forwardRef<HTMLDivElement, DiffViewerProps>(function D
   }
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(DIFF_VIEWER_BASE_CLASSES, ...sizeClasses, className)}
       style={{ maxHeight }}
@@ -1012,7 +1017,7 @@ export const DiffViewer = forwardRef<HTMLDivElement, DiffViewerProps>(function D
       </VisuallyHidden>
 
       {/* Summary header */}
-      <header className={cn(DIFF_VIEWER_SUMMARY_CLASSES, headerPaddingClasses)}>
+      <Box as="header" className={cn(DIFF_VIEWER_SUMMARY_CLASSES, headerPaddingClasses)}>
         <Text size={baseSize === 'sm' ? 'xs' : 'sm'} color="foreground">
           {totals.files} {totals.files === 1 ? 'file' : 'files'} changed
         </Text>
@@ -1024,10 +1029,10 @@ export const DiffViewer = forwardRef<HTMLDivElement, DiffViewerProps>(function D
             -{totals.deletions}
           </Text>
         </Flex>
-      </header>
+      </Box>
 
       {/* File list */}
-      <div
+      <Box
         className={DIFF_VIEWER_CONTENT_CLASSES}
         role="list"
         aria-label={`${diffs.length} ${diffs.length === 1 ? 'file' : 'files'}`}
@@ -1038,7 +1043,7 @@ export const DiffViewer = forwardRef<HTMLDivElement, DiffViewerProps>(function D
           const contentId = `${viewerId}-content-${index}`;
 
           return (
-            <div
+            <Box
               key={diff.path}
               className="flex flex-col border-b border-[rgb(var(--border))] last:border-b-0"
               role="listitem"
@@ -1054,15 +1059,15 @@ export const DiffViewer = forwardRef<HTMLDivElement, DiffViewerProps>(function D
               />
 
               {expanded && (
-                <div id={contentId} aria-labelledby={headerId}>
+                <Box id={contentId} aria-labelledby={headerId}>
                   <FileDiffContent diff={diff} showLineNumbers={showLineNumbers} size={baseSize} />
-                </div>
+                </Box>
               )}
-            </div>
+            </Box>
           );
         })}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 });
 

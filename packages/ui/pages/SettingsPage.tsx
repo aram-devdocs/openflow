@@ -26,7 +26,14 @@
  * @module pages/SettingsPage
  */
 
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Heading,
+  Paragraph,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertCircle, HardDrive, Info, Moon, Save } from 'lucide-react';
 import { forwardRef, useId } from 'react';
@@ -419,7 +426,7 @@ export const SettingsPageSkeleton = forwardRef<HTMLDivElement, SettingsPageSkele
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         className={SETTINGS_PAGE_SKELETON_CLASSES}
         aria-hidden="true"
@@ -428,9 +435,9 @@ export const SettingsPageSkeleton = forwardRef<HTMLDivElement, SettingsPageSkele
       >
         {/* Screen reader loading announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite">
+          <Box role="status" aria-live="polite">
             {SR_LOADING}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         <SkeletonSettings
@@ -438,7 +445,7 @@ export const SettingsPageSkeleton = forwardRef<HTMLDivElement, SettingsPageSkele
           fieldsPerSection={fieldsPerSection}
           size={getBaseSize(size)}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -449,7 +456,7 @@ export const SettingsPageSkeleton = forwardRef<HTMLDivElement, SettingsPageSkele
 export const SettingsPageError = forwardRef<HTMLDivElement, SettingsPageErrorStateProps>(
   function SettingsPageError({ error, onRetry, size, 'data-testid': testId }, ref) {
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(
           SETTINGS_PAGE_ERROR_CLASSES,
@@ -464,12 +471,14 @@ export const SettingsPageError = forwardRef<HTMLDivElement, SettingsPageErrorSta
         <Icon icon={AlertCircle} className={SETTINGS_PAGE_ERROR_ICON_CLASSES} aria-hidden="true" />
 
         {/* Error content */}
-        <div className="flex flex-col items-center gap-2">
-          <h2 className={SETTINGS_PAGE_ERROR_TITLE_CLASSES}>{DEFAULT_ERROR_TITLE}</h2>
-          <p className={SETTINGS_PAGE_ERROR_DESCRIPTION_CLASSES}>
+        <Box className="flex flex-col items-center gap-2">
+          <Heading level={2} className={SETTINGS_PAGE_ERROR_TITLE_CLASSES}>
+            {DEFAULT_ERROR_TITLE}
+          </Heading>
+          <Paragraph className={SETTINGS_PAGE_ERROR_DESCRIPTION_CLASSES}>
             {error || DEFAULT_ERROR_DESCRIPTION}
-          </p>
-        </div>
+          </Paragraph>
+        </Box>
 
         {/* Retry button */}
         {onRetry && (
@@ -484,11 +493,11 @@ export const SettingsPageError = forwardRef<HTMLDivElement, SettingsPageErrorSta
 
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="assertive">
+          <Box role="status" aria-live="assertive">
             {SR_ERROR_PREFIX} {error || DEFAULT_ERROR_DESCRIPTION}
-          </div>
+          </Box>
         </VisuallyHidden>
-      </div>
+      </Box>
     );
   }
 );
@@ -598,7 +607,7 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
   // Loading state
   if (state === 'loading') {
     return (
-      <div
+      <Box
         ref={ref}
         className={SETTINGS_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -608,14 +617,14 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
         data-size={baseSize}
       >
         <SettingsPageSkeleton size={size} />
-      </div>
+      </Box>
     );
   }
 
   // Error state
   if (state === 'error' && error) {
     return (
-      <div
+      <Box
         ref={ref}
         className={SETTINGS_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -624,13 +633,13 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
         data-size={baseSize}
       >
         <SettingsPageError error={error.error} onRetry={error.onRetry} size={size} />
-      </div>
+      </Box>
     );
   }
 
   // Ready state
   return (
-    <div
+    <Box
       ref={ref}
       className={SETTINGS_PAGE_BASE_CLASSES}
       aria-label={computedAriaLabel}
@@ -643,21 +652,21 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
     >
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite" aria-atomic="true">
+        <Box role="status" aria-live="polite" aria-atomic="true">
           {buildLoadedAnnouncement(save.hasChanges, save.saveSuccess)}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       {/* Saving state announcement */}
       {save.isSaving && (
         <VisuallyHidden>
-          <div role="status" aria-live="polite">
+          <Box role="status" aria-live="polite">
             {SR_SAVING}
-          </div>
+          </Box>
         </VisuallyHidden>
       )}
 
-      <div
+      <Box
         className={cn(
           SETTINGS_PAGE_CONTENT_CLASSES,
           getResponsiveSizeClasses(size, PAGE_SIZE_SPACE_Y)
@@ -665,7 +674,7 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
       >
         {/* Status badges */}
         {(save.hasChanges || save.saveSuccess) && (
-          <div className={SETTINGS_PAGE_STATUS_CLASSES} role="status" aria-live="polite">
+          <Box className={SETTINGS_PAGE_STATUS_CLASSES} role="status" aria-live="polite">
             {save.hasChanges && (
               <Badge variant="warning" aria-label="Warning: Unsaved changes">
                 Unsaved changes
@@ -676,49 +685,59 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
                 Saved successfully
               </Badge>
             )}
-          </div>
+          </Box>
         )}
 
         {/* Appearance Section */}
         <Card className="overflow-hidden" role="region" aria-labelledby={appearanceSectionId}>
           <CardHeader className={SETTINGS_PAGE_CARD_HEADER_CLASSES}>
-            <div className={SETTINGS_PAGE_HEADER_TITLE_CONTAINER_CLASSES}>
+            <Box className={SETTINGS_PAGE_HEADER_TITLE_CONTAINER_CLASSES}>
               <Icon icon={Moon} className={SETTINGS_PAGE_HEADER_ICON_CLASSES} aria-hidden="true" />
-              <h2 id={appearanceSectionId} className={SETTINGS_PAGE_HEADER_TITLE_CLASSES}>
+              <Heading
+                id={appearanceSectionId}
+                level={2}
+                className={SETTINGS_PAGE_HEADER_TITLE_CLASSES}
+              >
                 Appearance
-              </h2>
-            </div>
-            <p className={SETTINGS_PAGE_HEADER_DESCRIPTION_CLASSES}>Customize how OpenFlow looks</p>
+              </Heading>
+            </Box>
+            <Paragraph className={SETTINGS_PAGE_HEADER_DESCRIPTION_CLASSES}>
+              Customize how OpenFlow looks
+            </Paragraph>
           </CardHeader>
           <CardContent className={SETTINGS_PAGE_CARD_CONTENT_CLASSES}>
             <FormField label="Theme">
               <ThemeToggle theme={appearance.theme} onThemeChange={appearance.onThemeChange} />
             </FormField>
-            <p className={SETTINGS_PAGE_HELPER_TEXT_CLASSES}>
+            <Paragraph className={SETTINGS_PAGE_HELPER_TEXT_CLASSES}>
               Theme changes are applied immediately and persisted automatically.
-            </p>
+            </Paragraph>
           </CardContent>
         </Card>
 
         {/* Behavior Section */}
         <Card className="overflow-hidden" role="region" aria-labelledby={behaviorSectionId}>
           <CardHeader className={SETTINGS_PAGE_CARD_HEADER_CLASSES}>
-            <div className={SETTINGS_PAGE_HEADER_TITLE_CONTAINER_CLASSES}>
+            <Box className={SETTINGS_PAGE_HEADER_TITLE_CONTAINER_CLASSES}>
               <Icon
                 icon={HardDrive}
                 className={SETTINGS_PAGE_HEADER_ICON_CLASSES}
                 aria-hidden="true"
               />
-              <h2 id={behaviorSectionId} className={SETTINGS_PAGE_HEADER_TITLE_CLASSES}>
+              <Heading
+                id={behaviorSectionId}
+                level={2}
+                className={SETTINGS_PAGE_HEADER_TITLE_CLASSES}
+              >
                 Behavior
-              </h2>
-            </div>
-            <p className={SETTINGS_PAGE_HEADER_DESCRIPTION_CLASSES}>
+              </Heading>
+            </Box>
+            <Paragraph className={SETTINGS_PAGE_HEADER_DESCRIPTION_CLASSES}>
               Configure application behavior
-            </p>
+            </Paragraph>
           </CardHeader>
           <CardContent className={SETTINGS_PAGE_CARD_CONTENT_CLASSES}>
-            <div className="flex items-start gap-3">
+            <Box className="flex items-start gap-3">
               <Checkbox
                 id={autoSaveId}
                 checked={behavior.autoSave}
@@ -726,50 +745,59 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
                 className="mt-0.5"
                 aria-describedby={`${autoSaveId}-description`}
               />
-              <div>
-                <label
+              <Box>
+                <Text
+                  as="label"
                   htmlFor={autoSaveId}
                   className="text-sm font-medium text-[rgb(var(--foreground))] cursor-pointer"
                 >
                   Auto-save task descriptions
-                </label>
-                <p
+                </Text>
+                <Paragraph
                   id={`${autoSaveId}-description`}
                   className="text-xs text-[rgb(var(--muted-foreground))]"
                 >
                   Automatically save changes as you type
-                </p>
-              </div>
-            </div>
+                </Paragraph>
+              </Box>
+            </Box>
           </CardContent>
         </Card>
 
         {/* About Section */}
         <Card className="overflow-hidden" role="region" aria-labelledby={aboutSectionId}>
           <CardHeader className={SETTINGS_PAGE_CARD_HEADER_CLASSES}>
-            <div className={SETTINGS_PAGE_HEADER_TITLE_CONTAINER_CLASSES}>
+            <Box className={SETTINGS_PAGE_HEADER_TITLE_CONTAINER_CLASSES}>
               <Icon icon={Info} className={SETTINGS_PAGE_HEADER_ICON_CLASSES} aria-hidden="true" />
-              <h2 id={aboutSectionId} className={SETTINGS_PAGE_HEADER_TITLE_CLASSES}>
+              <Heading id={aboutSectionId} level={2} className={SETTINGS_PAGE_HEADER_TITLE_CLASSES}>
                 About
-              </h2>
-            </div>
+              </Heading>
+            </Box>
           </CardHeader>
           <CardContent className={SETTINGS_PAGE_CARD_CONTENT_CLASSES}>
-            <dl className="space-y-2 text-sm">
-              <div className={SETTINGS_PAGE_ABOUT_ROW_CLASSES}>
-                <dt className={SETTINGS_PAGE_ABOUT_LABEL_CLASSES}>Version</dt>
-                <dd className={SETTINGS_PAGE_ABOUT_VALUE_CLASSES}>{about.version}</dd>
-              </div>
-              <div className={SETTINGS_PAGE_ABOUT_ROW_CLASSES}>
-                <dt className={SETTINGS_PAGE_ABOUT_LABEL_CLASSES}>Build</dt>
-                <dd className={SETTINGS_PAGE_ABOUT_VALUE_CLASSES}>{about.build}</dd>
-              </div>
-            </dl>
+            <Box as="dl" className="space-y-2 text-sm">
+              <Box className={SETTINGS_PAGE_ABOUT_ROW_CLASSES}>
+                <Text as="dt" className={SETTINGS_PAGE_ABOUT_LABEL_CLASSES}>
+                  Version
+                </Text>
+                <Text as="dd" className={SETTINGS_PAGE_ABOUT_VALUE_CLASSES}>
+                  {about.version}
+                </Text>
+              </Box>
+              <Box className={SETTINGS_PAGE_ABOUT_ROW_CLASSES}>
+                <Text as="dt" className={SETTINGS_PAGE_ABOUT_LABEL_CLASSES}>
+                  Build
+                </Text>
+                <Text as="dd" className={SETTINGS_PAGE_ABOUT_VALUE_CLASSES}>
+                  {about.build}
+                </Text>
+              </Box>
+            </Box>
           </CardContent>
         </Card>
 
         {/* Save button */}
-        <div className={SETTINGS_PAGE_FOOTER_CLASSES}>
+        <Box className={SETTINGS_PAGE_FOOTER_CLASSES}>
           <Button
             variant="primary"
             onClick={save.onSave}
@@ -783,14 +811,14 @@ export const SettingsPage = forwardRef<HTMLDivElement, SettingsPageProps>(functi
           </Button>
           {!save.hasChanges && (
             <VisuallyHidden>
-              <span id="save-disabled-hint">
+              <Text as="span" id="save-disabled-hint">
                 No changes to save. Make changes to settings first.
-              </span>
+              </Text>
             </VisuallyHidden>
           )}
-        </div>
-      </div>
-    </div>
+        </Box>
+      </Box>
+    </Box>
   );
 });
 

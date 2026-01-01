@@ -26,10 +26,14 @@
  */
 
 import {
+  Aside,
+  Box,
   DEFAULT_MAIN_ID,
+  Flex,
   Header as HeaderPrimitive,
   Main,
   type ResponsiveValue,
+  Text,
   VisuallyHidden,
 } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
@@ -377,7 +381,7 @@ export const AppLayout = forwardRef<HTMLDivElement, AppLayoutProps>(function App
   const sidebarWidthClasses = getResponsiveSidebarClasses(size, sidebarCollapsed);
 
   return (
-    <div
+    <Flex
       ref={ref}
       className={cn(APP_LAYOUT_CONTAINER_CLASSES, className)}
       data-testid={dataTestId}
@@ -392,28 +396,28 @@ export const AppLayout = forwardRef<HTMLDivElement, AppLayoutProps>(function App
       {/* Screen reader announcements for state changes */}
       {drawerChanged && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {buildDrawerAnnouncement(isMobileDrawerOpen, mobileDrawerLabel)}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
       {sidebarChanged && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {buildSidebarAnnouncement(sidebarCollapsed)}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       {/* Desktop Sidebar - hidden on mobile */}
-      <aside
+      <Aside
         id={sidebarId}
         aria-label={sidebarLabel}
         className={cn(APP_LAYOUT_SIDEBAR_BASE_CLASSES, sidebarWidthClasses)}
         data-testid={dataTestId ? `${dataTestId}-sidebar` : undefined}
       >
         {sidebar}
-      </aside>
+      </Aside>
 
       {/* Mobile Drawer */}
       <Drawer
@@ -427,7 +431,8 @@ export const AppLayout = forwardRef<HTMLDivElement, AppLayoutProps>(function App
       </Drawer>
 
       {/* Main area: Header + Content */}
-      <div
+      <Flex
+        direction="column"
         className={APP_LAYOUT_MAIN_AREA_CLASSES}
         data-testid={dataTestId ? `${dataTestId}-main-area` : undefined}
       >
@@ -439,17 +444,17 @@ export const AppLayout = forwardRef<HTMLDivElement, AppLayoutProps>(function App
           data-testid={dataTestId ? `${dataTestId}-header` : undefined}
         >
           {/* Hamburger button - only visible on mobile */}
-          <div className={APP_LAYOUT_HAMBURGER_CONTAINER_CLASSES}>
+          <Box className={APP_LAYOUT_HAMBURGER_CONTAINER_CLASSES}>
             <HamburgerButton
               onClick={handleOpenDrawer}
               isOpen={isMobileDrawerOpen}
               controlsId="mobile-nav"
               data-testid={dataTestId ? `${dataTestId}-hamburger` : undefined}
             />
-          </div>
+          </Box>
 
           {/* Header content */}
-          <div className={APP_LAYOUT_HEADER_CONTENT_CLASSES}>{header}</div>
+          <Box className={APP_LAYOUT_HEADER_CONTENT_CLASSES}>{header}</Box>
         </HeaderPrimitive>
 
         {/* Main content */}
@@ -462,8 +467,8 @@ export const AppLayout = forwardRef<HTMLDivElement, AppLayoutProps>(function App
         >
           {children}
         </Main>
-      </div>
-    </div>
+      </Flex>
+    </Flex>
   );
 });
 

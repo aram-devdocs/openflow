@@ -16,7 +16,7 @@
  * />
  */
 
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertCircle, GitPullRequest } from 'lucide-react';
 import { type HTMLAttributes, forwardRef, useCallback, useEffect, useId, useState } from 'react';
@@ -516,32 +516,32 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
       >
         {/* Screen reader announcements */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {isOpen && SR_DIALOG_OPENED}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         {isSubmitting && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               {SR_SUBMITTING}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 
         {showGhWarning && (
           <VisuallyHidden>
-            <span role="alert" aria-live="assertive">
+            <Text as="span" role="alert" aria-live="assertive">
               {buildGhWarningAnnouncement(ghCliInstalled, ghAuthenticated)}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 
         <DialogContent data-testid={dataTestId ? `${dataTestId}-content` : undefined}>
-          <div className={formGapClasses} onKeyDown={handleKeyDown}>
+          <Box className={formGapClasses} onKeyDown={handleKeyDown}>
             {/* GitHub CLI warning */}
             {showGhWarning && (
-              <div
+              <Box
                 className={cn(...WARNING_CONTAINER_CLASSES, WARNING_BORDER_CLASSES.warning)}
                 role="alert"
                 data-testid={dataTestId ? `${dataTestId}-gh-warning` : undefined}
@@ -552,7 +552,7 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                   className="mt-0.5 shrink-0 text-[rgb(var(--warning))]"
                   aria-hidden="true"
                 />
-                <div className="text-sm">
+                <Box className="text-sm">
                   {!ghCliInstalled ? (
                     <>
                       <Text weight="medium" color="warning" as="p">
@@ -560,9 +560,9 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                       </Text>
                       <Text color="muted-foreground" as="p" className="mt-1">
                         Install the GitHub CLI to create pull requests:{' '}
-                        <code className="rounded bg-[rgb(var(--muted))] px-1 py-0.5">
+                        <Box as="code" className="rounded bg-[rgb(var(--muted))] px-1 py-0.5">
                           brew install gh
-                        </code>
+                        </Box>
                       </Text>
                     </>
                   ) : (
@@ -572,32 +572,32 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                       </Text>
                       <Text color="muted-foreground" as="p" className="mt-1">
                         Run{' '}
-                        <code className="rounded bg-[rgb(var(--muted))] px-1 py-0.5">
+                        <Box as="code" className="rounded bg-[rgb(var(--muted))] px-1 py-0.5">
                           gh auth login
-                        </code>{' '}
+                        </Box>{' '}
                         to authenticate.
                       </Text>
                     </>
                   )}
-                </div>
-              </div>
+                </Box>
+              </Box>
             )}
 
             {/* PR Icon and info */}
-            <div
+            <Box
               className="flex items-center gap-3 text-[rgb(var(--muted-foreground))]"
               data-testid={dataTestId ? `${dataTestId}-info` : undefined}
             >
-              <div className={cn(...PR_ICON_CONTAINER_CLASSES)} aria-hidden="true">
+              <Box className={cn(...PR_ICON_CONTAINER_CLASSES)} aria-hidden={true}>
                 <Icon icon={GitPullRequest} size="md" className="text-[rgb(var(--primary))]" />
-              </div>
+              </Box>
               <Text size="sm" color="muted-foreground" as="p">
                 {PR_INFO_TEXT}
               </Text>
-            </div>
+            </Box>
 
             {/* Title input (required) */}
-            <div
+            <Box
               className={cn(...FORM_FIELD_CONTAINER_CLASSES)}
               data-testid={dataTestId ? `${dataTestId}-title-field` : undefined}
             >
@@ -622,18 +622,21 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                 maxLength={MAX_TITLE_LENGTH}
                 data-testid={dataTestId ? `${dataTestId}-title-input` : undefined}
               />
-            </div>
+            </Box>
 
             {/* Body textarea */}
-            <div
+            <Box
               className={cn(...FORM_FIELD_CONTAINER_CLASSES)}
               data-testid={dataTestId ? `${dataTestId}-body-field` : undefined}
             >
               <Label htmlFor={bodyId} size={labelSize} disabled={isSubmitting || showGhWarning}>
                 Description
-                <span className="ml-1 text-xs font-normal text-[rgb(var(--muted-foreground))]">
+                <Text
+                  as="span"
+                  className="ml-1 text-xs font-normal text-[rgb(var(--muted-foreground))]"
+                >
                   (optional)
-                </span>
+                </Text>
               </Label>
               <Textarea
                 id={bodyId}
@@ -645,18 +648,21 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                 resize="vertical"
                 data-testid={dataTestId ? `${dataTestId}-body-input` : undefined}
               />
-            </div>
+            </Box>
 
             {/* Base branch input */}
-            <div
+            <Box
               className={cn(...FORM_FIELD_CONTAINER_CLASSES)}
               data-testid={dataTestId ? `${dataTestId}-base-field` : undefined}
             >
               <Label htmlFor={baseId} size={labelSize} disabled={isSubmitting || showGhWarning}>
                 Base Branch
-                <span className="ml-1 text-xs font-normal text-[rgb(var(--muted-foreground))]">
+                <Text
+                  as="span"
+                  className="ml-1 text-xs font-normal text-[rgb(var(--muted-foreground))]"
+                >
                   (optional)
-                </span>
+                </Text>
               </Label>
               <Input
                 id={baseId}
@@ -671,10 +677,10 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
               <Text id={baseHelperId} size="xs" color="muted-foreground" as="p">
                 {BASE_BRANCH_HELPER}
               </Text>
-            </div>
+            </Box>
 
             {/* Draft PR toggle - using native checkbox with label */}
-            <div
+            <Box
               className={cn(...DRAFT_CHECKBOX_CONTAINER_CLASSES)}
               data-testid={dataTestId ? `${dataTestId}-draft-field` : undefined}
             >
@@ -685,7 +691,8 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                 disabled={isSubmitting || showGhWarning}
                 data-testid={dataTestId ? `${dataTestId}-draft-checkbox` : undefined}
               />
-              <label
+              <Box
+                as="label"
                 htmlFor={draftId}
                 className={cn(
                   'text-sm text-[rgb(var(--foreground))]',
@@ -693,15 +700,15 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                 )}
               >
                 {DRAFT_LABEL}
-                <span className="ml-1 text-xs text-[rgb(var(--muted-foreground))]">
+                <Text as="span" className="ml-1 text-xs text-[rgb(var(--muted-foreground))]">
                   {DRAFT_HELPER}
-                </span>
-              </label>
-            </div>
+                </Text>
+              </Box>
+            </Box>
 
             {/* Error message */}
             {error && (
-              <div
+              <Box
                 className={cn(...WARNING_CONTAINER_CLASSES, WARNING_BORDER_CLASSES.error)}
                 role="alert"
                 aria-live="assertive"
@@ -716,7 +723,7 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
                 <Text id={errorId} size="sm" color="destructive" as="p">
                   {error}
                 </Text>
-              </div>
+              </Box>
             )}
 
             {/* Keyboard shortcut hint - only on desktop */}
@@ -727,16 +734,22 @@ export const CreatePRDialog = forwardRef<HTMLDivElement, CreatePRDialogProps>(
               as="p"
               data-testid={dataTestId ? `${dataTestId}-shortcut-hint` : undefined}
             >
-              <kbd className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]">
+              <Box
+                as="kbd"
+                className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]"
+              >
                 ⌘
-              </kbd>
+              </Box>
               {' + '}
-              <kbd className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]">
+              <Box
+                as="kbd"
+                className="rounded border border-[rgb(var(--border))] bg-[rgb(var(--muted))] px-1.5 py-0.5 font-mono text-[10px]"
+              >
                 Enter
-              </kbd>
+              </Box>
               {' to submit'}
             </Text>
-          </div>
+          </Box>
         </DialogContent>
 
         <DialogFooter

@@ -1,5 +1,5 @@
 import type { Chat, Project, Task, TaskStatus } from '@openflow/generated';
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
   Archive,
@@ -39,7 +39,23 @@ export type StatusFilter = TaskStatus | 'all';
 export type SidebarSize = 'sm' | 'md' | 'lg';
 export type SidebarBreakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
-export interface SidebarProps extends Omit<HTMLAttributes<HTMLElement>, 'role'> {
+export interface SidebarProps
+  extends Omit<
+    HTMLAttributes<HTMLElement>,
+    | 'role'
+    | 'aria-hidden'
+    | 'aria-busy'
+    | 'aria-checked'
+    | 'aria-disabled'
+    | 'aria-expanded'
+    | 'aria-grabbed'
+    | 'aria-haspopup'
+    | 'aria-invalid'
+    | 'aria-pressed'
+    | 'aria-readonly'
+    | 'aria-required'
+    | 'aria-selected'
+  > {
   /** Array of projects for the project selector */
   projects: Project[];
   /** Array of tasks to display in the sidebar */
@@ -92,7 +108,23 @@ export interface SidebarProps extends Omit<HTMLAttributes<HTMLElement>, 'role'> 
   'data-testid'?: string;
 }
 
-export interface SidebarSkeletonProps extends Omit<HTMLAttributes<HTMLDivElement>, 'role'> {
+export interface SidebarSkeletonProps
+  extends Omit<
+    HTMLAttributes<HTMLDivElement>,
+    | 'role'
+    | 'aria-hidden'
+    | 'aria-busy'
+    | 'aria-checked'
+    | 'aria-disabled'
+    | 'aria-expanded'
+    | 'aria-grabbed'
+    | 'aria-haspopup'
+    | 'aria-invalid'
+    | 'aria-pressed'
+    | 'aria-readonly'
+    | 'aria-required'
+    | 'aria-selected'
+  > {
   /** Number of task skeleton items to show */
   taskCount?: number;
   /** Number of chat skeleton items to show */
@@ -532,7 +564,8 @@ function StatusFilterButton({
   const buttonId = useId();
 
   return (
-    <button
+    <Box
+      as="button"
       id={buttonId}
       type="button"
       role="tab"
@@ -549,8 +582,11 @@ function StatusFilterButton({
       data-state={isActive ? 'active' : 'inactive'}
       data-filter={filter}
     >
-      <span className="truncate">{label}</span>
-      <span
+      <Text as="span" className="truncate">
+        {label}
+      </Text>
+      <Text
+        as="span"
         className={cn(
           SIDEBAR_FILTER_COUNT_BASE_CLASSES,
           isActive ? SIDEBAR_FILTER_COUNT_ACTIVE_CLASSES : SIDEBAR_FILTER_COUNT_INACTIVE_CLASSES
@@ -558,8 +594,8 @@ function StatusFilterButton({
         aria-label={`${count} ${count === 1 ? 'task' : 'tasks'}`}
       >
         {count}
-      </span>
-    </button>
+      </Text>
+    </Box>
   );
 }
 
@@ -598,7 +634,8 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
   const navId = useId();
 
   return (
-    <aside
+    <Box
+      as="aside"
       ref={ref}
       role="navigation"
       aria-label={ariaLabel || DEFAULT_SIDEBAR_LABEL}
@@ -608,13 +645,14 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
       data-size={baseSize}
     >
       {/* Expand button */}
-      <div
+      <Box
         className={cn(
           'flex items-center justify-center border-b border-[rgb(var(--border))]',
           paddingClasses
         )}
       >
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onToggleCollapse}
           className={SIDEBAR_ICON_BUTTON_CLASSES}
@@ -623,17 +661,19 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           data-testid={testId ? `${testId}-expand-button` : undefined}
         >
           <Icon icon={ChevronRight} size={iconSize} aria-hidden="true" />
-        </button>
-      </div>
+        </Box>
+      </Box>
 
       {/* Action buttons */}
-      <nav
+      <Box
+        as="nav"
         id={navId}
         aria-label="Quick actions"
         className={cn('flex flex-1 flex-col items-center gap-1', paddingClasses)}
       >
         {/* New task button */}
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onNewTask}
           className={cn(SIDEBAR_ICON_BUTTON_CLASSES, 'text-[rgb(var(--primary))]')}
@@ -641,9 +681,10 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           data-testid={testId ? `${testId}-new-task-button` : undefined}
         >
           <Icon icon={Plus} size={iconSize} aria-hidden="true" />
-        </button>
+        </Box>
         {/* New chat button */}
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onNewChat}
           className={SIDEBAR_ICON_BUTTON_CLASSES}
@@ -651,17 +692,18 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           data-testid={testId ? `${testId}-new-chat-button` : undefined}
         >
           <Icon icon={MessageSquare} size={iconSize} aria-hidden="true" />
-        </button>
-      </nav>
+        </Box>
+      </Box>
 
       {/* Footer actions */}
-      <div
+      <Box
         className={cn(
           'flex flex-col items-center gap-1 border-t border-[rgb(var(--border))]',
           paddingClasses
         )}
       >
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onArchiveClick}
           className={SIDEBAR_ICON_BUTTON_CLASSES}
@@ -669,8 +711,9 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           data-testid={testId ? `${testId}-archive-button` : undefined}
         >
           <Icon icon={Archive} size={iconSize} aria-hidden="true" />
-        </button>
-        <button
+        </Box>
+        <Box
+          as="button"
           type="button"
           onClick={onSettingsClick}
           className={SIDEBAR_ICON_BUTTON_CLASSES}
@@ -678,9 +721,9 @@ const CollapsedSidebar = forwardRef<HTMLElement, CollapsedSidebarProps>(function
           data-testid={testId ? `${testId}-settings-button` : undefined}
         >
           <Icon icon={Settings} size={iconSize} aria-hidden="true" />
-        </button>
-      </div>
-    </aside>
+        </Box>
+      </Box>
+    </Box>
   );
 });
 
@@ -709,10 +752,10 @@ export const SidebarSkeleton = forwardRef<HTMLDivElement, SidebarSkeletonProps>(
 
     if (isCollapsed) {
       return (
-        <div
+        <Box
           ref={ref}
           role="presentation"
-          aria-hidden="true"
+          aria-hidden={true}
           className={cn(SIDEBAR_BASE_CLASSES, SIDEBAR_WIDTH_CLASSES.collapsed, className)}
           data-testid={testId}
           data-collapsed="true"
@@ -720,21 +763,21 @@ export const SidebarSkeleton = forwardRef<HTMLDivElement, SidebarSkeletonProps>(
           {...props}
         >
           {/* Expand button skeleton */}
-          <div
+          <Box
             className={cn(
               'flex items-center justify-center border-b border-[rgb(var(--border))]',
               paddingClasses
             )}
           >
             <Skeleton className="h-11 w-11 rounded-md" />
-          </div>
+          </Box>
           {/* Action buttons skeleton */}
-          <div className={cn('flex flex-1 flex-col items-center gap-1', paddingClasses)}>
+          <Box className={cn('flex flex-1 flex-col items-center gap-1', paddingClasses)}>
             <Skeleton className="h-11 w-11 rounded-md" />
             <Skeleton className="h-11 w-11 rounded-md" />
-          </div>
+          </Box>
           {/* Footer skeleton */}
-          <div
+          <Box
             className={cn(
               'flex flex-col items-center gap-1 border-t border-[rgb(var(--border))]',
               paddingClasses
@@ -742,16 +785,16 @@ export const SidebarSkeleton = forwardRef<HTMLDivElement, SidebarSkeletonProps>(
           >
             <Skeleton className="h-11 w-11 rounded-md" />
             <Skeleton className="h-11 w-11 rounded-md" />
-          </div>
-        </div>
+          </Box>
+        </Box>
       );
     }
 
     return (
-      <div
+      <Box
         ref={ref}
         role="presentation"
-        aria-hidden="true"
+        aria-hidden={true}
         className={cn(SIDEBAR_BASE_CLASSES, SIDEBAR_WIDTH_CLASSES.expanded, className)}
         data-testid={testId}
         data-collapsed="false"
@@ -761,59 +804,59 @@ export const SidebarSkeleton = forwardRef<HTMLDivElement, SidebarSkeletonProps>(
         {...props}
       >
         {/* Header skeleton */}
-        <div className={cn(SIDEBAR_HEADER_CLASSES, paddingClasses)}>
+        <Box className={cn(SIDEBAR_HEADER_CLASSES, paddingClasses)}>
           <Skeleton className="h-10 flex-1 rounded-md" />
           <Skeleton className="h-11 w-11 shrink-0 rounded-md" />
-        </div>
+        </Box>
 
         {/* New task button skeleton */}
-        <div className={paddingClasses}>
+        <Box className={paddingClasses}>
           <Skeleton className="h-9 w-full rounded-md" />
-        </div>
+        </Box>
 
         {/* Status filter skeleton */}
-        <div className={cn('border-b border-[rgb(var(--border))]', paddingClasses)}>
-          <div className="mb-2 flex items-center gap-2">
+        <Box className={cn('border-b border-[rgb(var(--border))]', paddingClasses)}>
+          <Box className="mb-2 flex items-center gap-2">
             <Skeleton className="h-3 w-3 rounded" />
             <Skeleton className="h-3 w-24" />
-          </div>
-          <div className="flex flex-col gap-0.5">
+          </Box>
+          <Box className="flex flex-col gap-0.5">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full rounded-md" />
             ))}
-          </div>
-        </div>
+          </Box>
+        </Box>
 
         {/* Tasks skeleton */}
-        <div className={cn(SIDEBAR_CONTENT_CLASSES, paddingClasses)}>
-          <div className="flex flex-col gap-2">
+        <Box className={cn(SIDEBAR_CONTENT_CLASSES, paddingClasses)}>
+          <Box className="flex flex-col gap-2">
             {Array.from({ length: taskCount }).map((_, i) => (
               <Skeleton key={i} className="h-20 w-full rounded-lg" />
             ))}
-          </div>
+          </Box>
 
           {/* Chats section skeleton */}
-          <div className="mt-4 border-t border-[rgb(var(--border))] pt-3">
-            <div className="mb-2 flex items-center gap-2">
+          <Box className="mt-4 border-t border-[rgb(var(--border))] pt-3">
+            <Box className="mb-2 flex items-center gap-2">
               <Skeleton className="h-3 w-3 rounded" />
               <Skeleton className="h-3 w-3 rounded" />
               <Skeleton className="h-3 w-12" />
               <Skeleton className="ml-auto h-5 w-6 rounded-full" />
-            </div>
-            <div className="flex flex-col gap-1">
+            </Box>
+            <Box className="flex flex-col gap-1">
               {Array.from({ length: chatCount }).map((_, i) => (
                 <Skeleton key={i} className="h-11 w-full rounded-md" />
               ))}
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Box>
+        </Box>
 
         {/* Footer skeleton */}
-        <div className={cn(SIDEBAR_FOOTER_CLASSES, paddingClasses)}>
+        <Box className={cn(SIDEBAR_FOOTER_CLASSES, paddingClasses)}>
           <Skeleton className="h-11 w-24 rounded-md" />
           <Skeleton className="h-11 w-24 rounded-md" />
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -998,9 +1041,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
         {/* Screen reader announcement */}
         {announcement && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite" aria-atomic="true">
+            <Text as="span" role="status" aria-live="polite" aria-atomic="true">
               {announcement}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
         <CollapsedSidebar
@@ -1024,7 +1067,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
   const taskCounts = getTaskCounts(tasks);
 
   return (
-    <aside
+    <Box
+      as="aside"
       ref={ref}
       role="navigation"
       aria-label={ariaLabel || DEFAULT_SIDEBAR_LABEL}
@@ -1040,14 +1084,14 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
       {/* Screen reader announcement */}
       {announcement && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite" aria-atomic="true">
+          <Text as="span" role="status" aria-live="polite" aria-atomic="true">
             {announcement}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       {/* Header: Project selector and collapse button */}
-      <div className={cn(SIDEBAR_HEADER_CLASSES, paddingClasses)}>
+      <Box className={cn(SIDEBAR_HEADER_CLASSES, paddingClasses)}>
         <ProjectSelector
           projects={projects}
           {...(selectedProjectId && { selectedProjectId })}
@@ -1056,7 +1100,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           className="flex-1"
           data-testid={testId ? `${testId}-project-selector` : undefined}
         />
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onToggleCollapse}
           className={cn(SIDEBAR_ICON_BUTTON_CLASSES, 'h-11 w-11 shrink-0')}
@@ -1065,11 +1110,11 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           data-testid={testId ? `${testId}-collapse-button` : undefined}
         >
           <Icon icon={ChevronLeft} size={iconSize} aria-hidden="true" />
-        </button>
-      </div>
+        </Box>
+      </Box>
 
       {/* New task button */}
-      <div className={paddingClasses}>
+      <Box className={paddingClasses}>
         <Button
           variant="primary"
           size="sm"
@@ -1081,15 +1126,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           <Icon icon={Plus} size="sm" aria-hidden="true" />
           New Task
         </Button>
-      </div>
+      </Box>
 
       {/* Status filter with tablist pattern */}
-      <div className={cn('border-b border-[rgb(var(--border))]', paddingClasses)}>
-        <div className="mb-2 flex items-center gap-2 text-xs font-medium text-[rgb(var(--muted-foreground))]">
+      <Box className={cn('border-b border-[rgb(var(--border))]', paddingClasses)}>
+        <Box className="mb-2 flex items-center gap-2 text-xs font-medium text-[rgb(var(--muted-foreground))]">
           <Icon icon={ListFilter} size="xs" aria-hidden="true" />
-          <span id={filterTablistId}>{DEFAULT_FILTER_LABEL}</span>
-        </div>
-        <div
+          <Text as="span" id={filterTablistId}>
+            {DEFAULT_FILTER_LABEL}
+          </Text>
+        </Box>
+        <Box
           role="tablist"
           aria-labelledby={filterTablistId}
           aria-orientation="vertical"
@@ -1108,13 +1155,13 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               data-testid={testId ? `${testId}-filter-${option.value}` : undefined}
             />
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Scrollable content: Tasks and Chats */}
-      <div className={SIDEBAR_CONTENT_CLASSES}>
+      <Box className={SIDEBAR_CONTENT_CLASSES}>
         {/* Task list */}
-        <div
+        <Box
           id={tasksPanelId}
           role="tabpanel"
           aria-labelledby={filterTablistId}
@@ -1122,14 +1169,15 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           data-testid={testId ? `${testId}-tasks-panel` : undefined}
         >
           {filteredTasks.length > 0 ? (
-            <ul
+            <Box
+              as="ul"
               role="list"
               aria-label={`${getStatusFilterLabel(statusFilter)}, ${filteredTasks.length} ${filteredTasks.length === 1 ? 'task' : 'tasks'}`}
               className="flex flex-col gap-2"
               data-testid={testId ? `${testId}-tasks-list` : undefined}
             >
               {filteredTasks.map((task) => (
-                <li key={task.id} role="listitem">
+                <Box as="li" key={task.id} role="listitem">
                   <TaskCard
                     task={task}
                     isSelected={selectedTaskId === task.id}
@@ -1139,9 +1187,9 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     {...(onTaskContextMenu && { onContextMenu: onTaskContextMenu })}
                     data-testid={testId ? `${testId}-task-${task.id}` : undefined}
                   />
-                </li>
+                </Box>
               ))}
-            </ul>
+            </Box>
           ) : (
             <EmptyState
               icon={ClipboardList}
@@ -1155,17 +1203,18 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
               data-testid={testId ? `${testId}-empty-tasks` : undefined}
             />
           )}
-        </div>
+        </Box>
 
         {/* Chats section */}
-        <div
+        <Box
           id={chatsSectionId}
           className={cn('border-t border-[rgb(var(--border))]', paddingClasses)}
           data-testid={testId ? `${testId}-chats-section` : undefined}
         >
           {/* Collapsible header with View All link */}
-          <div className="mb-2 flex items-center gap-1">
-            <button
+          <Box className="mb-2 flex items-center gap-1">
+            <Box
+              as="button"
               type="button"
               onClick={handleChatsToggle}
               aria-expanded={isChatsExpanded}
@@ -1182,17 +1231,19 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 aria-hidden="true"
               />
               <Icon icon={MessageSquare} size="xs" aria-hidden="true" />
-              <span>Chats</span>
-              <span
+              <Text as="span">Chats</Text>
+              <Text
+                as="span"
                 className="ml-auto rounded-full bg-[rgb(var(--muted))] px-1.5 py-0.5 text-xs"
-                aria-hidden="true"
+                aria-hidden={true}
               >
                 {chats.length}
-              </span>
-            </button>
+              </Text>
+            </Box>
             {/* View All link */}
             {onViewAllChats && chats.length > 0 && (
-              <button
+              <Box
+                as="button"
                 type="button"
                 onClick={onViewAllChats}
                 className={cn(
@@ -1205,19 +1256,20 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 data-testid={testId ? `${testId}-view-all-chats` : undefined}
               >
                 View All
-              </button>
+              </Box>
             )}
-          </div>
+          </Box>
 
           {/* Chat list */}
           {isChatsExpanded && (
-            <div
+            <Box
               id={chatsListId}
               className="flex flex-col gap-1"
               data-testid={testId ? `${testId}-chats-list` : undefined}
             >
               {chats.length > 0 ? (
-                <ul
+                <Box
+                  as="ul"
                   role="list"
                   aria-label={`${chats.length} ${chats.length === 1 ? 'chat' : 'chats'}`}
                 >
@@ -1226,7 +1278,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                     const chatTitle = chat.title ?? 'Untitled Chat';
 
                     return (
-                      <li
+                      <Box
+                        as="li"
                         key={chat.id}
                         role="listitem"
                         className={cn(
@@ -1240,7 +1293,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                         data-testid={testId ? `${testId}-chat-${chat.id}` : undefined}
                         data-selected={isSelected}
                       >
-                        <button
+                        <Box
+                          as="button"
                           type="button"
                           onClick={() => onSelectChat?.(chat.id)}
                           aria-label={buildChatAccessibleLabel(chat.title, isSelected)}
@@ -1259,11 +1313,14 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             className="shrink-0"
                             aria-hidden="true"
                           />
-                          <span className="truncate">{chatTitle}</span>
-                        </button>
+                          <Text as="span" className="truncate">
+                            {chatTitle}
+                          </Text>
+                        </Box>
                         {/* More button for context menu */}
                         {onChatContextMenu && (
-                          <button
+                          <Box
+                            as="button"
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1274,12 +1331,12 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                             data-testid={testId ? `${testId}-chat-${chat.id}-more` : undefined}
                           >
                             <Icon icon={MoreVertical} size="xs" aria-hidden="true" />
-                          </button>
+                          </Box>
                         )}
-                      </li>
+                      </Box>
                     );
                   })}
-                </ul>
+                </Box>
               ) : (
                 <EmptyState
                   icon={MessageSquare}
@@ -1289,7 +1346,8 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 />
               )}
               {/* New chat button */}
-              <button
+              <Box
+                as="button"
                 type="button"
                 onClick={onNewChat}
                 className={cn(
@@ -1301,16 +1359,17 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
                 data-testid={testId ? `${testId}-new-chat-button` : undefined}
               >
                 <Icon icon={Plus} size="xs" aria-hidden="true" />
-                <span>New Chat</span>
-              </button>
-            </div>
+                <Text as="span">New Chat</Text>
+              </Box>
+            </Box>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* Footer: Settings and Archive links */}
-      <div className={cn(SIDEBAR_FOOTER_CLASSES, paddingClasses)}>
-        <button
+      <Box className={cn(SIDEBAR_FOOTER_CLASSES, paddingClasses)}>
+        <Box
+          as="button"
           type="button"
           onClick={onArchiveClick}
           className={SIDEBAR_FOOTER_BUTTON_CLASSES}
@@ -1318,9 +1377,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           data-testid={testId ? `${testId}-archive-button` : undefined}
         >
           <Icon icon={Archive} size={iconSize} aria-hidden="true" />
-          <span>Archive</span>
-        </button>
-        <button
+          <Text as="span">Archive</Text>
+        </Box>
+        <Box
+          as="button"
           type="button"
           onClick={onSettingsClick}
           className={SIDEBAR_FOOTER_BUTTON_CLASSES}
@@ -1328,10 +1388,10 @@ export const Sidebar = forwardRef<HTMLElement, SidebarProps>(function Sidebar(
           data-testid={testId ? `${testId}-settings-button` : undefined}
         >
           <Icon icon={Settings} size={iconSize} aria-hidden="true" />
-          <span>Settings</span>
-        </button>
-      </div>
-    </aside>
+          <Text as="span">Settings</Text>
+        </Box>
+      </Box>
+    </Box>
   );
 });
 

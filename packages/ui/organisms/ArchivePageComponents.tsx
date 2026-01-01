@@ -16,7 +16,14 @@
  */
 
 import type { Chat, Project, Task } from '@openflow/generated';
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Archive, ArrowLeft, Folder, MessageSquare, RotateCcw, Trash2 } from 'lucide-react';
 import { type HTMLAttributes, type KeyboardEvent, forwardRef, useCallback, useId } from 'react';
@@ -366,7 +373,7 @@ export function getSelectedAnnouncement(
 export function ArchiveLayout({ header, children }: ArchiveLayoutProps) {
   return (
     <AppLayout sidebarCollapsed={true} sidebar={null} header={header}>
-      <div className={ARCHIVE_LAYOUT_CLASSES}>{children}</div>
+      <Box className={ARCHIVE_LAYOUT_CLASSES}>{children}</Box>
     </AppLayout>
   );
 }
@@ -452,7 +459,7 @@ export const ArchiveTabBar = forwardRef<HTMLDivElement, ArchiveTabBarProps>(func
   );
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(ARCHIVE_TAB_BAR_CLASSES, className)}
       data-testid={dataTestId}
@@ -460,14 +467,15 @@ export const ArchiveTabBar = forwardRef<HTMLDivElement, ArchiveTabBarProps>(func
     >
       {/* Screen reader announcement for tab changes */}
       <VisuallyHidden>
-        <span role="status" aria-live="polite" aria-atomic="true">
+        <Text as="span" role="status" aria-live="polite" aria-atomic="true">
           {getTabChangeAnnouncement(activeTab, counts[activeTab])}
-        </span>
+        </Text>
       </VisuallyHidden>
 
       <Flex justify="between" align="center">
         {/* Back button */}
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onBack}
           className={ARCHIVE_BACK_BUTTON_CLASSES}
@@ -477,10 +485,10 @@ export const ArchiveTabBar = forwardRef<HTMLDivElement, ArchiveTabBarProps>(func
           <Text as="span" size="sm">
             {DEFAULT_BACK_LABEL}
           </Text>
-        </button>
+        </Box>
 
         {/* Tab list */}
-        <div
+        <Box
           role="tablist"
           aria-label="Archive categories"
           className={ARCHIVE_TAB_CONTAINER_CLASSES}
@@ -493,7 +501,8 @@ export const ArchiveTabBar = forwardRef<HTMLDivElement, ArchiveTabBarProps>(func
             const count = counts[tab.id];
 
             return (
-              <button
+              <Box
+                as="button"
                 key={tab.id}
                 type="button"
                 role="tab"
@@ -510,12 +519,12 @@ export const ArchiveTabBar = forwardRef<HTMLDivElement, ArchiveTabBarProps>(func
                 data-state={isActive ? 'active' : 'inactive'}
               >
                 {tab.label} ({count})
-              </button>
+              </Box>
             );
           })}
-        </div>
+        </Box>
       </Flex>
-    </div>
+    </Box>
   );
 });
 
@@ -598,7 +607,7 @@ export const ArchivedTaskItem = forwardRef<HTMLDivElement, ArchivedTaskItemProps
     const title = task.title || 'Untitled Task';
 
     return (
-      <div
+      <Box
         ref={ref}
         role="listitem"
         className={cn(
@@ -615,13 +624,14 @@ export const ArchivedTaskItem = forwardRef<HTMLDivElement, ArchivedTaskItemProps
         {/* Screen reader announcement for selection */}
         {isSelected && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               Selected
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onSelect}
           className={ARCHIVE_ITEM_CONTENT_CLASSES}
@@ -642,7 +652,7 @@ export const ArchivedTaskItem = forwardRef<HTMLDivElement, ArchivedTaskItemProps
               Archived {archivedDate}
             </Text>
           </Flex>
-        </button>
+        </Box>
 
         <ActionButtons
           isRestoring={isRestoring}
@@ -652,7 +662,7 @@ export const ArchivedTaskItem = forwardRef<HTMLDivElement, ArchivedTaskItemProps
           entityType="task"
           data-testid={dataTestId}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -683,7 +693,7 @@ export const ArchivedChatItem = forwardRef<HTMLDivElement, ArchivedChatItemProps
     const title = chat.title || 'Untitled Chat';
 
     return (
-      <div
+      <Box
         ref={ref}
         role="listitem"
         className={cn(
@@ -700,13 +710,14 @@ export const ArchivedChatItem = forwardRef<HTMLDivElement, ArchivedChatItemProps
         {/* Screen reader announcement for selection */}
         {isSelected && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               Selected
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onSelect}
           className={ARCHIVE_ITEM_CONTENT_CLASSES}
@@ -737,7 +748,7 @@ export const ArchivedChatItem = forwardRef<HTMLDivElement, ArchivedChatItemProps
               Archived {archivedDate}
             </Text>
           </Flex>
-        </button>
+        </Box>
 
         <ActionButtons
           isRestoring={isRestoring}
@@ -747,7 +758,7 @@ export const ArchivedChatItem = forwardRef<HTMLDivElement, ArchivedChatItemProps
           entityType="chat"
           data-testid={dataTestId}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -776,7 +787,7 @@ export const ArchivedProjectItem = forwardRef<HTMLDivElement, ArchivedProjectIte
     const title = project.name || 'Untitled Project';
 
     return (
-      <div
+      <Box
         ref={ref}
         role="listitem"
         className={cn(
@@ -793,13 +804,14 @@ export const ArchivedProjectItem = forwardRef<HTMLDivElement, ArchivedProjectIte
         {/* Screen reader announcement for selection */}
         {isSelected && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               Selected
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 
-        <button
+        <Box
+          as="button"
           type="button"
           onClick={onSelect}
           className={ARCHIVE_ITEM_CONTENT_CLASSES}
@@ -825,7 +837,7 @@ export const ArchivedProjectItem = forwardRef<HTMLDivElement, ArchivedProjectIte
               Archived {archivedDate}
             </Text>
           </Flex>
-        </button>
+        </Box>
 
         <ActionButtons
           isRestoring={isRestoring}
@@ -835,7 +847,7 @@ export const ArchivedProjectItem = forwardRef<HTMLDivElement, ArchivedProjectIte
           entityType="project"
           data-testid={dataTestId}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -883,7 +895,7 @@ function TasksList({
   }
 
   return (
-    <div
+    <Box
       role="list"
       aria-label="Archived tasks"
       className={ARCHIVE_LIST_CLASSES}
@@ -903,7 +915,7 @@ function TasksList({
           data-testid={dataTestId ? `${dataTestId}-item-${task.id}` : undefined}
         />
       ))}
-    </div>
+    </Box>
   );
 }
 
@@ -946,7 +958,7 @@ function ChatsList({
   }
 
   return (
-    <div
+    <Box
       role="list"
       aria-label="Archived chats"
       className={ARCHIVE_LIST_CLASSES}
@@ -967,7 +979,7 @@ function ChatsList({
           data-testid={dataTestId ? `${dataTestId}-item-${chat.id}` : undefined}
         />
       ))}
-    </div>
+    </Box>
   );
 }
 
@@ -1006,7 +1018,7 @@ function ProjectsList({
   }
 
   return (
-    <div
+    <Box
       role="list"
       aria-label="Archived projects"
       className={ARCHIVE_LIST_CLASSES}
@@ -1025,7 +1037,7 @@ function ProjectsList({
           data-testid={dataTestId ? `${dataTestId}-item-${project.id}` : undefined}
         />
       ))}
-    </div>
+    </Box>
   );
 }
 
@@ -1105,7 +1117,7 @@ export const ArchiveContent = forwardRef<HTMLDivElement, ArchiveContentProps>(
     ref
   ) {
     return (
-      <div
+      <Box
         ref={ref}
         role="tabpanel"
         aria-label={`${getTabLabel(activeTab)} archive list`}
@@ -1167,7 +1179,7 @@ export const ArchiveContent = forwardRef<HTMLDivElement, ArchiveContentProps>(
             data-testid={dataTestId ? `${dataTestId}-projects` : undefined}
           />
         )}
-      </div>
+      </Box>
     );
   }
 );

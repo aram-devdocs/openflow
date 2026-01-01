@@ -25,6 +25,7 @@
 
 import type { Project, Task, TaskStatus, WorkflowTemplate } from '@openflow/generated';
 import {
+  Box,
   type Breakpoint,
   Flex,
   Heading,
@@ -471,11 +472,11 @@ export const ProjectDetailHeader = forwardRef<HTMLDivElement, ProjectDetailHeade
     const baseSize = getBaseSize(size);
 
     return (
-      <div ref={ref} className={className} data-testid={testId} data-size={baseSize} {...props}>
+      <Box ref={ref} className={className} data-testid={testId} data-size={baseSize} {...props}>
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {buildHeaderAccessibleLabel(project)}
-          </span>
+          </Text>
         </VisuallyHidden>
         <Header
           title={project.name}
@@ -483,7 +484,7 @@ export const ProjectDetailHeader = forwardRef<HTMLDivElement, ProjectDetailHeade
           onSearch={onSearch}
           onNewChat={onNewTask}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -514,12 +515,12 @@ export const ProjectDetailLoadingSkeleton = forwardRef<
       sidebarCollapsed={true}
       sidebar={null}
       header={
-        <div className={SKELETON_HEADER_CLASSES} aria-hidden="true">
+        <Box className={SKELETON_HEADER_CLASSES} aria-hidden={true}>
           <Skeleton className="h-6 w-48" />
-        </div>
+        </Box>
       }
     >
-      <div
+      <Box
         ref={ref}
         className={cn(paddingClasses, className)}
         data-testid={testId}
@@ -531,14 +532,16 @@ export const ProjectDetailLoadingSkeleton = forwardRef<
         {...props}
       >
         <VisuallyHidden>
-          <span aria-live="polite">{SR_LOADING}</span>
+          <Text as="span" aria-live="polite">
+            {SR_LOADING}
+          </Text>
         </VisuallyHidden>
-        <div className={cn(SKELETON_CONTAINER_CLASSES, gapClasses)} aria-hidden="true">
+        <Box className={cn(SKELETON_CONTAINER_CLASSES, gapClasses)} aria-hidden={true}>
           {Array.from({ length: skeletonCount }).map((_, i) => (
             <SkeletonTaskCard key={`skeleton-project-${i}`} />
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
     </AppLayout>
   );
 });
@@ -560,7 +563,7 @@ export const ProjectNotFound = forwardRef<HTMLDivElement, ProjectNotFoundProps>(
         sidebar={null}
         header={<Header title={DEFAULT_NOT_FOUND_TITLE} onSearch={onSearch} />}
       >
-        <div
+        <Box
           ref={ref}
           className={cn(NOT_FOUND_CONTAINER_CLASSES, className)}
           data-testid={testId}
@@ -570,18 +573,18 @@ export const ProjectNotFound = forwardRef<HTMLDivElement, ProjectNotFoundProps>(
           {...props}
         >
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               {SR_NOT_FOUND}. {DEFAULT_NOT_FOUND_DESCRIPTION}
-            </span>
+            </Text>
           </VisuallyHidden>
-          <div className={NOT_FOUND_ICON_CONTAINER_CLASSES}>
+          <Box className={NOT_FOUND_ICON_CONTAINER_CLASSES}>
             <Icon
               icon={FolderGit2}
               size="xl"
               className="text-[rgb(var(--muted-foreground))]"
               aria-hidden="true"
             />
-          </div>
+          </Box>
           <Heading level={2} size="lg" weight="semibold" className="mb-2">
             {DEFAULT_NOT_FOUND_TITLE}
           </Heading>
@@ -598,7 +601,7 @@ export const ProjectNotFound = forwardRef<HTMLDivElement, ProjectNotFoundProps>(
           >
             {DEFAULT_BACK_LABEL}
           </Button>
-        </div>
+        </Box>
       </AppLayout>
     );
   }
@@ -631,7 +634,7 @@ export const ProjectDetailErrorState = forwardRef<HTMLDivElement, ProjectDetailE
         sidebar={null}
         header={onSearch ? <Header title={errorTitle} onSearch={onSearch} /> : null}
       >
-        <div
+        <Box
           ref={ref}
           className={cn(ERROR_STATE_CLASSES, className)}
           data-testid={testId}
@@ -641,13 +644,13 @@ export const ProjectDetailErrorState = forwardRef<HTMLDivElement, ProjectDetailE
           {...props}
         >
           <VisuallyHidden>
-            <span>
+            <Text as="span">
               {SR_ERROR}. {message || errorTitle}
-            </span>
+            </Text>
           </VisuallyHidden>
-          <div className={ERROR_ICON_CONTAINER_CLASSES}>
+          <Box className={ERROR_ICON_CONTAINER_CLASSES}>
             <Icon icon={AlertCircle} size="lg" aria-hidden="true" />
-          </div>
+          </Box>
           <Heading level={2} size="lg" weight="semibold" className="mb-2">
             {errorTitle}
           </Heading>
@@ -681,7 +684,7 @@ export const ProjectDetailErrorState = forwardRef<HTMLDivElement, ProjectDetailE
               </Button>
             )}
           </Flex>
-        </div>
+        </Box>
       </AppLayout>
     );
   }
@@ -710,7 +713,8 @@ export const ProjectDetailInfoBar = forwardRef<HTMLDivElement, ProjectDetailInfo
     const iconSize = ICON_SIZE_MAP[baseSize];
 
     return (
-      <nav
+      <Box
+        as="nav"
         ref={ref}
         className={cn(INFO_BAR_BASE_CLASSES, paddingClasses, className)}
         data-testid={testId}
@@ -719,7 +723,8 @@ export const ProjectDetailInfoBar = forwardRef<HTMLDivElement, ProjectDetailInfo
         {...props}
       >
         <Flex align="center" gap="4">
-          <button
+          <Box
+            as="button"
             type="button"
             onClick={onBack}
             className={BREADCRUMB_BUTTON_CLASSES}
@@ -733,7 +738,7 @@ export const ProjectDetailInfoBar = forwardRef<HTMLDivElement, ProjectDetailInfo
             >
               {DEFAULT_PROJECTS_LABEL}
             </Text>
-          </button>
+          </Box>
           <Text as="span" className={BREADCRUMB_SEPARATOR_CLASSES} aria-hidden={true}>
             {DEFAULT_BREADCRUMB_SEPARATOR}
           </Text>
@@ -763,7 +768,7 @@ export const ProjectDetailInfoBar = forwardRef<HTMLDivElement, ProjectDetailInfo
             {DEFAULT_NEW_TASK_LABEL}
           </Button>
         </Flex>
-      </nav>
+      </Box>
     );
   }
 );
@@ -796,7 +801,7 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
     // Error state
     if (error) {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(ERROR_STATE_CLASSES, className)}
           data-testid={testId ? `${testId}-error` : undefined}
@@ -806,13 +811,13 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
           {...props}
         >
           <VisuallyHidden>
-            <span>
+            <Text as="span">
               {SR_ERROR}. {error}
-            </span>
+            </Text>
           </VisuallyHidden>
-          <div className={ERROR_ICON_CONTAINER_CLASSES}>
+          <Box className={ERROR_ICON_CONTAINER_CLASSES}>
             <Icon icon={AlertCircle} size="lg" aria-hidden="true" />
-          </div>
+          </Box>
           <Heading level={2} size="lg" weight="semibold" className="mb-2">
             {DEFAULT_ERROR_TITLE}
           </Heading>
@@ -829,14 +834,14 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
               {DEFAULT_ERROR_RETRY_LABEL}
             </Button>
           )}
-        </div>
+        </Box>
       );
     }
 
     // Loading state
     if (isLoading) {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(CONTENT_CONTAINER_CLASSES, paddingClasses, className)}
           data-testid={testId ? `${testId}-loading` : undefined}
@@ -847,32 +852,34 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
           {...props}
         >
           <VisuallyHidden>
-            <span aria-live="polite">{SR_LOADING}</span>
+            <Text as="span" aria-live="polite">
+              {SR_LOADING}
+            </Text>
           </VisuallyHidden>
-          <div className={cn(SKELETON_CONTAINER_CLASSES, gapClasses)} aria-hidden="true">
+          <Box className={cn(SKELETON_CONTAINER_CLASSES, gapClasses)} aria-hidden={true}>
             {Array.from({ length: DEFAULT_SKELETON_COUNT }).map((_, i) => (
               <SkeletonTaskCard key={`skeleton-tasks-${i}`} />
             ))}
-          </div>
-        </div>
+          </Box>
+        </Box>
       );
     }
 
     // Empty state
     if (tasks.length === 0) {
       return (
-        <div
+        <Box
           ref={ref}
           className={cn(CONTENT_CONTAINER_CLASSES, paddingClasses, className)}
           data-testid={testId ? `${testId}-empty` : undefined}
           data-size={baseSize}
           {...props}
         >
-          <div className={EMPTY_STATE_CONTAINER_CLASSES}>
+          <Box className={EMPTY_STATE_CONTAINER_CLASSES}>
             <VisuallyHidden>
-              <span role="status" aria-live="polite">
+              <Text as="span" role="status" aria-live="polite">
                 {SR_EMPTY}. {DEFAULT_EMPTY_DESCRIPTION}
-              </span>
+              </Text>
             </VisuallyHidden>
             <EmptyState
               icon={Plus}
@@ -884,14 +891,14 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
               }}
               size={baseSize}
             />
-          </div>
-        </div>
+          </Box>
+        </Box>
       );
     }
 
     // Tasks list
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(CONTENT_CONTAINER_CLASSES, paddingClasses, className)}
         data-testid={testId}
@@ -902,13 +909,15 @@ export const ProjectDetailContent = forwardRef<HTMLDivElement, ProjectDetailCont
         {...props}
       >
         <VisuallyHidden>
-          <h2 id={contentId}>Tasks</h2>
-          <span role="status" aria-live="polite">
+          <Heading level={2} id={contentId}>
+            Tasks
+          </Heading>
+          <Text as="span" role="status" aria-live="polite">
             {buildTaskCountAnnouncement(tasks.length)}
-          </span>
+          </Text>
         </VisuallyHidden>
         <TaskList tasks={tasks} onSelectTask={onSelectTask} onStatusChange={onTaskStatusChange} />
-      </div>
+      </Box>
     );
   }
 );
@@ -938,7 +947,8 @@ export function ProjectCreateTaskDialog({
 
   return (
     <Dialog isOpen={isOpen} onClose={onClose} title="Create New Task">
-      <form
+      <Box
+        as="form"
         id={formId}
         className="space-y-4"
         data-size={baseSize}
@@ -951,11 +961,11 @@ export function ProjectCreateTaskDialog({
       >
         {/* Screen reader announcement for dialog */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {isCreating
               ? SR_CREATING_TASK
               : 'Create new task dialog. Enter task title and select a workflow template.'}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         <FormField
@@ -995,13 +1005,13 @@ export function ProjectCreateTaskDialog({
 
         {/* Preview selected workflow */}
         {selectedWorkflow && (
-          <div
+          <Box
             className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-1))] p-4"
             role="region"
             aria-label={`Selected workflow: ${selectedWorkflow.name}`}
           >
             <WorkflowPreview workflow={selectedWorkflow} maxSteps={5} showDescriptions />
-          </div>
+          </Box>
         )}
 
         {error && (
@@ -1031,7 +1041,7 @@ export function ProjectCreateTaskDialog({
             Create Task
           </Button>
         </Flex>
-      </form>
+      </Box>
     </Dialog>
   );
 }

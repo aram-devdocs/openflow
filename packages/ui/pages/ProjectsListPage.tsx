@@ -26,7 +26,14 @@
  */
 
 import type { Project } from '@openflow/generated';
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, FolderOpen, RefreshCw } from 'lucide-react';
 import { forwardRef, useId } from 'react';
@@ -384,7 +391,7 @@ export const ProjectsListPageSkeleton = forwardRef<HTMLDivElement, ProjectsListP
     }));
 
     return (
-      <div
+      <Box
         ref={ref}
         className={PROJECTS_LIST_PAGE_SKELETON_CLASSES}
         aria-hidden="true"
@@ -394,13 +401,13 @@ export const ProjectsListPageSkeleton = forwardRef<HTMLDivElement, ProjectsListP
       >
         {/* Screen reader loading announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite">
+          <Box role="status" aria-live="polite">
             {SR_LOADING}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         {/* Header skeleton */}
-        <div className={PROJECTS_LIST_PAGE_SKELETON_HEADER_CLASSES}>
+        <Box className={PROJECTS_LIST_PAGE_SKELETON_HEADER_CLASSES}>
           <Flex direction="row" justify="between" align="center">
             <Flex direction="column" gap="2">
               <Skeleton width={180} height={28} variant="text" />
@@ -408,22 +415,22 @@ export const ProjectsListPageSkeleton = forwardRef<HTMLDivElement, ProjectsListP
             </Flex>
             <Skeleton width={140} height={40} />
           </Flex>
-        </div>
+        </Box>
 
         {/* Grid skeleton - project cards */}
-        <div className={PROJECTS_LIST_PAGE_SKELETON_GRID_CLASSES}>
+        <Box className={PROJECTS_LIST_PAGE_SKELETON_GRID_CLASSES}>
           {projects.map((project) => (
-            <div key={project.id} className={PROJECTS_LIST_PAGE_SKELETON_CARD_CLASSES}>
+            <Box key={project.id} className={PROJECTS_LIST_PAGE_SKELETON_CARD_CLASSES}>
               {/* Icon */}
               <Skeleton width={iconSize} height={iconSize} variant="circular" />
               {/* Title */}
               <Skeleton width="70%" height={20} variant="text" />
               {/* Path */}
               <Skeleton width="100%" height={14} variant="text" />
-            </div>
+            </Box>
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -437,7 +444,7 @@ export const ProjectsListPageError = forwardRef<HTMLDivElement, ProjectsListPage
     const descriptionId = useId();
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -452,9 +459,9 @@ export const ProjectsListPageError = forwardRef<HTMLDivElement, ProjectsListPage
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="assertive">
+          <Box role="status" aria-live="assertive">
             {SR_ERROR_PREFIX} {error.message}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         <Icon
@@ -479,7 +486,7 @@ export const ProjectsListPageError = forwardRef<HTMLDivElement, ProjectsListPage
         >
           {DEFAULT_RETRY_LABEL}
         </Button>
-      </div>
+      </Box>
     );
   }
 );
@@ -591,7 +598,7 @@ export const ProjectsListPage = forwardRef<HTMLDivElement, ProjectsListPageProps
     // Loading state
     if (state === 'loading') {
       return (
-        <div
+        <Box
           ref={ref}
           className={PROJECTS_LIST_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -600,14 +607,14 @@ export const ProjectsListPage = forwardRef<HTMLDivElement, ProjectsListPageProps
           data-state="loading"
         >
           <ProjectsListPageSkeleton size={size} />
-        </div>
+        </Box>
       );
     }
 
     // Error state
     if (state === 'error' && error && onRetry) {
       return (
-        <div
+        <Box
           ref={ref}
           className={PROJECTS_LIST_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
@@ -615,7 +622,7 @@ export const ProjectsListPage = forwardRef<HTMLDivElement, ProjectsListPageProps
           data-state="error"
         >
           <ProjectsListPageError error={error} onRetry={onRetry} size={size} />
-        </div>
+        </Box>
       );
     }
 
@@ -623,14 +630,14 @@ export const ProjectsListPage = forwardRef<HTMLDivElement, ProjectsListPageProps
     if (!header || !content || !createDialog || !confirmDialog) {
       // Fallback for missing props - show empty page with error
       return (
-        <div
+        <Box
           ref={ref}
           className={PROJECTS_LIST_PAGE_BASE_CLASSES}
           aria-label={computedAriaLabel}
           data-testid={testId ?? 'projects-list-page'}
           data-state="error"
         >
-          <div className={PROJECTS_LIST_PAGE_ERROR_CLASSES}>
+          <Box className={PROJECTS_LIST_PAGE_ERROR_CLASSES}>
             <Icon
               icon={FolderOpen}
               size="xl"
@@ -641,13 +648,13 @@ export const ProjectsListPage = forwardRef<HTMLDivElement, ProjectsListPageProps
               Unable to load projects
             </Heading>
             <Text color="muted-foreground">Required page configuration is missing.</Text>
-          </div>
-        </div>
+          </Box>
+        </Box>
       );
     }
 
     return (
-      <div
+      <Box
         ref={ref}
         className={PROJECTS_LIST_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -657,13 +664,13 @@ export const ProjectsListPage = forwardRef<HTMLDivElement, ProjectsListPageProps
       >
         {/* Screen reader announcements */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite" aria-atomic="true">
+          <Box role="status" aria-live="polite" aria-atomic="true">
             {buildLoadedAnnouncement(projectCount)}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         <ProjectsListLayout projectCount={projectCount} onSearch={onSearch ?? (() => {})}>
-          <div className="flex h-full flex-col p-4 md:p-6">
+          <Box className="flex h-full flex-col p-4 md:p-6">
             <ProjectsListHeader onCreateProject={header.onCreateProject} />
 
             <ProjectsListContent
@@ -674,7 +681,7 @@ export const ProjectsListPage = forwardRef<HTMLDivElement, ProjectsListPageProps
               onProjectSettings={content.onProjectSettings}
               onDeleteProject={content.onDeleteProject}
             />
-          </div>
+          </Box>
 
           <ProjectsListCreateDialog
             isOpen={createDialog.isOpen}
@@ -691,7 +698,7 @@ export const ProjectsListPage = forwardRef<HTMLDivElement, ProjectsListPageProps
 
           <ProjectsListConfirmDialog dialogProps={confirmDialog} />
         </ProjectsListLayout>
-      </div>
+      </Box>
     );
   }
 );

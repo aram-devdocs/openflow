@@ -1,5 +1,5 @@
 import type { Task, TaskStatus } from '@openflow/generated';
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertCircle, MoreVertical } from 'lucide-react';
 import { type HTMLAttributes, forwardRef } from 'react';
@@ -454,14 +454,14 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
           {/* Screen reader announcement for selected state */}
           {isSelected && (
             <VisuallyHidden>
-              <span role="status" aria-live="polite">
+              <Text as="span" role="status" aria-live="polite">
                 {DEFAULT_SELECTED_LABEL}
-              </span>
+              </Text>
             </VisuallyHidden>
           )}
 
           {/* Header: Title and Status */}
-          <div className={TASK_CARD_HEADER_CLASSES}>
+          <Box className={TASK_CARD_HEADER_CLASSES}>
             <Text
               as="span"
               className={cn(
@@ -475,7 +475,7 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
             </Text>
 
             {/* Status dropdown or badge */}
-            <div
+            <Box
               onClick={handleStatusClick}
               onKeyDown={handleStatusKeyDown}
               className={TASK_CARD_STATUS_DROPDOWN_CLASSES}
@@ -500,8 +500,8 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                   {taskStatusToLabel(task.status)}
                 </Badge>
               )}
-            </div>
-          </div>
+            </Box>
+          </Box>
 
           {/* Description preview */}
           {task.description && (
@@ -519,7 +519,7 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
           )}
 
           {/* Footer: Metadata and indicators */}
-          <div className={cn(TASK_CARD_FOOTER_CLASSES, footerMarginClasses)}>
+          <Box className={cn(TASK_CARD_FOOTER_CLASSES, footerMarginClasses)}>
             {/* Actions required badge */}
             {hasActionsRequired ? (
               <Badge
@@ -529,17 +529,18 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
                 aria-label={buildActionsAnnouncement(task.actionsRequiredCount)}
                 data-testid={testId ? `${testId}-actions-badge` : undefined}
               >
-                <span aria-hidden="true">
+                <Text as="span" aria-hidden="true">
                   {task.actionsRequiredCount}{' '}
                   {task.actionsRequiredCount === 1 ? 'action' : 'actions'} required
-                </span>
+                </Text>
               </Badge>
             ) : (
-              <span aria-hidden="true" />
+              <Text as="span" aria-hidden="true" />
             )}
 
             {/* Context menu button - visible on hover */}
-            <button
+            <Box
+              as="button"
               type="button"
               className={TASK_CARD_MORE_BUTTON_CLASSES}
               onClick={handleMoreClick}
@@ -547,8 +548,8 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
               data-testid={testId ? `${testId}-more-button` : undefined}
             >
               <Icon icon={MoreVertical} size={iconSize} aria-hidden="true" />
-            </button>
-          </div>
+            </Box>
+          </Box>
         </CardContent>
       </Card>
     );

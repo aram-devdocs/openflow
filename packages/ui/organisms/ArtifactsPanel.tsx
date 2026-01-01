@@ -1,4 +1,12 @@
-import { Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Heading,
+  List,
+  ListItem,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertCircle, ExternalLink, Eye, File, FileText, Folder, RefreshCw } from 'lucide-react';
 import { type ForwardedRef, type HTMLAttributes, forwardRef, useId, useMemo } from 'react';
@@ -309,7 +317,7 @@ export const ArtifactsPanelSkeleton = forwardRef(function ArtifactsPanelSkeleton
   const iconDimension = iconSize === 'xs' ? 14 : iconSize === 'sm' ? 16 : 20;
 
   return (
-    <div
+    <Box
       ref={ref}
       role="presentation"
       aria-hidden="true"
@@ -321,22 +329,22 @@ export const ArtifactsPanelSkeleton = forwardRef(function ArtifactsPanelSkeleton
       <Skeleton variant="text" width={80} height={14} className={headingMarginClasses} />
 
       {/* Item skeletons */}
-      <div className={listGapClasses}>
+      <Box className={listGapClasses}>
         {Array.from({ length: count }, (_, i) => (
-          <div key={i} className={cn(ARTIFACTS_SKELETON_CONTAINER_CLASSES, itemClasses)}>
+          <Box key={i} className={cn(ARTIFACTS_SKELETON_CONTAINER_CLASSES, itemClasses)}>
             <Skeleton variant="rectangular" width={iconDimension} height={iconDimension} />
-            <div className={ARTIFACTS_SKELETON_TEXT_CLASSES}>
+            <Box className={ARTIFACTS_SKELETON_TEXT_CLASSES}>
               <Skeleton variant="text" width={`${50 + ((i * 15) % 40)}%`} height={14} />
               <Skeleton variant="text" width={40} height={12} />
-            </div>
-          </div>
+            </Box>
+          </Box>
         ))}
-      </div>
+      </Box>
 
-      <span role="status" aria-live="polite">
+      <Text as="span" role="status" aria-live="polite">
         <VisuallyHidden>Loading artifacts</VisuallyHidden>
-      </span>
-    </div>
+      </Text>
+    </Box>
   );
 });
 
@@ -375,7 +383,7 @@ export const ArtifactsPanelError = forwardRef(function ArtifactsPanelError(
   const iconSize = ARTIFACTS_ICON_SIZE_MAP[baseSize];
 
   return (
-    <div
+    <Box
       ref={ref}
       role="alert"
       aria-live="assertive"
@@ -388,14 +396,14 @@ export const ArtifactsPanelError = forwardRef(function ArtifactsPanelError(
         className="text-[rgb(var(--destructive))]"
         aria-hidden="true"
       />
-      <div className="space-y-1">
+      <Box className="space-y-1">
         <Text weight="medium" className="text-[rgb(var(--foreground))]">
           {title}
         </Text>
         <Text size="sm" className="text-[rgb(var(--muted-foreground))]">
           {error}
         </Text>
-      </div>
+      </Box>
       {onRetry && (
         <Button
           variant="secondary"
@@ -409,7 +417,7 @@ export const ArtifactsPanelError = forwardRef(function ArtifactsPanelError(
           {DEFAULT_RETRY_LABEL}
         </Button>
       )}
-    </div>
+    </Box>
   );
 });
 
@@ -536,7 +544,7 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
   }
 
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(ARTIFACTS_PANEL_BASE_CLASSES, containerClasses, className)}
       data-testid={testId}
@@ -559,12 +567,12 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
       </Heading>
 
       {/* Screen reader announcement */}
-      <span role="status" aria-live="polite">
+      <Text as="span" role="status" aria-live="polite">
         <VisuallyHidden>{listAnnouncement}</VisuallyHidden>
-      </span>
+      </Text>
 
       {/* Artifacts list */}
-      <ul id={listId} role="list" aria-labelledby={headingId} className={listGapClasses}>
+      <List id={listId} aria-labelledby={headingId} className={listGapClasses}>
         {artifacts.map((artifact) => {
           const FileIcon = getFileIcon(artifact);
           const showPreview = canPreview(artifact) && onPreviewArtifact;
@@ -572,7 +580,7 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
           const itemId = `artifact-${artifact.path.replace(/[^a-zA-Z0-9]/g, '-')}`;
 
           return (
-            <li
+            <ListItem
               key={artifact.path}
               id={itemId}
               className={cn(ARTIFACTS_ITEM_BASE_CLASSES, itemClasses)}
@@ -589,7 +597,7 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
               />
 
               {/* File info */}
-              <div className={ARTIFACTS_FILE_INFO_CLASSES}>
+              <Box className={ARTIFACTS_FILE_INFO_CLASSES}>
                 <Text
                   as="span"
                   size="sm"
@@ -603,10 +611,10 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
                   {formatFileSize(artifact.size)}
                   <VisuallyHidden>, {fileType}</VisuallyHidden>
                 </Text>
-              </div>
+              </Box>
 
               {/* Actions - visible on hover/focus */}
-              <div className={ARTIFACTS_ACTIONS_CLASSES}>
+              <Box className={ARTIFACTS_ACTIONS_CLASSES}>
                 {showPreview && (
                   <Tooltip content="Preview" position="left">
                     <Button
@@ -633,12 +641,12 @@ export const ArtifactsPanel = forwardRef(function ArtifactsPanel(
                     <Icon icon={ExternalLink} size={iconSize} aria-hidden="true" />
                   </Button>
                 </Tooltip>
-              </div>
-            </li>
+              </Box>
+            </ListItem>
           );
         })}
-      </ul>
-    </div>
+      </List>
+    </Box>
   );
 });
 

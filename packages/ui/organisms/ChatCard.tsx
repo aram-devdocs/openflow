@@ -1,5 +1,5 @@
 import type { Chat } from '@openflow/generated';
-import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { MessageSquare, MoreVertical } from 'lucide-react';
 import { type HTMLAttributes, forwardRef } from 'react';
@@ -399,9 +399,9 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
       {/* Screen reader announcement for selected state */}
       {isSelected && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {DEFAULT_SELECTED_LABEL}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
@@ -410,9 +410,9 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
         data-testid={dataTestId ? `${dataTestId}-content` : undefined}
       >
         {/* Header: Icon, Title, and More button */}
-        <div className={CHAT_CARD_HEADER_CLASSES}>
-          <div className={CHAT_CARD_CONTENT_WRAPPER_CLASSES}>
-            <div
+        <Box className={CHAT_CARD_HEADER_CLASSES}>
+          <Box className={CHAT_CARD_CONTENT_WRAPPER_CLASSES}>
+            <Box
               className={cn(CHAT_CARD_ICON_CONTAINER_BASE_CLASSES, iconContainerClasses)}
               aria-hidden="true"
             >
@@ -421,8 +421,8 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
                 size={baseSize === 'lg' ? 'sm' : 'xs'}
                 className="text-[rgb(var(--primary))]"
               />
-            </div>
-            <div className={CHAT_CARD_TITLE_CONTAINER_CLASSES}>
+            </Box>
+            <Box className={CHAT_CARD_TITLE_CONTAINER_CLASSES}>
               <Text
                 as="span"
                 weight="medium"
@@ -432,7 +432,7 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
               </Text>
               {/* Context: Project and/or Task */}
               {(projectName || taskTitle) && (
-                <div className={cn(CHAT_CARD_CONTEXT_CLASSES, metadataSizeClasses)}>
+                <Box className={cn(CHAT_CARD_CONTEXT_CLASSES, metadataSizeClasses)}>
                   {projectName && (
                     <Text as="span" className="truncate">
                       {projectName}
@@ -448,14 +448,15 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
                       {taskTitle}
                     </Text>
                   )}
-                </div>
+                </Box>
               )}
-            </div>
-          </div>
+            </Box>
+          </Box>
 
           {/* More options button - visible on hover, touch target ≥44px on mobile */}
           {onMoreClick && (
-            <button
+            <Box
+              as="button"
               type="button"
               className={CHAT_CARD_MORE_BUTTON_CLASSES}
               onClick={handleMoreClick}
@@ -463,15 +464,15 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
               data-testid={dataTestId ? `${dataTestId}-more-button` : undefined}
             >
               <Icon icon={MoreVertical} size={baseSize === 'lg' ? 'sm' : 'xs'} aria-hidden="true" />
-            </button>
+            </Box>
           )}
-        </div>
+        </Box>
 
         {/* Footer: Metadata */}
-        <div className={cn(CHAT_CARD_FOOTER_CLASSES, footerMarginClasses)}>
-          <div className="flex items-center gap-2" role="list" aria-label="Chat attributes">
+        <Box className={cn(CHAT_CARD_FOOTER_CLASSES, footerMarginClasses)}>
+          <Box className="flex items-center gap-2" role="list" aria-label="Chat attributes">
             {isStandalone ? (
-              <div role="listitem">
+              <Box role="listitem">
                 <Badge
                   variant="info"
                   size={badgeSize}
@@ -479,9 +480,9 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
                 >
                   {DEFAULT_STANDALONE_LABEL}
                 </Badge>
-              </div>
+              </Box>
             ) : (
-              <div role="listitem">
+              <Box role="listitem">
                 <Badge
                   variant="default"
                   size={badgeSize}
@@ -489,10 +490,10 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
                 >
                   {DEFAULT_TASK_LABEL}
                 </Badge>
-              </div>
+              </Box>
             )}
             {isCompleted && (
-              <div role="listitem">
+              <Box role="listitem">
                 <Badge
                   variant="success"
                   size={badgeSize}
@@ -500,17 +501,18 @@ export const ChatCard = forwardRef<HTMLDivElement, ChatCardProps>(function ChatC
                 >
                   {DEFAULT_COMPLETED_LABEL}
                 </Badge>
-              </div>
+              </Box>
             )}
-          </div>
-          <time
+          </Box>
+          <Box
+            as="time"
             dateTime={isoDateTime}
             className={cn('text-[rgb(var(--muted-foreground))]', metadataSizeClasses)}
             aria-label={`Created on ${formattedDateSR}`}
           >
             {formattedDate}
-          </time>
-        </div>
+          </Box>
+        </Box>
       </CardContent>
     </Card>
   );

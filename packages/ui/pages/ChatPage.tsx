@@ -25,7 +25,14 @@
  */
 
 import type { Chat, Project } from '@openflow/generated';
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, MessageSquare, RefreshCw } from 'lucide-react';
 import type { RefObject } from 'react';
@@ -436,7 +443,7 @@ export const ChatPageSkeleton = forwardRef<HTMLDivElement, ChatPageSkeletonProps
     }));
 
     return (
-      <div
+      <Box
         ref={ref}
         className={CHAT_PAGE_SKELETON_CLASSES}
         aria-hidden="true"
@@ -445,13 +452,13 @@ export const ChatPageSkeleton = forwardRef<HTMLDivElement, ChatPageSkeletonProps
       >
         {/* Screen reader loading announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="polite">
+          <Box role="status" aria-live="polite">
             {SR_LOADING}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         {/* Header skeleton */}
-        <div className={CHAT_PAGE_SKELETON_HEADER_CLASSES}>
+        <Box className={CHAT_PAGE_SKELETON_HEADER_CLASSES}>
           <Flex direction="row" justify="between" align="center">
             <Flex direction="row" align="center" gap="3">
               <Skeleton width={32} height={32} variant="circular" />
@@ -462,12 +469,12 @@ export const ChatPageSkeleton = forwardRef<HTMLDivElement, ChatPageSkeletonProps
             </Flex>
             <Skeleton width={80} height={32} />
           </Flex>
-        </div>
+        </Box>
 
         {/* Content skeleton - message bubbles */}
-        <div className={CHAT_PAGE_SKELETON_CONTENT_CLASSES}>
+        <Box className={CHAT_PAGE_SKELETON_CONTENT_CLASSES}>
           {messages.map((msg) => (
-            <div
+            <Box
               key={msg.id}
               className={cn(
                 CHAT_PAGE_SKELETON_MESSAGE_CLASSES,
@@ -480,18 +487,18 @@ export const ChatPageSkeleton = forwardRef<HTMLDivElement, ChatPageSkeletonProps
                 <Skeleton width={msg.isUser ? 160 : 320} height={16} variant="text" />
                 {!msg.isUser && <Skeleton width={240} height={16} variant="text" />}
               </Flex>
-            </div>
+            </Box>
           ))}
-        </div>
+        </Box>
 
         {/* Input area skeleton */}
-        <div className={CHAT_PAGE_SKELETON_INPUT_CLASSES}>
+        <Box className={CHAT_PAGE_SKELETON_INPUT_CLASSES}>
           <Flex direction="row" align="end" gap="2">
             <Skeleton height={80} className="flex-1" />
             <Skeleton width={44} height={44} variant="circular" />
           </Flex>
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -505,7 +512,7 @@ export const ChatPageError = forwardRef<HTMLDivElement, ChatPageErrorStateProps>
     const descriptionId = useId();
 
     return (
-      <div
+      <Box
         ref={ref}
         role="alert"
         aria-live="assertive"
@@ -517,9 +524,9 @@ export const ChatPageError = forwardRef<HTMLDivElement, ChatPageErrorStateProps>
       >
         {/* Screen reader announcement */}
         <VisuallyHidden>
-          <div role="status" aria-live="assertive">
+          <Box role="status" aria-live="assertive">
             {SR_ERROR_PREFIX} {error.message}
-          </div>
+          </Box>
         </VisuallyHidden>
 
         <Icon
@@ -544,7 +551,7 @@ export const ChatPageError = forwardRef<HTMLDivElement, ChatPageErrorStateProps>
         >
           {DEFAULT_RETRY_LABEL}
         </Button>
-      </div>
+      </Box>
     );
   }
 );
@@ -560,7 +567,7 @@ export const ChatPageNotFound = forwardRef<
   const descriptionId = useId();
 
   return (
-    <div
+    <Box
       ref={ref}
       role="region"
       aria-labelledby={headingId}
@@ -570,9 +577,9 @@ export const ChatPageNotFound = forwardRef<
     >
       {/* Screen reader announcement */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite">
+        <Box role="status" aria-live="polite">
           {SR_NOT_FOUND}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       <Icon
@@ -593,7 +600,7 @@ export const ChatPageNotFound = forwardRef<
       <Button onClick={onBack} variant="secondary" className="min-h-[44px] min-w-[44px]">
         {DEFAULT_BACK_LABEL}
       </Button>
-    </div>
+    </Box>
   );
 });
 
@@ -732,7 +739,7 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
   // Loading state
   if (state === 'loading') {
     return (
-      <div
+      <Box
         ref={ref}
         className={CHAT_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -741,14 +748,14 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
         data-state="loading"
       >
         <ChatPageSkeleton size={size} />
-      </div>
+      </Box>
     );
   }
 
   // Error state
   if (state === 'error' && error && onRetry) {
     return (
-      <div
+      <Box
         ref={ref}
         className={CHAT_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -756,14 +763,14 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
         data-state="error"
       >
         <ChatPageError error={error} onRetry={onRetry} size={size} />
-      </div>
+      </Box>
     );
   }
 
   // Not found state
   if (state === 'not-found') {
     return (
-      <div
+      <Box
         ref={ref}
         className={CHAT_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -771,7 +778,7 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
         data-state="not-found"
       >
         <ChatPageNotFound onBack={onNotFoundBack ?? (() => {})} />
-      </div>
+      </Box>
     );
   }
 
@@ -779,7 +786,7 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
   if (!header || !content || !inputArea) {
     // Fallback if props are missing in ready state (shouldn't happen in practice)
     return (
-      <div
+      <Box
         ref={ref}
         className={CHAT_PAGE_BASE_CLASSES}
         aria-label={computedAriaLabel}
@@ -787,12 +794,12 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
         data-state="not-found"
       >
         <ChatPageNotFound onBack={onNotFoundBack ?? (() => {})} />
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div
+    <Box
       ref={ref}
       className={CHAT_PAGE_BASE_CLASSES}
       aria-label={computedAriaLabel}
@@ -803,9 +810,9 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
     >
       {/* Screen reader announcements */}
       <VisuallyHidden>
-        <div role="status" aria-live="polite" aria-atomic="true">
+        <Box role="status" aria-live="polite" aria-atomic="true">
           {buildLoadedAnnouncement(header.title, messageCount, isProcessing)}
-        </div>
+        </Box>
       </VisuallyHidden>
 
       <ChatPageLayout
@@ -851,7 +858,7 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
           scrollRef={content.scrollRef}
         />
       </ChatPageLayout>
-    </div>
+    </Box>
   );
 });
 

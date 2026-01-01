@@ -25,7 +25,13 @@
  */
 
 import type { Task, TaskStatus } from '@openflow/generated';
-import { type Breakpoint, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  type Breakpoint,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, ListTodo, RefreshCw } from 'lucide-react';
 import {
@@ -496,7 +502,7 @@ export const TasksFilterBar = forwardRef<HTMLDivElement, TasksFilterBarProps>(
     );
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(FILTER_BAR_BASE_CLASSES, paddingClasses, className)}
         role="tablist"
@@ -508,15 +514,15 @@ export const TasksFilterBar = forwardRef<HTMLDivElement, TasksFilterBarProps>(
       >
         {/* Screen reader navigation hint */}
         <VisuallyHidden>
-          <span>{SR_FILTER_NAVIGATION_HINT}</span>
+          <Text as="span">{SR_FILTER_NAVIGATION_HINT}</Text>
         </VisuallyHidden>
 
         {/* Screen reader announcement for filter changes */}
         {announcement && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               {announcement}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
 
@@ -525,7 +531,8 @@ export const TasksFilterBar = forwardRef<HTMLDivElement, TasksFilterBarProps>(
           const tabId = `${tablistId}-tab-${index}`;
 
           return (
-            <button
+            <Box
+              as="button"
               key={filter.value}
               ref={(el) => {
                 tabsRef.current[index] = el;
@@ -549,7 +556,8 @@ export const TasksFilterBar = forwardRef<HTMLDivElement, TasksFilterBarProps>(
             >
               {filter.label}
               {filter.count !== undefined && (
-                <span
+                <Text
+                  as="span"
                   className={cn(
                     FILTER_COUNT_BADGE_CLASSES,
                     isSelected && 'bg-[rgb(var(--primary-foreground))]/20'
@@ -557,12 +565,12 @@ export const TasksFilterBar = forwardRef<HTMLDivElement, TasksFilterBarProps>(
                   aria-hidden="true"
                 >
                   {filter.count}
-                </span>
+                </Text>
               )}
-            </button>
+            </Box>
           );
         })}
-      </div>
+      </Box>
     );
   }
 );
@@ -588,7 +596,7 @@ export const TasksListLoading = forwardRef<HTMLDivElement, TasksListLoadingProps
     const gapClasses = getResponsiveSizeClasses(size, LOADING_GAP_CLASSES);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(LOADING_BASE_CLASSES, gapClasses, className)}
         role="status"
@@ -600,9 +608,11 @@ export const TasksListLoading = forwardRef<HTMLDivElement, TasksListLoadingProps
         {...props}
       >
         <VisuallyHidden>
-          <span aria-live="polite">{SR_LOADING}</span>
+          <Text as="span" aria-live="polite">
+            {SR_LOADING}
+          </Text>
         </VisuallyHidden>
-        <div aria-hidden="true">
+        <Box aria-hidden="true">
           {Array.from({ length: count }).map((_, i) => (
             <SkeletonTaskCard
               key={`skeleton-task-${i}`}
@@ -610,8 +620,8 @@ export const TasksListLoading = forwardRef<HTMLDivElement, TasksListLoadingProps
               data-testid={testId ? `${testId}-skeleton-${i}` : undefined}
             />
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
     );
   }
 );
@@ -637,7 +647,7 @@ export const TasksListEmpty = forwardRef<HTMLDivElement, TasksListEmptyProps>(
     const description = buildEmptyDescription(filter);
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn('h-full', className)}
         role="region"
@@ -648,9 +658,9 @@ export const TasksListEmpty = forwardRef<HTMLDivElement, TasksListEmptyProps>(
         {...props}
       >
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {SR_EMPTY}
-          </span>
+          </Text>
         </VisuallyHidden>
         <EmptyState
           icon={ListTodo}
@@ -669,7 +679,7 @@ export const TasksListEmpty = forwardRef<HTMLDivElement, TasksListEmptyProps>(
             : {})}
           data-testid={testId ? `${testId}-empty-state` : undefined}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -705,7 +715,7 @@ export const TasksListError = forwardRef<HTMLDivElement, TasksListErrorProps>(
     const messageSize = ERROR_MESSAGE_SIZE[baseSize];
 
     return (
-      <div
+      <Box
         ref={ref}
         className={cn(ERROR_BASE_CLASSES, paddingClasses, className)}
         role="alert"
@@ -743,11 +753,11 @@ export const TasksListError = forwardRef<HTMLDivElement, TasksListErrorProps>(
           </Button>
         )}
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {`${SR_ERROR} ${message}`}
-          </span>
+          </Text>
         </VisuallyHidden>
-      </div>
+      </Box>
     );
   }
 );
@@ -847,7 +857,7 @@ export const TasksListContent = forwardRef<HTMLDivElement, TasksListContentProps
 
     // Task list
     return (
-      <div
+      <Box
         ref={ref}
         className={className}
         data-testid={testId}
@@ -858,9 +868,9 @@ export const TasksListContent = forwardRef<HTMLDivElement, TasksListContentProps
         {/* Screen reader announcement for tasks loaded */}
         {announcement && (
           <VisuallyHidden>
-            <span role="status" aria-live="polite">
+            <Text as="span" role="status" aria-live="polite">
               {announcement}
-            </span>
+            </Text>
           </VisuallyHidden>
         )}
         <TaskList
@@ -870,7 +880,7 @@ export const TasksListContent = forwardRef<HTMLDivElement, TasksListContentProps
           size={size}
           data-testid={testId ? `${testId}-list` : undefined}
         />
-      </div>
+      </Box>
     );
   }
 );
@@ -899,7 +909,7 @@ export const TasksListLayout = forwardRef<HTMLDivElement, TasksListLayoutProps>(
 
     return (
       <>
-        <div
+        <Box
           ref={ref}
           className={cn(LAYOUT_BASE_CLASSES, className)}
           role="region"
@@ -909,8 +919,8 @@ export const TasksListLayout = forwardRef<HTMLDivElement, TasksListLayoutProps>(
           {...props}
         >
           {filterBar}
-          <div className={cn(LAYOUT_CONTENT_BASE_CLASSES, contentPaddingClasses)}>{children}</div>
-        </div>
+          <Box className={cn(LAYOUT_CONTENT_BASE_CLASSES, contentPaddingClasses)}>{children}</Box>
+        </Box>
         {outlet}
       </>
     );

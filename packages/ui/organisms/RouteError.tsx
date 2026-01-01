@@ -1,4 +1,11 @@
-import { Flex, Heading, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  Flex,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn, createLogger } from '@openflow/utils';
 import { AlertCircle, Home, RefreshCw } from 'lucide-react';
 import { forwardRef, useEffect, useId, useState } from 'react';
@@ -460,7 +467,7 @@ export const RouteError = forwardRef<HTMLDivElement, RouteErrorProps>(function R
       <VisuallyHidden aria-live="polite">{announcement}</VisuallyHidden>
 
       {/* Error icon */}
-      <div
+      <Box
         className={cn(ROUTE_ERROR_ICON_CONTAINER_BASE_CLASSES, iconContainerClasses)}
         aria-hidden="true"
       >
@@ -470,10 +477,10 @@ export const RouteError = forwardRef<HTMLDivElement, RouteErrorProps>(function R
           className="text-[rgb(var(--destructive))]"
           data-testid="route-error-icon"
         />
-      </div>
+      </Box>
 
       {/* Error message content */}
-      <div className={cn(ROUTE_ERROR_CONTENT_CLASSES, contentMaxWidth)}>
+      <Box className={cn(ROUTE_ERROR_CONTENT_CLASSES, contentMaxWidth)}>
         <Heading
           id={titleId}
           level={headingLevel}
@@ -492,7 +499,7 @@ export const RouteError = forwardRef<HTMLDivElement, RouteErrorProps>(function R
         >
           {description}
         </Text>
-      </div>
+      </Box>
 
       {/* Action buttons */}
       {(onRetry || onGoHome) && (
@@ -539,29 +546,32 @@ export const RouteError = forwardRef<HTMLDivElement, RouteErrorProps>(function R
 
       {/* Technical details (collapsible) */}
       {showTechnicalDetails && (
-        <details
+        <Box
+          as="details"
           id={detailsId}
           className={cn('w-full', detailsClasses)}
           data-testid="route-error-details"
         >
-          <summary
+          <Box
+            as="summary"
             className={ROUTE_ERROR_DETAILS_SUMMARY_CLASSES}
             aria-label={`${TECHNICAL_DETAILS_LABEL}, click to expand`}
           >
             {TECHNICAL_DETAILS_LABEL}
-          </summary>
-          <pre
+          </Box>
+          <Box
+            as="pre"
             className={ROUTE_ERROR_DETAILS_PRE_CLASSES}
             aria-label="Error details"
             tabIndex={0}
             data-testid="route-error-stack"
           >
-            <code>
+            <Box as="code">
               {error.name}: {error.message}
               {error.stack && `\n\n${error.stack}`}
-            </code>
-          </pre>
-        </details>
+            </Box>
+          </Box>
+        </Box>
       )}
     </Flex>
   );
