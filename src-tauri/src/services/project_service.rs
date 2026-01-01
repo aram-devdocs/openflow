@@ -646,6 +646,9 @@ mod tests {
             .await
             .expect("Failed to create project");
 
+        // Wait to ensure timestamp changes (avoid flaky test on fast machines)
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+
         // Update partial fields
         let update_request = UpdateProjectRequest {
             name: Some("Updated Name".to_string()),
