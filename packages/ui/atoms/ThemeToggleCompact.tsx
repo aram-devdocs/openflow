@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Moon, Sun } from 'lucide-react';
 import { type ButtonHTMLAttributes, forwardRef } from 'react';
@@ -192,9 +192,9 @@ export const ThemeToggleCompact = forwardRef<HTMLButtonElement, ThemeToggleCompa
       >
         {/* Screen reader announcement for state changes */}
         <VisuallyHidden>
-          <span role="status" aria-live="polite" aria-atomic="true">
+          <Text as="span" role="status" aria-live="polite" aria-atomic="true">
             {`Current theme: ${resolvedTheme}`}
-          </span>
+          </Text>
         </VisuallyHidden>
 
         {resolvedTheme === 'dark' ? (

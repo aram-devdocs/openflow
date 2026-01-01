@@ -13,6 +13,7 @@
  * - data-testid support for testing
  */
 
+import { Box } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type CSSProperties, type HTMLAttributes, forwardRef } from 'react';
 
@@ -180,7 +181,16 @@ export const SKELETON_BASE_CLASSES = 'bg-[rgb(var(--muted))] motion-safe:animate
  * />
  */
 export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(function Skeleton(
-  { variant = 'rectangular', width, height, className, style, 'data-testid': dataTestId, ...props },
+  {
+    variant = 'rectangular',
+    width,
+    height,
+    className,
+    style,
+    'data-testid': dataTestId,
+    'aria-hidden': _ariaHidden,
+    ...props
+  },
   ref
 ) {
   // Get responsive dimension styles and classes
@@ -197,8 +207,24 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(function Skele
   // Merge classes
   const responsiveClasses = [...widthResult.classes, ...heightResult.classes];
 
+  // Exclude all ARIA Booleanish props that conflict with BoxProps strict boolean types
+  const {
+    'aria-busy': _ariaBusy,
+    'aria-atomic': _ariaAtomic,
+    'aria-expanded': _ariaExpanded,
+    'aria-pressed': _ariaPressed,
+    'aria-selected': _ariaSelected,
+    'aria-checked': _ariaChecked,
+    'aria-disabled': _ariaDisabled,
+    'aria-required': _ariaRequired,
+    'aria-invalid': _ariaInvalid,
+    'aria-haspopup': _ariaHaspopup,
+    'aria-current': _ariaCurrent,
+    ...restProps
+  } = props;
+
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(
         SKELETON_BASE_CLASSES,
@@ -209,7 +235,7 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(function Skele
       style={computedStyle}
       aria-hidden={true}
       data-testid={dataTestId}
-      {...props}
+      {...restProps}
     />
   );
 });

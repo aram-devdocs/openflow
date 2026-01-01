@@ -1,4 +1,5 @@
 import {
+  Box,
   type ResponsiveValue,
   Text,
   VisuallyHidden,
@@ -181,9 +182,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {loading ? (
         <Spinner size={spinnerSizeMap[baseSize]} />
       ) : icon ? (
-        <span className="shrink-0" aria-hidden="true">
+        <Box as="span" className="shrink-0" aria-hidden={true}>
           {icon}
-        </span>
+        </Box>
       ) : null}
 
       {/* Button text content */}
@@ -191,9 +192,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 
       {/* Trailing icon (hidden during loading) */}
       {!loading && iconAfter && (
-        <span className="shrink-0" aria-hidden="true">
+        <Box as="span" className="shrink-0" aria-hidden={true}>
           {iconAfter}
-        </span>
+        </Box>
       )}
     </button>
   );

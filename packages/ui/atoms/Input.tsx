@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { X } from 'lucide-react';
 import { type InputHTMLAttributes, type ReactNode, forwardRef, useId } from 'react';
@@ -209,28 +209,31 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   const paddingRightClass = hasTrailingIcon ? 'pr-10' : '';
 
   return (
-    <span className="relative inline-flex w-full" data-testid={dataTestId}>
+    <Box as="span" className="relative inline-flex w-full" data-testid={dataTestId}>
       {/* Screen reader error announcement */}
       {error && (
         <VisuallyHidden>
-          <span id={errorAnnouncementId} aria-live="assertive">
+          <Text as="span" id={errorAnnouncementId} aria-live="assertive">
             This field has an error
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       {/* Leading icon */}
       {hasLeadingIcon && (
-        <span
+        <Box
+          as="span"
           className={cn(
             'pointer-events-none absolute inset-y-0 left-0 flex items-center',
             'text-[rgb(var(--muted-foreground))]',
             ...iconWrapperClasses
           )}
-          aria-hidden="true"
+          aria-hidden={true}
         >
-          <span className={cn(...iconClasses)}>{leadingIcon}</span>
-        </span>
+          <Box as="span" className={cn(...iconClasses)}>
+            {leadingIcon}
+          </Box>
+        </Box>
       )}
 
       <input
@@ -272,7 +275,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
       {/* Trailing icon or clear button */}
       {hasTrailingIcon && (
-        <span className={cn('absolute inset-y-0 right-0 flex items-center', ...iconWrapperClasses)}>
+        <Box
+          as="span"
+          className={cn('absolute inset-y-0 right-0 flex items-center', ...iconWrapperClasses)}
+        >
           {shouldShowClearButton ? (
             <button
               type="button"
@@ -292,19 +298,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
               <X className={cn(...iconClasses)} aria-hidden="true" />
             </button>
           ) : trailingIcon ? (
-            <span
+            <Box
+              as="span"
               className={cn(
                 'pointer-events-none text-[rgb(var(--muted-foreground))]',
                 ...iconClasses
               )}
-              aria-hidden="true"
+              aria-hidden={true}
             >
               {trailingIcon}
-            </span>
+            </Box>
           ) : null}
-        </span>
+        </Box>
       )}
-    </span>
+    </Box>
   );
 });
 

@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Menu, X } from 'lucide-react';
 import { type ButtonHTMLAttributes, forwardRef } from 'react';
@@ -178,7 +178,9 @@ export const HamburgerButton = forwardRef<HTMLButtonElement, HamburgerButtonProp
       >
         {/* Screen reader announcement of state */}
         <VisuallyHidden>
-          <span aria-live="polite">{isOpen ? 'Menu open' : 'Menu closed'}</span>
+          <Text as="span" aria-live="polite">
+            {isOpen ? 'Menu open' : 'Menu closed'}
+          </Text>
         </VisuallyHidden>
         <Icon className={cn(...iconClasses)} aria-hidden="true" />
       </button>

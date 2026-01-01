@@ -1,4 +1,10 @@
-import { BREAKPOINT_ORDER, type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import {
+  BREAKPOINT_ORDER,
+  Box,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Check, Minus } from 'lucide-react';
 import { type InputHTMLAttributes, forwardRef, useEffect, useId, useRef, useState } from 'react';
@@ -196,7 +202,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
 
   return (
     // Touch target wrapper: 44x44px minimum for accessibility (WCAG 2.5.5)
-    <span
+    <Box
+      as="span"
       className={cn(
         'relative inline-flex items-center justify-center',
         ...wrapperClasses,
@@ -206,12 +213,12 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
     >
       {/* Screen reader state announcement - only announces on state changes */}
       <VisuallyHidden>
-        <span id={announcementId} aria-live="polite" aria-atomic="true">
+        <Text as="span" id={announcementId} aria-live="polite" aria-atomic="true">
           {announcement}
-        </span>
+        </Text>
       </VisuallyHidden>
 
-      <span className="relative inline-flex items-center">
+      <Box as="span" className="relative inline-flex items-center">
         <input
           type="checkbox"
           ref={(element) => {
@@ -280,8 +287,8 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           )}
           aria-hidden="true"
         />
-      </span>
-    </span>
+      </Box>
+    </Box>
   );
 });
 

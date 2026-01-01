@@ -1,4 +1,4 @@
-import { Flex, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
+import { Box, Flex, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertCircle, CheckCircle, Info, X, XCircle } from 'lucide-react';
 import { type HTMLAttributes, type ReactNode, forwardRef } from 'react';
@@ -280,6 +280,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
     dismissLabel = DEFAULT_DISMISS_LABEL,
     className,
     'data-testid': testId,
+    'aria-hidden': _ariaHidden,
     ...props
   },
   ref
@@ -289,16 +290,32 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
   const role = getAriaRole(variant);
   const ariaLive = getAriaLive(variant);
 
+  // Exclude all ARIA Booleanish props that conflict with BoxProps strict boolean types
+  const {
+    'aria-busy': _ariaBusy,
+    'aria-atomic': _ariaAtomic,
+    'aria-expanded': _ariaExpanded,
+    'aria-pressed': _ariaPressed,
+    'aria-selected': _ariaSelected,
+    'aria-checked': _ariaChecked,
+    'aria-disabled': _ariaDisabled,
+    'aria-required': _ariaRequired,
+    'aria-invalid': _ariaInvalid,
+    'aria-haspopup': _ariaHaspopup,
+    'aria-current': _ariaCurrent,
+    ...restProps
+  } = props;
+
   return (
-    <div
+    <Box
       ref={ref}
       role={role}
       aria-live={ariaLive}
-      aria-atomic="true"
+      aria-atomic={true}
       data-testid={testId}
       data-variant={variant}
       className={cn(TOAST_BASE_CLASSES, VARIANT_CLASSES[variant], sizeClasses.container, className)}
-      {...props}
+      {...restProps}
     >
       {/* Status icon - decorative, status conveyed via text and role */}
       <Icon
@@ -348,7 +365,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
           </button>
         )}
 
-        {actionElement && <div className="mt-2">{actionElement}</div>}
+        {actionElement && <Box className="mt-2">{actionElement}</Box>}
       </Flex>
 
       {/* Dismiss button */}
@@ -372,7 +389,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(function Toast(
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       )}
-    </div>
+    </Box>
   );
 });
 

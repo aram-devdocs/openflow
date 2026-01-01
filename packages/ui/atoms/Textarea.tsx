@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type TextareaHTMLAttributes, forwardRef, useId, useMemo } from 'react';
 
@@ -232,22 +232,22 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   const resizeClass = resizeClasses[resize];
 
   return (
-    <span className="relative flex w-full flex-col" data-testid={dataTestId}>
+    <Box as="span" className="relative flex w-full flex-col" data-testid={dataTestId}>
       {/* Screen reader error announcement */}
       {error && (
         <VisuallyHidden>
-          <span id={errorAnnouncementId} aria-live="assertive">
+          <Text as="span" id={errorAnnouncementId} aria-live="assertive">
             This field has an error
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
       {/* Screen reader character count announcement */}
       {charCountStatus && (
         <VisuallyHidden>
-          <span aria-live="polite" aria-atomic="true">
+          <Text as="span" aria-live="polite" aria-atomic="true">
             {charCountStatus}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 
@@ -277,7 +277,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
 
       {/* Visual character count */}
       {shouldShowCharCount && maxLength !== undefined && (
-        <span
+        <Text
+          as="span"
           id={charCountId}
           className={cn(
             'mt-1 text-right',
@@ -286,12 +287,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
               ? 'text-[rgb(var(--destructive))]'
               : 'text-[rgb(var(--muted-foreground))]'
           )}
-          aria-hidden="true"
+          aria-hidden={true}
         >
           {currentCount}/{maxLength}
-        </span>
+        </Text>
       )}
-    </span>
+    </Box>
   );
 });
 

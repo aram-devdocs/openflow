@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { forwardRef } from 'react';
 
@@ -158,9 +158,9 @@ export const Spinner = forwardRef<SVGSVGElement, SpinnerProps>(function Spinner(
       {/* Screen reader announcement via aria-live region */}
       {announce && (
         <VisuallyHidden>
-          <span role="status" aria-live="polite">
+          <Text as="span" role="status" aria-live="polite">
             {accessibleLabel}
-          </span>
+          </Text>
         </VisuallyHidden>
       )}
 

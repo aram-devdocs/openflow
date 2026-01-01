@@ -1,4 +1,4 @@
-import { type ResponsiveValue, VisuallyHidden } from '@openflow/primitives';
+import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { type HTMLAttributes, type KeyboardEvent, forwardRef, useCallback, useRef } from 'react';
@@ -149,6 +149,7 @@ export const ThemeToggle = forwardRef<HTMLDivElement, ThemeToggleProps>(function
     disabled = false,
     className,
     'data-testid': dataTestId,
+    'aria-hidden': _ariaHidden,
     ...props
   },
   ref
@@ -207,8 +208,24 @@ export const ThemeToggle = forwardRef<HTMLDivElement, ThemeToggleProps>(function
   // Get the current theme label for screen reader announcement
   const currentThemeLabel = themeOptions.find((opt) => opt.value === theme)?.label ?? 'Unknown';
 
+  // Exclude all ARIA Booleanish props that conflict with BoxProps strict boolean types
+  const {
+    'aria-busy': _ariaBusy,
+    'aria-atomic': _ariaAtomic,
+    'aria-expanded': _ariaExpanded,
+    'aria-pressed': _ariaPressed,
+    'aria-selected': _ariaSelected,
+    'aria-checked': _ariaChecked,
+    'aria-disabled': _ariaDisabled,
+    'aria-required': _ariaRequired,
+    'aria-invalid': _ariaInvalid,
+    'aria-haspopup': _ariaHaspopup,
+    'aria-current': _ariaCurrent,
+    ...restProps
+  } = props;
+
   return (
-    <div
+    <Box
       ref={ref}
       className={cn(
         THEME_TOGGLE_BASE_CLASSES,
@@ -221,13 +238,13 @@ export const ThemeToggle = forwardRef<HTMLDivElement, ThemeToggleProps>(function
       aria-disabled={disabled || undefined}
       onKeyDown={handleKeyDown}
       data-testid={dataTestId}
-      {...props}
+      {...restProps}
     >
       {/* Screen reader announcement for theme changes */}
       <VisuallyHidden>
-        <span role="status" aria-live="polite" aria-atomic="true">
+        <Text as="span" role="status" aria-live="polite" aria-atomic="true">
           {`Current theme: ${currentThemeLabel}`}
-        </span>
+        </Text>
       </VisuallyHidden>
 
       {themeOptions.map(({ value, label, description, icon: Icon }, index) => {
@@ -264,11 +281,13 @@ export const ThemeToggle = forwardRef<HTMLDivElement, ThemeToggleProps>(function
             data-testid={dataTestId ? `${dataTestId}-${value}` : undefined}
           >
             <Icon className={cn(...iconClasses)} aria-hidden="true" />
-            <span className="sr-only sm:not-sr-only">{label}</span>
+            <Text as="span" className="sr-only sm:not-sr-only">
+              {label}
+            </Text>
           </button>
         );
       })}
-    </div>
+    </Box>
   );
 });
 

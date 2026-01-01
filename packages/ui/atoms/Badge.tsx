@@ -1,5 +1,11 @@
 import type { TaskStatus } from '@openflow/generated';
-import { type ResponsiveValue, Text, type TextSize, VisuallyHidden } from '@openflow/primitives';
+import {
+  Box,
+  type ResponsiveValue,
+  Text,
+  type TextSize,
+  VisuallyHidden,
+} from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { type ReactNode, forwardRef } from 'react';
 
@@ -237,9 +243,9 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
 
       {/* Optional icon for conveying meaning beyond color */}
       {icon && (
-        <span className="shrink-0" aria-hidden="true">
+        <Box as="span" className="shrink-0" aria-hidden={true}>
           {icon}
-        </span>
+        </Box>
       )}
 
       {children}
