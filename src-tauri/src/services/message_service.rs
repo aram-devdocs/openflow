@@ -1,7 +1,21 @@
 //! Message management service.
 //!
-//! Handles CRUD operations for chat messages.
+//! Handles CRUD operations for chat messages within chat sessions.
+//!
+//! ## Logging
+//!
+//! This service uses the `log` crate for structured logging:
+//! - `debug!`: Detailed operation tracing (query params, internal steps)
+//! - `info!`: Successful operations (create, update, delete)
+//! - `warn!`: Potentially problematic but recoverable situations
+//! - `error!`: Operation failures (logged before returning error)
+//!
+//! ## Error Handling
+//!
+//! All functions return `ServiceResult<T>` which wraps errors in `ServiceError`.
+//! Errors are logged at the appropriate level before being returned.
 
+use log::{debug, error, info};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -10,6 +24,12 @@ use crate::types::{CreateMessageRequest, Message};
 use super::{ServiceError, ServiceResult};
 
 /// Service for managing messages.
+///
+/// Provides CRUD operations for chat messages, including:
+/// - Message creation with role (user, assistant, system)
+/// - Streaming support (append content, set streaming state)
+/// - Token usage tracking
+/// - Message deletion
 pub struct MessageService;
 
 impl MessageService {
@@ -21,6 +41,8 @@ impl MessageService {
     ///
     /// Returns messages ordered by created_at ASC.
     pub async fn list(pool: &SqlitePool, chat_id: &str) -> ServiceResult<Vec<Message>> {
+        debug!("Listing messages for chat_id={}", chat_id);
+
         let messages = sqlx::query_as::<_, Message>(
             r#"
             SELECT
@@ -33,13 +55,43 @@ impl MessageService {
         )
         .bind(chat_id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to list messages for chat_id={}: {}", chat_id, e);
+            ServiceError::Database(e)
+        })?;
 
+        debug!(
+            "Found {} messages for chat_id={} (user: {}, assistant: {}, system: {})",
+            messages.len(),
+            chat_id,
+            messages
+                .iter()
+                .filter(|m| m.role.to_string() == "user")
+                .count(),
+            messages
+                .iter()
+                .filter(|m| m.role.to_string() == "assistant")
+                .count(),
+            messages
+                .iter()
+                .filter(|m| m.role.to_string() == "system")
+                .count()
+        );
         Ok(messages)
     }
 
     /// Get a message by ID.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Message ID to fetch
+    ///
+    /// # Errors
+    /// Returns `ServiceError::NotFound` if the message doesn't exist.
     pub async fn get(pool: &SqlitePool, id: &str) -> ServiceResult<Message> {
+        debug!("Getting message by id={}", id);
+
         let message = sqlx::query_as::<_, Message>(
             r#"
             SELECT
@@ -51,12 +103,26 @@ impl MessageService {
         )
         .bind(id)
         .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| ServiceError::NotFound {
-            entity: "Message",
-            id: id.to_string(),
+        .await
+        .map_err(|e| {
+            error!("Failed to get message id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?
+        .ok_or_else(|| {
+            debug!("Message not found: id={}", id);
+            ServiceError::NotFound {
+                entity: "Message",
+                id: id.to_string(),
+            }
         })?;
 
+        debug!(
+            "Found message id={}, role={}, chat_id={}, content_length={}",
+            message.id,
+            message.role,
+            message.chat_id,
+            message.content.len()
+        );
         Ok(message)
     }
 
@@ -72,6 +138,17 @@ impl MessageService {
         request: CreateMessageRequest,
     ) -> ServiceResult<Message> {
         let id = Uuid::new_v4().to_string();
+
+        debug!(
+            "Creating message: id={}, chat_id={}, role={}, content_length={}, has_tool_calls={}, has_tool_results={}, model={:?}",
+            id,
+            request.chat_id,
+            request.role,
+            request.content.len(),
+            request.tool_calls.is_some(),
+            request.tool_results.is_some(),
+            request.model
+        );
 
         sqlx::query(
             r#"
@@ -89,20 +166,45 @@ impl MessageService {
         .bind(&request.tool_results)
         .bind(&request.model)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to create message in chat_id={}: {}",
+                request.chat_id, e
+            );
+            ServiceError::Database(e)
+        })?;
+
+        info!(
+            "Created message id={} in chat_id={} with role={}",
+            id, request.chat_id, request.role
+        );
 
         // Fetch and return the created message
         Self::get(pool, &id).await
     }
 
     /// Mark a message as streaming or not.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Message ID to update
+    /// * `is_streaming` - Whether the message is currently streaming
+    ///
+    /// # Errors
+    /// Returns `ServiceError::NotFound` if the message doesn't exist.
     pub async fn set_streaming(
         pool: &SqlitePool,
         id: &str,
         is_streaming: bool,
     ) -> ServiceResult<Message> {
+        debug!(
+            "Setting streaming state for message id={} to {}",
+            id, is_streaming
+        );
+
         // Verify the message exists first
-        Self::get(pool, id).await?;
+        let message = Self::get(pool, id).await?;
 
         sqlx::query(
             r#"
@@ -114,19 +216,41 @@ impl MessageService {
         .bind(is_streaming)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to set streaming state for message id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
+
+        debug!(
+            "Updated streaming state for message id={} in chat_id={}: {} -> {}",
+            id, message.chat_id, message.is_streaming, is_streaming
+        );
 
         Self::get(pool, id).await
     }
 
     /// Update token usage for a message.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Message ID to update
+    /// * `tokens_used` - Number of tokens consumed by this message
+    ///
+    /// # Errors
+    /// Returns `ServiceError::NotFound` if the message doesn't exist.
     pub async fn set_tokens_used(
         pool: &SqlitePool,
         id: &str,
         tokens_used: i32,
     ) -> ServiceResult<Message> {
+        debug!(
+            "Setting tokens_used for message id={} to {}",
+            id, tokens_used
+        );
+
         // Verify the message exists first
-        Self::get(pool, id).await?;
+        let message = Self::get(pool, id).await?;
 
         sqlx::query(
             r#"
@@ -138,19 +262,45 @@ impl MessageService {
         .bind(tokens_used)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to set tokens_used for message id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
+
+        info!(
+            "Updated tokens_used for message id={} in chat_id={}: {:?} -> {}",
+            id, message.chat_id, message.tokens_used, tokens_used
+        );
 
         Self::get(pool, id).await
     }
 
     /// Append content to a message (useful for streaming).
+    ///
+    /// This function concatenates the given content to the existing message content.
+    /// It's typically used during streaming responses to build up the message incrementally.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Message ID to update
+    /// * `content` - Content to append to the existing message
+    ///
+    /// # Errors
+    /// Returns `ServiceError::NotFound` if the message doesn't exist.
     pub async fn append_content(
         pool: &SqlitePool,
         id: &str,
         content: &str,
     ) -> ServiceResult<Message> {
+        debug!(
+            "Appending content to message id={}, append_length={}",
+            id,
+            content.len()
+        );
+
         // Verify the message exists first
-        Self::get(pool, id).await?;
+        let message = Self::get(pool, id).await?;
 
         sqlx::query(
             r#"
@@ -162,20 +312,53 @@ impl MessageService {
         .bind(content)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to append content to message id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
+
+        debug!(
+            "Appended {} chars to message id={} in chat_id={}, new_length={}",
+            content.len(),
+            id,
+            message.chat_id,
+            message.content.len() + content.len()
+        );
 
         Self::get(pool, id).await
     }
 
     /// Delete a message by ID.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Message ID to delete
+    ///
+    /// # Errors
+    /// Returns `ServiceError::NotFound` if the message doesn't exist.
     pub async fn delete(pool: &SqlitePool, id: &str) -> ServiceResult<()> {
-        // Verify the message exists first
-        Self::get(pool, id).await?;
+        debug!("Deleting message id={}", id);
+
+        // Verify the message exists first and get details for logging
+        let message = Self::get(pool, id).await?;
 
         sqlx::query("DELETE FROM messages WHERE id = ?")
             .bind(id)
             .execute(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to delete message id={}: {}", id, e);
+                ServiceError::Database(e)
+            })?;
+
+        info!(
+            "Deleted message id={} from chat_id={} (role={}, content_length={})",
+            id,
+            message.chat_id,
+            message.role,
+            message.content.len()
+        );
 
         Ok(())
     }

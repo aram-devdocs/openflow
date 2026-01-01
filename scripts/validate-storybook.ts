@@ -103,6 +103,17 @@ function shouldExcludeComponent(filePath: string): boolean {
 }
 
 /**
+ * Check if a story file corresponds to an excluded component pattern
+ * This prevents "orphan story" warnings for stories of excluded components like ToastProvider
+ */
+function isStoryForExcludedComponent(storyPath: string): boolean {
+  const componentName = getComponentNameFromStory(storyPath);
+  // Check if the corresponding component name would match any exclusion pattern
+  const hypotheticalComponentFile = `${componentName}.tsx`;
+  return EXCLUDED_PATTERNS.some((pattern) => pattern.test(hypotheticalComponentFile));
+}
+
+/**
  * Get the component name from a file path
  * e.g., "packages/ui/atoms/Button.tsx" -> "Button"
  */
@@ -253,6 +264,10 @@ function validate(verbose = false): ValidationResult {
   for (const story of stories) {
     const key = `${story.directory}/${story.componentName}`;
     if (componentByNameAndDir.has(key)) {
+      story.hasComponent = true;
+    } else if (isStoryForExcludedComponent(story.filePath)) {
+      // Story corresponds to an excluded component (e.g., ToastProvider)
+      // This is not an orphan - the component exists but is intentionally excluded from coverage
       story.hasComponent = true;
     } else {
       orphanStories.push(story.filePath);

@@ -3,11 +3,22 @@
  *
  * This hook encapsulates all the state management and effects for the
  * task detail page, keeping the route component pure.
+ *
+ * Features:
+ * - Logger integration with DEBUG/INFO/WARN/ERROR levels
+ * - Toast notifications for user feedback (success/error)
+ * - Workflow step management with auto-start support
+ * - Claude event streaming and processing
+ * - PR creation via GitHub CLI integration
+ * - Task archive/delete with confirmation dialogs
+ *
+ * @module useTaskSession
  */
 
 import type { Chat, Commit, FileDiff, Task, TaskStatus, WorkflowStep } from '@openflow/generated';
 import { ChatRole, MessageRole, WorkflowStepStatus } from '@openflow/generated';
 import type { ArtifactFile } from '@openflow/queries';
+import { createLogger } from '@openflow/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useArtifactContent, useArtifacts, useOpenArtifact } from './useArtifacts';
 import { useChat, useCreateChat, useToggleStepComplete } from './useChats';
@@ -21,6 +32,10 @@ import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useCreateMessage, useMessages } from './useMessages';
 import { useKillProcess } from './useProcesses';
 import { useArchiveTask, useDeleteTask, useTask, useUpdateTask } from './useTasks';
+import { useToast } from './useToast';
+
+// Create logger for this hook
+const logger = createLogger('useTaskSession');
 
 // ============================================================================
 // Types
@@ -29,8 +44,15 @@ import { useArchiveTask, useDeleteTask, useTask, useUpdateTask } from './useTask
 export interface UseTaskSessionOptions {
   /** Task ID to load */
   taskId: string;
-  /** Callback for showing toast messages */
+  /**
+   * Callback for showing success messages
+   * @deprecated Toast notifications are now handled internally via useToast hook
+   */
   onSuccess?: (title: string, message: string) => void;
+  /**
+   * Callback for showing error messages
+   * @deprecated Toast notifications are now handled internally via useToast hook
+   */
   onError?: (title: string, message: string) => void;
   /** Navigation callback */
   onNavigate?: (path: string, params?: Record<string, string>) => void;
@@ -220,6 +242,36 @@ export function useTaskSession({
   onError,
   onNavigate,
 }: UseTaskSessionOptions): TaskSessionState {
+  // Log hook initialization
+  const initLoggedRef = useRef(false);
+  if (!initLoggedRef.current) {
+    logger.debug('Hook initialized', { taskId });
+    initLoggedRef.current = true;
+  }
+
+  // =========================================================================
+  // Toast Integration
+  // =========================================================================
+  const toast = useToast();
+
+  // Helper to show success toast (also calls deprecated callback for backward compatibility)
+  const showSuccess = useCallback(
+    (title: string, message: string) => {
+      toast.success(title, message);
+      onSuccess?.(title, message);
+    },
+    [toast, onSuccess]
+  );
+
+  // Helper to show error toast (also calls deprecated callback for backward compatibility)
+  const showError = useCallback(
+    (title: string, message: string) => {
+      toast.error(title, message);
+      onError?.(title, message);
+    },
+    [toast, onError]
+  );
+
   // =========================================================================
   // UI State
   // =========================================================================
@@ -380,14 +432,30 @@ export function useTaskSession({
       const nextStepIndex = currentStepIndex + 1;
       const nextChat = chats[nextStepIndex];
 
+      logger.debug('Step completed, checking auto-start', {
+        currentStepIndex,
+        nextStepIndex,
+        hasNextStep: !!nextChat,
+        autoStart,
+      });
+
       if (nextChat?.initialPrompt) {
-        onSuccess?.('Step completed', `Finished "${activeChat?.title}"`);
+        logger.info('Auto-starting next step', {
+          completedStep: activeChat?.title,
+          nextStep: nextChat.title,
+          nextStepIndex,
+        });
+        showSuccess('Step completed', `Finished "${activeChat?.title}"`);
 
         setTimeout(() => {
           handleStartStep(nextStepIndex);
         }, 500);
       } else {
-        onSuccess?.('Workflow completed', 'All steps have finished');
+        logger.info('Workflow completed', {
+          taskId,
+          totalSteps: chats.length,
+        });
+        showSuccess('Workflow completed', 'All steps have finished');
       }
     }
     prevIsCompleteRef.current = isComplete;
@@ -399,7 +467,8 @@ export function useTaskSession({
     activeStepIndex,
     chats,
     activeChat?.title,
-    onSuccess,
+    showSuccess,
+    taskId,
   ]);
 
   // =========================================================================
@@ -407,17 +476,54 @@ export function useTaskSession({
   // =========================================================================
   const handleStatusChange = useCallback(
     (status: TaskStatus) => {
-      if (!task) return;
-      updateTask.mutate({ id: task.id, request: { status } });
+      if (!task) {
+        logger.warn('handleStatusChange called without task');
+        return;
+      }
+
+      logger.debug('Changing task status', {
+        taskId: task.id,
+        taskTitle: task.title,
+        previousStatus: task.status,
+        newStatus: status,
+      });
+
+      updateTask.mutate(
+        { id: task.id, request: { status } },
+        {
+          onSuccess: () => {
+            logger.info('Task status updated', {
+              taskId: task.id,
+              taskTitle: task.title,
+              status,
+            });
+            showSuccess('Status updated', `Task status changed to ${status}`);
+          },
+          onError: (error) => {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            logger.error('Failed to update task status', {
+              taskId: task.id,
+              taskTitle: task.title,
+              status,
+              error: message,
+            });
+            showError('Failed to update status', message);
+          },
+        }
+      );
     },
-    [task, updateTask]
+    [task, updateTask, showSuccess, showError]
   );
 
   // =========================================================================
   // Callbacks - Title Editing
   // =========================================================================
   const handleTitleEditToggle = useCallback(() => {
-    if (!task) return;
+    if (!task) {
+      logger.warn('handleTitleEditToggle called without task');
+      return;
+    }
+    logger.debug('Title edit toggled', { taskId: task.id, taskTitle: task.title });
     setTitleInputValue(task.title);
     setIsTitleEditing(true);
   }, [task]);
@@ -427,14 +533,49 @@ export function useTaskSession({
   }, []);
 
   const handleTitleEditSubmit = useCallback(() => {
-    if (!task || !titleInputValue.trim()) return;
+    if (!task) {
+      logger.warn('handleTitleEditSubmit called without task');
+      return;
+    }
+    if (!titleInputValue.trim()) {
+      logger.warn('Title edit submitted with empty value', { taskId: task.id });
+      showError('Invalid title', 'Title cannot be empty');
+      return;
+    }
+
+    const newTitle = titleInputValue.trim();
+    logger.debug('Submitting title edit', {
+      taskId: task.id,
+      previousTitle: task.title,
+      newTitle,
+    });
+
     updateTask.mutate(
-      { id: task.id, request: { title: titleInputValue.trim() } },
-      { onSuccess: () => setIsTitleEditing(false) }
+      { id: task.id, request: { title: newTitle } },
+      {
+        onSuccess: () => {
+          logger.info('Task title updated', {
+            taskId: task.id,
+            previousTitle: task.title,
+            newTitle,
+          });
+          setIsTitleEditing(false);
+          showSuccess('Title updated', `Task renamed to "${newTitle}"`);
+        },
+        onError: (error) => {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          logger.error('Failed to update task title', {
+            taskId: task.id,
+            error: message,
+          });
+          showError('Failed to update title', message);
+        },
+      }
     );
-  }, [task, titleInputValue, updateTask]);
+  }, [task, titleInputValue, updateTask, showSuccess, showError]);
 
   const handleTitleEditCancel = useCallback(() => {
+    logger.debug('Title edit cancelled');
     setIsTitleEditing(false);
     setTitleInputValue('');
   }, []);
@@ -445,7 +586,17 @@ export function useTaskSession({
   const handleStartStep = useCallback(
     async (stepIndex: number) => {
       const chat = chats[stepIndex];
-      if (!chat || !chat.initialPrompt) return;
+      if (!chat || !chat.initialPrompt) {
+        logger.warn('handleStartStep called without valid chat', { stepIndex, hasChat: !!chat });
+        return;
+      }
+
+      logger.debug('Starting step', {
+        stepIndex,
+        chatId: chat.id,
+        chatTitle: chat.title,
+        executorProfileId: chat.executorProfileId,
+      });
 
       try {
         const process = await runExecutor.mutateAsync({
@@ -455,88 +606,159 @@ export function useTaskSession({
         });
         setActiveProcessId(process.id);
         setActiveStepIndex(stepIndex);
-        onSuccess?.('Step started', `Running "${chat.title}"`);
+        logger.info('Step started successfully', {
+          stepIndex,
+          chatTitle: chat.title,
+          processId: process.id,
+        });
+        showSuccess('Step started', `Running "${chat.title}"`);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        onError?.('Failed to start step', message);
+        logger.error('Failed to start step', {
+          stepIndex,
+          chatId: chat.id,
+          chatTitle: chat.title,
+          error: message,
+        });
+        showError('Failed to start step', message);
       }
     },
-    [chats, runExecutor, onSuccess, onError]
+    [chats, runExecutor, showSuccess, showError]
   );
 
   const handleToggleStep = useCallback(
     (stepIndex: number, _completed: boolean) => {
       const chat = chats[stepIndex];
-      if (!chat) return;
+      if (!chat) {
+        logger.warn('handleToggleStep called without valid chat', { stepIndex });
+        return;
+      }
+
+      logger.debug('Toggling step completion', {
+        stepIndex,
+        chatId: chat.id,
+        chatTitle: chat.title,
+        currentlyCompleted: !!chat.setupCompletedAt,
+      });
 
       toggleStepComplete.mutate(chat.id, {
         onSuccess: (updatedChat) => {
           const action = updatedChat.setupCompletedAt ? 'completed' : 'reopened';
-          onSuccess?.('Step updated', `"${chat.title}" has been ${action}`);
+          logger.info('Step toggled', {
+            chatId: chat.id,
+            chatTitle: chat.title,
+            action,
+          });
+          showSuccess('Step updated', `"${chat.title}" has been ${action}`);
         },
         onError: (error) => {
           const message = error instanceof Error ? error.message : 'Unknown error';
-          onError?.('Failed to update step', message);
+          logger.error('Failed to toggle step', {
+            chatId: chat.id,
+            chatTitle: chat.title,
+            error: message,
+          });
+          showError('Failed to update step', message);
         },
       });
     },
-    [chats, toggleStepComplete, onSuccess, onError]
+    [chats, toggleStepComplete, showSuccess, showError]
   );
 
   const handleSelectStep = useCallback((stepIndex: number) => {
+    logger.debug('Step selected', { stepIndex });
     setActiveStepIndex(stepIndex);
   }, []);
 
   const handleCompleteStep = useCallback(
     (stepIndex: number) => {
       const chat = chats[stepIndex];
-      if (!chat) return;
-
-      // If already completed, do nothing
-      if (chat.setupCompletedAt) {
-        onSuccess?.('Step already completed', `"${chat.title}" is already marked as complete`);
+      if (!chat) {
+        logger.warn('handleCompleteStep called without valid chat', { stepIndex });
         return;
       }
 
+      // If already completed, do nothing
+      if (chat.setupCompletedAt) {
+        logger.debug('Step already completed', { chatId: chat.id, chatTitle: chat.title });
+        showSuccess('Step already completed', `"${chat.title}" is already marked as complete`);
+        return;
+      }
+
+      logger.debug('Completing step', {
+        stepIndex,
+        chatId: chat.id,
+        chatTitle: chat.title,
+      });
+
       toggleStepComplete.mutate(chat.id, {
         onSuccess: () => {
-          onSuccess?.('Step completed', `"${chat.title}" has been marked as complete`);
+          logger.info('Step completed', {
+            chatId: chat.id,
+            chatTitle: chat.title,
+          });
+          showSuccess('Step completed', `"${chat.title}" has been marked as complete`);
         },
         onError: (error) => {
           const message = error instanceof Error ? error.message : 'Unknown error';
-          onError?.('Failed to complete step', message);
+          logger.error('Failed to complete step', {
+            chatId: chat.id,
+            chatTitle: chat.title,
+            error: message,
+          });
+          showError('Failed to complete step', message);
         },
       });
     },
-    [chats, toggleStepComplete, onSuccess, onError]
+    [chats, toggleStepComplete, showSuccess, showError]
   );
 
   const handleSkipStep = useCallback(
     (stepIndex: number) => {
       const chat = chats[stepIndex];
-      if (!chat) return;
-
-      // Skip is essentially marking as complete without running
-      if (chat.setupCompletedAt) {
-        onSuccess?.('Step already skipped/completed', `"${chat.title}" is already done`);
+      if (!chat) {
+        logger.warn('handleSkipStep called without valid chat', { stepIndex });
         return;
       }
 
+      // Skip is essentially marking as complete without running
+      if (chat.setupCompletedAt) {
+        logger.debug('Step already skipped/completed', { chatId: chat.id, chatTitle: chat.title });
+        showSuccess('Step already skipped/completed', `"${chat.title}" is already done`);
+        return;
+      }
+
+      logger.debug('Skipping step', {
+        stepIndex,
+        chatId: chat.id,
+        chatTitle: chat.title,
+      });
+
       toggleStepComplete.mutate(chat.id, {
         onSuccess: () => {
-          onSuccess?.('Step skipped', `"${chat.title}" has been skipped`);
+          logger.info('Step skipped', {
+            chatId: chat.id,
+            chatTitle: chat.title,
+          });
+          showSuccess('Step skipped', `"${chat.title}" has been skipped`);
         },
         onError: (error) => {
           const message = error instanceof Error ? error.message : 'Unknown error';
-          onError?.('Failed to skip step', message);
+          logger.error('Failed to skip step', {
+            chatId: chat.id,
+            chatTitle: chat.title,
+            error: message,
+          });
+          showError('Failed to skip step', message);
         },
       });
     },
-    [chats, toggleStepComplete, onSuccess, onError]
+    [chats, toggleStepComplete, showSuccess, showError]
   );
 
   const handleViewStepChat = useCallback(
     (chatId: string) => {
+      logger.debug('Navigating to step chat', { chatId });
       onNavigate?.('/chats/$chatId', { chatId });
     },
     [onNavigate]
@@ -546,7 +768,11 @@ export function useTaskSession({
   // Callbacks - Add Step Dialog
   // =========================================================================
   const handleAddStep = useCallback(() => {
-    if (!task) return;
+    if (!task) {
+      logger.warn('handleAddStep called without task');
+      return;
+    }
+    logger.debug('Opening add step dialog', { taskId: task.id, currentStepCount: chats.length });
     setAddStepDialog({
       isOpen: true,
       title: `Step ${chats.length + 1}`,
@@ -555,6 +781,7 @@ export function useTaskSession({
   }, [task, chats.length]);
 
   const handleCloseAddStepDialog = useCallback(() => {
+    logger.debug('Closing add step dialog');
     setAddStepDialog({ isOpen: false, title: '', description: '' });
   }, []);
 
@@ -568,17 +795,34 @@ export function useTaskSession({
 
   const handleCreateStep = useCallback(
     async (startImmediately: boolean) => {
-      if (!task || !addStepDialog.title.trim()) return;
+      if (!task) {
+        logger.warn('handleCreateStep called without task');
+        return;
+      }
+      if (!addStepDialog.title.trim()) {
+        logger.warn('handleCreateStep called with empty title', { taskId: task.id });
+        showError('Invalid step', 'Step title cannot be empty');
+        return;
+      }
 
       const stepIndex = chats.length;
+      const stepTitle = addStepDialog.title.trim();
       const defaultExecutorProfile =
         executorProfiles.find((p) => p.isDefault) ?? executorProfiles[0];
+
+      logger.debug('Creating step', {
+        taskId: task.id,
+        stepIndex,
+        stepTitle,
+        startImmediately,
+        executorProfileId: defaultExecutorProfile?.id,
+      });
 
       createChat.mutate(
         {
           taskId: task.id,
           projectId: task.projectId,
-          title: addStepDialog.title.trim(),
+          title: stepTitle,
           chatRole: ChatRole.Main,
           executorProfileId: defaultExecutorProfile?.id,
           initialPrompt: addStepDialog.description.trim() || task.title,
@@ -586,11 +830,21 @@ export function useTaskSession({
         },
         {
           onSuccess: async (newChat) => {
-            onSuccess?.('Step added', `Created "${newChat.title}"`);
+            logger.info('Step created', {
+              chatId: newChat.id,
+              chatTitle: newChat.title,
+              stepIndex,
+              startImmediately,
+            });
+            showSuccess('Step added', `Created "${newChat.title}"`);
             setActiveStepIndex(stepIndex);
             handleCloseAddStepDialog();
 
             if (startImmediately && newChat.initialPrompt) {
+              logger.debug('Auto-starting new step', {
+                chatId: newChat.id,
+                chatTitle: newChat.title,
+              });
               try {
                 const process = await runExecutor.mutateAsync({
                   chatId: newChat.id,
@@ -598,14 +852,28 @@ export function useTaskSession({
                   executorProfileId: newChat.executorProfileId,
                 });
                 setActiveProcessId(process.id);
+                logger.info('New step started', {
+                  chatId: newChat.id,
+                  processId: process.id,
+                });
               } catch (error) {
                 const message = error instanceof Error ? error.message : 'Unknown error';
-                onError?.('Failed to start step', message);
+                logger.error('Failed to auto-start new step', {
+                  chatId: newChat.id,
+                  error: message,
+                });
+                showError('Failed to start step', message);
               }
             }
           },
           onError: (error) => {
-            onError?.('Failed to add step', error.message);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            logger.error('Failed to create step', {
+              taskId: task.id,
+              stepTitle,
+              error: message,
+            });
+            showError('Failed to add step', message);
           },
         }
       );
@@ -617,8 +885,8 @@ export function useTaskSession({
       createChat,
       runExecutor,
       addStepDialog,
-      onSuccess,
-      onError,
+      showSuccess,
+      showError,
       handleCloseAddStepDialog,
     ]
   );
@@ -628,7 +896,16 @@ export function useTaskSession({
   // =========================================================================
   const handleSendMessage = useCallback(
     async (content: string) => {
-      if (!activeChatId) return;
+      if (!activeChatId) {
+        logger.warn('handleSendMessage called without active chat');
+        return;
+      }
+
+      logger.debug('Sending message', {
+        chatId: activeChatId,
+        contentLength: content.length,
+        executorProfileId: selectedExecutorProfileId,
+      });
 
       createMessage.mutate({
         chatId: activeChatId,
@@ -643,41 +920,66 @@ export function useTaskSession({
           executorProfileId: selectedExecutorProfileId,
         });
         setActiveProcessId(process.id);
+        logger.info('Executor started after message', {
+          chatId: activeChatId,
+          processId: process.id,
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        onError?.('Failed to run executor', message);
+        logger.error('Failed to run executor after message', {
+          chatId: activeChatId,
+          error: message,
+        });
+        showError('Failed to run executor', message);
       }
     },
-    [activeChatId, createMessage, runExecutor, selectedExecutorProfileId, onError]
+    [activeChatId, createMessage, runExecutor, selectedExecutorProfileId, showError]
   );
 
   const handleStopProcess = useCallback(() => {
-    if (!activeProcessId) return;
+    if (!activeProcessId) {
+      logger.warn('handleStopProcess called without active process');
+      return;
+    }
+
+    logger.debug('Stopping process', { processId: activeProcessId });
+
     killProcess.mutate(activeProcessId, {
       onSuccess: () => {
+        logger.info('Process stopped', { processId: activeProcessId });
         setActiveProcessId(null);
-        onSuccess?.('Process stopped', 'The executor process has been stopped');
+        showSuccess('Process stopped', 'The executor process has been stopped');
       },
       onError: (error) => {
         const message = error instanceof Error ? error.message : 'Unknown error';
-        onError?.('Failed to stop process', message);
+        logger.error('Failed to stop process', {
+          processId: activeProcessId,
+          error: message,
+        });
+        showError('Failed to stop process', message);
       },
     });
-  }, [activeProcessId, killProcess, onSuccess, onError]);
+  }, [activeProcessId, killProcess, showSuccess, showError]);
 
   // =========================================================================
   // Callbacks - Navigation
   // =========================================================================
   const handleBack = useCallback(() => {
     if (task?.projectId) {
+      logger.debug('Navigating back to project', { projectId: task.projectId });
       onNavigate?.('/projects/$projectId', { projectId: task.projectId });
     } else {
+      logger.debug('Navigating back to tasks list');
       onNavigate?.('/tasks');
     }
   }, [task?.projectId, onNavigate]);
 
   const handleCreatePR = useCallback(() => {
-    if (!task) return;
+    if (!task) {
+      logger.warn('handleCreatePR called without task');
+      return;
+    }
+    logger.debug('Opening Create PR dialog', { taskId: task.id, taskTitle: task.title });
     setCreatePRDialog({
       isOpen: true,
       title: task.title,
@@ -691,6 +993,7 @@ export function useTaskSession({
   // Callbacks - Create PR Dialog
   // =========================================================================
   const handleClosePRDialog = useCallback(() => {
+    logger.debug('Closing Create PR dialog');
     setCreatePRDialog((prev) => ({ ...prev, isOpen: false, error: null }));
   }, []);
 
@@ -708,7 +1011,17 @@ export function useTaskSession({
 
   const handleSubmitPR = useCallback(
     (data: { title: string; body: string; base?: string; draft?: boolean }) => {
-      if (!task) return;
+      if (!task) {
+        logger.warn('handleSubmitPR called without task');
+        return;
+      }
+
+      logger.debug('Submitting PR', {
+        taskId: task.id,
+        prTitle: data.title,
+        base: data.base,
+        draft: data.draft,
+      });
 
       createPullRequest.mutate(
         {
@@ -720,7 +1033,12 @@ export function useTaskSession({
         },
         {
           onSuccess: (result) => {
-            onSuccess?.('Pull Request Created', `View at ${result.url}`);
+            logger.info('Pull Request created', {
+              taskId: task.id,
+              prNumber: result.number,
+              prUrl: result.url,
+            });
+            showSuccess('Pull Request Created', `View at ${result.url}`);
             handleClosePRDialog();
             // Optionally open the PR URL in browser
             if (typeof window !== 'undefined') {
@@ -729,19 +1047,25 @@ export function useTaskSession({
           },
           onError: (error) => {
             const message = error instanceof Error ? error.message : 'Failed to create PR';
+            logger.error('Failed to create PR', {
+              taskId: task.id,
+              prTitle: data.title,
+              error: message,
+            });
             setCreatePRDialog((prev) => ({ ...prev, error: message }));
-            onError?.('Failed to create PR', message);
+            showError('Failed to create PR', message);
           },
         }
       );
     },
-    [task, createPullRequest, onSuccess, onError, handleClosePRDialog]
+    [task, createPullRequest, showSuccess, showError, handleClosePRDialog]
   );
 
   // =========================================================================
   // Callbacks - More Actions Menu
   // =========================================================================
   const handleMoreActions = useCallback((event?: React.MouseEvent) => {
+    logger.debug('Opening more actions menu');
     const rect = (event?.currentTarget as HTMLElement)?.getBoundingClientRect();
     setMoreMenuState({
       isOpen: true,
@@ -753,26 +1077,43 @@ export function useTaskSession({
   }, []);
 
   const handleCloseMoreMenu = useCallback(() => {
+    logger.debug('Closing more actions menu');
     setMoreMenuState((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
   const handleArchiveTask = useCallback(async () => {
-    if (!task) return;
+    if (!task) {
+      logger.warn('handleArchiveTask called without task');
+      return;
+    }
     handleCloseMoreMenu();
+
+    logger.debug('Archiving task', { taskId: task.id, taskTitle: task.title });
 
     try {
       await archiveTask.mutateAsync(task.id);
-      onSuccess?.('Task archived', 'The task has been moved to the archive.');
+      logger.info('Task archived', { taskId: task.id, taskTitle: task.title });
+      showSuccess('Task archived', 'The task has been moved to the archive.');
       onNavigate?.('/tasks');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      onError?.('Failed to archive task', message);
+      logger.error('Failed to archive task', {
+        taskId: task.id,
+        taskTitle: task.title,
+        error: message,
+      });
+      showError('Failed to archive task', message);
     }
-  }, [task, archiveTask, handleCloseMoreMenu, onSuccess, onError, onNavigate]);
+  }, [task, archiveTask, handleCloseMoreMenu, showSuccess, showError, onNavigate]);
 
   const handleDeleteTask = useCallback(() => {
-    if (!task) return;
+    if (!task) {
+      logger.warn('handleDeleteTask called without task');
+      return;
+    }
     handleCloseMoreMenu();
+
+    logger.debug('Opening delete confirmation dialog', { taskId: task.id, taskTitle: task.title });
 
     confirm({
       title: 'Delete Task',
@@ -781,22 +1122,30 @@ export function useTaskSession({
       cancelLabel: 'Cancel',
       variant: 'destructive',
       onConfirm: async () => {
+        logger.debug('Delete confirmed', { taskId: task.id, taskTitle: task.title });
         try {
           await deleteTask.mutateAsync(task.id);
-          onSuccess?.('Task deleted', 'The task has been permanently deleted.');
+          logger.info('Task deleted', { taskId: task.id, taskTitle: task.title });
+          showSuccess('Task deleted', 'The task has been permanently deleted.');
           onNavigate?.('/tasks');
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error';
-          onError?.('Failed to delete task', message);
+          logger.error('Failed to delete task', {
+            taskId: task.id,
+            taskTitle: task.title,
+            error: message,
+          });
+          showError('Failed to delete task', message);
         }
       },
     });
-  }, [task, handleCloseMoreMenu, confirm, deleteTask, onSuccess, onError, onNavigate]);
+  }, [task, handleCloseMoreMenu, confirm, deleteTask, showSuccess, showError, onNavigate]);
 
   // =========================================================================
   // Callbacks - File/Commit Toggles
   // =========================================================================
   const handleFileToggle = useCallback((path: string) => {
+    logger.debug('Toggling file expansion', { path });
     setExpandedDiffFiles((prev) => {
       const next = new Set(prev);
       if (next.has(path)) {
@@ -809,6 +1158,7 @@ export function useTaskSession({
   }, []);
 
   const handleCommitToggle = useCallback((hash: string) => {
+    logger.debug('Toggling commit expansion', { hash });
     setExpandedCommits((prev) => {
       const next = new Set(prev);
       if (next.has(hash)) {
@@ -820,9 +1170,9 @@ export function useTaskSession({
     });
   }, []);
 
-  const handleViewCommit = useCallback((_hash: string) => {
+  const handleViewCommit = useCallback((hash: string) => {
     // TODO: Show commit diff
-    console.log('View commit clicked');
+    logger.debug('View commit clicked', { hash });
   }, []);
 
   // =========================================================================
@@ -830,20 +1180,35 @@ export function useTaskSession({
   // =========================================================================
   const handleOpenArtifact = useCallback(
     (artifact: ArtifactFile) => {
-      openArtifact.mutate(artifact.path, {
-        onError: (error) => {
-          onError?.('Failed to open artifact', error.message);
-        },
-      });
+      logger.debug('Opening artifact', { path: artifact.path, name: artifact.name });
+      openArtifact.mutate(
+        { path: artifact.path, fileName: artifact.name },
+        {
+          onSuccess: () => {
+            logger.info('Artifact opened', { path: artifact.path, name: artifact.name });
+          },
+          onError: (error) => {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            logger.error('Failed to open artifact', {
+              path: artifact.path,
+              name: artifact.name,
+              error: message,
+            });
+            showError('Failed to open artifact', message);
+          },
+        }
+      );
     },
-    [openArtifact, onError]
+    [openArtifact, showError]
   );
 
   const handlePreviewArtifact = useCallback((artifact: ArtifactFile) => {
+    logger.debug('Opening artifact preview', { path: artifact.path, name: artifact.name });
     setPreviewArtifact(artifact);
   }, []);
 
   const handleClosePreview = useCallback(() => {
+    logger.debug('Closing artifact preview');
     setPreviewArtifact(null);
   }, []);
 

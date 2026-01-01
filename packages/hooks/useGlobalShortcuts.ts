@@ -10,6 +10,7 @@
  * - Cmd+N: Create new task
  * - Cmd+,: Open settings
  */
+import { createLogger } from '@openflow/utils';
 import {
   createContext,
   useCallback,
@@ -19,6 +20,8 @@ import {
   useRef,
   useState,
 } from 'react';
+
+const logger = createLogger('useGlobalShortcuts');
 
 export interface GlobalShortcutsContextValue {
   /**
@@ -80,6 +83,10 @@ let registrationIdCounter = 0;
 export function useGlobalShortcutsProvider(
   navigate?: (path: string) => void
 ): GlobalShortcutsContextValue {
+  logger.debug('useGlobalShortcutsProvider initialized', {
+    hasNavigate: !!navigate,
+  });
+
   // Use refs for handlers to avoid re-registering event listeners
   // Store as registration objects to prevent race conditions
   const newTaskHandlerRef = useRef<HandlerRegistration | null>(null);
@@ -93,12 +100,14 @@ export function useGlobalShortcutsProvider(
     const id = ++registrationIdCounter;
     newTaskHandlerRef.current = { id, handler };
     setHasNewTaskHandler(true);
+    logger.debug('New task handler registered', { registrationId: id });
 
     return () => {
       // Only clear if this is still the current registration (prevents race conditions)
       if (newTaskHandlerRef.current?.id === id) {
         newTaskHandlerRef.current = null;
         setHasNewTaskHandler(false);
+        logger.debug('New task handler unregistered', { registrationId: id });
       }
     };
   }, []);
@@ -107,33 +116,48 @@ export function useGlobalShortcutsProvider(
     const id = ++registrationIdCounter;
     settingsHandlerRef.current = { id, handler };
     setHasSettingsHandler(true);
+    logger.debug('Settings handler registered', { registrationId: id });
 
     return () => {
       // Only clear if this is still the current registration (prevents race conditions)
       if (settingsHandlerRef.current?.id === id) {
         settingsHandlerRef.current = null;
         setHasSettingsHandler(false);
+        logger.debug('Settings handler unregistered', { registrationId: id });
       }
     };
   }, []);
 
   const triggerNewTask = useCallback(() => {
     if (newTaskHandlerRef.current) {
+      logger.info('Triggering new task action (programmatic)', {
+        registrationId: newTaskHandlerRef.current.id,
+      });
       newTaskHandlerRef.current.handler();
+    } else {
+      logger.debug('New task trigger called but no handler registered');
     }
   }, []);
 
   const triggerSettings = useCallback(() => {
     if (settingsHandlerRef.current) {
+      logger.info('Triggering settings action (programmatic)', {
+        registrationId: settingsHandlerRef.current.id,
+      });
       settingsHandlerRef.current.handler();
     } else if (navigate) {
       // Fallback: navigate to settings if no custom handler
+      logger.info('Triggering settings fallback navigation', { path: '/settings' });
       navigate('/settings');
+    } else {
+      logger.debug('Settings trigger called but no handler or navigate function');
     }
   }, [navigate]);
 
   // Register global keyboard event listeners
   useEffect(() => {
+    logger.debug('Setting up global keyboard event listeners');
+
     const handler = (e: KeyboardEvent) => {
       const isMeta = e.metaKey || e.ctrlKey;
 
@@ -141,25 +165,40 @@ export function useGlobalShortcutsProvider(
       if (isMeta && e.key.toLowerCase() === 'n' && !e.shiftKey && !e.altKey) {
         if (newTaskHandlerRef.current) {
           e.preventDefault();
+          logger.info('Keyboard shortcut activated: Cmd+N (new task)', {
+            registrationId: newTaskHandlerRef.current.id,
+          });
           newTaskHandlerRef.current.handler();
           return;
         }
+        logger.debug('Cmd+N pressed but no handler registered, allowing default behavior');
       }
 
       // Cmd+,: Settings (common Mac shortcut for preferences)
       if (isMeta && e.key === ',' && !e.shiftKey && !e.altKey) {
         e.preventDefault();
         if (settingsHandlerRef.current) {
+          logger.info('Keyboard shortcut activated: Cmd+, (settings)', {
+            registrationId: settingsHandlerRef.current.id,
+          });
           settingsHandlerRef.current.handler();
         } else if (navigate) {
+          logger.info('Keyboard shortcut activated: Cmd+, (settings fallback navigation)', {
+            path: '/settings',
+          });
           navigate('/settings');
+        } else {
+          logger.debug('Cmd+, pressed but no handler or navigate function');
         }
         return;
       }
     };
 
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return () => {
+      logger.debug('Cleaning up global keyboard event listeners');
+      window.removeEventListener('keydown', handler);
+    };
   }, [navigate]);
 
   return useMemo(
@@ -199,7 +238,11 @@ export function useGlobalShortcutsProvider(
 export function useGlobalShortcuts(): GlobalShortcutsContextValue {
   const context = useContext(GlobalShortcutsContext);
   if (!context) {
-    throw new Error('useGlobalShortcuts must be used within a GlobalShortcutsProvider');
+    const error = new Error('useGlobalShortcuts must be used within a GlobalShortcutsProvider');
+    logger.error('useGlobalShortcuts called outside of GlobalShortcutsProvider', {
+      error: error.message,
+    });
+    throw error;
   }
   return context;
 }
@@ -217,7 +260,12 @@ export function useNewTaskShortcut(handler: () => void): void {
   const { registerNewTaskHandler } = useGlobalShortcuts();
 
   useEffect(() => {
-    return registerNewTaskHandler(handler);
+    logger.debug('useNewTaskShortcut: Registering handler');
+    const unregister = registerNewTaskHandler(handler);
+    return () => {
+      logger.debug('useNewTaskShortcut: Unregistering handler (unmount)');
+      unregister();
+    };
   }, [registerNewTaskHandler, handler]);
 }
 
@@ -234,6 +282,11 @@ export function useSettingsShortcut(handler: () => void): void {
   const { registerSettingsHandler } = useGlobalShortcuts();
 
   useEffect(() => {
-    return registerSettingsHandler(handler);
+    logger.debug('useSettingsShortcut: Registering handler');
+    const unregister = registerSettingsHandler(handler);
+    return () => {
+      logger.debug('useSettingsShortcut: Unregistering handler (unmount)');
+      unregister();
+    };
   }, [registerSettingsHandler, handler]);
 }

@@ -1,4 +1,7 @@
+import { createLogger } from '@openflow/utils';
 import { useCallback, useEffect, useRef } from 'react';
+
+const logger = createLogger('useKeyboardShortcuts');
 
 /**
  * Configuration for a keyboard shortcut.
@@ -70,6 +73,25 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]): void {
   const shortcutsRef = useRef(shortcuts);
   shortcutsRef.current = shortcuts;
 
+  // Track if we've logged initialization for this set of shortcuts
+  const hasLoggedInitRef = useRef(false);
+
+  // Log initialization on first render with shortcuts info
+  if (!hasLoggedInitRef.current && shortcuts.length > 0) {
+    const shortcutDescriptions = shortcuts.map((s) => {
+      const modifiers = [s.meta && 'meta', s.shift && 'shift', s.alt && 'alt']
+        .filter(Boolean)
+        .join('+');
+      const keyCombo = modifiers ? `${modifiers}+${s.key}` : s.key;
+      return s.description ? `${keyCombo} (${s.description})` : keyCombo;
+    });
+    logger.debug('Registering keyboard shortcuts', {
+      count: shortcuts.length,
+      shortcuts: shortcutDescriptions,
+    });
+    hasLoggedInitRef.current = true;
+  }
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     for (const shortcut of shortcutsRef.current) {
       // Check meta key (Cmd on Mac, Ctrl on Windows/Linux)
@@ -89,6 +111,22 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]): void {
         // Check optional condition
         if (!shortcut.when || shortcut.when()) {
           e.preventDefault();
+
+          // Build shortcut label for logging
+          const modifiers = [
+            shortcut.meta && 'Meta',
+            shortcut.shift && 'Shift',
+            shortcut.alt && 'Alt',
+          ]
+            .filter(Boolean)
+            .join('+');
+          const keyCombo = modifiers ? `${modifiers}+${shortcut.key}` : shortcut.key;
+
+          logger.info('Keyboard shortcut activated', {
+            shortcut: keyCombo,
+            description: shortcut.description,
+          });
+
           shortcut.action();
           return;
         }
@@ -97,8 +135,12 @@ export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]): void {
   }, []);
 
   useEffect(() => {
+    logger.debug('Setting up keyboard event listener');
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      logger.debug('Cleaning up keyboard event listener');
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [handleKeyDown]);
 }
 

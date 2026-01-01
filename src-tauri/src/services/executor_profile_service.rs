@@ -2,7 +2,21 @@
 //!
 //! Handles CRUD operations for executor profiles (CLI tool configurations).
 //! Manages the is_default constraint ensuring only one profile is default at a time.
+//!
+//! ## Logging
+//!
+//! This service uses the `log` crate for structured logging:
+//! - `debug!`: Detailed operation tracing (query params, internal steps)
+//! - `info!`: Successful operations (create, update, delete, set default)
+//! - `warn!`: Potentially problematic but recoverable situations
+//! - `error!`: Operation failures (logged before returning error)
+//!
+//! ## Error Handling
+//!
+//! All functions return `ServiceResult<T>` which wraps errors in `ServiceError`.
+//! Errors are logged at the appropriate level before being returned.
 
+use log::{debug, error, info};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
@@ -15,7 +29,14 @@ pub struct ExecutorProfileService;
 
 impl ExecutorProfileService {
     /// List all executor profiles ordered by name.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    ///
+    /// Returns all profiles ordered alphabetically by name.
     pub async fn list(pool: &SqlitePool) -> ServiceResult<Vec<ExecutorProfile>> {
+        debug!("Listing all executor profiles");
+
         let profiles = sqlx::query_as::<_, ExecutorProfile>(
             r#"
             SELECT
@@ -34,13 +55,26 @@ impl ExecutorProfileService {
             "#,
         )
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to list executor profiles: {}", e);
+            ServiceError::Database(e)
+        })?;
 
+        debug!("Found {} executor profiles", profiles.len());
         Ok(profiles)
     }
 
     /// Get an executor profile by ID.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Profile ID to fetch
+    ///
+    /// Returns the profile if found, or `ServiceError::NotFound`.
     pub async fn get(pool: &SqlitePool, id: &str) -> ServiceResult<ExecutorProfile> {
+        debug!("Getting executor profile id={}", id);
+
         let profile = sqlx::query_as::<_, ExecutorProfile>(
             r#"
             SELECT
@@ -60,17 +94,36 @@ impl ExecutorProfileService {
         )
         .bind(id)
         .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| ServiceError::NotFound {
-            entity: "ExecutorProfile",
-            id: id.to_string(),
+        .await
+        .map_err(|e| {
+            error!(
+                "Database error while fetching executor profile id={}: {}",
+                id, e
+            );
+            ServiceError::Database(e)
+        })?
+        .ok_or_else(|| {
+            debug!("Executor profile not found: id={}", id);
+            ServiceError::NotFound {
+                entity: "ExecutorProfile",
+                id: id.to_string(),
+            }
         })?;
 
+        debug!("Found executor profile id={}, name={}", id, profile.name);
         Ok(profile)
     }
 
     /// Create a new executor profile.
-    /// If is_default is true, clears default from all other profiles.
+    ///
+    /// If is_default is true, clears default from all other profiles first
+    /// to ensure only one profile is marked as default.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `request` - Profile creation request
+    ///
+    /// Returns the created profile.
     pub async fn create(
         pool: &SqlitePool,
         request: CreateExecutorProfileRequest,
@@ -78,8 +131,14 @@ impl ExecutorProfileService {
         let id = Uuid::new_v4().to_string();
         let is_default = request.is_default.unwrap_or(false);
 
+        debug!(
+            "Creating executor profile: id={}, name={}, command={}, is_default={}",
+            id, request.name, request.command, is_default
+        );
+
         // If this profile should be default, clear default from all others
         if is_default {
+            debug!("New profile will be default, clearing existing defaults");
             Self::clear_all_defaults(pool).await?;
         }
 
@@ -100,18 +159,43 @@ impl ExecutorProfileService {
         .bind(&request.model)
         .bind(is_default)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to create executor profile: name={}, command={}, error={}",
+                request.name, request.command, e
+            );
+            ServiceError::Database(e)
+        })?;
 
-        Self::get(pool, &id).await
+        // Fetch and return the created profile
+        let profile = Self::get(pool, &id).await?;
+
+        info!(
+            "Created executor profile: id={}, name={}, command={}, is_default={}",
+            id, profile.name, profile.command, profile.is_default
+        );
+        Ok(profile)
     }
 
     /// Update an existing executor profile.
-    /// If is_default is set to true, clears default from all other profiles.
+    ///
+    /// If is_default is set to true and wasn't before, clears default from all
+    /// other profiles to ensure only one profile is marked as default.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Profile ID to update
+    /// * `request` - Partial update request (None fields preserve existing values)
+    ///
+    /// Returns the updated profile.
     pub async fn update(
         pool: &SqlitePool,
         id: &str,
         request: UpdateExecutorProfileRequest,
     ) -> ServiceResult<ExecutorProfile> {
+        debug!("Updating executor profile id={}", id);
+
         // Verify the profile exists first
         let existing = Self::get(pool, id).await?;
 
@@ -126,6 +210,10 @@ impl ExecutorProfileService {
 
         // If setting this profile as default, clear default from all others
         if is_default && !existing.is_default {
+            debug!(
+                "Profile id={} being set as default, clearing existing defaults",
+                id
+            );
             Self::clear_all_defaults(pool).await?;
         }
 
@@ -153,26 +241,59 @@ impl ExecutorProfileService {
         .bind(is_default)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to update executor profile id={}: {}", id, e);
+            ServiceError::Database(e)
+        })?;
 
-        Self::get(pool, id).await
+        let profile = Self::get(pool, id).await?;
+
+        info!(
+            "Updated executor profile: id={}, name={}, is_default={}",
+            id, profile.name, profile.is_default
+        );
+        Ok(profile)
     }
 
     /// Delete an executor profile by ID.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `id` - Profile ID to delete
+    ///
+    /// Returns `Ok(())` on success, or `ServiceError::NotFound` if profile doesn't exist.
     pub async fn delete(pool: &SqlitePool, id: &str) -> ServiceResult<()> {
-        // Verify the profile exists first
-        Self::get(pool, id).await?;
+        debug!("Deleting executor profile id={}", id);
+
+        // Verify the profile exists first and get details for logging
+        let existing = Self::get(pool, id).await?;
 
         sqlx::query("DELETE FROM executor_profiles WHERE id = ?")
             .bind(id)
             .execute(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to delete executor profile id={}: {}", id, e);
+                ServiceError::Database(e)
+            })?;
 
+        info!(
+            "Deleted executor profile: id={}, name={}",
+            id, existing.name
+        );
         Ok(())
     }
 
     /// Get the default executor profile.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    ///
+    /// Returns the default profile if one exists, or `None`.
     pub async fn get_default(pool: &SqlitePool) -> ServiceResult<Option<ExecutorProfile>> {
+        debug!("Getting default executor profile");
+
         let profile = sqlx::query_as::<_, ExecutorProfile>(
             r#"
             SELECT
@@ -192,14 +313,30 @@ impl ExecutorProfileService {
             "#,
         )
         .fetch_optional(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to get default executor profile: {}", e);
+            ServiceError::Database(e)
+        })?;
+
+        match &profile {
+            Some(p) => debug!(
+                "Found default executor profile: id={}, name={}",
+                p.id, p.name
+            ),
+            None => debug!("No default executor profile found"),
+        }
 
         Ok(profile)
     }
 
     /// Clear the is_default flag from all profiles.
+    ///
+    /// Internal helper used when setting a new default profile.
     async fn clear_all_defaults(pool: &SqlitePool) -> ServiceResult<()> {
-        sqlx::query(
+        debug!("Clearing is_default from all executor profiles");
+
+        let result = sqlx::query(
             r#"
             UPDATE executor_profiles
             SET is_default = FALSE, updated_at = datetime('now', 'subsec')
@@ -207,22 +344,43 @@ impl ExecutorProfileService {
             "#,
         )
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!("Failed to clear default executor profiles: {}", e);
+            ServiceError::Database(e)
+        })?;
 
+        debug!(
+            "Cleared is_default from {} executor profiles",
+            result.rows_affected()
+        );
         Ok(())
     }
 
     /// Seed the default Claude Code executor profile if no profiles exist.
     ///
     /// This ensures there's always at least one executor profile available
-    /// for running AI coding CLI tools.
+    /// for running AI coding CLI tools. Called during application initialization.
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    ///
+    /// Returns `Ok(())` whether a profile was created or already existed.
     pub async fn seed_default_profile(pool: &SqlitePool) -> ServiceResult<()> {
+        debug!("Checking if default executor profile needs to be seeded");
+
         // Check if any profiles exist
         let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM executor_profiles")
             .fetch_one(pool)
-            .await?;
+            .await
+            .map_err(|e| {
+                error!("Failed to count executor profiles: {}", e);
+                ServiceError::Database(e)
+            })?;
 
         if count == 0 {
+            debug!("No executor profiles exist, creating default Claude Code profile");
+
             // Create the default Claude Code profile
             let request = CreateExecutorProfileRequest {
                 name: "Claude Code".to_string(),
@@ -235,7 +393,9 @@ impl ExecutorProfileService {
             };
 
             Self::create(pool, request).await?;
-            println!("Created default Claude Code executor profile");
+            info!("Seeded default Claude Code executor profile");
+        } else {
+            debug!("Found {} existing executor profiles, skipping seed", count);
         }
 
         Ok(())

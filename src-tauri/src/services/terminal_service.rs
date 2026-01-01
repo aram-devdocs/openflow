@@ -3,10 +3,26 @@
 //! This service manages terminal processes that allow users to run interactive
 //! shell commands within a project's working directory. Unlike executor processes,
 //! terminals spawn a user's default shell and persist until explicitly closed.
+//!
+//! ## Logging
+//!
+//! This module uses structured logging at the following levels:
+//! - `debug`: Function entry, parameter details, intermediate steps
+//! - `info`: Successful terminal spawn/resize, shell detection results
+//! - `warn`: Unusual conditions (custom cwd, unknown shell types)
+//! - `error`: Failed operations with context
+//!
+//! ## Error Handling
+//!
+//! All public functions return `ServiceResult<T>` with:
+//! - `ServiceError::Validation` for invalid paths, cwd outside project boundaries
+//! - `ServiceError::NotFound` for missing projects/chats
+//! - Errors from underlying services (ProcessService, ChatService)
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 
 use crate::services::process_service::{CreateProcessRequest, StartProcessRequest};
@@ -57,13 +73,25 @@ impl TerminalService {
     /// On Unix, checks $SHELL environment variable, falling back to /bin/bash.
     /// On Windows, uses cmd.exe.
     pub fn get_default_shell() -> ServiceResult<String> {
+        debug!("Detecting default shell for platform");
+
         #[cfg(unix)]
         {
-            Ok(std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string()))
+            let shell = std::env::var("SHELL").unwrap_or_else(|_| {
+                debug!("$SHELL not set, falling back to /bin/bash");
+                "/bin/bash".to_string()
+            });
+            info!("Default shell detected: {}", shell);
+            Ok(shell)
         }
         #[cfg(windows)]
         {
-            Ok(std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".to_string()))
+            let shell = std::env::var("COMSPEC").unwrap_or_else(|_| {
+                debug!("$COMSPEC not set, falling back to cmd.exe");
+                "cmd.exe".to_string()
+            });
+            info!("Default shell detected: {}", shell);
+            Ok(shell)
         }
     }
 
@@ -71,6 +99,8 @@ impl TerminalService {
     ///
     /// Sets up a clean terminal environment with proper TERM settings.
     pub fn build_environment() -> ServiceResult<HashMap<String, String>> {
+        debug!("Building terminal environment variables");
+
         let mut env = HashMap::new();
         // Set TERM for proper terminal emulation
         env.insert("TERM".to_string(), "xterm-256color".to_string());
@@ -78,6 +108,11 @@ impl TerminalService {
         env.insert("COLORTERM".to_string(), "truecolor".to_string());
         // Ensure interactive mode hints
         env.insert("OPENFLOW_TERMINAL".to_string(), "1".to_string());
+
+        debug!(
+            "Terminal environment built with {} variables: TERM=xterm-256color, COLORTERM=truecolor, OPENFLOW_TERMINAL=1",
+            env.len()
+        );
         Ok(env)
     }
 
@@ -85,6 +120,8 @@ impl TerminalService {
     ///
     /// Adds flags to ensure the shell runs interactively.
     pub fn build_shell_args(shell: &str) -> ServiceResult<Vec<String>> {
+        debug!("Building shell arguments for: {}", shell);
+
         // Determine shell type from path
         let shell_name = shell
             .rsplit('/')
@@ -93,6 +130,8 @@ impl TerminalService {
             .rsplit('\\')
             .next()
             .unwrap_or(shell);
+
+        debug!("Detected shell name: {}", shell_name);
 
         let args = match shell_name {
             "bash" => vec!["-i".to_string()], // Interactive
@@ -103,13 +142,28 @@ impl TerminalService {
             "powershell.exe" | "powershell" | "pwsh.exe" | "pwsh" => {
                 vec!["-NoLogo".to_string(), "-NoExit".to_string()]
             }
-            _ => vec![], // Unknown shell, no special args
+            _ => {
+                warn!(
+                    "Unknown shell type '{}', no special arguments will be added",
+                    shell_name
+                );
+                vec![]
+            }
         };
+
+        if args.is_empty() {
+            debug!("No special arguments for shell '{}'", shell_name);
+        } else {
+            debug!("Shell arguments for '{}': {:?}", shell_name, args);
+        }
+
         Ok(args)
     }
 
     /// Create the process record request for a terminal.
     pub fn create_process_request(chat_id: &str) -> ServiceResult<CreateProcessRequest> {
+        debug!("Creating terminal process request for chat_id={}", chat_id);
+
         Ok(CreateProcessRequest {
             chat_id: chat_id.to_string(),
             executor_profile_id: None,
@@ -128,14 +182,26 @@ impl TerminalService {
         cols: Option<u16>,
         rows: Option<u16>,
     ) -> StartProcessRequest {
+        let final_cols = cols.unwrap_or(120);
+        let final_rows = rows.unwrap_or(30);
+
+        debug!(
+            "Creating terminal start request: shell={}, args={:?}, cwd={}, cols={}, rows={}",
+            shell,
+            args,
+            cwd.display(),
+            final_cols,
+            final_rows
+        );
+
         StartProcessRequest {
             command: shell,
             args,
             cwd: Some(cwd),
             env,
             use_pty: true,
-            pty_cols: Some(cols.unwrap_or(120)),
-            pty_rows: Some(rows.unwrap_or(30)),
+            pty_cols: Some(final_cols),
+            pty_rows: Some(final_rows),
         }
     }
 
@@ -150,22 +216,57 @@ impl TerminalService {
         pool: &SqlitePool,
         request: SpawnTerminalRequest,
     ) -> ServiceResult<TerminalContext> {
+        info!(
+            "Preparing terminal session for project_id={}, chat_id={:?}, custom_cwd={}, custom_shell={}",
+            request.project_id,
+            request.chat_id,
+            request.cwd.is_some(),
+            request.shell.is_some()
+        );
+
         // 1. Get the project
-        let project = ProjectService::get(pool, &request.project_id).await?;
+        debug!("Step 1: Fetching project {}", request.project_id);
+        let project = ProjectService::get(pool, &request.project_id)
+            .await
+            .map_err(|e| {
+                error!(
+                    "Failed to fetch project for terminal: project_id={}, error={}",
+                    request.project_id, e
+                );
+                e
+            })?;
+        debug!(
+            "Project fetched: name={}, path={}",
+            project.name, project.git_repo_path
+        );
 
         // 2. Resolve chat ID - use provided or create a standalone terminal chat
+        debug!("Step 2: Resolving chat ID");
         let chat_id = match request.chat_id {
             Some(id) => {
+                debug!("Verifying provided chat_id={} belongs to project", id);
                 // Verify the chat exists and belongs to this project
-                let chat = ChatService::get(pool, &id).await?;
+                let chat = ChatService::get(pool, &id).await.map_err(|e| {
+                    error!(
+                        "Failed to fetch chat for terminal: chat_id={}, error={}",
+                        id, e
+                    );
+                    e
+                })?;
                 if chat.chat.project_id != project.id {
+                    error!(
+                        "Chat project mismatch: chat.project_id={}, expected={}",
+                        chat.chat.project_id, project.id
+                    );
                     return Err(ServiceError::Validation(
                         "Chat does not belong to the specified project".to_string(),
                     ));
                 }
+                debug!("Chat verified: chat_id={}", id);
                 id
             }
             None => {
+                debug!("Creating standalone terminal chat for project");
                 // Create a standalone terminal chat
                 use crate::types::CreateChatRequest;
                 let chat_request = CreateChatRequest {
@@ -181,25 +282,43 @@ impl TerminalService {
                     main_chat_id: None,
                     workflow_step_index: None,
                 };
-                let chat = ChatService::create(pool, chat_request).await?;
+                let chat = ChatService::create(pool, chat_request).await.map_err(|e| {
+                    error!(
+                        "Failed to create terminal chat: project_id={}, error={}",
+                        project.id, e
+                    );
+                    e
+                })?;
+                info!("Created standalone terminal chat: chat_id={}", chat.id);
                 chat.id
             }
         };
 
         // 3. Determine and validate working directory
+        debug!("Step 3: Validating working directory");
         let project_root = std::fs::canonicalize(&project.git_repo_path).map_err(|e| {
+            error!(
+                "Failed to resolve project path: path={}, error={}",
+                project.git_repo_path, e
+            );
             ServiceError::Validation(format!(
                 "Failed to resolve project path {}: {}",
                 project.git_repo_path, e
             ))
         })?;
 
+        let has_custom_cwd = request.cwd.is_some();
         let cwd = request
             .cwd
             .unwrap_or_else(|| PathBuf::from(&project.git_repo_path));
 
+        if has_custom_cwd {
+            warn!("Custom working directory specified: {}", cwd.display());
+        }
+
         // Validate working directory exists
         if !cwd.exists() {
+            error!("Working directory does not exist: {}", cwd.display());
             return Err(ServiceError::Validation(format!(
                 "Working directory does not exist: {}",
                 cwd.display()
@@ -208,6 +327,11 @@ impl TerminalService {
 
         // Canonicalize and validate cwd is within project boundaries (security)
         let cwd = std::fs::canonicalize(&cwd).map_err(|e| {
+            error!(
+                "Failed to resolve working directory: path={}, error={}",
+                cwd.display(),
+                e
+            );
             ServiceError::Validation(format!(
                 "Failed to resolve working directory {}: {}",
                 cwd.display(),
@@ -216,27 +340,41 @@ impl TerminalService {
         })?;
 
         if !cwd.starts_with(&project_root) {
+            error!(
+                "Security: working directory '{}' is outside project root '{}'",
+                cwd.display(),
+                project_root.display()
+            );
             return Err(ServiceError::Validation(
                 "Working directory must be within the project directory".to_string(),
             ));
         }
+        debug!("Working directory validated: {}", cwd.display());
 
         // 4. Determine shell
+        debug!("Step 4: Determining shell");
         let shell = match request.shell {
-            Some(s) => s,
+            Some(s) => {
+                info!("Using custom shell: {}", s);
+                s
+            }
             None => Self::get_default_shell()?,
         };
 
         // 5. Build shell arguments
+        debug!("Step 5: Building shell arguments");
         let args = Self::build_shell_args(&shell)?;
 
         // 6. Build environment
+        debug!("Step 6: Building environment");
         let env = Self::build_environment()?;
 
         // 7. Create process request
+        debug!("Step 7: Creating process request");
         let create_request = Self::create_process_request(&chat_id)?;
 
         // 8. Create start request
+        debug!("Step 8: Creating start request");
         let start_request = Self::create_start_request(
             shell.clone(),
             args,
@@ -244,6 +382,14 @@ impl TerminalService {
             env,
             request.cols,
             request.rows,
+        );
+
+        info!(
+            "Terminal session prepared successfully: project={}, chat_id={}, shell={}, cwd={}",
+            project.name,
+            chat_id,
+            shell,
+            cwd.display()
         );
 
         Ok(TerminalContext {
@@ -264,9 +410,30 @@ impl TerminalService {
         process_service: &ProcessService,
         context: TerminalContext,
     ) -> ServiceResult<ExecutionProcess> {
-        process_service
+        debug!(
+            "Spawning terminal process: chat_id={}, shell={}, cwd={}",
+            context.chat_id,
+            context.shell,
+            context.cwd.display()
+        );
+
+        let process = process_service
             .start(pool, context.create_request, context.start_request)
             .await
+            .map_err(|e| {
+                error!(
+                    "Failed to spawn terminal process: chat_id={}, shell={}, error={}",
+                    context.chat_id, context.shell, e
+                );
+                e
+            })?;
+
+        info!(
+            "Terminal spawned successfully: process_id={}, chat_id={}, shell={}, pid={:?}",
+            process.id, context.chat_id, context.shell, process.pid
+        );
+
+        Ok(process)
     }
 
     /// Prepare and spawn a terminal in one call.
@@ -277,6 +444,11 @@ impl TerminalService {
         process_service: &ProcessService,
         request: SpawnTerminalRequest,
     ) -> ServiceResult<ExecutionProcess> {
+        debug!(
+            "spawn_terminal: project_id={}, chat_id={:?}",
+            request.project_id, request.chat_id
+        );
+
         let context = Self::prepare(pool, request).await?;
         Self::spawn(pool, process_service, context).await
     }

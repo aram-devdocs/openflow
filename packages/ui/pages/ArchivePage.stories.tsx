@@ -3,24 +3,64 @@
  *
  * Demonstrates the complete archive page in various states:
  * - Default (with archived items)
- * - Loading state
+ * - Loading state with skeleton
+ * - Error state with retry button
  * - Empty states (no items per tab)
  * - With confirm dialog open
  * - Different tabs selected
  * - Mobile viewport
+ * - Accessibility demos
  */
 
 import type { Chat, Project, Task } from '@openflow/generated';
 import { ChatRole, TaskStatus } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
+import { useRef, useState } from 'react';
 import type { ArchiveTab } from '../organisms/ArchivePageComponents';
-import { ArchivePage, type ArchivePageProps } from './ArchivePage';
+import {
+  ArchivePage,
+  ArchivePageError,
+  type ArchivePageProps,
+  ArchivePageSkeleton,
+  DEFAULT_ERROR_TITLE,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_RETRY_LABEL,
+  DEFAULT_SKELETON_COUNT,
+  SR_EMPTY,
+  SR_ERROR_PREFIX,
+  SR_LOADED_PREFIX,
+  SR_LOADING,
+} from './ArchivePage';
 
 const meta: Meta<typeof ArchivePage> = {
   title: 'Pages/ArchivePage',
   component: ArchivePage,
   parameters: {
     layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+Archive page component with comprehensive accessibility support.
+
+## Features
+- **Page-level loading skeleton** - Shows skeleton UI during data loading
+- **Error state with retry** - Graceful error handling with retry option
+- **Empty state** - Contextual empty states for each tab
+- **Screen reader announcements** - Live regions for state changes
+- **Proper heading hierarchy** - h1 for page title
+- **Responsive layout** - Works on all screen sizes
+- **forwardRef support** - For focus management
+
+## Accessibility
+- ARIA live regions announce loading, error, and content states
+- Proper landmark structure
+- Touch targets ≥44px for WCAG 2.5.5
+- Focus management with forwardRef
+- Screen reader optimized state announcements
+        `,
+      },
+    },
   },
   tags: ['autodocs'],
   decorators: [
@@ -30,6 +70,29 @@ const meta: Meta<typeof ArchivePage> = {
       </div>
     ),
   ],
+  argTypes: {
+    isLoading: {
+      control: 'boolean',
+      description: 'Whether data is loading',
+    },
+    error: {
+      control: 'object',
+      description: 'Error object if an error occurred',
+    },
+    size: {
+      control: 'select',
+      options: ['sm', 'md', 'lg'],
+      description: 'Size variant for responsive layout',
+    },
+    'aria-label': {
+      control: 'text',
+      description: 'Custom aria-label for the page',
+    },
+    'data-testid': {
+      control: 'text',
+      description: 'Test ID for automated testing',
+    },
+  },
 };
 
 export default meta;
@@ -131,11 +194,8 @@ const mockProjectsMap: Record<string, string> = {
 // Helper functions
 // ============================================================================
 
-const noop = () => {};
-const noopTab = (_tab: ArchiveTab) => {};
-const noopTask = (_task: Task) => {};
-const noopChat = (_chat: Chat) => {};
-const noopProject = (_project: Project) => {};
+// Unused variables are prefixed with underscore to indicate they are intentionally unused
+// in these story mock functions
 
 // ============================================================================
 // Default Props Factory
@@ -147,39 +207,39 @@ function createDefaultProps(overrides?: Partial<ArchivePageProps>): ArchivePageP
     header: {
       archivedCount: mockArchivedTasks.length,
       activeTab: 'tasks' as ArchiveTab,
-      onSearch: noop,
+      onSearch: fn(),
     },
     tabBar: {
       activeTab: 'tasks' as ArchiveTab,
-      onTabChange: noopTab,
+      onTabChange: fn(),
       taskCount: mockArchivedTasks.length,
       chatCount: mockArchivedChats.length,
       projectCount: mockArchivedProjects.length,
-      onBack: noop,
+      onBack: fn(),
     },
     tasks: {
       archivedTasks: mockArchivedTasks,
       selectedTask: null,
       isRestoringTask: false,
-      onSelectTask: noopTask,
-      onRestoreTask: noopTask,
-      onDeleteTask: noopTask,
+      onSelectTask: fn(),
+      onRestoreTask: fn(),
+      onDeleteTask: fn(),
     },
     chats: {
       archivedChats: mockArchivedChats,
       selectedChat: null,
       isRestoringChat: false,
-      onSelectChat: noopChat,
-      onRestoreChat: noopChat,
-      onDeleteChat: noopChat,
+      onSelectChat: fn(),
+      onRestoreChat: fn(),
+      onDeleteChat: fn(),
     },
     projects: {
       archivedProjects: mockArchivedProjects,
       selectedProject: null,
       isRestoringProject: false,
-      onSelectProject: noopProject,
-      onRestoreProject: noopProject,
-      onDeleteProject: noopProject,
+      onSelectProject: fn(),
+      onRestoreProject: fn(),
+      onDeleteProject: fn(),
     },
     helpers: {
       getProjectName: (projectId: string) => mockProjectsMap[projectId] ?? 'Unknown Project',
@@ -191,8 +251,8 @@ function createDefaultProps(overrides?: Partial<ArchivePageProps>): ArchivePageP
     },
     confirmDialog: {
       isOpen: false,
-      onClose: noop,
-      onConfirm: noop,
+      onClose: fn(),
+      onConfirm: fn(),
       title: '',
       description: '',
     },
@@ -201,7 +261,7 @@ function createDefaultProps(overrides?: Partial<ArchivePageProps>): ArchivePageP
 }
 
 // ============================================================================
-// Stories
+// Basic Examples
 // ============================================================================
 
 /**
@@ -212,12 +272,38 @@ export const Default: Story = {
 };
 
 /**
- * Archive page in loading state
+ * Archive page in loading state with skeleton
  */
 export const Loading: Story = {
   args: createDefaultProps({
     isLoading: true,
   }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Shows a skeleton loading state while data is being fetched. Screen readers announce "Loading archive. Please wait."',
+      },
+    },
+  },
+};
+
+/**
+ * Archive page with error state
+ */
+export const ErrorState: Story = {
+  args: createDefaultProps({
+    error: new Error('Failed to connect to server. Please check your network connection.'),
+    onRetry: fn(),
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Shows an error state with a retry button. The error message is announced to screen readers with role="alert".',
+      },
+    },
+  },
 };
 
 /**
@@ -228,7 +314,7 @@ export const ChatsTab: Story = {
     header: {
       archivedCount: mockArchivedChats.length,
       activeTab: 'chats' as ArchiveTab,
-      onSearch: noop,
+      onSearch: fn(),
     },
     tabBar: {
       ...createDefaultProps().tabBar,
@@ -245,7 +331,7 @@ export const ProjectsTab: Story = {
     header: {
       archivedCount: mockArchivedProjects.length,
       activeTab: 'projects' as ArchiveTab,
-      onSearch: noop,
+      onSearch: fn(),
     },
     tabBar: {
       ...createDefaultProps().tabBar,
@@ -253,6 +339,10 @@ export const ProjectsTab: Story = {
     },
   }),
 };
+
+// ============================================================================
+// Empty States
+// ============================================================================
 
 /**
  * Empty tasks tab
@@ -262,7 +352,7 @@ export const EmptyTasksTab: Story = {
     header: {
       archivedCount: 0,
       activeTab: 'tasks' as ArchiveTab,
-      onSearch: noop,
+      onSearch: fn(),
     },
     tabBar: {
       ...createDefaultProps().tabBar,
@@ -283,7 +373,7 @@ export const EmptyChatsTab: Story = {
     header: {
       archivedCount: 0,
       activeTab: 'chats' as ArchiveTab,
-      onSearch: noop,
+      onSearch: fn(),
     },
     tabBar: {
       ...createDefaultProps().tabBar,
@@ -305,7 +395,7 @@ export const EmptyProjectsTab: Story = {
     header: {
       archivedCount: 0,
       activeTab: 'projects' as ArchiveTab,
-      onSearch: noop,
+      onSearch: fn(),
     },
     tabBar: {
       ...createDefaultProps().tabBar,
@@ -327,7 +417,7 @@ export const CompletelyEmpty: Story = {
     header: {
       archivedCount: 0,
       activeTab: 'tasks' as ArchiveTab,
-      onSearch: noop,
+      onSearch: fn(),
     },
     tabBar: {
       ...createDefaultProps().tabBar,
@@ -349,6 +439,10 @@ export const CompletelyEmpty: Story = {
     },
   }),
 };
+
+// ============================================================================
+// Selection States
+// ============================================================================
 
 /**
  * Task selected in list
@@ -375,6 +469,10 @@ export const RestoringTask: Story = {
   }),
 };
 
+// ============================================================================
+// Dialog States
+// ============================================================================
+
 /**
  * Confirm dialog open for delete
  */
@@ -386,8 +484,8 @@ export const WithConfirmDialogOpen: Story = {
     },
     confirmDialog: {
       isOpen: true,
-      onClose: noop,
-      onConfirm: noop,
+      onClose: fn(),
+      onConfirm: fn(),
       title: 'Delete Task',
       description:
         'Are you sure you want to permanently delete "Implement user authentication"? This action cannot be undone.',
@@ -405,8 +503,8 @@ export const ConfirmDialogLoading: Story = {
   args: createDefaultProps({
     confirmDialog: {
       isOpen: true,
-      onClose: noop,
-      onConfirm: noop,
+      onClose: fn(),
+      onConfirm: fn(),
       title: 'Delete Task',
       description:
         'Are you sure you want to permanently delete "Implement user authentication"? This action cannot be undone.',
@@ -417,6 +515,10 @@ export const ConfirmDialogLoading: Story = {
     },
   }),
 };
+
+// ============================================================================
+// Content Variations
+// ============================================================================
 
 /**
  * Many archived tasks (scrollable list)
@@ -442,7 +544,7 @@ export const ManyArchivedTasks: Story = {
       header: {
         archivedCount: manyTasks.length,
         activeTab: 'tasks' as ArchiveTab,
-        onSearch: noop,
+        onSearch: fn(),
       },
       tabBar: {
         ...createDefaultProps().tabBar,
@@ -456,6 +558,10 @@ export const ManyArchivedTasks: Story = {
   })(),
 };
 
+// ============================================================================
+// Viewport Variations
+// ============================================================================
+
 /**
  * Mobile viewport
  */
@@ -464,6 +570,439 @@ export const Mobile: Story = {
   parameters: {
     viewport: {
       defaultViewport: 'mobile1',
+    },
+  },
+};
+
+/**
+ * Tablet viewport
+ */
+export const Tablet: Story = {
+  args: createDefaultProps(),
+  parameters: {
+    viewport: {
+      defaultViewport: 'tablet',
+    },
+  },
+};
+
+// ============================================================================
+// Sub-Component Stories
+// ============================================================================
+
+/**
+ * Skeleton component standalone
+ */
+export const SkeletonStandalone: Story = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <ArchivePageSkeleton itemCount={5} />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'The skeleton component shown during loading state.',
+      },
+    },
+  },
+};
+
+/**
+ * Error component standalone
+ */
+export const ErrorStandalone: Story = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <ArchivePageError
+        error={new Error('Network connection lost')}
+        onRetry={() => console.log('Retry clicked')}
+      />
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The error component shown when data loading fails. Has role="alert" for screen reader announcement.',
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Accessibility Demos
+// ============================================================================
+
+/**
+ * Screen reader accessibility demo
+ */
+export const ScreenReaderAccessibility: Story = {
+  render: () => {
+    const [state, setState] = useState<'loading' | 'error' | 'loaded'>('loaded');
+    const [activeTab, setActiveTab] = useState<ArchiveTab>('tasks');
+
+    return (
+      <div className="flex h-screen w-screen flex-col">
+        <div className="bg-muted p-4 border-b">
+          <p className="text-sm mb-2">
+            <strong>Screen Reader Demo:</strong> Use a screen reader to hear announcements for
+            different states.
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setState('loading')}
+              className="px-3 py-1 border rounded text-sm"
+            >
+              Simulate Loading
+            </button>
+            <button
+              type="button"
+              onClick={() => setState('error')}
+              className="px-3 py-1 border rounded text-sm"
+            >
+              Simulate Error
+            </button>
+            <button
+              type="button"
+              onClick={() => setState('loaded')}
+              className="px-3 py-1 border rounded text-sm"
+            >
+              Show Content
+            </button>
+          </div>
+        </div>
+        <div className="flex-1">
+          <ArchivePage
+            {...createDefaultProps()}
+            isLoading={state === 'loading'}
+            error={state === 'error' ? new Error('Demo error for testing') : null}
+            onRetry={() => setState('loaded')}
+            header={{ ...createDefaultProps().header, activeTab }}
+            tabBar={{
+              ...createDefaultProps().tabBar,
+              activeTab,
+              onTabChange: setActiveTab,
+            }}
+          />
+        </div>
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Demonstrates screen reader announcements:
+- **Loading**: "${SR_LOADING}"
+- **Error**: "${SR_ERROR_PREFIX} [error message]"
+- **Empty**: "${SR_EMPTY}"
+- **Loaded**: "${SR_LOADED_PREFIX} Showing X archived items in [tab] tab."
+        `,
+      },
+    },
+  },
+};
+
+/**
+ * Focus ring visibility demo
+ */
+export const FocusRingVisibility: Story = {
+  args: createDefaultProps(),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Tab through the interface to see focus rings on all interactive elements. Focus rings have a 2px offset for visibility on all backgrounds.',
+      },
+    },
+  },
+  play: async ({ canvasElement }) => {
+    // Focus the first focusable element
+    const firstButton = canvasElement.querySelector('button');
+    if (firstButton) {
+      firstButton.focus();
+    }
+  },
+};
+
+/**
+ * Keyboard navigation demo
+ */
+export const KeyboardNavigation: Story = {
+  render: () => (
+    <div className="flex h-screen w-screen flex-col">
+      <div className="bg-muted p-4 border-b">
+        <p className="text-sm">
+          <strong>Keyboard Navigation:</strong>
+        </p>
+        <ul className="text-sm mt-2 list-disc list-inside">
+          <li>
+            <kbd className="px-1 border rounded">Tab</kbd> - Move between interactive elements
+          </li>
+          <li>
+            <kbd className="px-1 border rounded">Arrow Left/Right</kbd> - Navigate tabs
+          </li>
+          <li>
+            <kbd className="px-1 border rounded">Home/End</kbd> - Jump to first/last tab
+          </li>
+          <li>
+            <kbd className="px-1 border rounded">Enter/Space</kbd> - Activate selection
+          </li>
+        </ul>
+      </div>
+      <div className="flex-1">
+        <ArchivePage {...createDefaultProps()} />
+      </div>
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Demonstrates keyboard navigation patterns for the archive page.',
+      },
+    },
+  },
+};
+
+/**
+ * Ref forwarding demo
+ */
+export const RefForwarding: Story = {
+  render: () => {
+    const ref = useRef<HTMLDivElement>(null);
+
+    return (
+      <div className="flex h-screen w-screen flex-col">
+        <div className="bg-muted p-4 border-b flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              if (ref.current) {
+                ref.current.focus();
+                console.log('Page focused via ref');
+              }
+            }}
+            className="px-3 py-1 border rounded text-sm"
+          >
+            Focus Page via Ref
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (ref.current) {
+                console.log('Ref element:', ref.current);
+                console.log('data-state:', ref.current.dataset.state);
+                console.log('data-active-tab:', ref.current.dataset.activeTab);
+              }
+            }}
+            className="px-3 py-1 border rounded text-sm"
+          >
+            Log Ref Data
+          </button>
+        </div>
+        <div className="flex-1">
+          <ArchivePage ref={ref} {...createDefaultProps()} />
+        </div>
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Demonstrates ref forwarding for programmatic focus management and DOM access. Check console for logged data.',
+      },
+    },
+  },
+};
+
+/**
+ * Data attributes demo
+ */
+export const DataAttributes: Story = {
+  render: () => (
+    <div className="flex h-screen w-screen flex-col">
+      <div className="bg-muted p-4 border-b">
+        <p className="text-sm">
+          <strong>Data Attributes:</strong> Inspect the DOM to see these attributes on the page
+          container:
+        </p>
+        <ul className="text-sm mt-2 list-disc list-inside">
+          <li>
+            <code>data-testid="archive-page"</code> - For automated testing
+          </li>
+          <li>
+            <code>data-state="loading|error|empty|loaded"</code> - Current page state
+          </li>
+          <li>
+            <code>data-active-tab="tasks|chats|projects"</code> - Currently active tab
+          </li>
+          <li>
+            <code>data-total-items="6"</code> - Total items across all tabs
+          </li>
+        </ul>
+      </div>
+      <div className="flex-1">
+        <ArchivePage {...createDefaultProps()} data-testid="demo-archive-page" />
+      </div>
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Shows the data attributes available for testing and CSS styling.',
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Interactive Demo
+// ============================================================================
+
+/**
+ * Interactive demo with full state management
+ */
+export const InteractiveDemo: Story = {
+  render: () => {
+    const [activeTab, setActiveTab] = useState<ArchiveTab>('tasks');
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<Task | null>(null);
+
+    const handleDeleteTask = (task: Task) => {
+      setItemToDelete(task);
+      setConfirmOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+      console.log('Deleting task:', itemToDelete?.title);
+      setConfirmOpen(false);
+      setItemToDelete(null);
+      setSelectedTask(null);
+    };
+
+    return (
+      <div className="h-screen w-screen">
+        <ArchivePage
+          isLoading={false}
+          header={{
+            archivedCount:
+              activeTab === 'tasks'
+                ? mockArchivedTasks.length
+                : activeTab === 'chats'
+                  ? mockArchivedChats.length
+                  : mockArchivedProjects.length,
+            activeTab,
+            onSearch: () => console.log('Search clicked'),
+          }}
+          tabBar={{
+            activeTab,
+            onTabChange: setActiveTab,
+            taskCount: mockArchivedTasks.length,
+            chatCount: mockArchivedChats.length,
+            projectCount: mockArchivedProjects.length,
+            onBack: () => console.log('Back clicked'),
+          }}
+          tasks={{
+            archivedTasks: mockArchivedTasks,
+            selectedTask,
+            isRestoringTask: false,
+            onSelectTask: setSelectedTask,
+            onRestoreTask: (task) => console.log('Restore task:', task.title),
+            onDeleteTask: handleDeleteTask,
+          }}
+          chats={{
+            archivedChats: mockArchivedChats,
+            selectedChat: null,
+            isRestoringChat: false,
+            onSelectChat: () => {},
+            onRestoreChat: (chat) => console.log('Restore chat:', chat.title),
+            onDeleteChat: () => {},
+          }}
+          projects={{
+            archivedProjects: mockArchivedProjects,
+            selectedProject: null,
+            isRestoringProject: false,
+            onSelectProject: () => {},
+            onRestoreProject: (project) => console.log('Restore project:', project.name),
+            onDeleteProject: () => {},
+          }}
+          helpers={{
+            getProjectName: (projectId) => mockProjectsMap[projectId] ?? 'Unknown Project',
+            getTaskTitle: () => null,
+            formatDate: (dateString) => {
+              if (!dateString) return 'Unknown';
+              return new Date(dateString).toLocaleDateString();
+            },
+          }}
+          confirmDialog={{
+            isOpen: confirmOpen,
+            onClose: () => setConfirmOpen(false),
+            onConfirm: handleConfirmDelete,
+            title: 'Delete Task',
+            description: itemToDelete
+              ? `Are you sure you want to permanently delete "${itemToDelete.title}"? This action cannot be undone.`
+              : '',
+            confirmLabel: 'Delete',
+            cancelLabel: 'Cancel',
+            variant: 'destructive',
+          }}
+        />
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Fully interactive demo with tab switching, item selection, and delete confirmation. Check console for action logs.',
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Constants Reference
+// ============================================================================
+
+/**
+ * Constants reference for testing
+ */
+export const ConstantsReference: Story = {
+  render: () => (
+    <div className="p-6 space-y-4">
+      <h2 className="text-xl font-bold">ArchivePage Constants Reference</h2>
+
+      <div className="space-y-2">
+        <h3 className="font-semibold">Defaults</h3>
+        <ul className="list-disc list-inside text-sm">
+          <li>DEFAULT_SKELETON_COUNT: {DEFAULT_SKELETON_COUNT}</li>
+          <li>DEFAULT_PAGE_SIZE: {DEFAULT_PAGE_SIZE}</li>
+          <li>DEFAULT_ERROR_TITLE: {DEFAULT_ERROR_TITLE}</li>
+          <li>DEFAULT_RETRY_LABEL: {DEFAULT_RETRY_LABEL}</li>
+        </ul>
+      </div>
+
+      <div className="space-y-2">
+        <h3 className="font-semibold">Screen Reader Announcements</h3>
+        <ul className="list-disc list-inside text-sm">
+          <li>SR_LOADING: "{SR_LOADING}"</li>
+          <li>SR_ERROR_PREFIX: "{SR_ERROR_PREFIX}"</li>
+          <li>SR_EMPTY: "{SR_EMPTY}"</li>
+          <li>SR_LOADED_PREFIX: "{SR_LOADED_PREFIX}"</li>
+        </ul>
+      </div>
+    </div>
+  ),
+  parameters: {
+    layout: 'padded',
+    docs: {
+      description: {
+        story: 'Reference of all exported constants from ArchivePage for testing and verification.',
+      },
     },
   },
 };

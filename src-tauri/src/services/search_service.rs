@@ -2,12 +2,26 @@
 //!
 //! Provides search functionality across projects and tasks
 //! using the FTS5 search_index virtual table.
+//!
+//! # Logging
+//!
+//! This module uses structured logging at the following levels:
+//! - `debug`: Query parameters, FTS5 query sanitization, filter construction
+//! - `info`: Successful search operations with result counts and top results
+//! - `warn`: Empty queries, unknown result types, fallback behaviors
+//! - `error`: Database query failures
+//!
+//! # Error Handling
+//!
+//! All functions return `ServiceResult<T>` and use structured error types:
+//! - `ServiceError::Database` for FTS5 query failures
 
+use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 
 use crate::types::{SearchResult, SearchResultType};
 
-use super::ServiceResult;
+use super::{ServiceError, ServiceResult};
 
 /// Service for full-text search operations.
 pub struct SearchService;
@@ -45,11 +59,25 @@ impl SearchService {
         limit: Option<i32>,
     ) -> ServiceResult<Vec<SearchResult>> {
         let limit = limit.unwrap_or(20);
+        let type_names: Vec<&str> = result_types
+            .as_ref()
+            .map(|types| types.iter().map(Self::type_to_string).collect())
+            .unwrap_or_default();
+
+        debug!(
+            "Searching: query='{}', project_id={:?}, result_types={:?}, limit={}",
+            query, project_id, type_names, limit
+        );
 
         // Sanitize the query for FTS5 - escape special characters
         let sanitized_query = Self::sanitize_fts_query(query);
+        debug!("Sanitized FTS5 query: '{}' -> '{}'", query, sanitized_query);
 
         if sanitized_query.is_empty() {
+            warn!(
+                "Empty or invalid search query after sanitization: '{}'",
+                query
+            );
             return Ok(Vec::new());
         }
 
@@ -85,34 +113,52 @@ impl SearchService {
         if !conditions.is_empty() {
             sql.push_str(" AND ");
             sql.push_str(&conditions.join(" AND "));
+            debug!("Applied search filters: {:?}", conditions);
         }
 
         sql.push_str(" ORDER BY rank LIMIT ?");
 
+        debug!("Executing FTS5 search query");
+
         // Build and execute the query based on the filter combinations
         let raw_results = match (project_id, &result_types) {
             (Some(pid), Some(types)) if !types.is_empty() => {
+                debug!(
+                    "Executing search with project_id={} and {} result types",
+                    pid,
+                    types.len()
+                );
                 // Both project_id and result_types filters
                 match types.len() {
-                    1 => {
-                        sqlx::query_as::<_, RawSearchResult>(&sql)
-                            .bind(&sanitized_query)
-                            .bind(pid)
-                            .bind(Self::type_to_string(&types[0]))
-                            .bind(limit)
-                            .fetch_all(pool)
-                            .await?
-                    }
-                    2 => {
-                        sqlx::query_as::<_, RawSearchResult>(&sql)
-                            .bind(&sanitized_query)
-                            .bind(pid)
-                            .bind(Self::type_to_string(&types[0]))
-                            .bind(Self::type_to_string(&types[1]))
-                            .bind(limit)
-                            .fetch_all(pool)
-                            .await?
-                    }
+                    1 => sqlx::query_as::<_, RawSearchResult>(&sql)
+                        .bind(&sanitized_query)
+                        .bind(pid)
+                        .bind(Self::type_to_string(&types[0]))
+                        .bind(limit)
+                        .fetch_all(pool)
+                        .await
+                        .map_err(|e| {
+                            error!(
+                                "FTS5 search failed: query='{}', project_id={}, error={}",
+                                query, pid, e
+                            );
+                            ServiceError::Database(e)
+                        })?,
+                    2 => sqlx::query_as::<_, RawSearchResult>(&sql)
+                        .bind(&sanitized_query)
+                        .bind(pid)
+                        .bind(Self::type_to_string(&types[0]))
+                        .bind(Self::type_to_string(&types[1]))
+                        .bind(limit)
+                        .fetch_all(pool)
+                        .await
+                        .map_err(|e| {
+                            error!(
+                                "FTS5 search failed: query='{}', project_id={}, error={}",
+                                query, pid, e
+                            );
+                            ServiceError::Database(e)
+                        })?,
                     _ => {
                         // For more than 2 types, use a simpler approach
                         Self::search_with_many_types(
@@ -122,60 +168,114 @@ impl SearchService {
                             types,
                             limit,
                         )
-                        .await?
+                        .await
+                        .map_err(|e| {
+                            error!(
+                                "FTS5 search with many types failed: query='{}', project_id={}, error={:?}",
+                                query, pid, e
+                            );
+                            e
+                        })?
                     }
                 }
             }
             (Some(pid), None) | (Some(pid), Some(_)) => {
+                debug!("Executing search with project_id={} only", pid);
                 // Only project_id filter (empty types treated as no filter)
                 sqlx::query_as::<_, RawSearchResult>(&sql)
                     .bind(&sanitized_query)
                     .bind(pid)
                     .bind(limit)
                     .fetch_all(pool)
-                    .await?
+                    .await
+                    .map_err(|e| {
+                        error!(
+                            "FTS5 search failed: query='{}', project_id={}, error={}",
+                            query, pid, e
+                        );
+                        ServiceError::Database(e)
+                    })?
             }
             (None, Some(types)) if !types.is_empty() => {
+                debug!("Executing search with {} result types only", types.len());
                 // Only result_types filter
                 match types.len() {
-                    1 => {
-                        sqlx::query_as::<_, RawSearchResult>(&sql)
-                            .bind(&sanitized_query)
-                            .bind(Self::type_to_string(&types[0]))
-                            .bind(limit)
-                            .fetch_all(pool)
-                            .await?
-                    }
-                    2 => {
-                        sqlx::query_as::<_, RawSearchResult>(&sql)
-                            .bind(&sanitized_query)
-                            .bind(Self::type_to_string(&types[0]))
-                            .bind(Self::type_to_string(&types[1]))
-                            .bind(limit)
-                            .fetch_all(pool)
-                            .await?
-                    }
-                    _ => {
-                        Self::search_with_many_types(pool, &sanitized_query, None, types, limit)
-                            .await?
-                    }
+                    1 => sqlx::query_as::<_, RawSearchResult>(&sql)
+                        .bind(&sanitized_query)
+                        .bind(Self::type_to_string(&types[0]))
+                        .bind(limit)
+                        .fetch_all(pool)
+                        .await
+                        .map_err(|e| {
+                            error!("FTS5 search failed: query='{}', error={}", query, e);
+                            ServiceError::Database(e)
+                        })?,
+                    2 => sqlx::query_as::<_, RawSearchResult>(&sql)
+                        .bind(&sanitized_query)
+                        .bind(Self::type_to_string(&types[0]))
+                        .bind(Self::type_to_string(&types[1]))
+                        .bind(limit)
+                        .fetch_all(pool)
+                        .await
+                        .map_err(|e| {
+                            error!("FTS5 search failed: query='{}', error={}", query, e);
+                            ServiceError::Database(e)
+                        })?,
+                    _ => Self::search_with_many_types(pool, &sanitized_query, None, types, limit)
+                        .await
+                        .map_err(|e| {
+                            error!(
+                                "FTS5 search with many types failed: query='{}', error={:?}",
+                                query, e
+                            );
+                            e
+                        })?,
                 }
             }
             (None, None) | (None, Some(_)) => {
+                debug!("Executing search without filters");
                 // No filters (empty types treated as no filter)
                 sqlx::query_as::<_, RawSearchResult>(&sql)
                     .bind(&sanitized_query)
                     .bind(limit)
                     .fetch_all(pool)
-                    .await?
+                    .await
+                    .map_err(|e| {
+                        error!("FTS5 search failed: query='{}', error={}", query, e);
+                        ServiceError::Database(e)
+                    })?
             }
         };
 
         // Convert raw results to SearchResult
-        let results = raw_results
+        let results: Vec<SearchResult> = raw_results
             .into_iter()
             .map(Self::raw_to_search_result)
             .collect();
+
+        // Log search results summary
+        let results_by_type: std::collections::HashMap<&str, usize> =
+            results
+                .iter()
+                .fold(std::collections::HashMap::new(), |mut acc, r| {
+                    let type_str = Self::type_to_string(&r.result_type);
+                    *acc.entry(type_str).or_insert(0) += 1;
+                    acc
+                });
+
+        let top_results: Vec<(&str, f64)> = results
+            .iter()
+            .take(3)
+            .map(|r| (r.title.as_str(), r.score))
+            .collect();
+
+        info!(
+            "Search completed: query='{}', total_results={}, by_type={:?}, top_results={:?}",
+            query,
+            results.len(),
+            results_by_type,
+            top_results
+        );
 
         Ok(results)
     }
@@ -188,6 +288,12 @@ impl SearchService {
         types: &[SearchResultType],
         limit: i32,
     ) -> ServiceResult<Vec<RawSearchResult>> {
+        let type_names: Vec<&str> = types.iter().map(Self::type_to_string).collect();
+        debug!(
+            "search_with_many_types: query='{}', project_id={:?}, types={:?}, limit={}",
+            query, project_id, type_names, limit
+        );
+
         // For many types, construct the query with literal type values
         let type_values: Vec<String> = types
             .iter()
@@ -240,14 +346,33 @@ impl SearchService {
                 .bind(pid)
                 .bind(limit)
                 .fetch_all(pool)
-                .await?
+                .await
+                .map_err(|e| {
+                    error!(
+                        "search_with_many_types failed: query='{}', project_id={}, error={}",
+                        query, pid, e
+                    );
+                    ServiceError::Database(e)
+                })?
         } else {
             sqlx::query_as::<_, RawSearchResult>(&sql)
                 .bind(query)
                 .bind(limit)
                 .fetch_all(pool)
-                .await?
+                .await
+                .map_err(|e| {
+                    error!(
+                        "search_with_many_types failed: query='{}', error={}",
+                        query, e
+                    );
+                    ServiceError::Database(e)
+                })?
         };
+
+        debug!(
+            "search_with_many_types completed: {} results found",
+            results.len()
+        );
 
         Ok(results)
     }
@@ -269,7 +394,13 @@ impl SearchService {
             "project" => SearchResultType::Project,
             "chat" => SearchResultType::Chat,
             "message" => SearchResultType::Message,
-            _ => SearchResultType::Task, // Default fallback
+            unknown => {
+                warn!(
+                    "Unknown search result type '{}', defaulting to Task",
+                    unknown
+                );
+                SearchResultType::Task
+            }
         }
     }
 

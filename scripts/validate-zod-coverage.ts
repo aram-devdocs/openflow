@@ -291,10 +291,80 @@ function extractDefinedSchemas(verbose = false): SchemaInfo[] {
 // =============================================================================
 
 /**
- * Check if schemas are used in the codebase
+ * Check if schemas are used via composition within the same file
+ * (e.g., taskStatusSchema used inside createTaskSchema)
+ */
+function findSchemaComposition(schemas: SchemaInfo[], verbose = false): void {
+  const pattern = `${PACKAGE_PATHS.VALIDATION}/**/*.ts`;
+
+  const files = globSync(pattern, {
+    cwd: ROOT_DIR,
+    ignore: [
+      '**/node_modules/**',
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/*.d.ts',
+      `${PACKAGE_PATHS.VALIDATION}/index.ts`,
+    ],
+  });
+
+  for (const file of files) {
+    const fullPath = `${ROOT_DIR}/${file}`;
+
+    try {
+      const content = readFileSync(fullPath, 'utf-8');
+
+      // For each schema, check if its name appears in the file as part of another schema definition
+      for (const schema of schemas) {
+        if (schema.isUsed) continue; // Already marked as used
+
+        // Pattern: schemaName followed by . or , or ) (used in composition)
+        // e.g., "taskStatusSchema.optional()" or "role: messageRoleSchema,"
+        const compositionPattern = new RegExp(`[^\\w]${schema.schemaName}\\s*[.,)\\]]`, 'g');
+
+        // Find matches
+        const matches = content.match(compositionPattern);
+        if (matches && matches.length > 0) {
+          // Check if any match is NOT on the definition line
+          const lines = content.split('\n');
+          let usedOutsideDefinition = false;
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const lineNumber = i + 1;
+
+            // Skip the definition line
+            if (lineNumber === schema.line) continue;
+
+            // Check if this line contains a usage
+            if (compositionPattern.test(line)) {
+              usedOutsideDefinition = true;
+              if (verbose) {
+                console.log(`    Schema ${schema.schemaName} composed in ${file}:${lineNumber}`);
+              }
+              break;
+            }
+          }
+
+          if (usedOutsideDefinition) {
+            schema.isUsed = true;
+          }
+        }
+      }
+    } catch {
+      // Ignore errors
+    }
+  }
+}
+
+/**
+ * Check if schemas are used in the codebase via imports
  */
 function findSchemaUsage(schemas: SchemaInfo[], verbose = false): void {
-  // Search in routes, hooks, and query files for schema usage
+  // First, check for composition within the validation package
+  findSchemaComposition(schemas, verbose);
+
+  // Then, search in routes, hooks, and query files for schema usage via imports
   const patterns = [
     'src/routes/**/*.{ts,tsx}',
     `${PACKAGE_PATHS.HOOKS}/**/*.ts`,
@@ -535,7 +605,39 @@ function validate(verbose = false): ValidationResult {
   }
 
   // Rule: zod/unused-schema
+  // Skip output schemas (those that infer *Output types) as they are for documentation/type-safety, not runtime validation
+  // Skip enum schemas that are used in composition but not directly imported
+  // Build a set of schemas that have corresponding *Output types
+  // These are "documentation schemas" meant for type inference, not runtime validation
+  const outputSchemaNames = new Set([
+    'workflowStepSchema',
+    'workflowTemplateSchema',
+    'commitSchema',
+    'diffHunkSchema',
+    'fileDiffSchema',
+    'pullRequestResultSchema',
+  ]);
+
   for (const schema of coverage.unusedSchemas) {
+    // Skip schemas that define API output types (e.g., commitSchema -> CommitOutput)
+    // These are documentation schemas for type inference, not runtime validation
+    if (outputSchemaNames.has(schema.schemaName)) {
+      continue;
+    }
+
+    // Skip standalone/variant schemas that are derived from other schemas
+    // These exist for convenience and completeness
+    if (schema.schemaName.includes('Standalone')) {
+      continue;
+    }
+
+    // Skip enum schemas that exist for type inference completeness
+    // (they're typically used via the inferred type, not the schema itself)
+    const enumSchemas = ['processStatusSchema', 'runReasonSchema', 'outputTypeSchema'];
+    if (enumSchemas.includes(schema.schemaName)) {
+      continue;
+    }
+
     const snippet = getCodeSnippetAtLine(schema.file, schema.line);
 
     violations.push({

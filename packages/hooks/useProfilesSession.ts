@@ -3,6 +3,12 @@
  *
  * This hook encapsulates all the state management, data fetching, and
  * callbacks for the Executor Profiles Settings page, keeping the route component pure.
+ *
+ * Features:
+ * - Full logging at DEBUG/INFO/WARN/ERROR levels
+ * - Toast notifications for user feedback on all CRUD actions
+ * - Proper error handling with try/catch patterns
+ * - Form validation with error state management
  */
 
 import type {
@@ -10,7 +16,8 @@ import type {
   ExecutorProfile,
   UpdateExecutorProfileRequest,
 } from '@openflow/generated';
-import { useCallback, useState } from 'react';
+import { createLogger } from '@openflow/utils';
+import { useCallback, useRef, useState } from 'react';
 
 import { useConfirmDialog } from './useConfirmDialog';
 import {
@@ -20,6 +27,13 @@ import {
   useUpdateExecutorProfile,
 } from './useExecutorProfiles';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
+import { useToast } from './useToast';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+const logger = createLogger('useProfilesSession');
 
 // ============================================================================
 // Types
@@ -36,9 +50,15 @@ export interface ProfileFormData {
 }
 
 export interface UseProfilesSessionOptions {
-  /** Callback for showing success messages */
+  /**
+   * Callback for showing success messages
+   * @deprecated Use built-in toast notifications instead. This prop is maintained for backward compatibility.
+   */
   onSuccess?: (title: string, message: string) => void;
-  /** Callback for showing error messages */
+  /**
+   * Callback for showing error messages
+   * @deprecated Use built-in toast notifications instead. This prop is maintained for backward compatibility.
+   */
   onError?: (title: string, message: string) => void;
 }
 
@@ -159,6 +179,16 @@ export function useProfilesSession({
   onSuccess,
   onError,
 }: UseProfilesSessionOptions = {}): ProfilesSessionState {
+  // Track initialization for logging
+  const isInitializedRef = useRef(false);
+  if (!isInitializedRef.current) {
+    logger.debug('Initializing useProfilesSession hook');
+    isInitializedRef.current = true;
+  }
+
+  // Toast integration for user feedback
+  const toast = useToast();
+
   // UI state
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<ExecutorProfile | null>(null);
@@ -179,11 +209,15 @@ export function useProfilesSession({
     {
       key: 'n',
       meta: true,
-      action: () => handleOpenCreateDialog(),
+      action: () => {
+        logger.info('Keyboard shortcut activated: Cmd+N (new profile)');
+        handleOpenCreateDialog();
+      },
     },
     {
       key: 'Escape',
       action: () => {
+        logger.debug('Keyboard shortcut activated: Escape (close dialog)');
         setIsCreateDialogOpen(false);
         setEditingProfile(null);
       },
@@ -195,18 +229,27 @@ export function useProfilesSession({
   // ============================================================================
 
   const handleOpenCreateDialog = useCallback(() => {
+    logger.debug('Opening create profile dialog');
     setFormData(getEmptyFormData());
     setFormError(null);
     setIsCreateDialogOpen(true);
   }, []);
 
   const handleCloseDialog = useCallback(() => {
+    logger.debug('Closing dialog', {
+      wasCreating: isCreateDialogOpen,
+      wasEditing: editingProfile?.name ?? null,
+    });
     setIsCreateDialogOpen(false);
     setEditingProfile(null);
     setFormError(null);
-  }, []);
+  }, [isCreateDialogOpen, editingProfile]);
 
   const handleOpenEditDialog = useCallback((profile: ExecutorProfile) => {
+    logger.debug('Opening edit dialog for profile', {
+      profileId: profile.id,
+      profileName: profile.name,
+    });
     setFormData(profileToFormData(profile));
     setFormError(null);
     setEditingProfile(profile);
@@ -217,19 +260,29 @@ export function useProfilesSession({
   // ============================================================================
 
   const handleFormChange = useCallback((field: keyof ProfileFormData, value: string | boolean) => {
+    logger.debug('Form field changed', {
+      field,
+      value: typeof value === 'boolean' ? value : '[string]',
+    });
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
   const handleCreate = useCallback(() => {
+    logger.debug('Create profile triggered', { name: formData.name });
     setFormError(null);
 
+    // Validation
     if (!formData.name.trim()) {
-      setFormError('Profile name is required');
+      const errorMsg = 'Profile name is required';
+      logger.warn('Create profile validation failed: missing name');
+      setFormError(errorMsg);
       return;
     }
 
     if (!formData.command.trim()) {
-      setFormError('Command is required');
+      const errorMsg = 'Command is required';
+      logger.warn('Create profile validation failed: missing command');
+      setFormError(errorMsg);
       return;
     }
 
@@ -242,29 +295,59 @@ export function useProfilesSession({
       ...(formData.description.trim() && { description: formData.description.trim() }),
     };
 
+    logger.debug('Creating profile', {
+      name: request.name,
+      command: request.command,
+      isDefault: request.isDefault,
+    });
+
     createProfile.mutate(request, {
       onSuccess: (profile) => {
+        logger.info('Profile created successfully', {
+          profileId: profile.id,
+          profileName: profile.name,
+        });
         handleCloseDialog();
+        toast.success('Profile created', `"${profile.name}" has been created successfully.`);
+        // Backward compatibility
         onSuccess?.('Profile created', `"${profile.name}" has been created successfully.`);
       },
       onError: (error) => {
-        setFormError(error.message);
-        onError?.('Failed to create profile', error.message);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        logger.error('Failed to create profile', { name: request.name, error: errorMsg });
+        setFormError(errorMsg);
+        toast.error('Failed to create profile', errorMsg);
+        // Backward compatibility
+        onError?.('Failed to create profile', errorMsg);
       },
     });
-  }, [formData, createProfile, handleCloseDialog, onSuccess, onError]);
+  }, [formData, createProfile, handleCloseDialog, toast, onSuccess, onError]);
 
   const handleUpdate = useCallback(() => {
-    if (!editingProfile) return;
+    if (!editingProfile) {
+      logger.warn('handleUpdate called without editingProfile');
+      return;
+    }
+
+    logger.debug('Update profile triggered', { profileId: editingProfile.id, name: formData.name });
     setFormError(null);
 
+    // Validation
     if (!formData.name.trim()) {
-      setFormError('Profile name is required');
+      const errorMsg = 'Profile name is required';
+      logger.warn('Update profile validation failed: missing name', {
+        profileId: editingProfile.id,
+      });
+      setFormError(errorMsg);
       return;
     }
 
     if (!formData.command.trim()) {
-      setFormError('Command is required');
+      const errorMsg = 'Command is required';
+      logger.warn('Update profile validation failed: missing command', {
+        profileId: editingProfile.id,
+      });
+      setFormError(errorMsg);
       return;
     }
 
@@ -277,20 +360,35 @@ export function useProfilesSession({
       ...(formData.description.trim() && { description: formData.description.trim() }),
     };
 
+    logger.debug('Updating profile', { profileId: editingProfile.id, changes: request });
+
     updateProfile.mutate(
-      { id: editingProfile.id, request },
+      { id: editingProfile.id, request, name: editingProfile.name },
       {
         onSuccess: () => {
+          logger.info('Profile updated successfully', {
+            profileId: editingProfile.id,
+            profileName: formData.name,
+          });
           handleCloseDialog();
+          toast.success('Profile updated', `"${formData.name}" has been updated successfully.`);
+          // Backward compatibility
           onSuccess?.('Profile updated', `"${formData.name}" has been updated successfully.`);
         },
         onError: (error) => {
-          setFormError(error.message);
-          onError?.('Failed to update profile', error.message);
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          logger.error('Failed to update profile', {
+            profileId: editingProfile.id,
+            error: errorMsg,
+          });
+          setFormError(errorMsg);
+          toast.error('Failed to update profile', errorMsg);
+          // Backward compatibility
+          onError?.('Failed to update profile', errorMsg);
         },
       }
     );
-  }, [editingProfile, formData, updateProfile, handleCloseDialog, onSuccess, onError]);
+  }, [editingProfile, formData, updateProfile, handleCloseDialog, toast, onSuccess, onError]);
 
   // ============================================================================
   // Profile Actions
@@ -298,40 +396,95 @@ export function useProfilesSession({
 
   const handleDelete = useCallback(
     (profile: ExecutorProfile) => {
+      logger.debug('Delete profile requested', {
+        profileId: profile.id,
+        profileName: profile.name,
+      });
+
       confirm({
         title: 'Delete Executor Profile',
         description: `Are you sure you want to delete "${profile.name}"? This action cannot be undone.`,
         confirmLabel: 'Delete',
         variant: 'destructive',
         onConfirm: async () => {
-          await deleteProfile.mutateAsync(profile.id);
-          onSuccess?.('Profile deleted', `"${profile.name}" has been deleted.`);
+          try {
+            logger.debug('Deleting profile', { profileId: profile.id, profileName: profile.name });
+            await deleteProfile.mutateAsync({ id: profile.id, name: profile.name });
+            logger.info('Profile deleted successfully', {
+              profileId: profile.id,
+              profileName: profile.name,
+            });
+            toast.success('Profile deleted', `"${profile.name}" has been deleted.`);
+            // Backward compatibility
+            onSuccess?.('Profile deleted', `"${profile.name}" has been deleted.`);
+          } catch (error) {
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            logger.error('Failed to delete profile', {
+              profileId: profile.id,
+              profileName: profile.name,
+              error: errorMsg,
+            });
+            toast.error('Failed to delete profile', errorMsg);
+            // Backward compatibility
+            onError?.('Failed to delete profile', errorMsg);
+            // Re-throw so confirm dialog can handle the error state
+            throw error;
+          }
         },
       });
     },
-    [confirm, deleteProfile, onSuccess]
+    [confirm, deleteProfile, toast, onSuccess, onError]
   );
 
   const handleSetDefault = useCallback(
     (profile: ExecutorProfile) => {
-      if (profile.isDefault) return;
+      if (profile.isDefault) {
+        logger.debug('Profile is already default, skipping', {
+          profileId: profile.id,
+          profileName: profile.name,
+        });
+        return;
+      }
+
+      logger.debug('Setting profile as default', {
+        profileId: profile.id,
+        profileName: profile.name,
+      });
 
       updateProfile.mutate(
         {
           id: profile.id,
           request: { isDefault: true },
+          name: profile.name,
         },
         {
           onSuccess: () => {
+            logger.info('Default profile updated', {
+              profileId: profile.id,
+              profileName: profile.name,
+            });
+            toast.success(
+              'Default profile updated',
+              `"${profile.name}" is now the default profile.`
+            );
+            // Backward compatibility
             onSuccess?.('Default profile updated', `"${profile.name}" is now the default profile.`);
           },
           onError: (error) => {
-            onError?.('Failed to update default', error.message);
+            const errorMsg = error instanceof Error ? error.message : String(error);
+            logger.error('Failed to set default profile', {
+              profileId: profile.id,
+              profileName: profile.name,
+              error: errorMsg,
+            });
+            toast.error('Failed to update default', errorMsg);
+            // Backward compatibility
+            onError?.('Failed to update default', errorMsg);
           },
         }
       );
     },
-    [updateProfile, onSuccess, onError]
+    [updateProfile, toast, onSuccess, onError]
   );
 
   return {

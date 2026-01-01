@@ -6,8 +6,25 @@
 //! - Killing running processes
 //! - Sending input to processes
 //! - Real-time output streaming via Tauri events
+//!
+//! # Logging
+//!
+//! This module uses structured logging at the following levels:
+//! - `debug`: Query parameters, tracking state changes, PTY operations
+//! - `info`: Process creation, status updates, kill operations, start/complete
+//! - `warn`: Kill attempts on non-running processes, PTY fallback to OS kill
+//! - `error`: Database failures, process spawn failures, PTY errors
+//!
+//! # Error Handling
+//!
+//! All public functions return `ServiceResult<T>` with contextual error information:
+//! - `ServiceError::NotFound` for missing process records
+//! - `ServiceError::Validation` for invalid state transitions
+//! - `ServiceError::Process` for PTY/spawn failures
+//! - `ServiceError::Database` for SQLx errors
 
 use chrono::Utc;
+use log::{debug, error, info, warn};
 use sqlx::{FromRow, SqlitePool};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -136,6 +153,8 @@ impl ProcessService {
 
     /// Get a process by ID.
     pub async fn get(pool: &SqlitePool, id: &str) -> ServiceResult<ExecutionProcess> {
+        debug!("get: fetching process id={}", id);
+
         let row = sqlx::query_as::<_, ExecutionProcessRow>(
             r#"
             SELECT
@@ -159,13 +178,25 @@ impl ProcessService {
         )
         .bind(id)
         .fetch_optional(pool)
-        .await?
-        .ok_or_else(|| ServiceError::NotFound {
-            entity: "ExecutionProcess",
-            id: id.to_string(),
+        .await
+        .map_err(|e| {
+            error!("get: database error fetching process id={}: {}", id, e);
+            e
+        })?
+        .ok_or_else(|| {
+            debug!("get: process not found id={}", id);
+            ServiceError::NotFound {
+                entity: "ExecutionProcess",
+                id: id.to_string(),
+            }
         })?;
 
-        row.try_into()
+        let process: ExecutionProcess = row.try_into()?;
+        debug!(
+            "get: found process id={} status={} chat_id={}",
+            process.id, process.status, process.chat_id
+        );
+        Ok(process)
     }
 
     /// List processes for a chat.
@@ -173,6 +204,8 @@ impl ProcessService {
         pool: &SqlitePool,
         chat_id: &str,
     ) -> ServiceResult<Vec<ExecutionProcess>> {
+        debug!("list_by_chat: fetching processes for chat_id={}", chat_id);
+
         let rows = sqlx::query_as::<_, ExecutionProcessRow>(
             r#"
             SELECT
@@ -197,11 +230,26 @@ impl ProcessService {
         )
         .bind(chat_id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "list_by_chat: database error for chat_id={}: {}",
+                chat_id, e
+            );
+            e
+        })?;
 
-        rows.into_iter()
+        let processes: Vec<ExecutionProcess> = rows
+            .into_iter()
             .map(|row| row.try_into())
-            .collect::<Result<Vec<_>, _>>()
+            .collect::<Result<Vec<_>, _>>()?;
+
+        debug!(
+            "list_by_chat: found {} processes for chat_id={}",
+            processes.len(),
+            chat_id
+        );
+        Ok(processes)
     }
 
     /// List running processes for a chat.
@@ -209,6 +257,11 @@ impl ProcessService {
         pool: &SqlitePool,
         chat_id: &str,
     ) -> ServiceResult<Vec<ExecutionProcess>> {
+        debug!(
+            "list_running_by_chat: fetching running processes for chat_id={}",
+            chat_id
+        );
+
         let rows = sqlx::query_as::<_, ExecutionProcessRow>(
             r#"
             SELECT
@@ -233,11 +286,26 @@ impl ProcessService {
         )
         .bind(chat_id)
         .fetch_all(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "list_running_by_chat: database error for chat_id={}: {}",
+                chat_id, e
+            );
+            e
+        })?;
 
-        rows.into_iter()
+        let processes: Vec<ExecutionProcess> = rows
+            .into_iter()
             .map(|row| row.try_into())
-            .collect::<Result<Vec<_>, _>>()
+            .collect::<Result<Vec<_>, _>>()?;
+
+        debug!(
+            "list_running_by_chat: found {} running processes for chat_id={}",
+            processes.len(),
+            chat_id
+        );
+        Ok(processes)
     }
 
     /// Create a new execution process record.
@@ -247,6 +315,11 @@ impl ProcessService {
     ) -> ServiceResult<ExecutionProcess> {
         let id = Uuid::new_v4().to_string();
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
+
+        debug!(
+            "create: creating process id={} chat_id={} action={} reason={}",
+            id, request.chat_id, request.executor_action, request.run_reason
+        );
 
         sqlx::query(
             r#"
@@ -267,8 +340,19 @@ impl ProcessService {
         .bind(&now)
         .bind(&now)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "create: database error creating process id={} chat_id={}: {}",
+                id, request.chat_id, e
+            );
+            e
+        })?;
 
+        info!(
+            "create: created process id={} chat_id={} action={} reason={}",
+            id, request.chat_id, request.executor_action, request.run_reason
+        );
         Self::get(pool, &id).await
     }
 
@@ -279,8 +363,13 @@ impl ProcessService {
         status: ProcessStatus,
         exit_code: Option<i32>,
     ) -> ServiceResult<ExecutionProcess> {
-        // Verify process exists
-        Self::get(pool, id).await?;
+        debug!(
+            "update_status: updating process id={} to status={} exit_code={:?}",
+            id, status, exit_code
+        );
+
+        // Verify process exists and get current status for logging
+        let current = Self::get(pool, id).await?;
 
         let now = Utc::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
         let completed_at = match status {
@@ -305,8 +394,19 @@ impl ProcessService {
         .bind(&now)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "update_status: database error updating process id={}: {}",
+                id, e
+            );
+            e
+        })?;
 
+        info!(
+            "update_status: updated process id={} status={}->{} exit_code={:?}",
+            id, current.status, status, exit_code
+        );
         Self::get(pool, id).await
     }
 
@@ -316,6 +416,8 @@ impl ProcessService {
         id: &str,
         pid: i32,
     ) -> ServiceResult<ExecutionProcess> {
+        debug!("update_pid: updating process id={} to pid={}", id, pid);
+
         // Verify process exists
         Self::get(pool, id).await?;
 
@@ -332,8 +434,16 @@ impl ProcessService {
         .bind(&now)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "update_pid: database error updating process id={} pid={}: {}",
+                id, pid, e
+            );
+            e
+        })?;
 
+        debug!("update_pid: updated process id={} pid={}", id, pid);
         Self::get(pool, id).await
     }
 
@@ -343,6 +453,11 @@ impl ProcessService {
         id: &str,
         commit: &str,
     ) -> ServiceResult<ExecutionProcess> {
+        debug!(
+            "update_after_commit: updating process id={} after_commit={}",
+            id, commit
+        );
+
         // Verify process exists
         Self::get(pool, id).await?;
 
@@ -359,8 +474,19 @@ impl ProcessService {
         .bind(&now)
         .bind(id)
         .execute(pool)
-        .await?;
+        .await
+        .map_err(|e| {
+            error!(
+                "update_after_commit: database error updating process id={}: {}",
+                id, e
+            );
+            e
+        })?;
 
+        debug!(
+            "update_after_commit: updated process id={} after_commit={}",
+            id, commit
+        );
         Self::get(pool, id).await
     }
 
@@ -376,11 +502,21 @@ impl ProcessService {
             ProcessStatus::Failed
         };
 
+        if exit_code == 0 {
+            info!("complete: process id={} completed successfully", id);
+        } else {
+            warn!(
+                "complete: process id={} failed with exit_code={}",
+                id, exit_code
+            );
+        }
+
         Self::update_status(pool, id, status, Some(exit_code)).await
     }
 
     /// Mark a process as killed.
     pub async fn mark_killed(pool: &SqlitePool, id: &str) -> ServiceResult<ExecutionProcess> {
+        info!("mark_killed: marking process id={} as killed", id);
         Self::update_status(pool, id, ProcessStatus::Killed, None).await
     }
 
@@ -389,10 +525,15 @@ impl ProcessService {
     /// This method attempts to kill the process using either PTY or standard
     /// process kill mechanisms, then updates the database record.
     pub async fn kill(&self, pool: &SqlitePool, id: &str) -> ServiceResult<ExecutionProcess> {
+        info!("kill: attempting to kill process id={}", id);
         let process = Self::get(pool, id).await?;
 
         // Only kill running processes
         if process.status != ProcessStatus::Running {
+            warn!(
+                "kill: cannot kill process id={} with status={}",
+                id, process.status
+            );
             return Err(ServiceError::Validation(format!(
                 "Cannot kill process {} with status {}",
                 id, process.status
@@ -401,22 +542,37 @@ impl ProcessService {
 
         // Try to kill via PTY first
         let killed_via_pty = self.pty_manager.kill(id).is_ok();
+        debug!(
+            "kill: PTY kill attempt for id={} success={}",
+            id, killed_via_pty
+        );
 
         // If not a PTY process, try to kill via OS PID
         if !killed_via_pty {
             if let Some(pid) = process.pid {
+                debug!("kill: falling back to OS kill for id={} pid={}", id, pid);
                 #[cfg(unix)]
                 {
                     use std::process::Command;
-                    let _ = Command::new("kill").arg("-9").arg(pid.to_string()).output();
+                    let result = Command::new("kill").arg("-9").arg(pid.to_string()).output();
+                    match result {
+                        Ok(_) => debug!("kill: OS kill signal sent to pid={}", pid),
+                        Err(e) => warn!("kill: failed to send OS kill to pid={}: {}", pid, e),
+                    }
                 }
                 #[cfg(windows)]
                 {
                     use std::process::Command;
-                    let _ = Command::new("taskkill")
+                    let result = Command::new("taskkill")
                         .args(&["/F", "/PID", &pid.to_string()])
                         .output();
+                    match result {
+                        Ok(_) => debug!("kill: taskkill sent to pid={}", pid),
+                        Err(e) => warn!("kill: failed to taskkill pid={}: {}", pid, e),
+                    }
                 }
+            } else {
+                debug!("kill: no OS PID available for process id={}", id);
             }
         }
 
@@ -424,12 +580,15 @@ impl ProcessService {
         {
             let mut running = self.running_processes.lock().await;
             running.remove(id);
+            debug!("kill: removed process id={} from running tracking", id);
         }
 
         // Close PTY if exists
         let _ = self.pty_manager.close(id);
+        debug!("kill: closed PTY for process id={}", id);
 
         // Update database
+        info!("kill: successfully killed process id={}", id);
         Self::mark_killed(pool, id).await
     }
 
@@ -443,24 +602,41 @@ impl ProcessService {
         create_request: CreateProcessRequest,
         start_request: StartProcessRequest,
     ) -> ServiceResult<ExecutionProcess> {
+        info!(
+            "start: starting process for chat_id={} command={} use_pty={}",
+            create_request.chat_id, start_request.command, start_request.use_pty
+        );
+
         // Create database record
         let process = Self::create(pool, create_request).await?;
+        debug!("start: created database record id={}", process.id);
 
         // Spawn the process
         if start_request.use_pty {
             // Use PTY for interactive processes
+            debug!(
+                "start: spawning PTY process id={} cols={} rows={}",
+                process.id,
+                start_request.pty_cols.unwrap_or(80),
+                start_request.pty_rows.unwrap_or(24)
+            );
+
             let config = PtyConfig {
-                command: start_request.command,
-                args: start_request.args,
-                cwd: start_request.cwd,
-                env: start_request.env,
+                command: start_request.command.clone(),
+                args: start_request.args.clone(),
+                cwd: start_request.cwd.clone(),
+                env: start_request.env.clone(),
                 cols: start_request.pty_cols.unwrap_or(80),
                 rows: start_request.pty_rows.unwrap_or(24),
             };
 
-            self.pty_manager
-                .create(&process.id, config)
-                .map_err(|e| ServiceError::Process(e.to_string()))?;
+            self.pty_manager.create(&process.id, config).map_err(|e| {
+                error!(
+                    "start: failed to create PTY for process id={}: {}",
+                    process.id, e
+                );
+                ServiceError::Process(e.to_string())
+            })?;
 
             // Track the running process
             {
@@ -473,21 +649,42 @@ impl ProcessService {
                         os_pid: None,
                     },
                 );
+                debug!(
+                    "start: added PTY process id={} to running tracking (total={})",
+                    process.id,
+                    running.len()
+                );
             }
+
+            info!(
+                "start: PTY process started id={} command={}",
+                process.id, start_request.command
+            );
         } else {
             // Use standard process spawning
+            debug!(
+                "start: spawning standard process id={} command={} args={:?}",
+                process.id, start_request.command, start_request.args
+            );
+
             let config = SpawnConfig {
-                command: start_request.command,
-                args: start_request.args,
-                cwd: start_request.cwd,
-                env: start_request.env,
+                command: start_request.command.clone(),
+                args: start_request.args.clone(),
+                cwd: start_request.cwd.clone(),
+                env: start_request.env.clone(),
                 inherit_env: true,
             };
 
-            let child =
-                ProcessSpawner::spawn(config).map_err(|e| ServiceError::Process(e.to_string()))?;
+            let child = ProcessSpawner::spawn(config).map_err(|e| {
+                error!("start: failed to spawn process id={}: {}", process.id, e);
+                ServiceError::Process(e.to_string())
+            })?;
 
             let os_pid = child.id();
+            debug!(
+                "start: spawned standard process id={} os_pid={}",
+                process.id, os_pid
+            );
 
             // Update PID in database
             Self::update_pid(pool, &process.id, os_pid as i32).await?;
@@ -503,7 +700,18 @@ impl ProcessService {
                         os_pid: Some(os_pid),
                     },
                 );
+                debug!(
+                    "start: added standard process id={} pid={} to running tracking (total={})",
+                    process.id,
+                    os_pid,
+                    running.len()
+                );
             }
+
+            info!(
+                "start: standard process started id={} pid={} command={}",
+                process.id, os_pid, start_request.command
+            );
         }
 
         Self::get(pool, &process.id).await
@@ -511,30 +719,68 @@ impl ProcessService {
 
     /// Send input to a running PTY process.
     pub fn send_input(&self, process_id: &str, input: &str) -> ServiceResult<()> {
+        debug!(
+            "send_input: sending {} bytes to process id={}",
+            input.len(),
+            process_id
+        );
+
         self.pty_manager
             .write(process_id, input.as_bytes())
-            .map_err(|e| ServiceError::Process(e.to_string()))?;
+            .map_err(|e| {
+                error!(
+                    "send_input: failed to write to process id={}: {}",
+                    process_id, e
+                );
+                ServiceError::Process(e.to_string())
+            })?;
+
+        debug!(
+            "send_input: sent {} bytes to process id={}",
+            input.len(),
+            process_id
+        );
         Ok(())
     }
 
     /// Resize a PTY process.
     pub fn resize(&self, process_id: &str, cols: u16, rows: u16) -> ServiceResult<()> {
+        debug!(
+            "resize: resizing process id={} to cols={} rows={}",
+            process_id, cols, rows
+        );
+
         self.pty_manager
             .resize(process_id, PtySize { cols, rows })
-            .map_err(|e| ServiceError::Process(e.to_string()))?;
+            .map_err(|e| {
+                error!("resize: failed to resize process id={}: {}", process_id, e);
+                ServiceError::Process(e.to_string())
+            })?;
+
+        debug!(
+            "resize: resized process id={} to cols={} rows={}",
+            process_id, cols, rows
+        );
         Ok(())
     }
 
     /// Check if a process is currently running.
     pub async fn is_running(&self, process_id: &str) -> ServiceResult<bool> {
         let running = self.running_processes.lock().await;
-        Ok(running.contains_key(process_id))
+        let is_running = running.contains_key(process_id);
+        debug!(
+            "is_running: process id={} is_running={}",
+            process_id, is_running
+        );
+        Ok(is_running)
     }
 
     /// Get the count of running processes.
     pub async fn running_count(&self) -> ServiceResult<usize> {
         let running = self.running_processes.lock().await;
-        Ok(running.len())
+        let count = running.len();
+        debug!("running_count: {} processes running", count);
+        Ok(count)
     }
 
     /// Kill all running processes (cleanup on shutdown).
@@ -544,13 +790,31 @@ impl ProcessService {
             running.keys().cloned().collect()
         };
 
-        for id in process_ids {
-            let _ = self.kill(pool, &id).await;
+        info!("kill_all: killing {} running processes", process_ids.len());
+
+        let mut killed_count = 0;
+        let mut failed_count = 0;
+        for id in &process_ids {
+            match self.kill(pool, id).await {
+                Ok(_) => {
+                    killed_count += 1;
+                    debug!("kill_all: killed process id={}", id);
+                }
+                Err(e) => {
+                    failed_count += 1;
+                    warn!("kill_all: failed to kill process id={}: {}", id, e);
+                }
+            }
         }
 
         // Close all PTYs
         let _ = self.pty_manager.close_all();
+        debug!("kill_all: closed all PTYs");
 
+        info!(
+            "kill_all: completed - killed={} failed={}",
+            killed_count, failed_count
+        );
         Ok(())
     }
 

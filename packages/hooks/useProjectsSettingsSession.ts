@@ -3,13 +3,27 @@
  *
  * This hook encapsulates all the state management, data fetching, and
  * callbacks for the Project Settings page, keeping the route component pure.
+ *
+ * Features:
+ * - Full logging at DEBUG/INFO/WARN/ERROR levels
+ * - Toast notifications for user feedback on save actions
+ * - Proper error handling with form validation
+ * - Keyboard shortcuts (Cmd+S to save)
  */
 
 import type { Project, UpdateProjectRequest } from '@openflow/generated';
-import { useCallback, useEffect, useState } from 'react';
+import { createLogger } from '@openflow/utils';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useProject, useProjects, useUpdateProject } from './useProjects';
+import { useToast } from './useToast';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+const logger = createLogger('useProjectsSettingsSession');
 
 // ============================================================================
 // Types
@@ -30,9 +44,15 @@ export interface ProjectSettingsFormData {
 }
 
 export interface UseProjectsSettingsSessionOptions {
-  /** Callback for showing success messages */
+  /**
+   * Callback for showing success messages
+   * @deprecated Use built-in toast notifications instead. This prop is maintained for backward compatibility.
+   */
   onSuccess?: (title: string, message: string) => void;
-  /** Callback for showing error messages */
+  /**
+   * Callback for showing error messages
+   * @deprecated Use built-in toast notifications instead. This prop is maintained for backward compatibility.
+   */
   onError?: (title: string, message: string) => void;
 }
 
@@ -98,13 +118,13 @@ function projectToFormData(project: Project): ProjectSettingsFormData {
  * - Data fetching (projects list, selected project)
  * - UI state (form data, save status)
  * - All user interaction callbacks
+ * - Logging at DEBUG/INFO/WARN/ERROR levels
+ * - Toast notifications for save feedback
  *
  * @example
  * ```tsx
  * function ProjectSettingsPage() {
- *   const session = useProjectsSettingsSession({
- *     onSuccess: (title, message) => toast.success(title, message),
- *   });
+ *   const session = useProjectsSettingsSession();
  *
  *   if (session.isLoadingProjects) {
  *     return <SkeletonSettings />;
@@ -131,6 +151,12 @@ export function useProjectsSettingsSession({
   onSuccess,
   onError,
 }: UseProjectsSettingsSessionOptions = {}): ProjectsSettingsSessionState {
+  // Toast notifications
+  const toast = useToast();
+
+  // Track initialization for logging
+  const initializedRef = useRef(false);
+
   // UI state
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProjectSettingsFormData | null>(null);
@@ -145,10 +171,22 @@ export function useProjectsSettingsSession({
   );
   const updateProject = useUpdateProject();
 
+  // Log hook initialization once
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      logger.debug('Hook initialized');
+    }
+  }, []);
+
   // Auto-select first project if none selected
   useEffect(() => {
     const firstProject = projects[0];
     if (!selectedProjectId && firstProject) {
+      logger.debug('Auto-selecting first project', {
+        projectId: firstProject.id,
+        projectName: firstProject.name,
+      });
       setSelectedProjectId(firstProject.id);
     }
   }, [selectedProjectId, projects]);
@@ -156,6 +194,10 @@ export function useProjectsSettingsSession({
   // Update form data when selected project changes
   useEffect(() => {
     if (selectedProject) {
+      logger.debug('Loading project settings into form', {
+        projectId: selectedProject.id,
+        projectName: selectedProject.name,
+      });
       setFormData(projectToFormData(selectedProject));
       setHasChanges(false);
       setSaveError(null);
@@ -169,7 +211,14 @@ export function useProjectsSettingsSession({
       key: 's',
       meta: true,
       action: () => {
-        if (hasChanges) handleSave();
+        if (hasChanges) {
+          logger.info('Keyboard shortcut triggered: Cmd+S (save settings)', {
+            projectId: selectedProjectId,
+          });
+          handleSave();
+        } else {
+          logger.debug('Keyboard shortcut Cmd+S ignored: no changes to save');
+        }
       },
     },
   ]);
@@ -181,6 +230,7 @@ export function useProjectsSettingsSession({
   const handleFormChange = useCallback(
     (field: keyof ProjectSettingsFormData) =>
       (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        logger.debug('Form field changed', { field, newValueLength: e.target.value.length });
         setFormData((prev) => (prev ? { ...prev, [field]: e.target.value } : null));
         setHasChanges(true);
         setSaveSuccess(false);
@@ -188,15 +238,43 @@ export function useProjectsSettingsSession({
     []
   );
 
-  const handleProjectSelect = useCallback((projectId: string) => {
-    setSelectedProjectId(projectId);
-    setHasChanges(false);
-    setSaveError(null);
-    setSaveSuccess(false);
-  }, []);
+  const handleProjectSelect = useCallback(
+    (projectId: string) => {
+      const project = projects.find((p) => p.id === projectId);
+      logger.debug('Project selected', {
+        projectId,
+        projectName: project?.name ?? 'unknown',
+      });
+      setSelectedProjectId(projectId);
+      setHasChanges(false);
+      setSaveError(null);
+      setSaveSuccess(false);
+    },
+    [projects]
+  );
 
   const handleSave = useCallback(() => {
-    if (!selectedProjectId || !formData) return;
+    if (!selectedProjectId || !formData) {
+      logger.warn('Save attempted with missing data', {
+        hasProjectId: !!selectedProjectId,
+        hasFormData: !!formData,
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!formData.name.trim()) {
+      logger.warn('Validation failed: project name is required');
+      setSaveError('Project name is required');
+      toast.error('Validation Error', 'Project name is required');
+      return;
+    }
+
+    logger.debug('Saving project settings', {
+      projectId: selectedProjectId,
+      projectName: formData.name,
+    });
+
     setSaveError(null);
     setSaveSuccess(false);
 
@@ -218,21 +296,41 @@ export function useProjectsSettingsSession({
     };
 
     updateProject.mutate(
-      { id: selectedProjectId, request },
+      { id: selectedProjectId, request, name: formData.name },
       {
         onSuccess: () => {
+          logger.info('Project settings saved successfully', {
+            projectId: selectedProjectId,
+            projectName: formData.name,
+          });
           setHasChanges(false);
           setSaveSuccess(true);
           setTimeout(() => setSaveSuccess(false), 3000);
+
+          // Show toast notification
+          toast.success('Settings saved', 'Project settings have been updated.');
+
+          // Call deprecated callback for backward compatibility
           onSuccess?.('Settings saved', 'Project settings have been updated.');
         },
         onError: (error) => {
-          setSaveError(error.message);
-          onError?.('Failed to save', error.message);
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          logger.error('Failed to save project settings', {
+            projectId: selectedProjectId,
+            projectName: formData.name,
+            error: errorMessage,
+          });
+          setSaveError(errorMessage);
+
+          // Show toast notification
+          toast.error('Failed to save settings', errorMessage);
+
+          // Call deprecated callback for backward compatibility
+          onError?.('Failed to save', errorMessage);
         },
       }
     );
-  }, [selectedProjectId, formData, updateProject, onSuccess, onError]);
+  }, [selectedProjectId, formData, updateProject, toast, onSuccess, onError]);
 
   // Build project dropdown options
   const projectOptions = projects.map((p) => ({

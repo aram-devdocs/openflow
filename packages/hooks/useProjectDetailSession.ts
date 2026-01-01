@@ -3,6 +3,12 @@
  *
  * This hook encapsulates all the state management, data fetching, and
  * callbacks for the Project Detail page, keeping the route component pure.
+ *
+ * Features:
+ * - Full logging at DEBUG/INFO/WARN/ERROR levels
+ * - Toast notifications for user feedback on task creation and status updates
+ * - Proper error handling with form validation
+ * - Keyboard shortcuts for common actions
  */
 
 import type {
@@ -12,7 +18,8 @@ import type {
   TaskStatus,
   WorkflowTemplate,
 } from '@openflow/generated';
-import { useCallback, useState } from 'react';
+import { createLogger } from '@openflow/utils';
+import { useCallback, useRef, useState } from 'react';
 
 // Local type definitions to avoid importing from @openflow/ui (architecture violation)
 type StatusFilter = TaskStatus | 'all';
@@ -20,7 +27,14 @@ type StatusFilter = TaskStatus | 'all';
 import { useKeyboardShortcuts } from './useKeyboardShortcuts';
 import { useProject, useProjects } from './useProjects';
 import { useCreateTask, useTasks, useUpdateTask } from './useTasks';
+import { useToast } from './useToast';
 import { useWorkflowTemplates } from './useWorkflows';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+const logger = createLogger('useProjectDetailSession');
 
 // ============================================================================
 // Types
@@ -128,6 +142,16 @@ export function useProjectDetailSession({
   projectId,
   navigate,
 }: UseProjectDetailSessionOptions): ProjectDetailSessionState {
+  // Track initialization logging
+  const hasLoggedInit = useRef(false);
+  if (!hasLoggedInit.current) {
+    logger.debug('Hook initialized', { projectId });
+    hasLoggedInit.current = true;
+  }
+
+  // Toast notifications
+  const toast = useToast();
+
   // UI state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -158,11 +182,19 @@ export function useProjectDetailSession({
     {
       key: 'n',
       meta: true,
-      action: () => setIsCreateTaskDialogOpen(true),
+      action: () => {
+        logger.info('Keyboard shortcut activated: Cmd+N (new task)', { projectId });
+        setIsCreateTaskDialogOpen(true);
+      },
     },
     {
       key: 'Escape',
-      action: () => setIsCreateTaskDialogOpen(false),
+      action: () => {
+        if (isCreateTaskDialogOpen) {
+          logger.debug('Keyboard shortcut activated: Escape (close dialog)');
+          setIsCreateTaskDialogOpen(false);
+        }
+      },
     },
   ]);
 
@@ -172,51 +204,83 @@ export function useProjectDetailSession({
 
   const handleSelectProject = useCallback(
     (id: string) => {
+      logger.debug('Selecting project', { fromProjectId: projectId, toProjectId: id });
       navigate({ to: '/projects/$projectId', params: { projectId: id } });
     },
-    [navigate]
+    [navigate, projectId]
   );
 
   const handleSelectTask = useCallback(
     (taskId: string) => {
+      logger.debug('Selecting task', { projectId, taskId });
       navigate({ to: '/tasks/$taskId', params: { taskId } });
     },
-    [navigate]
+    [navigate, projectId]
   );
 
   const handleNewTask = useCallback(() => {
+    logger.debug('Opening new task dialog', { projectId });
     setCreateError(null);
     setNewTaskTitle('');
     setNewTaskDescription('');
     setSelectedWorkflow(null);
     setIsCreateTaskDialogOpen(true);
-  }, []);
+  }, [projectId]);
 
   const handleNewProject = useCallback(() => {
+    logger.debug('Navigating to create new project');
     navigate({ to: '/projects' });
   }, [navigate]);
 
-  const handleStatusFilter = useCallback((status: StatusFilter) => {
-    setStatusFilter(status);
-  }, []);
+  const handleStatusFilter = useCallback(
+    (status: StatusFilter) => {
+      logger.debug('Status filter changed', { previousFilter: statusFilter, newFilter: status });
+      setStatusFilter(status);
+    },
+    [statusFilter]
+  );
 
   const handleTaskStatusChange = useCallback(
     (taskId: string, status: TaskStatus) => {
-      updateTask.mutate({ id: taskId, request: { status } });
+      logger.debug('Updating task status', { projectId, taskId, newStatus: status });
+      updateTask.mutate(
+        { id: taskId, request: { status } },
+        {
+          onSuccess: () => {
+            logger.info('Task status updated successfully', { projectId, taskId, status });
+            toast.success('Status Updated', `Task status changed to ${status}`);
+          },
+          onError: (error) => {
+            logger.error('Failed to update task status', {
+              projectId,
+              taskId,
+              status,
+              error: error.message,
+            });
+            toast.error('Update Failed', `Could not update task status: ${error.message}`);
+          },
+        }
+      );
     },
-    [updateTask]
+    [updateTask, projectId, toast]
   );
 
   const handleSettingsClick = useCallback(() => {
+    logger.debug('Navigating to settings');
     navigate({ to: '/settings' as string });
   }, [navigate]);
 
   const handleArchiveClick = useCallback(() => {
+    logger.debug('Navigating to archive');
     navigate({ to: '/archive' as string });
   }, [navigate]);
 
   const handleToggleSidebar = useCallback(() => {
-    setSidebarCollapsed((prev) => !prev);
+    setSidebarCollapsed((prev) => {
+      const newState = !prev;
+      logger.debug('Sidebar toggled', { collapsed: newState });
+      return newState;
+    });
   }, []);
 
   // ============================================================================
@@ -224,15 +288,17 @@ export function useProjectDetailSession({
   // ============================================================================
 
   const handleSearch = useCallback(() => {
+    logger.debug('Search triggered', { projectId });
     // TODO: Open command palette for search
-    console.log('Search clicked');
-  }, []);
+  }, [projectId]);
 
   const handleBackToProjects = useCallback(() => {
+    logger.debug('Navigating back to projects list');
     navigate({ to: '/projects' });
   }, [navigate]);
 
   const handleProjectSettings = useCallback(() => {
+    logger.debug('Navigating to project settings', { projectId });
     navigate({
       to: '/settings/projects' as string,
       search: { projectId } as Record<string, string>,
@@ -244,21 +310,25 @@ export function useProjectDetailSession({
   // ============================================================================
 
   const handleOpenCreateTaskDialog = useCallback(() => {
+    logger.debug('Opening create task dialog', { projectId });
     setCreateError(null);
     setNewTaskTitle('');
     setNewTaskDescription('');
     setSelectedWorkflow(null);
     setIsCreateTaskDialogOpen(true);
-  }, []);
+  }, [projectId]);
 
   const handleCloseCreateTaskDialog = useCallback(() => {
+    logger.debug('Closing create task dialog');
     setIsCreateTaskDialogOpen(false);
   }, []);
 
   const handleCreateTask = useCallback(() => {
     setCreateError(null);
 
+    // Validation
     if (!newTaskTitle.trim()) {
+      logger.warn('Create task validation failed: missing title', { projectId });
       setCreateError('Task title is required');
       return;
     }
@@ -270,8 +340,22 @@ export function useProjectDetailSession({
       ...(selectedWorkflow ? { workflowTemplate: selectedWorkflow.id } : {}),
     };
 
+    logger.debug('Creating task', {
+      projectId,
+      title: request.title,
+      hasDescription: !!request.description,
+      workflowId: selectedWorkflow?.id,
+    });
+
     createTask.mutate(request, {
       onSuccess: (task) => {
+        logger.info('Task created successfully', {
+          projectId,
+          taskId: task.id,
+          title: task.title,
+          workflowId: selectedWorkflow?.id,
+        });
+        toast.success('Task Created', `Created "${task.title}"`);
         setIsCreateTaskDialogOpen(false);
         setNewTaskTitle('');
         setNewTaskDescription('');
@@ -279,10 +363,16 @@ export function useProjectDetailSession({
         navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
       },
       onError: (error) => {
+        logger.error('Failed to create task', {
+          projectId,
+          title: newTaskTitle,
+          error: error.message,
+        });
+        toast.error('Creation Failed', `Could not create task: ${error.message}`);
         setCreateError(error.message);
       },
     });
-  }, [projectId, newTaskTitle, newTaskDescription, selectedWorkflow, createTask, navigate]);
+  }, [projectId, newTaskTitle, newTaskDescription, selectedWorkflow, createTask, navigate, toast]);
 
   return {
     // Data

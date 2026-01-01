@@ -3,9 +3,15 @@
  *
  * This hook encapsulates all the state management, data fetching, and
  * callbacks for the Archive page, keeping the route component pure.
+ *
+ * Features:
+ * - Full logging at DEBUG/INFO/ERROR levels
+ * - Toast notifications for user feedback on actions
+ * - Proper error handling with try/catch patterns
  */
 
 import type { Chat, Project, Task } from '@openflow/generated';
+import { createLogger } from '@openflow/utils';
 import { useCallback, useMemo, useState } from 'react';
 import { useArchivedChats, useDeleteChat, useUnarchiveChat } from './useChats';
 import { useConfirmDialog } from './useConfirmDialog';
@@ -17,6 +23,13 @@ import {
   useUnarchiveProject,
 } from './useProjects';
 import { useArchivedTasks, useDeleteTask, useRestoreTask, useTasks } from './useTasks';
+import { useToast } from './useToast';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+const logger = createLogger('useArchiveSession');
 
 // ============================================================================
 // Types
@@ -113,11 +126,16 @@ export interface ArchiveSessionState {
  * ```
  */
 export function useArchiveSession({ navigate }: UseArchiveSessionOptions): ArchiveSessionState {
+  logger.debug('Initializing useArchiveSession hook');
+
   // UI state
   const [activeTab, setActiveTab] = useState<ArchiveTab>('tasks');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+
+  // Toast notifications
+  const toast = useToast();
 
   // Confirm dialog
   const { dialogProps, confirm } = useConfirmDialog();
@@ -142,6 +160,7 @@ export function useArchiveSession({ navigate }: UseArchiveSessionOptions): Archi
     {
       key: 'Escape',
       action: () => {
+        logger.debug('Escape pressed, clearing selection');
         setSelectedTask(null);
         setSelectedChat(null);
         setSelectedProject(null);
@@ -211,108 +230,207 @@ export function useArchiveSession({ navigate }: UseArchiveSessionOptions): Archi
   // ============================================================================
 
   const handleBack = useCallback(() => {
+    logger.debug('Navigating back to home');
     navigate({ to: '/' });
   }, [navigate]);
 
   const handleSearch = useCallback(() => {
+    logger.debug('Search action triggered');
     // TODO: Open command palette for search
-    console.log('Search clicked');
   }, []);
 
   const handleSelectTask = useCallback((task: Task) => {
+    logger.debug('Selecting task', { taskId: task.id, taskTitle: task.title });
     setSelectedTask(task);
   }, []);
 
   const handleSelectChat = useCallback((chat: Chat) => {
+    logger.debug('Selecting chat', { chatId: chat.id, chatTitle: chat.title });
     setSelectedChat(chat);
   }, []);
 
   const handleSelectProject = useCallback((project: Project) => {
+    logger.debug('Selecting project', { projectId: project.id, projectName: project.name });
     setSelectedProject(project);
   }, []);
 
   const handleRestoreTask = useCallback(
     (task: Task) => {
+      logger.debug('Restoring task', { taskId: task.id, taskTitle: task.title });
       restoreTask.mutate(
         { id: task.id },
         {
           onSuccess: () => {
+            logger.info('Task restored successfully', { taskId: task.id, taskTitle: task.title });
+            toast.success('Task Restored', `"${task.title}" has been restored.`);
             setSelectedTask(null);
+          },
+          onError: (error) => {
+            logger.error('Failed to restore task', {
+              taskId: task.id,
+              taskTitle: task.title,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            toast.error('Restore Failed', `Failed to restore "${task.title}". Please try again.`);
           },
         }
       );
     },
-    [restoreTask]
+    [restoreTask, toast]
   );
 
   const handleRestoreChat = useCallback(
     (chat: Chat) => {
+      const chatTitle = chat.title || 'Untitled Chat';
+      logger.debug('Restoring chat', { chatId: chat.id, chatTitle });
       unarchiveChat.mutate(chat.id, {
         onSuccess: () => {
+          logger.info('Chat restored successfully', { chatId: chat.id, chatTitle });
+          toast.success('Chat Restored', `"${chatTitle}" has been restored.`);
           setSelectedChat(null);
+        },
+        onError: (error) => {
+          logger.error('Failed to restore chat', {
+            chatId: chat.id,
+            chatTitle,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          toast.error('Restore Failed', `Failed to restore "${chatTitle}". Please try again.`);
         },
       });
     },
-    [unarchiveChat]
+    [unarchiveChat, toast]
   );
 
   const handleRestoreProject = useCallback(
     (project: Project) => {
-      unarchiveProject.mutate(project.id, {
-        onSuccess: () => {
-          setSelectedProject(null);
-        },
-      });
+      logger.debug('Restoring project', { projectId: project.id, projectName: project.name });
+      unarchiveProject.mutate(
+        { id: project.id, name: project.name },
+        {
+          onSuccess: () => {
+            logger.info('Project restored successfully', {
+              projectId: project.id,
+              projectName: project.name,
+            });
+            // Toast is handled by useUnarchiveProject hook
+            setSelectedProject(null);
+          },
+          onError: (error) => {
+            logger.error('Failed to restore project', {
+              projectId: project.id,
+              projectName: project.name,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            // Toast is handled by useUnarchiveProject hook
+          },
+        }
+      );
     },
     [unarchiveProject]
   );
 
   const handleDeleteTask = useCallback(
     (task: Task) => {
+      logger.debug('Opening delete confirmation for task', {
+        taskId: task.id,
+        taskTitle: task.title,
+      });
       confirm({
         title: 'Delete Task Permanently',
         description: `Are you sure you want to permanently delete "${task.title}"? This action cannot be undone.`,
         confirmLabel: 'Delete',
         variant: 'destructive',
         onConfirm: async () => {
-          await deleteTask.mutateAsync(task.id);
-          setSelectedTask(null);
+          logger.debug('Deleting task permanently', { taskId: task.id, taskTitle: task.title });
+          try {
+            await deleteTask.mutateAsync(task.id);
+            logger.info('Task deleted permanently', { taskId: task.id, taskTitle: task.title });
+            toast.success('Task Deleted', `"${task.title}" has been permanently deleted.`);
+            setSelectedTask(null);
+          } catch (error) {
+            logger.error('Failed to delete task', {
+              taskId: task.id,
+              taskTitle: task.title,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            toast.error('Delete Failed', `Failed to delete "${task.title}". Please try again.`);
+            throw error; // Re-throw to let the dialog handle the error state
+          }
         },
       });
     },
-    [confirm, deleteTask]
+    [confirm, deleteTask, toast]
   );
 
   const handleDeleteChat = useCallback(
     (chat: Chat) => {
+      const chatTitle = chat.title || 'Untitled Chat';
+      logger.debug('Opening delete confirmation for chat', { chatId: chat.id, chatTitle });
       confirm({
         title: 'Delete Chat Permanently',
-        description: `Are you sure you want to permanently delete "${chat.title || 'Untitled Chat'}"? This action cannot be undone.`,
+        description: `Are you sure you want to permanently delete "${chatTitle}"? This action cannot be undone.`,
         confirmLabel: 'Delete',
         variant: 'destructive',
         onConfirm: async () => {
-          await deleteChat.mutateAsync({
-            id: chat.id,
-            projectId: chat.projectId,
-            taskId: chat.taskId ?? undefined,
-          });
-          setSelectedChat(null);
+          logger.debug('Deleting chat permanently', { chatId: chat.id, chatTitle });
+          try {
+            await deleteChat.mutateAsync({
+              id: chat.id,
+              projectId: chat.projectId,
+              taskId: chat.taskId ?? undefined,
+            });
+            logger.info('Chat deleted permanently', { chatId: chat.id, chatTitle });
+            toast.success('Chat Deleted', `"${chatTitle}" has been permanently deleted.`);
+            setSelectedChat(null);
+          } catch (error) {
+            logger.error('Failed to delete chat', {
+              chatId: chat.id,
+              chatTitle,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            toast.error('Delete Failed', `Failed to delete "${chatTitle}". Please try again.`);
+            throw error; // Re-throw to let the dialog handle the error state
+          }
         },
       });
     },
-    [confirm, deleteChat]
+    [confirm, deleteChat, toast]
   );
 
   const handleDeleteProject = useCallback(
     (project: Project) => {
+      logger.debug('Opening delete confirmation for project', {
+        projectId: project.id,
+        projectName: project.name,
+      });
       confirm({
         title: 'Delete Project Permanently',
         description: `Are you sure you want to permanently delete "${project.name}"? This will delete all tasks, chats, and messages. This action cannot be undone.`,
         confirmLabel: 'Delete',
         variant: 'destructive',
         onConfirm: async () => {
-          await deleteProject.mutateAsync(project.id);
-          setSelectedProject(null);
+          logger.debug('Deleting project permanently', {
+            projectId: project.id,
+            projectName: project.name,
+          });
+          try {
+            await deleteProject.mutateAsync({ id: project.id, name: project.name });
+            logger.info('Project deleted permanently', {
+              projectId: project.id,
+              projectName: project.name,
+            });
+            // Toast is handled by useDeleteProject hook
+            setSelectedProject(null);
+          } catch (error) {
+            logger.error('Failed to delete project', {
+              projectId: project.id,
+              projectName: project.name,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            // Toast is handled by useDeleteProject hook
+            throw error; // Re-throw to let the dialog handle the error state
+          }
         },
       });
     },

@@ -15,12 +15,15 @@ import type {
 import { workflowQueries } from '@openflow/queries';
 import {
   type ParsedWorkflow,
+  createLogger,
   extractVariables,
   parseWorkflowSteps,
   substituteVariables,
 } from '@openflow/utils';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
+
+const logger = createLogger('useWorkflows');
 
 /**
  * Query keys factory for workflow-related queries.
@@ -112,8 +115,18 @@ export function useCreateWorkflowTemplate() {
 
   return useMutation({
     mutationFn: (request: CreateWorkflowTemplateRequest) => workflowQueries.create(request),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      logger.info('Workflow template created', {
+        templateId: data.id,
+        name: variables.name,
+      });
       queryClient.invalidateQueries({ queryKey: workflowKeys.lists() });
+    },
+    onError: (error, variables) => {
+      logger.error('Failed to create workflow template', {
+        name: variables.name,
+        error: error.message,
+      });
     },
   });
 }
@@ -140,10 +153,20 @@ export function useUpdateWorkflowTemplate() {
       request: UpdateWorkflowTemplateRequest;
     }) => workflowQueries.update(id, request),
     onSuccess: (_data, variables) => {
+      logger.info('Workflow template updated', {
+        templateId: variables.id,
+        updates: variables.request,
+      });
       queryClient.invalidateQueries({
         queryKey: workflowKeys.detail(variables.id),
       });
       queryClient.invalidateQueries({ queryKey: workflowKeys.lists() });
+    },
+    onError: (error, variables) => {
+      logger.error('Failed to update workflow template', {
+        templateId: variables.id,
+        error: error.message,
+      });
     },
   });
 }
@@ -163,9 +186,16 @@ export function useDeleteWorkflowTemplate() {
 
   return useMutation({
     mutationFn: (id: string) => workflowQueries.delete(id),
-    onSuccess: (_data, id) => {
-      queryClient.removeQueries({ queryKey: workflowKeys.detail(id) });
+    onSuccess: (_data, templateId) => {
+      logger.info('Workflow template deleted', { templateId });
+      queryClient.removeQueries({ queryKey: workflowKeys.detail(templateId) });
       queryClient.invalidateQueries({ queryKey: workflowKeys.lists() });
+    },
+    onError: (error, templateId) => {
+      logger.error('Failed to delete workflow template', {
+        templateId,
+        error: error.message,
+      });
     },
   });
 }

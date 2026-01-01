@@ -2,12 +2,22 @@
  * Storybook stories for TaskPage
  *
  * Demonstrates the complete task detail page in various states:
- * - Loading state
+ * - Loading state with skeleton
  * - Not found state
+ * - Error state with retry
  * - Ready state with different tabs
  * - With dialogs open
  * - Running executor
  * - Mobile viewport
+ * - Responsive sizing
+ * - Accessibility features
+ *
+ * @accessibility
+ * - All states announce to screen readers via VisuallyHidden
+ * - Error states use role="alert" with aria-live="assertive"
+ * - Loading states use role="status" with aria-busy
+ * - Touch targets meet WCAG 2.5.5 minimum of 44x44px on mobile
+ * - Focus management for dialog interactions
  */
 
 import type {
@@ -24,7 +34,24 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { FileCode2, FileText, GitCommit } from 'lucide-react';
 import type { ArtifactFile } from '../organisms/ArtifactsPanel';
 import type { ClaudeEvent } from '../organisms/ClaudeEventRenderer';
-import { TaskPage, type TaskPageProps } from './TaskPage';
+import {
+  // Constants for documentation
+  DEFAULT_ERROR_DESCRIPTION,
+  DEFAULT_ERROR_TITLE,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_SKELETON_MESSAGE_COUNT,
+  DEFAULT_SKELETON_STEP_COUNT,
+  SR_ERROR_PREFIX,
+  SR_LOADING,
+  SR_NOT_FOUND,
+  SR_PROCESSING,
+  SR_READY_PREFIX,
+  SR_RUNNING,
+  TaskPage,
+  TaskPageError,
+  type TaskPageProps,
+  TaskPageSkeleton,
+} from './TaskPage';
 
 const meta: Meta<typeof TaskPage> = {
   title: 'Pages/TaskPage',
@@ -738,6 +765,342 @@ export const Mobile: Story = {
   parameters: {
     viewport: {
       defaultViewport: 'mobile1',
+    },
+  },
+};
+
+// ============================================================================
+// Error State Stories
+// ============================================================================
+
+/**
+ * Error state with retry button
+ *
+ * @accessibility
+ * - Uses role="alert" for immediate announcement
+ * - aria-live="assertive" for error urgency
+ * - Retry button has minimum 44x44px touch target on mobile
+ */
+export const ErrorState: Story = {
+  args: {
+    state: 'error',
+    errorMessage: 'Failed to load task data. The server returned an error.',
+    onErrorRetry: noop,
+    onNotFoundBack: noop,
+  },
+};
+
+/**
+ * Error state with only retry button (no back)
+ */
+export const ErrorRetryOnly: Story = {
+  args: {
+    state: 'error',
+    errorMessage: 'Network connection failed. Please try again.',
+    onErrorRetry: noop,
+  },
+};
+
+/**
+ * Error state with only back button (no retry)
+ */
+export const ErrorBackOnly: Story = {
+  args: {
+    state: 'error',
+    errorMessage: 'This task has been deleted and cannot be recovered.',
+    onNotFoundBack: noop,
+  },
+};
+
+/**
+ * Error state with default message
+ */
+export const ErrorDefault: Story = {
+  args: {
+    state: 'error',
+    onErrorRetry: noop,
+    onNotFoundBack: noop,
+  },
+};
+
+// ============================================================================
+// Responsive Size Stories
+// ============================================================================
+
+/**
+ * Small size variant
+ */
+export const SizeSmall: Story = {
+  args: createDefaultProps({
+    size: 'sm',
+  }),
+};
+
+/**
+ * Medium size variant (default)
+ */
+export const SizeMedium: Story = {
+  args: createDefaultProps({
+    size: 'md',
+  }),
+};
+
+/**
+ * Large size variant
+ */
+export const SizeLarge: Story = {
+  args: createDefaultProps({
+    size: 'lg',
+  }),
+};
+
+/**
+ * Responsive size (changes with viewport)
+ */
+export const SizeResponsive: Story = {
+  args: createDefaultProps({
+    size: { base: 'sm', md: 'md', lg: 'lg' },
+  }),
+};
+
+// ============================================================================
+// Skeleton Sub-component Stories
+// ============================================================================
+
+/**
+ * TaskPageSkeleton with default settings
+ *
+ * @accessibility
+ * - Uses role="status" with aria-label for screen readers
+ * - aria-busy={true} indicates loading state
+ */
+export const SkeletonDefault: StoryObj<typeof TaskPageSkeleton> = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <TaskPageSkeleton data-testid="task-page-skeleton" />
+    </div>
+  ),
+};
+
+/**
+ * Skeleton with custom message and step count
+ */
+export const SkeletonCustomCounts: StoryObj<typeof TaskPageSkeleton> = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <TaskPageSkeleton messageCount={5} stepCount={6} data-testid="task-page-skeleton" />
+    </div>
+  ),
+};
+
+/**
+ * Skeleton without steps panel
+ */
+export const SkeletonNoStepsPanel: StoryObj<typeof TaskPageSkeleton> = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <TaskPageSkeleton showStepsPanel={false} data-testid="task-page-skeleton" />
+    </div>
+  ),
+};
+
+/**
+ * Skeleton with small size
+ */
+export const SkeletonSmall: StoryObj<typeof TaskPageSkeleton> = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <TaskPageSkeleton size="sm" data-testid="task-page-skeleton" />
+    </div>
+  ),
+};
+
+// ============================================================================
+// Error Sub-component Stories
+// ============================================================================
+
+/**
+ * TaskPageError with all options
+ *
+ * @accessibility
+ * - Uses role="alert" for error announcement
+ * - aria-describedby links error message to heading
+ * - Buttons have minimum touch target on mobile
+ */
+export const ErrorComponentFull: StoryObj<typeof TaskPageError> = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <TaskPageError
+        message="The task could not be loaded due to a server error."
+        onRetry={noop}
+        onBack={noop}
+        data-testid="task-page-error"
+      />
+    </div>
+  ),
+};
+
+/**
+ * Error component with only retry
+ */
+export const ErrorComponentRetryOnly: StoryObj<typeof TaskPageError> = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <TaskPageError message="Connection lost. Please retry." onRetry={noop} />
+    </div>
+  ),
+};
+
+/**
+ * Error component with small size
+ */
+export const ErrorComponentSmall: StoryObj<typeof TaskPageError> = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <TaskPageError message="An error occurred." onRetry={noop} onBack={noop} size="sm" />
+    </div>
+  ),
+};
+
+/**
+ * Error component with large size
+ */
+export const ErrorComponentLarge: StoryObj<typeof TaskPageError> = {
+  render: () => (
+    <div className="h-screen w-screen">
+      <TaskPageError message="An error occurred." onRetry={noop} onBack={noop} size="lg" />
+    </div>
+  ),
+};
+
+// ============================================================================
+// Accessibility Demo Stories
+// ============================================================================
+
+/**
+ * Accessibility demo: Screen reader announcements
+ *
+ * This story demonstrates the screen reader announcements for different states.
+ * Use a screen reader or browser dev tools to inspect the VisuallyHidden elements.
+ *
+ * @accessibility
+ * Screen reader announcements:
+ * - Loading: "Loading task details"
+ * - Not found: "Task not found"
+ * - Error: "Error loading task: [message]"
+ * - Ready: "Task loaded: [title]. [n] workflow steps. Showing [tab] tab."
+ * - Running: "Executor is running"
+ * - Processing: "Processing message"
+ */
+export const AccessibilityScreenReader: Story = {
+  args: createDefaultProps(),
+  parameters: {
+    docs: {
+      description: {
+        story: `
+**Screen Reader Announcements:**
+- \`${SR_LOADING}\` - Loading state
+- \`${SR_NOT_FOUND}\` - Not found state
+- \`${SR_ERROR_PREFIX} [message]\` - Error state
+- \`${SR_READY_PREFIX} [title]. [n] workflow steps. Showing [tab] tab.\` - Ready state
+- \`${SR_RUNNING}\` - When executor is running
+- \`${SR_PROCESSING}\` - When processing a message
+
+**Constants:**
+- \`DEFAULT_SKELETON_MESSAGE_COUNT\`: ${DEFAULT_SKELETON_MESSAGE_COUNT}
+- \`DEFAULT_SKELETON_STEP_COUNT\`: ${DEFAULT_SKELETON_STEP_COUNT}
+- \`DEFAULT_PAGE_SIZE\`: "${DEFAULT_PAGE_SIZE}"
+- \`DEFAULT_ERROR_TITLE\`: "${DEFAULT_ERROR_TITLE}"
+- \`DEFAULT_ERROR_DESCRIPTION\`: "${DEFAULT_ERROR_DESCRIPTION}"
+        `,
+      },
+    },
+  },
+};
+
+/**
+ * Touch target accessibility demo
+ *
+ * On mobile viewports, buttons have minimum 44x44px touch targets
+ * per WCAG 2.5.5 Target Size guidelines.
+ */
+export const AccessibilityTouchTargets: Story = {
+  args: {
+    state: 'error',
+    errorMessage: 'Touch targets demo - buttons have 44x44px minimum on mobile',
+    onErrorRetry: noop,
+    onNotFoundBack: noop,
+  },
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile1',
+    },
+    docs: {
+      description: {
+        story:
+          'On mobile viewports, all interactive elements have minimum 44x44px touch targets per WCAG 2.5.5.',
+      },
+    },
+  },
+};
+
+/**
+ * Focus management demo
+ *
+ * When dialogs open, focus is trapped within the dialog.
+ * When dialogs close, focus returns to the trigger element.
+ */
+export const AccessibilityFocusManagement: Story = {
+  args: createDefaultProps({
+    addStepDialog: {
+      ...defaultAddStepDialog,
+      isOpen: true,
+      title: 'Focus is trapped in this dialog',
+      description: 'Press Tab to cycle through focusable elements',
+    },
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Dialog components trap focus within themselves and return focus to the trigger when closed.',
+      },
+    },
+  },
+};
+
+/**
+ * ARIA attributes demo
+ *
+ * This story shows the data attributes added for testing and the ARIA attributes
+ * used for accessibility.
+ */
+export const AccessibilityAriaAttributes: Story = {
+  args: createDefaultProps(),
+  parameters: {
+    docs: {
+      description: {
+        story: `
+**Data Attributes (for testing):**
+- \`data-testid\`: Test identifier
+- \`data-state\`: Current page state ("loading" | "not-found" | "error" | "ready")
+- \`data-task-id\`: Task ID when ready
+- \`data-task-status\`: Task status when ready
+- \`data-active-tab\`: Currently active tab
+- \`data-step-count\`: Number of workflow steps
+- \`data-chat-count\`: Number of chats
+- \`data-size\`: Current size variant
+- \`data-running\`: Whether executor is running
+- \`data-processing\`: Whether processing a message
+
+**ARIA Attributes:**
+- \`aria-label\`: Accessible label for the page (includes task title and status)
+- \`aria-live\`: Announces state changes to screen readers
+- \`aria-busy\`: Indicates loading state
+- \`role="status"\`: For loading/ready announcements
+- \`role="alert"\`: For error announcements
+        `,
+      },
     },
   },
 };

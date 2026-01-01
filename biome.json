@@ -8,11 +8,35 @@
     "rules": {
       "recommended": true,
       "a11y": {
-        "useSemanticElements": "off",
-        "noNoninteractiveElementToInteractiveRole": "off",
-        "noNoninteractiveTabindex": "off",
-        "noRedundantRoles": "off",
-        "noAutofocus": "off"
+        "recommended": true,
+        "useSemanticElements": "warn",
+        "noNoninteractiveElementToInteractiveRole": "warn",
+        "noNoninteractiveTabindex": "warn",
+        "noRedundantRoles": "warn",
+        "noAutofocus": "warn",
+        "useButtonType": "error",
+        "useAltText": "error",
+        "useValidAnchor": "error",
+        "noBlankTarget": "error",
+        "useKeyWithClickEvents": "warn",
+        "useKeyWithMouseEvents": "warn",
+        "noAccessKey": "warn",
+        "noPositiveTabindex": "error",
+        "noHeaderScope": "error",
+        "useValidAriaProps": "error",
+        "useValidAriaValues": "error",
+        "useValidAriaRole": "error",
+        "noAriaUnsupportedElements": "error",
+        "noAriaHiddenOnFocusable": "warn",
+        "useAriaPropsForRole": "warn",
+        "useAriaActivedescendantWithTabindex": "warn",
+        "useMediaCaption": "warn",
+        "useIframeTitle": "error",
+        "noInteractiveElementToNoninteractiveRole": "warn",
+        "noDistractingElements": "error",
+        "useFocusableInteractive": "warn",
+        "noSvgWithoutTitle": "warn",
+        "noLabelWithoutControl": "warn"
       },
       "correctness": {
         "noUnusedImports": "error",
@@ -49,11 +73,51 @@
       "build",
       ".cache",
       "target",
+      "coverage",
       "src-tauri/gen",
       "src-tauri/target",
       "packages/generated/types.ts",
       "src/routeTree.gen.ts",
       "storybook-static"
     ]
-  }
+  },
+  "overrides": [
+    {
+      "include": ["**/*.stories.tsx", "**/*.stories.ts"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noLabelWithoutControl": "off",
+            "useButtonType": "warn",
+            "noAriaHiddenOnFocusable": "warn"
+          },
+          "style": {
+            "noNonNullAssertion": "warn"
+          },
+          "complexity": {
+            "noForEach": "off"
+          },
+          "correctness": {
+            "noUnusedVariables": "warn"
+          }
+        }
+      }
+    },
+    {
+      "include": ["**/*.test.ts", "**/*.test.tsx", "**/tests/**/*.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noForEach": "off"
+          },
+          "suspicious": {
+            "noExplicitAny": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    }
+  ]
 }

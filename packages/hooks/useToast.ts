@@ -9,7 +9,10 @@
  * The ToastProvider component in src/providers/ uses useToastProvider
  * and renders the actual Toast UI components from @openflow/ui.
  */
+import { createLogger } from '@openflow/utils';
 import { createContext, useCallback, useContext, useState } from 'react';
+
+const logger = createLogger('useToast');
 
 /** Toast variant types */
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
@@ -94,6 +97,7 @@ export function useToastProvider(): ToastContextValue {
   const [toasts, setToasts] = useState<ToastData[]>([]);
 
   const removeToast = useCallback((id: string) => {
+    logger.debug('Toast dismissed', { id });
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
@@ -101,6 +105,14 @@ export function useToastProvider(): ToastContextValue {
     (toast: Omit<ToastData, 'id'>): string => {
       const id = generateToastId();
       const newToast: ToastData = { ...toast, id };
+
+      logger.debug('Toast shown', {
+        id,
+        variant: toast.variant,
+        title: toast.title,
+        hasDescription: Boolean(toast.description),
+        hasAction: Boolean(toast.action),
+      });
 
       setToasts((prev) => [...prev, newToast]);
 

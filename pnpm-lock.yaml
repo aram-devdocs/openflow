@@ -153,6 +153,15 @@ importers:
         specifier: ^22.0.0
         version: 22.19.3
 
+  packages/primitives:
+    dependencies:
+      '@openflow/utils':
+        specifier: workspace:*
+        version: link:../utils
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+
   packages/queries:
     dependencies:
       '@openflow/generated':

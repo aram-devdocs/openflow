@@ -4,11 +4,13 @@
  * Demonstrates the complete project detail page in various states:
  * - Loading state
  * - Not found state
+ * - Error state with retry
  * - Ready state with tasks
  * - Different status filters
  * - With create task dialog
  * - Collapsed sidebar
  * - Mobile viewport
+ * - Accessibility demos
  */
 
 import type {
@@ -20,8 +22,31 @@ import type {
 } from '@openflow/generated';
 import { TaskStatus as TaskStatusEnum, WorkflowStepStatus } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
+import { useRef, useState } from 'react';
 import type { StatusFilter } from '../organisms/Sidebar';
-import { ProjectDetailPage, type ProjectDetailPageProps } from './ProjectDetailPage';
+import {
+  DEFAULT_BACK_LABEL,
+  DEFAULT_ERROR_TITLE,
+  DEFAULT_PAGE_LABEL,
+  DEFAULT_PAGE_SIZE,
+  DEFAULT_RETRY_LABEL,
+  // Constants
+  DEFAULT_SKELETON_TASK_COUNT,
+  PAGE_SIZE_GAP,
+  PAGE_SIZE_PADDING,
+  PROJECT_DETAIL_PAGE_BASE_CLASSES,
+  PROJECT_DETAIL_PAGE_ERROR_CLASSES,
+  PROJECT_DETAIL_PAGE_SKELETON_CLASSES,
+  ProjectDetailPage,
+  ProjectDetailPageError,
+  type ProjectDetailPageProps,
+  ProjectDetailPageSkeleton,
+  SR_EMPTY,
+  SR_ERROR_PREFIX,
+  SR_LOADED_PREFIX,
+  SR_LOADING,
+  SR_NOT_FOUND,
+} from './ProjectDetailPage';
 
 const meta: Meta<typeof ProjectDetailPage> = {
   title: 'Pages/ProjectDetailPage',
@@ -182,6 +207,7 @@ const noopString = (_s: string) => {};
 const noopStatus = (_s: StatusFilter) => {};
 const noopTaskStatus = (_id: string, _status: TaskStatus) => {};
 const noopWorkflow = (_w: WorkflowTemplate | null) => {};
+const noopBoolean = (_b: boolean) => {};
 
 // ============================================================================
 // Default Props Factory
@@ -251,7 +277,7 @@ function createDefaultProps(overrides?: Partial<ProjectDetailPageProps>): Projec
 }
 
 // ============================================================================
-// Stories
+// Basic Examples
 // ============================================================================
 
 /**
@@ -277,6 +303,19 @@ export const Loading: Story = {
 export const NotFound: Story = {
   args: {
     state: 'not-found',
+    onNotFoundBack: noop,
+    onSearch: noop,
+  },
+};
+
+/**
+ * Error state with retry
+ */
+export const ErrorState: Story = {
+  args: {
+    state: 'error',
+    errorMessage: 'Failed to connect to database. Connection timeout after 30 seconds.',
+    onErrorRetry: noop,
     onNotFoundBack: noop,
     onSearch: noop,
   },
@@ -310,6 +349,10 @@ export const EmptyProject: Story = {
     },
   }),
 };
+
+// ============================================================================
+// Status Filters
+// ============================================================================
 
 /**
  * Filtered by in progress status
@@ -345,6 +388,50 @@ export const FilteredTodo: Story = {
   }),
 };
 
+// ============================================================================
+// Size Variants
+// ============================================================================
+
+/**
+ * Small size variant
+ */
+export const SizeSmall: Story = {
+  args: createDefaultProps({
+    size: 'sm',
+  }),
+};
+
+/**
+ * Medium size variant (default)
+ */
+export const SizeMedium: Story = {
+  args: createDefaultProps({
+    size: 'md',
+  }),
+};
+
+/**
+ * Large size variant
+ */
+export const SizeLarge: Story = {
+  args: createDefaultProps({
+    size: 'lg',
+  }),
+};
+
+/**
+ * Responsive sizing - sm on mobile, md on tablet, lg on desktop
+ */
+export const ResponsiveSizing: Story = {
+  args: createDefaultProps({
+    size: { base: 'sm', md: 'md', lg: 'lg' },
+  }),
+};
+
+// ============================================================================
+// Layout Variants
+// ============================================================================
+
 /**
  * Sidebar collapsed
  */
@@ -357,6 +444,25 @@ export const SidebarCollapsed: Story = {
     },
   }),
 };
+
+/**
+ * Mobile drawer open
+ */
+export const MobileDrawerOpen: Story = {
+  args: createDefaultProps({
+    isMobileDrawerOpen: true,
+    onMobileDrawerToggle: noopBoolean,
+  }),
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile1',
+    },
+  },
+};
+
+// ============================================================================
+// Dialog States
+// ============================================================================
 
 /**
  * Create task dialog open
@@ -429,6 +535,25 @@ export const CreateTaskDialogError: Story = {
   }),
 };
 
+// ============================================================================
+// Content Variants
+// ============================================================================
+
+/**
+ * Content error state
+ */
+export const ContentError: Story = {
+  args: createDefaultProps({
+    content: {
+      ...defaultContent,
+      isLoading: false,
+      tasks: [],
+      error: 'Failed to load tasks. Network timeout.',
+      onRetry: noop,
+    },
+  }),
+};
+
 /**
  * Many tasks (scrollable)
  */
@@ -470,19 +595,27 @@ export const ManyTasks: Story = {
  * Different project selected
  */
 export const DifferentProject: Story = {
-  args: createDefaultProps({
-    project: mockProjects[1],
-    sidebar: {
-      ...defaultSidebar,
-      projectId: 'project-2',
-      tasks: [],
-    },
-    content: {
-      ...defaultContent,
-      tasks: [],
-    },
-  }),
+  args: (() => {
+    const secondProject = mockProjects[1];
+    if (!secondProject) return createDefaultProps();
+    return createDefaultProps({
+      project: secondProject,
+      sidebar: {
+        ...defaultSidebar,
+        projectId: 'project-2',
+        tasks: [],
+      },
+      content: {
+        ...defaultContent,
+        tasks: [],
+      },
+    });
+  })(),
 };
+
+// ============================================================================
+// Viewport Variants
+// ============================================================================
 
 /**
  * Mobile viewport
@@ -505,5 +638,403 @@ export const Tablet: Story = {
     viewport: {
       defaultViewport: 'tablet',
     },
+  },
+};
+
+// ============================================================================
+// Sub-Component Stories
+// ============================================================================
+
+/**
+ * Skeleton sub-component demo
+ */
+export const SkeletonDemo: Story = {
+  render: () => (
+    <div className="h-screen">
+      <ProjectDetailPageSkeleton
+        onSearch={noop}
+        skeletonCount={5}
+        size="md"
+        data-testid="skeleton-demo"
+      />
+    </div>
+  ),
+};
+
+/**
+ * Error sub-component demo
+ */
+export const ErrorDemo: Story = {
+  render: () => (
+    <div className="h-screen">
+      <ProjectDetailPageError
+        message="Database connection failed. Please check your network settings."
+        onRetry={noop}
+        onBack={noop}
+        onSearch={noop}
+        size="md"
+        data-testid="error-demo"
+      />
+    </div>
+  ),
+};
+
+// ============================================================================
+// Accessibility Demos
+// ============================================================================
+
+/**
+ * Focus ring visibility demo
+ */
+export const FocusRingVisibility: Story = {
+  args: createDefaultProps(),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Tab through the page to see focus rings on all interactive elements.',
+      },
+    },
+  },
+};
+
+/**
+ * Touch target accessibility demo
+ */
+export const TouchTargetAccessibility: Story = {
+  args: createDefaultProps(),
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile1',
+    },
+    docs: {
+      description: {
+        story:
+          'All interactive elements have minimum 44x44px touch targets on mobile (WCAG 2.5.5).',
+      },
+    },
+  },
+};
+
+/**
+ * Screen reader accessibility demo
+ */
+export const ScreenReaderAccessibility: Story = {
+  args: createDefaultProps(),
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Screen reader announcements:
+- Loading: "${SR_LOADING}"
+- Not found: "${SR_NOT_FOUND}"
+- Error: "${SR_ERROR_PREFIX} [error message]"
+- Ready: "Project loaded: [name] with [count] task(s)"
+        `,
+      },
+    },
+  },
+};
+
+/**
+ * Keyboard navigation demo
+ */
+export const KeyboardNavigation: Story = {
+  args: createDefaultProps(),
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Keyboard navigation:
+- Tab: Move between interactive elements
+- Enter/Space: Activate buttons
+- Escape: Close dialogs
+- Arrow keys: Navigate sidebar items
+        `,
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Ref Forwarding & Data Attributes
+// ============================================================================
+
+/**
+ * Ref forwarding demo
+ */
+export const RefForwardingDemo: Story = {
+  render: () => {
+    const ref = useRef<HTMLDivElement>(null);
+
+    return (
+      <div className="h-screen">
+        <ProjectDetailPage {...createDefaultProps()} ref={ref} data-testid="ref-demo" />
+        <div className="absolute bottom-4 left-4 rounded bg-black/80 px-4 py-2 text-white">
+          Ref attached: {ref.current ? 'Yes' : 'Mounting...'}
+        </div>
+      </div>
+    );
+  },
+};
+
+/**
+ * Data attributes demo
+ */
+export const DataAttributesDemo: Story = {
+  args: createDefaultProps({
+    'data-testid': 'data-attrs-demo',
+  }),
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Data attributes available:
+- data-testid: Custom test ID
+- data-state: "loading" | "not-found" | "error" | "ready"
+- data-size: Current size variant
+- data-task-count: Number of tasks (when ready)
+- data-sidebar-collapsed: Whether sidebar is collapsed
+- data-mobile-drawer-open: Whether mobile drawer is open
+        `,
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Interactive Examples
+// ============================================================================
+
+/**
+ * Interactive state toggle demo
+ */
+export const InteractiveStateDemo: Story = {
+  render: () => {
+    const [state, setState] = useState<ProjectDetailPageProps['state']>('ready');
+    const errorMessage = 'Connection failed';
+
+    return (
+      <div className="flex h-screen flex-col">
+        <div className="flex gap-2 border-b p-4">
+          <button
+            type="button"
+            className="rounded bg-blue-500 px-3 py-1 text-white"
+            onClick={() => setState('loading')}
+          >
+            Loading
+          </button>
+          <button
+            type="button"
+            className="rounded bg-blue-500 px-3 py-1 text-white"
+            onClick={() => setState('not-found')}
+          >
+            Not Found
+          </button>
+          <button
+            type="button"
+            className="rounded bg-blue-500 px-3 py-1 text-white"
+            onClick={() => setState('error')}
+          >
+            Error
+          </button>
+          <button
+            type="button"
+            className="rounded bg-blue-500 px-3 py-1 text-white"
+            onClick={() => setState('ready')}
+          >
+            Ready
+          </button>
+        </div>
+        <div className="flex-1">
+          <ProjectDetailPage
+            {...createDefaultProps({
+              state,
+              errorMessage,
+              onErrorRetry: () => {
+                setState('loading');
+                setTimeout(() => setState('ready'), 1500);
+              },
+              onNotFoundBack: () => setState('ready'),
+            })}
+          />
+        </div>
+      </div>
+    );
+  },
+};
+
+// ============================================================================
+// Constants Reference
+// ============================================================================
+
+/**
+ * Constants reference
+ */
+export const ConstantsReference: Story = {
+  render: () => (
+    <div className="space-y-8 p-8">
+      <section>
+        <h2 className="mb-4 text-xl font-bold">Default Values</h2>
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="p-2 text-left">Constant</th>
+              <th className="p-2 text-left">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b">
+              <td className="p-2 font-mono">DEFAULT_SKELETON_TASK_COUNT</td>
+              <td className="p-2">{DEFAULT_SKELETON_TASK_COUNT}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">DEFAULT_PAGE_SIZE</td>
+              <td className="p-2">{DEFAULT_PAGE_SIZE}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">DEFAULT_PAGE_LABEL</td>
+              <td className="p-2">{DEFAULT_PAGE_LABEL}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">DEFAULT_ERROR_TITLE</td>
+              <td className="p-2">{DEFAULT_ERROR_TITLE}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">DEFAULT_RETRY_LABEL</td>
+              <td className="p-2">{DEFAULT_RETRY_LABEL}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">DEFAULT_BACK_LABEL</td>
+              <td className="p-2">{DEFAULT_BACK_LABEL}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-bold">Screen Reader Announcements</h2>
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="p-2 text-left">Constant</th>
+              <th className="p-2 text-left">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b">
+              <td className="p-2 font-mono">SR_LOADING</td>
+              <td className="p-2">{SR_LOADING}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">SR_NOT_FOUND</td>
+              <td className="p-2">{SR_NOT_FOUND}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">SR_ERROR_PREFIX</td>
+              <td className="p-2">{SR_ERROR_PREFIX}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">SR_EMPTY</td>
+              <td className="p-2">{SR_EMPTY}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">SR_LOADED_PREFIX</td>
+              <td className="p-2">{SR_LOADED_PREFIX}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-bold">CSS Classes</h2>
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="p-2 text-left">Constant</th>
+              <th className="p-2 text-left">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b">
+              <td className="p-2 font-mono">PROJECT_DETAIL_PAGE_BASE_CLASSES</td>
+              <td className="p-2 font-mono text-xs">{PROJECT_DETAIL_PAGE_BASE_CLASSES}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">PROJECT_DETAIL_PAGE_ERROR_CLASSES</td>
+              <td className="p-2 font-mono text-xs">{PROJECT_DETAIL_PAGE_ERROR_CLASSES}</td>
+            </tr>
+            <tr className="border-b">
+              <td className="p-2 font-mono">PROJECT_DETAIL_PAGE_SKELETON_CLASSES</td>
+              <td className="p-2 font-mono text-xs">{PROJECT_DETAIL_PAGE_SKELETON_CLASSES}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-bold">Size Classes</h2>
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="p-2 text-left">Size</th>
+              <th className="p-2 text-left">Padding</th>
+              <th className="p-2 text-left">Gap</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(['sm', 'md', 'lg'] as const).map((size) => (
+              <tr key={size} className="border-b">
+                <td className="p-2 font-mono">{size}</td>
+                <td className="p-2 font-mono text-xs">{PAGE_SIZE_PADDING[size]}</td>
+                <td className="p-2 font-mono text-xs">{PAGE_SIZE_GAP[size]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2 className="mb-4 text-xl font-bold">Utility Functions</h2>
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold">getBaseSize(size)</h3>
+            <p className="text-sm text-gray-600">Extracts the base size from a responsive value.</p>
+            <pre className="mt-1 rounded bg-gray-100 p-2 text-xs">
+              getBaseSize('lg') → 'lg'{'\n'}
+              getBaseSize({'{'} base: 'sm', md: 'lg' {'}'}) → 'sm'
+            </pre>
+          </div>
+          <div>
+            <h3 className="font-semibold">getResponsiveSizeClasses(size, classMap)</h3>
+            <p className="text-sm text-gray-600">
+              Generates responsive Tailwind classes from a size value.
+            </p>
+            <pre className="mt-1 rounded bg-gray-100 p-2 text-xs">
+              getResponsiveSizeClasses('md', PAGE_SIZE_PADDING) → 'p-4 md:p-6'
+            </pre>
+          </div>
+          <div>
+            <h3 className="font-semibold">buildLoadedAnnouncement(project, taskCount)</h3>
+            <p className="text-sm text-gray-600">
+              Builds screen reader announcement for loaded state.
+            </p>
+            <pre className="mt-1 rounded bg-gray-100 p-2 text-xs">
+              buildLoadedAnnouncement(project, 5) → 'Project loaded: MyApp with 5 tasks'
+            </pre>
+          </div>
+          <div>
+            <h3 className="font-semibold">buildPageAccessibleLabel(state, project?)</h3>
+            <p className="text-sm text-gray-600">Builds accessible label based on page state.</p>
+            <pre className="mt-1 rounded bg-gray-100 p-2 text-xs">
+              buildPageAccessibleLabel('loading') → 'Loading project details...'{'\n'}
+              buildPageAccessibleLabel('ready', project) → 'Project Details: MyApp'
+            </pre>
+          </div>
+        </div>
+      </section>
+    </div>
+  ),
+  parameters: {
+    layout: 'padded',
   },
 };

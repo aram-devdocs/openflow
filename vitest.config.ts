@@ -27,9 +27,16 @@ export default defineConfig({
     alias: {
       '@openflow/generated': resolve(__dirname, 'packages/generated/index.ts'),
       '@openflow/utils': resolve(__dirname, 'packages/utils/index.ts'),
+      '@openflow/primitives': resolve(__dirname, 'packages/primitives/index.ts'),
       '@openflow/validation': resolve(__dirname, 'packages/validation/index.ts'),
       '@openflow/queries': resolve(__dirname, 'packages/queries/index.ts'),
       '@openflow/hooks': resolve(__dirname, 'packages/hooks/index.ts'),
+      // UI package with sub-package support
+      '@openflow/ui/atoms': resolve(__dirname, 'packages/ui/atoms/index.ts'),
+      '@openflow/ui/molecules': resolve(__dirname, 'packages/ui/molecules/index.ts'),
+      '@openflow/ui/organisms': resolve(__dirname, 'packages/ui/organisms/index.ts'),
+      '@openflow/ui/templates': resolve(__dirname, 'packages/ui/templates/index.ts'),
+      '@openflow/ui/pages': resolve(__dirname, 'packages/ui/pages/index.ts'),
       '@openflow/ui': resolve(__dirname, 'packages/ui/index.ts'),
     },
   },

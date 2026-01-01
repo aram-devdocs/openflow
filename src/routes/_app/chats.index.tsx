@@ -181,7 +181,7 @@ function ChatsIndexPage() {
               onFilterChange={setFilter}
               onSelectChat={handleSelectChat}
               onMoreClick={handleMoreClick}
-              onContextMenu={handleContextMenu}
+              onChatContextMenu={handleContextMenu}
               isLoading={isLoading}
             />
           </div>

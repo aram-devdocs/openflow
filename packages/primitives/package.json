@@ -1,0 +1,19 @@
+{
+  "name": "@openflow/primitives",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "import": "./index.ts",
+      "types": "./index.ts"
+    }
+  },
+  "dependencies": {
+    "@openflow/utils": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
+  }
+}

@@ -307,6 +307,17 @@ function isRootRoute(filePath: string): boolean {
 }
 
 /**
+ * Check if this is a layout route (file starts with underscore)
+ * Layout routes are pathless wrappers that don't need UI/hooks imports
+ * Examples: _app.tsx, _auth.tsx, _dashboard.tsx
+ */
+function isLayoutRoute(filePath: string): boolean {
+  const name = basename(filePath);
+  // Layout routes start with underscore but are not the root route
+  return name.startsWith('_') && name !== '__root.tsx';
+}
+
+/**
  * Find all component definitions in a file (excluding the main route component)
  */
 function findComponentDefinitions(
@@ -657,14 +668,16 @@ function validate(verbose = false): ValidationResult {
       // AST-based analysis for route purity
       const sourceFile = getSourceFile(fullPath);
 
-      // Check if this is a passthrough or root route (special handling)
+      // Check if this is a passthrough, root, or layout route (special handling)
       const isPassthrough = sourceFile ? isPassthroughRoute(sourceFile) : false;
       const isRoot = isRootRoute(file);
+      const isLayout = isLayoutRoute(file);
 
       // Check recommended package imports (warning level)
       // Skip for passthrough routes (they only render <Outlet />)
       // Skip for root route (it's a special case with providers)
-      if (!isPassthrough && !isRoot) {
+      // Skip for layout routes (they're pathless wrappers like _app.tsx)
+      if (!isPassthrough && !isRoot && !isLayout) {
         const hasUiImport = imports.some((imp) => imp.source.startsWith(PACKAGE_NAMES.UI));
         const hasHooksImport = imports.some((imp) => imp.source.startsWith(PACKAGE_NAMES.HOOKS));
 
@@ -828,6 +841,11 @@ Rules:
   route/no-jsx-logic          No complex JSX logic (map/filter/ternaries) (error)
   route/imports-ui-package    Routes should import from @openflow/ui (warning)
   route/imports-hooks-package Routes should import from @openflow/hooks (warning)
+
+Exempt Routes (not checked for UI/hooks imports):
+  - Root route (__root.tsx) - special case with providers
+  - Layout routes (_app.tsx, _auth.tsx, etc.) - pathless wrappers
+  - Passthrough routes - routes that only render <Outlet />
 
 Route Purity Philosophy:
   Routes are the orchestration layer that connects hooks to UI components.

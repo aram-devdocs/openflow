@@ -2,7 +2,25 @@ import { MessageRole } from '@openflow/generated';
 import type { ExecutorProfile, Message } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
-import { ChatPanel } from './ChatPanel';
+import {
+  ChatPanel,
+  ChatPanelError,
+  ChatPanelSkeleton,
+  DEFAULT_EMPTY_DESCRIPTION,
+  DEFAULT_EMPTY_TITLE,
+  DEFAULT_ERROR_RETRY_LABEL,
+  DEFAULT_ERROR_TITLE,
+  DEFAULT_INPUT_LABEL,
+  // Constants (used in stories documentation)
+  DEFAULT_MESSAGES_LABEL,
+  DEFAULT_PROCESSING_LABEL,
+  DEFAULT_SCROLL_LABEL,
+  DEFAULT_SEND_LABEL,
+  DEFAULT_SKELETON_MESSAGE_COUNT,
+  DEFAULT_STOP_LABEL,
+  SR_MESSAGE_SENT,
+  SR_NEW_MESSAGE,
+} from './ChatPanel';
 
 const meta = {
   title: 'Organisms/ChatPanel',
@@ -18,7 +36,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div className="h-[600px] w-full max-w-3xl border border-[rgb(var(--border))] rounded-lg overflow-hidden">
+      <div className="h-[600px] w-full max-w-3xl border border-[rgb(var(--border))] rounded-lg overflow-hidden relative">
         <Story />
       </div>
     ),
@@ -28,7 +46,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Named first message for single message stories
+// Sample data for stories
 const firstMessage: Message = {
   id: 'msg-1',
   chatId: 'chat-1',
@@ -38,7 +56,6 @@ const firstMessage: Message = {
   createdAt: '2024-01-15T10:00:00Z',
 };
 
-// Sample messages for stories
 const sampleMessages: Message[] = [
   firstMessage,
   {
@@ -130,6 +147,10 @@ const sampleProfiles: ExecutorProfile[] = [
   },
 ];
 
+// ============================================================================
+// Basic Stories
+// ============================================================================
+
 /**
  * Default chat panel with a conversation
  */
@@ -169,6 +190,71 @@ export const Processing: Story = {
 };
 
 /**
+ * Chat panel with a single user message
+ */
+export const SingleMessage: Story = {
+  args: {
+    messages: [firstMessage],
+  },
+};
+
+// ============================================================================
+// Size Variants
+// ============================================================================
+
+/**
+ * Small size variant - compact padding and spacing
+ */
+export const SizeSmall: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 2),
+    size: 'sm',
+  },
+};
+
+/**
+ * Medium size variant - default padding and spacing
+ */
+export const SizeMedium: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 2),
+    size: 'md',
+  },
+};
+
+/**
+ * Large size variant - expanded padding and spacing
+ */
+export const SizeLarge: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 2),
+    size: 'lg',
+  },
+};
+
+/**
+ * Responsive sizing - adapts to viewport
+ */
+export const ResponsiveSizing: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 2),
+    size: { base: 'sm', md: 'md', lg: 'lg' },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Demonstrates responsive sizing that adapts to viewport width. Small on mobile, medium on tablet, large on desktop.',
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Feature Variations
+// ============================================================================
+
+/**
  * Chat panel with executor profile selector
  */
 export const WithExecutorSelector: Story = {
@@ -190,15 +276,6 @@ export const WithSystemMessage: Story = {
 };
 
 /**
- * Chat panel with a single user message
- */
-export const SingleMessage: Story = {
-  args: {
-    messages: [firstMessage],
-  },
-};
-
-/**
  * Chat panel with custom placeholder text
  */
 export const CustomPlaceholder: Story = {
@@ -207,6 +284,34 @@ export const CustomPlaceholder: Story = {
     placeholder: 'Describe your task or ask a question...',
   },
 };
+
+/**
+ * Chat panel with custom empty state
+ */
+export const CustomEmptyState: Story = {
+  args: {
+    messages: [],
+    emptyTitle: 'Start a conversation',
+    emptyDescription: 'Type your question below to get started with AI-powered development.',
+  },
+};
+
+/**
+ * Chat panel showing all features together
+ */
+export const FullFeatured: Story = {
+  args: {
+    messages: [systemMessage, ...sampleMessages],
+    showExecutorSelector: true,
+    executorProfiles: sampleProfiles,
+    selectedExecutorProfileId: 'profile-1',
+    placeholder: 'Ask me anything about your code...',
+  },
+};
+
+// ============================================================================
+// Long Conversation (Scroll Testing)
+// ============================================================================
 
 /**
  * Chat panel with long conversation (for scroll testing)
@@ -228,17 +333,10 @@ export const LongConversation: Story = {
         chatId: 'chat-1',
         role: MessageRole.Assistant,
         content:
-          "I'll create comprehensive tests for the Card component using Vitest and Testing Library.\n\n```typescript\nimport { render, screen } from '@testing-library/react';\nimport { Card } from './Card';\n\ndescribe('Card', () => {\n  it('renders children content', () => {\n    render(<Card>Test Content</Card>);\n    expect(screen.getByText('Test Content')).toBeInTheDocument();\n  });\n\n  it('renders header when provided', () => {\n    render(<Card header=\"Header Text\">Content</Card>);\n    expect(screen.getByText('Header Text')).toBeInTheDocument();\n  });\n\n  it('renders footer when provided', () => {\n    render(<Card footer=\"Footer Text\">Content</Card>);\n    expect(screen.getByText('Footer Text')).toBeInTheDocument();\n  });\n\n  it('applies outlined variant styles', () => {\n    const { container } = render(<Card variant=\"outlined\">Content</Card>);\n    expect(container.firstChild).toHaveClass('border');\n  });\n\n  it('applies elevated variant styles', () => {\n    const { container } = render(<Card variant=\"elevated\">Content</Card>);\n    expect(container.firstChild).toHaveClass('shadow-lg');\n  });\n});\n```",
+          "I'll create comprehensive tests for the Card component using Vitest and Testing Library.\n\n```typescript\nimport { render, screen } from '@testing-library/react';\nimport { Card } from './Card';\n\ndescribe('Card', () => {\n  it('renders children content', () => {\n    render(<Card>Test Content</Card>);\n    expect(screen.getByText('Test Content')).toBeInTheDocument();\n  });\n\n  it('renders header when provided', () => {\n    render(<Card header=\"Header Text\">Content</Card>);\n    expect(screen.getByText('Header Text')).toBeInTheDocument();\n  });\n});\n```",
         isStreaming: false,
         model: 'claude-3-sonnet',
         tokensUsed: 320,
-        toolCalls: JSON.stringify([
-          {
-            id: 'call-2',
-            name: 'write_file',
-            arguments: { path: 'packages/ui/molecules/Card.test.tsx' },
-          },
-        ]),
         createdAt: '2024-01-15T10:02:30Z',
       },
       {
@@ -253,8 +351,7 @@ export const LongConversation: Story = {
         id: 'msg-8',
         chatId: 'chat-1',
         role: MessageRole.Assistant,
-        content:
-          "I'll create a Storybook story file with all the variants and use cases.\n\n```typescript\nimport type { Meta, StoryObj } from '@storybook/react';\nimport { Card } from './Card';\n\nconst meta: Meta<typeof Card> = {\n  title: 'Molecules/Card',\n  component: Card,\n  tags: ['autodocs'],\n};\n\nexport default meta;\ntype Story = StoryObj<typeof meta>;\n\nexport const Default: Story = {\n  args: {\n    children: 'This is the card content',\n  },\n};\n\nexport const WithHeader: Story = {\n  args: {\n    header: 'Card Title',\n    children: 'This is the card content with a header',\n  },\n};\n\nexport const WithFooter: Story = {\n  args: {\n    footer: 'Card Footer',\n    children: 'This is the card content with a footer',\n  },\n};\n\nexport const Outlined: Story = {\n  args: {\n    variant: 'outlined',\n    header: 'Outlined Card',\n    children: 'This card has an outlined style',\n  },\n};\n\nexport const Elevated: Story = {\n  args: {\n    variant: 'elevated',\n    header: 'Elevated Card',\n    children: 'This card has an elevated shadow style',\n  },\n};\n```\n\nThe story file includes examples for all variants and optional sections.",
+        content: "I'll create a Storybook story file with all the variants and use cases.",
         isStreaming: false,
         model: 'claude-3-sonnet',
         tokensUsed: 285,
@@ -262,17 +359,397 @@ export const LongConversation: Story = {
       },
     ],
   },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A long conversation to test scroll behavior and the scroll-to-bottom button.',
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Loading State Stories
+// ============================================================================
+
+type SkeletonStory = StoryObj<typeof ChatPanelSkeleton>;
+
+/**
+ * Loading state with skeleton
+ */
+export const Loading: SkeletonStory = {
+  render: (args) => <ChatPanelSkeleton {...args} />,
+  args: {
+    messageCount: 4,
+    size: 'md',
+    'data-testid': 'chat-panel-skeleton',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Loading skeleton that displays while chat messages are being fetched.',
+      },
+    },
+  },
 };
 
 /**
- * Chat panel showing all features together
+ * Loading state with fewer messages
  */
-export const FullFeatured: Story = {
+export const LoadingFewMessages: SkeletonStory = {
+  render: (args) => <ChatPanelSkeleton {...args} />,
   args: {
-    messages: [systemMessage, ...sampleMessages],
+    messageCount: 2,
+    size: 'md',
+  },
+};
+
+/**
+ * Loading state with small size
+ */
+export const LoadingSmall: SkeletonStory = {
+  render: (args) => <ChatPanelSkeleton {...args} />,
+  args: {
+    messageCount: 3,
+    size: 'sm',
+  },
+};
+
+/**
+ * Loading state with large size
+ */
+export const LoadingLarge: SkeletonStory = {
+  render: (args) => <ChatPanelSkeleton {...args} />,
+  args: {
+    messageCount: 3,
+    size: 'lg',
+  },
+};
+
+/**
+ * Loading state with responsive sizing
+ */
+export const LoadingResponsive: SkeletonStory = {
+  render: (args) => <ChatPanelSkeleton {...args} />,
+  args: {
+    messageCount: 3,
+    size: { base: 'sm', md: 'md', lg: 'lg' },
+  },
+};
+
+// ============================================================================
+// Error State Stories
+// ============================================================================
+
+type ErrorStory = StoryObj<typeof ChatPanelError>;
+
+/**
+ * Error state with retry option
+ */
+export const ErrorState: ErrorStory = {
+  render: (args) => <ChatPanelError {...args} />,
+  args: {
+    message: 'Unable to connect to the server. Please check your connection and try again.',
+    onRetry: fn(),
+    'data-testid': 'chat-panel-error',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Error state displayed when chat loading fails, with a retry button.',
+      },
+    },
+  },
+};
+
+/**
+ * Error state without message
+ */
+export const ErrorStateNoMessage: ErrorStory = {
+  render: (args) => <ChatPanelError {...args} />,
+  args: {
+    onRetry: fn(),
+  },
+};
+
+/**
+ * Error state without retry
+ */
+export const ErrorStateNoRetry: ErrorStory = {
+  render: (args) => <ChatPanelError {...args} />,
+  args: {
+    message: 'An unexpected error occurred.',
+  },
+};
+
+/**
+ * Error state with custom labels
+ */
+export const ErrorStateCustomLabels: ErrorStory = {
+  render: (args) => <ChatPanelError {...args} />,
+  args: {
+    errorTitle: 'Connection Lost',
+    message: 'The chat session has been disconnected.',
+    retryLabel: 'Reconnect',
+    onRetry: fn(),
+  },
+};
+
+// ============================================================================
+// Accessibility Stories
+// ============================================================================
+
+/**
+ * Demonstrates keyboard navigation and focus management
+ */
+export const KeyboardNavigation: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 2),
+    'data-testid': 'chat-panel-keyboard',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Keyboard navigation support:
+- **Tab**: Navigate between messages area, input, and buttons
+- **Enter**: Send message (when input is focused)
+- **Shift+Enter**: New line in input
+- **Escape**: Can be used to close dropdowns
+
+Focus management:
+- Input automatically receives focus after sending a message
+- Messages area is scrollable with keyboard (tabIndex=0)
+        `,
+      },
+    },
+  },
+};
+
+/**
+ * Screen reader accessibility demo
+ */
+export const ScreenReaderAccessibility: Story = {
+  args: {
+    messages: sampleMessages,
+    messagesLabel: 'Conversation history',
+    inputLabel: 'Type your message here',
+    sendLabel: 'Send your message',
+    'data-testid': 'chat-panel-a11y',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Screen reader features:
+- Messages area has role="log" with aria-live="polite" for new message announcements
+- Input area has role="region" with descriptive label
+- Send/Stop buttons have aria-labels
+- Empty state is announced as a status region
+- New messages are announced automatically
+        `,
+      },
+    },
+  },
+};
+
+/**
+ * Focus ring visibility demo
+ */
+export const FocusRingVisibility: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 1),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Use Tab to navigate and verify focus rings are visible on all interactive elements.',
+      },
+    },
+  },
+};
+
+/**
+ * Touch target accessibility (44px minimum)
+ */
+export const TouchTargetAccessibility: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 1),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Touch targets meet WCAG 2.5.5 requirements:
+- Send button: 44px × 44px minimum
+- Stop button: 44px × 44px minimum
+- Input has 44px minimum height
+        `,
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Ref Forwarding and Data Attributes
+// ============================================================================
+
+/**
+ * Demonstrates ref forwarding
+ */
+export const RefForwarding: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 2),
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'ChatPanel, ChatPanelSkeleton, and ChatPanelError all support ref forwarding for programmatic access.',
+      },
+    },
+  },
+};
+
+/**
+ * Data test ID support
+ */
+export const DataTestId: Story = {
+  args: {
+    messages: sampleMessages.slice(0, 2),
+    'data-testid': 'my-chat-panel',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: `
+Data test IDs are automatically generated:
+- Container: \`my-chat-panel\`
+- Messages: \`my-chat-panel-message-0\`, \`my-chat-panel-message-1\`, etc.
+- Empty state: \`my-chat-panel-empty\`
+- Input: \`my-chat-panel-input\`
+- Send button: \`my-chat-panel-send-button\`
+- Stop button: \`my-chat-panel-stop-button\`
+- Executor dropdown: \`my-chat-panel-executor-dropdown\`
+        `,
+      },
+    },
+  },
+};
+
+// ============================================================================
+// Real-World Examples
+// ============================================================================
+
+/**
+ * AI coding assistant conversation
+ */
+export const CodingAssistant: Story = {
+  args: {
+    messages: sampleMessages,
     showExecutorSelector: true,
     executorProfiles: sampleProfiles,
     selectedExecutorProfileId: 'profile-1',
-    placeholder: 'Ask me anything about your code...',
+    placeholder: 'Describe the code you want to generate...',
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Typical AI coding assistant interface with executor profile selection.',
+      },
+    },
+  },
+};
+
+/**
+ * Customer support chat
+ */
+export const CustomerSupport: Story = {
+  args: {
+    messages: [
+      {
+        id: 'support-1',
+        chatId: 'support-chat',
+        role: MessageRole.System,
+        content: 'You are connected to customer support.',
+        isStreaming: false,
+        createdAt: '2024-01-15T10:00:00Z',
+      },
+      {
+        id: 'support-2',
+        chatId: 'support-chat',
+        role: MessageRole.User,
+        content: "Hi, I'm having trouble with my subscription.",
+        isStreaming: false,
+        createdAt: '2024-01-15T10:00:30Z',
+      },
+      {
+        id: 'support-3',
+        chatId: 'support-chat',
+        role: MessageRole.Assistant,
+        content:
+          "Hello! I'm sorry to hear you're having issues with your subscription. I'd be happy to help. Could you please tell me more about what's happening?",
+        isStreaming: false,
+        createdAt: '2024-01-15T10:01:00Z',
+      },
+    ],
+    placeholder: 'Describe your issue...',
+    emptyTitle: 'Welcome to Support',
+    emptyDescription: 'How can we help you today? Type your question to get started.',
+  },
+};
+
+// ============================================================================
+// Constants Reference
+// ============================================================================
+
+/**
+ * Reference for all exported constants and utilities
+ */
+export const ConstantsReference: Story = {
+  args: {
+    messages: [],
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: `
+## Exported Constants
+
+### Default Labels
+- \`DEFAULT_MESSAGES_LABEL\`: "${DEFAULT_MESSAGES_LABEL}"
+- \`DEFAULT_INPUT_LABEL\`: "${DEFAULT_INPUT_LABEL}"
+- \`DEFAULT_SEND_LABEL\`: "${DEFAULT_SEND_LABEL}"
+- \`DEFAULT_STOP_LABEL\`: "${DEFAULT_STOP_LABEL}"
+- \`DEFAULT_SCROLL_LABEL\`: "${DEFAULT_SCROLL_LABEL}"
+- \`DEFAULT_EMPTY_TITLE\`: "${DEFAULT_EMPTY_TITLE}"
+- \`DEFAULT_EMPTY_DESCRIPTION\`: "${DEFAULT_EMPTY_DESCRIPTION}"
+- \`DEFAULT_PROCESSING_LABEL\`: "${DEFAULT_PROCESSING_LABEL}"
+- \`DEFAULT_ERROR_TITLE\`: "${DEFAULT_ERROR_TITLE}"
+- \`DEFAULT_ERROR_RETRY_LABEL\`: "${DEFAULT_ERROR_RETRY_LABEL}"
+- \`DEFAULT_SKELETON_MESSAGE_COUNT\`: ${DEFAULT_SKELETON_MESSAGE_COUNT}
+
+### Screen Reader Announcements
+- \`SR_NEW_MESSAGE\`: "${SR_NEW_MESSAGE}"
+- \`SR_MESSAGE_SENT\`: "${SR_MESSAGE_SENT}"
+
+### Class Constants
+- \`CHAT_PANEL_BASE_CLASSES\`: Base container styling
+- \`CHAT_PANEL_PADDING_CLASSES\`: Size-specific padding
+- \`CHAT_PANEL_GAP_CLASSES\`: Size-specific gaps
+- \`MESSAGES_CONTAINER_CLASSES\`: Scrollable messages area
+- \`INPUT_AREA_CONTAINER_CLASSES\`: Input section styling
+- \`SKELETON_AVATAR_SIZE\`: Avatar dimensions by size
+- \`ERROR_STATE_CLASSES\`: Error state layout
+
+### Utility Functions
+- \`getBaseSize(size)\`: Extract base size from ResponsiveValue
+- \`getResponsiveSizeClasses(size, classMap)\`: Generate responsive classes
+- \`getSkeletonAvatarDimensions(size)\`: Get avatar dimensions
+- \`buildNewMessageAnnouncement(count, hasUnread)\`: Build screen reader announcement
+        `,
+      },
+    },
   },
 };

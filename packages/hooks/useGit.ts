@@ -1,6 +1,29 @@
+/**
+ * useGit - Hooks for git operations (diffs, commits)
+ *
+ * This module provides React Query hooks for fetching git-related data
+ * for tasks, including file diffs and commit history.
+ *
+ * Features:
+ * - Full logging at DEBUG/INFO/ERROR levels
+ * - Proper error handling with try/catch patterns
+ * - Structured query keys for cache management
+ */
+
 import type { Commit, FileDiff } from '@openflow/generated';
 import { gitQueries } from '@openflow/queries';
+import { createLogger } from '@openflow/utils';
 import { type UseQueryResult, useQuery } from '@tanstack/react-query';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+const logger = createLogger('useGit');
+
+// ============================================================================
+// Query Keys
+// ============================================================================
 
 /**
  * Query key factory for git operations.
@@ -15,6 +38,10 @@ export const gitKeys = {
     [...gitKeys.taskCommits(), { taskId, limit }] as const,
 };
 
+// ============================================================================
+// Hook Options
+// ============================================================================
+
 /**
  * Options for useTaskDiff hook.
  */
@@ -26,6 +53,22 @@ export interface UseTaskDiffOptions {
   /** Stale time in milliseconds (default: 5000) */
   staleTime?: number;
 }
+
+/**
+ * Options for useTaskCommits hook.
+ */
+export interface UseTaskCommitsOptions {
+  /** Whether the query should execute (default: true) */
+  enabled?: boolean;
+  /** Maximum number of commits to return (default: 50) */
+  limit?: number;
+  /** Stale time in milliseconds (default: 30000) */
+  staleTime?: number;
+}
+
+// ============================================================================
+// Hooks
+// ============================================================================
 
 /**
  * Fetch git diff for a task's worktree.
@@ -59,25 +102,37 @@ export function useTaskDiff(
 ): UseQueryResult<FileDiff[]> {
   const { enabled = true, refetchInterval, staleTime = 5000 } = options;
 
-  return useQuery({
-    queryKey: gitKeys.taskDiff(taskId),
-    queryFn: () => gitQueries.getTaskDiff(taskId),
+  logger.debug('useTaskDiff hook called', {
+    taskId,
     enabled: enabled && !!taskId,
     refetchInterval,
     staleTime,
   });
-}
 
-/**
- * Options for useTaskCommits hook.
- */
-export interface UseTaskCommitsOptions {
-  /** Whether the query should execute (default: true) */
-  enabled?: boolean;
-  /** Maximum number of commits to return (default: 50) */
-  limit?: number;
-  /** Stale time in milliseconds (default: 30000) */
-  staleTime?: number;
+  return useQuery({
+    queryKey: gitKeys.taskDiff(taskId),
+    queryFn: async () => {
+      logger.debug('Fetching task diff', { taskId });
+      try {
+        const diffs = await gitQueries.getTaskDiff(taskId);
+        logger.info('Task diff fetched successfully', {
+          taskId,
+          fileCount: diffs.length,
+          files: diffs.map((d) => d.path),
+        });
+        return diffs;
+      } catch (error) {
+        logger.error('Failed to fetch task diff', {
+          taskId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error; // Re-throw for React Query to handle
+      }
+    },
+    enabled: enabled && !!taskId,
+    refetchInterval,
+    staleTime,
+  });
 }
 
 /**
@@ -110,9 +165,39 @@ export function useTaskCommits(
 ): UseQueryResult<Commit[]> {
   const { enabled = true, limit, staleTime = 30000 } = options;
 
+  logger.debug('useTaskCommits hook called', {
+    taskId,
+    enabled: enabled && !!taskId,
+    limit,
+    staleTime,
+  });
+
   return useQuery({
     queryKey: gitKeys.taskCommit(taskId, limit),
-    queryFn: () => gitQueries.getTaskCommits(taskId, limit),
+    queryFn: async () => {
+      logger.debug('Fetching task commits', { taskId, limit });
+      try {
+        const commits = await gitQueries.getTaskCommits(taskId, limit);
+        logger.info('Task commits fetched successfully', {
+          taskId,
+          commitCount: commits.length,
+          limit,
+          // Log the first few commit hashes for debugging
+          recentCommits: commits.slice(0, 3).map((c) => ({
+            hash: c.hash?.substring(0, 7),
+            message: c.message?.substring(0, 50),
+          })),
+        });
+        return commits;
+      } catch (error) {
+        logger.error('Failed to fetch task commits', {
+          taskId,
+          limit,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error; // Re-throw for React Query to handle
+      }
+    },
     enabled: enabled && !!taskId,
     staleTime,
   });

@@ -3,8 +3,23 @@
 //! This service wraps the GitHub CLI (`gh`) to create pull requests
 //! from task worktrees. It handles authentication status checking,
 //! branch pushing, and PR creation.
+//!
+//! ## Logging
+//!
+//! This service uses structured logging at the following levels:
+//! - `debug`: Function entry, intermediate steps, command execution details
+//! - `info`: Successful operations (PR created, auth verified, CLI found)
+//! - `warn`: Expected failures (CLI not installed, not authenticated)
+//! - `error`: Unexpected failures with full context
+//!
+//! ## Error Handling
+//!
+//! All public functions return `ServiceResult<T>` and provide detailed
+//! error context including task_id, branch names, and command output.
 
 use std::process::Command;
+
+use log::{debug, error, info, warn};
 
 use sqlx::SqlitePool;
 
@@ -27,13 +42,25 @@ impl GitHubService {
     /// - Must not exceed 256 characters
     /// - Must not contain control characters (except newlines/tabs in body)
     fn validate_pr_title(title: &str) -> ServiceResult<()> {
+        debug!(
+            "Validating PR title: length={}, preview='{}'",
+            title.len(),
+            title.chars().take(50).collect::<String>()
+        );
+
         if title.is_empty() {
+            warn!("PR title validation failed: title is empty");
             return Err(ServiceError::Validation(
                 "Pull request title cannot be empty".to_string(),
             ));
         }
 
         if title.len() > MAX_PR_TITLE_LENGTH {
+            warn!(
+                "PR title validation failed: length {} exceeds maximum {}",
+                title.len(),
+                MAX_PR_TITLE_LENGTH
+            );
             return Err(ServiceError::Validation(format!(
                 "Pull request title exceeds maximum length of {} characters",
                 MAX_PR_TITLE_LENGTH
@@ -42,17 +69,26 @@ impl GitHubService {
 
         // Check for control characters (but allow printable characters and common whitespace)
         if title.chars().any(|c| c.is_control() && c != '\t') {
+            warn!("PR title validation failed: contains control characters");
             return Err(ServiceError::Validation(
                 "Pull request title contains invalid control characters".to_string(),
             ));
         }
 
+        debug!("PR title validation passed");
         Ok(())
     }
 
     /// Validate PR body for security and API constraints.
     fn validate_pr_body(body: &str) -> ServiceResult<()> {
+        debug!("Validating PR body: length={}", body.len());
+
         if body.len() > MAX_PR_BODY_LENGTH {
+            warn!(
+                "PR body validation failed: length {} exceeds maximum {}",
+                body.len(),
+                MAX_PR_BODY_LENGTH
+            );
             return Err(ServiceError::Validation(format!(
                 "Pull request body exceeds maximum length of {} characters",
                 MAX_PR_BODY_LENGTH
@@ -64,11 +100,13 @@ impl GitHubService {
             .chars()
             .any(|c| c.is_control() && c != '\n' && c != '\r' && c != '\t')
         {
+            warn!("PR body validation failed: contains control characters");
             return Err(ServiceError::Validation(
                 "Pull request body contains invalid control characters".to_string(),
             ));
         }
 
+        debug!("PR body validation passed");
         Ok(())
     }
 
@@ -77,11 +115,31 @@ impl GitHubService {
     /// # Returns
     /// `Ok(true)` if `gh` is installed and executable, `Ok(false)` otherwise.
     pub fn check_gh_cli_installed() -> ServiceResult<bool> {
+        debug!("Checking if GitHub CLI (gh) is installed");
+
         let result = Command::new("gh")
             .arg("--version")
             .output()
-            .map(|output| output.status.success())
+            .map(|output| {
+                if output.status.success() {
+                    let version = String::from_utf8_lossy(&output.stdout);
+                    debug!(
+                        "GitHub CLI version: {}",
+                        version.lines().next().unwrap_or("unknown")
+                    );
+                    true
+                } else {
+                    false
+                }
+            })
             .unwrap_or(false);
+
+        if result {
+            info!("GitHub CLI is installed and available");
+        } else {
+            warn!("GitHub CLI (gh) is not installed or not in PATH");
+        }
+
         Ok(result)
     }
 
@@ -90,26 +148,38 @@ impl GitHubService {
     /// # Returns
     /// `Ok(())` if authenticated, `Err` with a descriptive message if not.
     pub fn check_gh_auth_status() -> ServiceResult<()> {
+        debug!("Checking GitHub CLI authentication status");
+
         if !Self::check_gh_cli_installed()? {
+            error!("GitHub CLI is not installed, cannot check authentication");
             return Err(ServiceError::Validation(
                 "GitHub CLI (gh) is not installed. Please install it from https://cli.github.com/"
                     .to_string(),
             ));
         }
 
+        debug!("Running 'gh auth status' command");
         let output = Command::new("gh")
             .args(["auth", "status"])
             .output()
-            .map_err(|e| ServiceError::Git(format!("Failed to run gh auth status: {}", e)))?;
+            .map_err(|e| {
+                error!("Failed to execute gh auth status: {}", e);
+                ServiceError::Git(format!("Failed to run gh auth status: {}", e))
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            warn!(
+                "GitHub CLI not authenticated: {}",
+                stderr.lines().next().unwrap_or("unknown error")
+            );
             return Err(ServiceError::Validation(format!(
                 "Not authenticated with GitHub. Run 'gh auth login' to authenticate. Error: {}",
                 stderr.trim()
             )));
         }
 
+        info!("GitHub CLI is authenticated");
         Ok(())
     }
 
@@ -123,14 +193,30 @@ impl GitHubService {
     /// The remote URL if found.
     pub fn get_remote_url(worktree_path: &str, remote: Option<&str>) -> ServiceResult<String> {
         let remote = remote.unwrap_or("origin");
+        debug!(
+            "Getting remote URL: worktree_path='{}', remote='{}'",
+            worktree_path, remote
+        );
 
         let output = Command::new("git")
             .args(["-C", worktree_path, "remote", "get-url", remote])
             .output()
-            .map_err(|e| ServiceError::Git(format!("Failed to get remote URL: {}", e)))?;
+            .map_err(|e| {
+                error!(
+                    "Failed to execute git remote get-url: worktree_path='{}', error={}",
+                    worktree_path, e
+                );
+                ServiceError::Git(format!("Failed to get remote URL: {}", e))
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            error!(
+                "Failed to get remote URL: worktree_path='{}', remote='{}', error={}",
+                worktree_path,
+                remote,
+                stderr.trim()
+            );
             return Err(ServiceError::Git(format!(
                 "Failed to get remote URL for '{}': {}",
                 remote,
@@ -138,7 +224,9 @@ impl GitHubService {
             )));
         }
 
-        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+        let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        debug!("Retrieved remote URL: remote='{}', url='{}'", remote, url);
+        Ok(url)
     }
 
     /// Create a pull request using the GitHub CLI.
@@ -167,14 +255,32 @@ impl GitHubService {
         base: Option<String>,
         draft: bool,
     ) -> ServiceResult<PullRequestResult> {
+        info!(
+            "Creating pull request: task_id='{}', has_title={}, has_body={}, has_base={}, draft={}",
+            task_id,
+            title.is_some(),
+            body.is_some(),
+            base.is_some(),
+            draft
+        );
+
         // 1. Check gh CLI is available and authenticated
+        debug!("Step 1: Checking GitHub CLI authentication");
         Self::check_gh_auth_status()?;
 
         // 2. Get the task with its chats to find the worktree
+        debug!("Step 2: Fetching task and chats: task_id='{}'", task_id);
         let task_with_chats = TaskService::get(pool, task_id).await?;
         let task = &task_with_chats.task;
+        debug!(
+            "Found task: title='{}', project_id='{}', chat_count={}",
+            task.title,
+            task.project_id,
+            task_with_chats.chats.len()
+        );
 
         // 3. Find the worktree path from the task's chats
+        debug!("Step 3: Finding active worktree from chats");
         let worktree_path = task_with_chats
             .chats
             .iter()
@@ -182,16 +288,30 @@ impl GitHubService {
             .min_by_key(|c| c.workflow_step_index.unwrap_or(i32::MAX))
             .and_then(|c| c.worktree_path.clone())
             .ok_or_else(|| {
+                error!(
+                    "No active worktree found for task: task_id='{}', task_title='{}'",
+                    task_id, task.title
+                );
                 ServiceError::Validation(
                     "Task has no active worktree. Cannot create PR without a worktree.".to_string(),
                 )
             })?;
+        debug!("Found worktree: path='{}'", worktree_path);
 
         // 4. Get project for default base branch
+        debug!(
+            "Step 4: Fetching project for base branch: project_id='{}'",
+            task.project_id
+        );
         let project = ProjectService::get(pool, &task.project_id).await?;
+        debug!(
+            "Found project: name='{}', base_branch='{}'",
+            project.name, project.base_branch
+        );
 
         // 5. Determine the title (default to task title) with validation
         let pr_title = title.unwrap_or_else(|| task.title.clone());
+        debug!("Step 5: Using PR title='{}'", pr_title);
 
         // Validate PR title
         Self::validate_pr_title(&pr_title)?;
@@ -206,21 +326,27 @@ impl GitHubService {
                     project.base_branch.clone()
                 }
             });
+        debug!("Step 6: Using base branch='{}'", base_branch);
 
         // 7. Get current branch name
+        debug!("Step 7: Getting current branch name");
         let branch = GitService::get_current_branch(&worktree_path).await?;
+        debug!("Current branch: '{}'", branch);
 
         // 8. Push the branch to remote (with set-upstream)
+        debug!("Step 8: Pushing branch to remote");
         GitService::push_branch(&worktree_path, None).await?;
+        debug!("Branch pushed successfully");
 
         // 9. Build the gh pr create command
+        debug!("Step 9: Building gh pr create command");
         let mut args = vec![
             "pr".to_string(),
             "create".to_string(),
             "--title".to_string(),
             pr_title.clone(),
             "--base".to_string(),
-            base_branch,
+            base_branch.clone(),
         ];
 
         // Add body if provided, with validation
@@ -228,26 +354,46 @@ impl GitHubService {
             Self::validate_pr_body(&body_text)?;
             args.push("--body".to_string());
             args.push(body_text);
+            debug!("PR body provided and validated");
         } else {
             // Use empty body if not provided
             args.push("--body".to_string());
             args.push(String::new());
+            debug!("No PR body provided, using empty body");
         }
 
         // Add draft flag if requested
         if draft {
             args.push("--draft".to_string());
+            debug!("Creating as draft PR");
         }
 
         // 10. Run gh pr create
+        debug!(
+            "Step 10: Running 'gh pr create' in worktree: path='{}'",
+            worktree_path
+        );
         let output = Command::new("gh")
             .args(&args)
             .current_dir(&worktree_path)
             .output()
-            .map_err(|e| ServiceError::Git(format!("Failed to run gh pr create: {}", e)))?;
+            .map_err(|e| {
+                error!(
+                    "Failed to execute gh pr create: task_id='{}', error={}",
+                    task_id, e
+                );
+                ServiceError::Git(format!("Failed to run gh pr create: {}", e))
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            error!(
+                "gh pr create failed: task_id='{}', branch='{}', base='{}', error={}",
+                task_id,
+                branch,
+                base_branch,
+                stderr.trim()
+            );
             return Err(ServiceError::Git(format!(
                 "Failed to create pull request: {}",
                 stderr.trim()
@@ -264,6 +410,11 @@ impl GitHubService {
             .next()
             .and_then(|s| s.parse::<u32>().ok())
             .unwrap_or(0);
+
+        info!(
+            "Pull request created successfully: task_id='{}', pr_number={}, branch='{}', url='{}'",
+            task_id, number, branch, url
+        );
 
         Ok(PullRequestResult {
             url,
@@ -284,13 +435,22 @@ impl GitHubService {
         worktree_path: &str,
         branch: Option<&str>,
     ) -> ServiceResult<Option<String>> {
+        debug!(
+            "Checking for existing PR: worktree_path='{}', branch={:?}",
+            worktree_path, branch
+        );
+
         Self::check_gh_auth_status()?;
 
         // Get current branch if not specified
         let branch_name = match branch {
             Some(b) => b.to_string(),
-            None => GitService::get_current_branch(worktree_path).await?,
+            None => {
+                debug!("No branch specified, getting current branch");
+                GitService::get_current_branch(worktree_path).await?
+            }
         };
+        debug!("Checking for PRs with head branch: '{}'", branch_name);
 
         let output = Command::new("gh")
             .args([
@@ -305,17 +465,32 @@ impl GitHubService {
             ])
             .current_dir(worktree_path)
             .output()
-            .map_err(|e| ServiceError::Git(format!("Failed to check for existing PR: {}", e)))?;
+            .map_err(|e| {
+                error!(
+                    "Failed to execute gh pr list: worktree_path='{}', branch='{}', error={}",
+                    worktree_path, branch_name, e
+                );
+                ServiceError::Git(format!("Failed to check for existing PR: {}", e))
+            })?;
 
         if !output.status.success() {
             // gh pr list can fail if not in a github repo, which is fine
+            debug!(
+                "gh pr list returned non-success (may not be a GitHub repo): branch='{}'",
+                branch_name
+            );
             return Ok(None);
         }
 
         let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
         if url.is_empty() {
+            debug!("No existing PR found for branch: '{}'", branch_name);
             Ok(None)
         } else {
+            info!(
+                "Found existing PR for branch '{}': url='{}'",
+                branch_name, url
+            );
             Ok(Some(url))
         }
     }
@@ -328,23 +503,42 @@ impl GitHubService {
     /// # Returns
     /// The URL to view the PR, or an error if no PR exists.
     pub async fn get_pr_url(worktree_path: &str) -> ServiceResult<String> {
+        debug!("Getting PR URL for worktree: path='{}'", worktree_path);
+
         Self::check_gh_auth_status()?;
 
+        debug!("Running 'gh pr view' command");
         let output = Command::new("gh")
             .args(["pr", "view", "--json", "url", "--jq", ".url"])
             .current_dir(worktree_path)
             .output()
-            .map_err(|e| ServiceError::Git(format!("Failed to get PR URL: {}", e)))?;
+            .map_err(|e| {
+                error!(
+                    "Failed to execute gh pr view: worktree_path='{}', error={}",
+                    worktree_path, e
+                );
+                ServiceError::Git(format!("Failed to get PR URL: {}", e))
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
+            warn!(
+                "No PR found for current branch in worktree: path='{}', error={}",
+                worktree_path,
+                stderr.lines().next().unwrap_or("unknown error")
+            );
             return Err(ServiceError::Git(format!(
                 "No pull request found for current branch: {}",
                 stderr.trim()
             )));
         }
 
-        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+        let url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        info!(
+            "Retrieved PR URL: worktree_path='{}', url='{}'",
+            worktree_path, url
+        );
+        Ok(url)
     }
 }
 

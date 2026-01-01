@@ -4,6 +4,7 @@ import {
   type SpawnTerminalInput,
   terminalQueries,
 } from '@openflow/queries';
+import { createLogger } from '@openflow/utils';
 import {
   type UseMutationResult,
   type UseQueryResult,
@@ -12,6 +13,8 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { processKeys } from './useProcesses';
+
+const logger = createLogger('useTerminal');
 
 /**
  * Query key factory for terminal operations.
@@ -82,10 +85,22 @@ export function useSpawnTerminal(): UseMutationResult<ExecutionProcess, Error, S
 
   return useMutation({
     mutationFn: (input: SpawnTerminalInput) => terminalQueries.spawn(input),
-    onSuccess: (process) => {
+    onSuccess: (process, input) => {
+      logger.info('Terminal spawned', {
+        processId: process.id,
+        projectId: input.projectId,
+        shell: input.shell,
+      });
       // Invalidate process queries to include the new terminal
       queryClient.invalidateQueries({ queryKey: processKeys.all });
       queryClient.invalidateQueries({ queryKey: processKeys.detail(process.id) });
+    },
+    onError: (error, input) => {
+      logger.error('Failed to spawn terminal', {
+        projectId: input.projectId,
+        shell: input.shell,
+        error: error.message,
+      });
     },
   });
 }
@@ -127,5 +142,20 @@ export function useSpawnTerminal(): UseMutationResult<ExecutionProcess, Error, S
 export function useResizeTerminal(): UseMutationResult<void, Error, ResizeTerminalInput> {
   return useMutation({
     mutationFn: (input: ResizeTerminalInput) => terminalQueries.resize(input),
+    onSuccess: (_data, input) => {
+      logger.debug('Terminal resized', {
+        processId: input.processId,
+        cols: input.cols,
+        rows: input.rows,
+      });
+    },
+    onError: (error, input) => {
+      logger.error('Failed to resize terminal', {
+        processId: input.processId,
+        cols: input.cols,
+        rows: input.rows,
+        error: error.message,
+      });
+    },
   });
 }

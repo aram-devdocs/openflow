@@ -2,11 +2,25 @@
 //!
 //! Handles parsing workflow markdown files, listing templates,
 //! and managing built-in workflow templates.
+//!
+//! ## Logging
+//!
+//! This service uses structured logging at appropriate levels:
+//! - `debug!` - Parsing details, file scanning, variable substitution
+//! - `info!` - Template operations (list, parse results with step counts)
+//! - `warn!` - Parse failures for individual files, missing templates
+//! - `error!` - File system errors, critical failures
+//!
+//! ## Error Handling
+//!
+//! All public functions return `ServiceResult<T>` for consistent error handling.
+//! Errors include context about the operation and relevant parameters.
 
 use std::collections::HashMap;
 use std::path::Path;
 
 use chrono::Utc;
+use log::{debug, error, info, warn};
 
 use crate::types::{WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate};
 
@@ -25,6 +39,8 @@ impl WorkflowService {
     ///
     /// Returns a vector of parsed workflow steps with their descriptions.
     pub fn parse_workflow(content: &str) -> ServiceResult<Vec<WorkflowStep>> {
+        debug!("Parsing workflow content (length: {} bytes)", content.len());
+
         let mut steps = Vec::new();
         let mut current_step: Option<(String, WorkflowStepStatus, Vec<String>)> = None;
         let mut index = 0;
@@ -32,6 +48,7 @@ impl WorkflowService {
         for line in content.lines() {
             // Check if this line starts a new step
             if let Some((name, status)) = Self::parse_step_header(line) {
+                debug!("Found step header: name='{}', status={:?}", name, status);
                 // Save previous step if exists
                 if let Some((prev_name, prev_status, prev_lines)) = current_step.take() {
                     let description = prev_lines.join("\n").trim().to_string();
@@ -62,6 +79,30 @@ impl WorkflowService {
                 status,
                 chat_id: None,
             });
+        }
+
+        // Log summary of parsed steps
+        if steps.is_empty() {
+            debug!("No workflow steps found in content");
+        } else {
+            let step_names: Vec<&str> = steps.iter().map(|s| s.name.as_str()).collect();
+            let by_status = steps.iter().fold(
+                (0, 0, 0),
+                |(pending, in_progress, completed), step| match step.status {
+                    WorkflowStepStatus::Pending => (pending + 1, in_progress, completed),
+                    WorkflowStepStatus::InProgress => (pending, in_progress + 1, completed),
+                    WorkflowStepStatus::Completed => (pending, in_progress, completed + 1),
+                    _ => (pending, in_progress, completed),
+                },
+            );
+            info!(
+                "Parsed {} workflow steps: {:?} (pending: {}, in_progress: {}, completed: {})",
+                steps.len(),
+                step_names,
+                by_status.0,
+                by_status.1,
+                by_status.2
+            );
         }
 
         Ok(steps)
@@ -116,56 +157,96 @@ impl WorkflowService {
     ///
     /// Scans the specified folder for `.md` files and parses them as workflow templates.
     pub async fn list_templates(folder_path: &Path) -> ServiceResult<Vec<WorkflowTemplate>> {
+        debug!(
+            "Listing workflow templates from folder: {}",
+            folder_path.display()
+        );
+
         let mut templates = Vec::new();
 
         if !folder_path.exists() {
+            debug!("Template folder does not exist: {}", folder_path.display());
             return Ok(templates);
         }
 
-        let entries = std::fs::read_dir(folder_path)?;
+        let entries = match std::fs::read_dir(folder_path) {
+            Ok(entries) => entries,
+            Err(e) => {
+                error!(
+                    "Failed to read template folder '{}': {}",
+                    folder_path.display(),
+                    e
+                );
+                return Err(e.into());
+            }
+        };
+
+        let mut files_scanned = 0;
+        let mut files_parsed = 0;
 
         for entry in entries.flatten() {
             let path = entry.path();
             if path.extension().is_some_and(|ext| ext == "md") {
-                if let Ok(content) = std::fs::read_to_string(&path) {
-                    let file_name = path.file_stem().unwrap_or_default().to_string_lossy();
-                    let name = Self::extract_title(&content).unwrap_or_else(|| {
-                        // Convert filename to title case
-                        file_name
-                            .split(['_', '-'])
-                            .map(|word| {
-                                let mut chars = word.chars();
-                                match chars.next() {
-                                    Some(first) => {
-                                        first.to_uppercase().chain(chars).collect::<String>()
+                files_scanned += 1;
+                debug!("Scanning template file: {}", path.display());
+
+                match std::fs::read_to_string(&path) {
+                    Ok(content) => {
+                        let file_name = path.file_stem().unwrap_or_default().to_string_lossy();
+                        let name = Self::extract_title(&content).unwrap_or_else(|| {
+                            // Convert filename to title case
+                            file_name
+                                .split(['_', '-'])
+                                .map(|word| {
+                                    let mut chars = word.chars();
+                                    match chars.next() {
+                                        Some(first) => {
+                                            first.to_uppercase().chain(chars).collect::<String>()
+                                        }
+                                        None => String::new(),
                                     }
-                                    None => String::new(),
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(" ")
-                    });
+                                })
+                                .collect::<Vec<_>>()
+                                .join(" ")
+                        });
 
-                    let description = Self::extract_description(&content);
-                    let steps = Self::parse_workflow(&content).unwrap_or_default();
-                    let now = Utc::now().to_rfc3339();
+                        let description = Self::extract_description(&content);
+                        let steps = Self::parse_workflow(&content).unwrap_or_default();
+                        let now = Utc::now().to_rfc3339();
 
-                    templates.push(WorkflowTemplate {
-                        id: format!("file:{}", file_name),
-                        name,
-                        description,
-                        content: content.clone(),
-                        is_builtin: false,
-                        steps,
-                        created_at: now.clone(),
-                        updated_at: now,
-                    });
+                        debug!("Parsed template '{}' with {} steps", name, steps.len());
+
+                        templates.push(WorkflowTemplate {
+                            id: format!("file:{}", file_name),
+                            name,
+                            description,
+                            content: content.clone(),
+                            is_builtin: false,
+                            steps,
+                            created_at: now.clone(),
+                            updated_at: now,
+                        });
+                        files_parsed += 1;
+                    }
+                    Err(e) => {
+                        warn!("Failed to read template file '{}': {}", path.display(), e);
+                    }
                 }
             }
         }
 
         // Sort by name
         templates.sort_by(|a, b| a.name.cmp(&b.name));
+
+        let template_names: Vec<&str> = templates.iter().map(|t| t.name.as_str()).collect();
+        info!(
+            "Listed {} templates from '{}' (scanned: {}, parsed: {}): {:?}",
+            templates.len(),
+            folder_path.display(),
+            files_scanned,
+            files_parsed,
+            template_names
+        );
 
         Ok(templates)
     }
@@ -174,19 +255,103 @@ impl WorkflowService {
     ///
     /// Returns the default workflow templates: Feature, Bug Fix, and Refactor.
     pub fn get_builtin_templates() -> ServiceResult<Vec<WorkflowTemplate>> {
+        debug!("Retrieving built-in workflow templates");
+
         let now = Utc::now().to_rfc3339();
-        Ok(vec![
+        let templates = vec![
             Self::create_feature_template(&now)?,
             Self::create_bugfix_template(&now)?,
             Self::create_refactor_template(&now)?,
-        ])
+        ];
+
+        let template_info: Vec<(&str, usize)> = templates
+            .iter()
+            .map(|t| (t.name.as_str(), t.steps.len()))
+            .collect();
+        info!(
+            "Retrieved {} built-in templates: {:?}",
+            templates.len(),
+            template_info
+        );
+
+        Ok(templates)
     }
 
     /// Get a built-in template by ID.
     pub fn get_builtin_template(id: &str) -> ServiceResult<Option<WorkflowTemplate>> {
-        Ok(Self::get_builtin_templates()?
+        debug!("Looking up built-in template by id: {}", id);
+
+        let template = Self::get_builtin_templates()?
             .into_iter()
-            .find(|t| t.id == id))
+            .find(|t| t.id == id);
+
+        match &template {
+            Some(t) => info!(
+                "Found built-in template: id='{}', name='{}', steps={}",
+                t.id,
+                t.name,
+                t.steps.len()
+            ),
+            None => warn!("Built-in template not found: id='{}'", id),
+        }
+
+        Ok(template)
+    }
+
+    /// Get a template by ID (either built-in or file-based).
+    ///
+    /// For built-in templates (prefixed with "builtin:"), returns the template directly.
+    /// For file-based templates, looks up in the specified workflows folder.
+    ///
+    /// # Arguments
+    /// * `id` - The template ID (e.g., "builtin:feature" or "file:custom")
+    /// * `workflows_folder_path` - Optional path to the workflows folder for file-based templates
+    pub async fn get_template(
+        id: &str,
+        workflows_folder_path: Option<&Path>,
+    ) -> ServiceResult<Option<WorkflowTemplate>> {
+        debug!("Looking up template by id: {}", id);
+
+        // Check if it's a built-in template
+        if id.starts_with("builtin:") {
+            return Self::get_builtin_template(id);
+        }
+
+        // For file-based templates, we need the workflows folder
+        let folder_path = match workflows_folder_path {
+            Some(path) => path,
+            None => {
+                warn!(
+                    "No workflows folder path provided for file-based template: {}",
+                    id
+                );
+                return Ok(None);
+            }
+        };
+
+        debug!(
+            "Searching for file-based template in: {}",
+            folder_path.display()
+        );
+        let templates = Self::list_templates(folder_path).await?;
+
+        let template = templates.into_iter().find(|t| t.id == id);
+
+        match &template {
+            Some(t) => info!(
+                "Found file-based template: id='{}', name='{}', steps={}",
+                t.id,
+                t.name,
+                t.steps.len()
+            ),
+            None => warn!(
+                "Template not found: id='{}' in folder '{}'",
+                id,
+                folder_path.display()
+            ),
+        }
+
+        Ok(template)
     }
 
     /// Substitute workflow variables in content using a HashMap.
@@ -197,11 +362,30 @@ impl WorkflowService {
         content: &str,
         vars: &HashMap<String, String>,
     ) -> ServiceResult<String> {
+        debug!(
+            "Substituting {} variables in content (length: {} bytes)",
+            vars.len(),
+            content.len()
+        );
+
         let mut result = content.to_string();
+        let mut substitutions = 0;
+
         for (key, value) in vars {
             let pattern = format!("{{@{}}}", key);
-            result = result.replace(&pattern, value);
+            if result.contains(&pattern) {
+                result = result.replace(&pattern, value);
+                substitutions += 1;
+                debug!("Substituted variable: {{@{}}}", key);
+            }
         }
+
+        debug!(
+            "Completed variable substitution: {} of {} variables applied",
+            substitutions,
+            vars.len()
+        );
+
         Ok(result)
     }
 
@@ -213,6 +397,18 @@ impl WorkflowService {
         content: &str,
         context: &WorkflowContext,
     ) -> ServiceResult<String> {
+        debug!(
+            "Substituting workflow context variables in content (length: {} bytes)",
+            content.len()
+        );
+        debug!(
+            "Context: artifacts_path={:?}, project_root={:?}, worktree_path={:?}, task_id={:?}",
+            context.artifacts_path.as_deref().map(|_| "[set]"),
+            context.project_root.as_deref().map(|_| "[set]"),
+            context.worktree_path.as_deref().map(|_| "[set]"),
+            context.task_id.as_deref().map(|_| "[set]")
+        );
+
         Ok(context.substitute(content))
     }
 

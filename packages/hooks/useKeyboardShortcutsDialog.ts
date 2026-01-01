@@ -1,10 +1,13 @@
+import { createLogger } from '@openflow/utils';
 /**
  * Hook for managing the keyboard shortcuts dialog state.
  *
  * Provides centralized state management for the keyboard shortcuts
- * help dialog and registers global shortcuts to open it (⌘+/ or ?).
+ * help dialog and registers global shortcuts to open it (Cmd+/ or ?).
  */
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+
+const logger = createLogger('useKeyboardShortcutsDialog');
 
 export interface KeyboardShortcutsDialogContextValue {
   /** Whether the dialog is currently open */
@@ -29,7 +32,7 @@ export const KeyboardShortcutsDialogContext =
  * Use this in your KeyboardShortcutsDialogProvider component.
  *
  * Automatically registers global keyboard shortcuts:
- * - ⌘+/ (Ctrl+/) to open the dialog
+ * - Cmd+/ (Ctrl+/) to open the dialog
  * - ? to open the dialog (when not in an input)
  *
  * @example
@@ -45,17 +48,51 @@ export const KeyboardShortcutsDialogContext =
  */
 export function useKeyboardShortcutsDialogProvider(): KeyboardShortcutsDialogContextValue {
   const [isOpen, setIsOpen] = useState(false);
+  const hasLoggedInit = useRef(false);
 
-  const open = useCallback(() => setIsOpen(true), []);
-  const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
+  // Log provider initialization once
+  useEffect(() => {
+    if (!hasLoggedInit.current) {
+      logger.debug('Provider initialized');
+      hasLoggedInit.current = true;
+    }
+  }, []);
+
+  const open = useCallback(() => {
+    logger.debug('Opening dialog');
+    setIsOpen(true);
+    logger.info('Dialog opened');
+  }, []);
+
+  const close = useCallback(() => {
+    logger.debug('Closing dialog');
+    setIsOpen(false);
+    logger.info('Dialog closed');
+  }, []);
+
+  const toggle = useCallback(() => {
+    setIsOpen((prev) => {
+      const newState = !prev;
+      logger.debug('Toggling dialog', { previousState: prev, newState });
+      logger.info(`Dialog ${newState ? 'opened' : 'closed'} via toggle`);
+      return newState;
+    });
+  }, []);
 
   // Register global keyboard shortcuts
   useEffect(() => {
+    logger.debug('Registering global keyboard shortcuts', {
+      shortcuts: ['Cmd+/ or Ctrl+/', '? (when not in input)'],
+    });
+
     const handler = (e: KeyboardEvent) => {
-      // ⌘+/ or Ctrl+/ to toggle shortcuts dialog
+      // Cmd+/ or Ctrl+/ to toggle shortcuts dialog
       if ((e.metaKey || e.ctrlKey) && e.key === '/') {
         e.preventDefault();
+        logger.info('Keyboard shortcut activated', {
+          shortcut: e.metaKey ? 'Cmd+/' : 'Ctrl+/',
+          action: 'toggle',
+        });
         toggle();
         return;
       }
@@ -70,13 +107,26 @@ export function useKeyboardShortcutsDialogProvider(): KeyboardShortcutsDialogCon
 
         if (!isInputField) {
           e.preventDefault();
+          logger.info('Keyboard shortcut activated', {
+            shortcut: '?',
+            action: 'open',
+          });
           open();
+        } else {
+          logger.debug('Keyboard shortcut ignored (input field focused)', {
+            shortcut: '?',
+            targetType: target.tagName,
+          });
         }
       }
     };
 
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+
+    return () => {
+      logger.debug('Cleaning up keyboard shortcuts listener');
+      window.removeEventListener('keydown', handler);
+    };
   }, [toggle, open]);
 
   return { isOpen, open, close, toggle };
@@ -101,6 +151,7 @@ export function useKeyboardShortcutsDialogProvider(): KeyboardShortcutsDialogCon
 export function useKeyboardShortcutsDialog(): KeyboardShortcutsDialogContextValue {
   const context = useContext(KeyboardShortcutsDialogContext);
   if (!context) {
+    logger.error('useKeyboardShortcutsDialog called outside of provider context');
     throw new Error(
       'useKeyboardShortcutsDialog must be used within a KeyboardShortcutsDialogProvider'
     );

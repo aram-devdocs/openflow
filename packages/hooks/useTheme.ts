@@ -9,7 +9,10 @@
  * The resolved theme is applied to the document root as a '.light' class
  * (dark mode is the default, no class needed).
  */
+import { createLogger } from '@openflow/utils';
 import { createContext, useContext, useEffect, useState } from 'react';
+
+const logger = createLogger('useTheme');
 
 /** Available theme options */
 export type Theme = 'light' | 'dark' | 'system';
@@ -44,7 +47,9 @@ function useSystemTheme(): ResolvedTheme {
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handler = (e: MediaQueryListEvent) => {
-      setSystemTheme(e.matches ? 'dark' : 'light');
+      const newTheme = e.matches ? 'dark' : 'light';
+      logger.debug('System theme preference changed', { theme: newTheme });
+      setSystemTheme(newTheme);
     };
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
@@ -73,6 +78,11 @@ export function useThemeProvider(): ThemeContextValue {
   const resolvedTheme: ResolvedTheme = theme === 'system' ? systemTheme : theme;
 
   const setTheme = (newTheme: Theme) => {
+    logger.info('Theme changed', {
+      from: theme,
+      to: newTheme,
+      resolved: newTheme === 'system' ? systemTheme : newTheme,
+    });
     setThemeState(newTheme);
     localStorage.setItem(THEME_STORAGE_KEY, newTheme);
   };

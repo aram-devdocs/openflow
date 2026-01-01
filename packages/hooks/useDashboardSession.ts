@@ -20,12 +20,17 @@ import type {
   ExecutorProfile,
   SearchResultType as SearchResultTypeEnum,
 } from '@openflow/generated';
+import { createLogger } from '@openflow/utils';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Archive, FolderPlus, Keyboard, Plus, Settings } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { useArchiveChat, useDeleteChat } from './useChats';
 import { useGlobalShortcuts } from './useGlobalShortcuts';
+
+// Create logger for this hook
+const logger = createLogger('useDashboardSession');
 
 // Local type definitions to avoid importing from @openflow/ui (architecture violation)
 // These types are compatible with the UI layer types
@@ -277,6 +282,8 @@ export function useDashboardSession({
   onSuccess,
   onError,
 }: UseDashboardSessionOptions): DashboardSessionState {
+  logger.debug('Hook initialized');
+
   const keyboardShortcutsDialog = useKeyboardShortcutsDialog();
 
   // UI state
@@ -381,17 +388,20 @@ export function useDashboardSession({
   // ============================================================================
 
   const handleSelectProject = useCallback((projectId: string) => {
+    logger.debug('Project selected', { projectId });
     setSelectedProjectId(projectId);
   }, []);
 
   const handleSelectTask = useCallback(
     (taskId: string) => {
+      logger.debug('Task selected, navigating', { taskId });
       navigate({ to: '/tasks/$taskId', params: { taskId } });
     },
     [navigate]
   );
 
   const handleNewTask = useCallback(() => {
+    logger.debug('Opening new task dialog');
     setCreateError(null);
     setNewTaskTitle('');
     setNewTaskDescription('');
@@ -399,6 +409,7 @@ export function useDashboardSession({
   }, []);
 
   const handleNewProject = useCallback(() => {
+    logger.debug('Opening new project dialog');
     setCreateError(null);
     setNewProjectName('');
     setNewProjectPath('');
@@ -406,11 +417,13 @@ export function useDashboardSession({
   }, []);
 
   const handleStatusFilter = useCallback((status: StatusFilter) => {
+    logger.debug('Status filter changed', { status });
     setStatusFilter(status);
   }, []);
 
   const handleTaskStatusChange = useCallback(
     (taskId: string, status: TaskStatus) => {
+      logger.debug('Task status change requested', { taskId, status });
       updateTask.mutate({ id: taskId, request: { status } });
     },
     [updateTask]
@@ -443,7 +456,10 @@ export function useDashboardSession({
   }, []);
 
   const handleNewTerminal = useCallback(() => {
+    logger.debug('Opening new terminal', { activeProjectId });
+
     if (!activeProjectId) {
+      logger.warn('Cannot open terminal: no project selected');
       onError?.(
         'No project selected',
         'Please select or create a project first to open a terminal.'
@@ -457,11 +473,16 @@ export function useDashboardSession({
         onSuccess: (process) => {
           setTerminalProcessId(process.id);
           setTerminalOpen(true);
-          if (import.meta.env.DEV) {
-            console.log('[Dashboard] Terminal spawned:', process.id);
-          }
+          logger.info('Terminal spawned successfully', {
+            processId: process.id,
+            projectId: activeProjectId,
+          });
         },
         onError: (error) => {
+          logger.error('Failed to spawn terminal', {
+            projectId: activeProjectId,
+            error: error.message,
+          });
           onError?.('Failed to open terminal', error.message);
         },
       }
@@ -499,12 +520,17 @@ export function useDashboardSession({
   const handleArchiveChat = useCallback(() => {
     if (!chatContextMenu) return;
 
-    archiveChat.mutate(chatContextMenu.chatId, {
+    const { chatId, chat } = chatContextMenu;
+    logger.debug('Archiving chat', { chatId, title: chat.title });
+
+    archiveChat.mutate(chatId, {
       onSuccess: () => {
+        logger.info('Chat archived successfully', { chatId, title: chat.title });
         onSuccess?.('Chat archived', 'The chat has been moved to the archive.');
         setChatContextMenu(null);
       },
       onError: (error) => {
+        logger.error('Failed to archive chat', { chatId, error: error.message });
         onError?.('Failed to archive chat', error.message);
       },
     });
@@ -514,14 +540,18 @@ export function useDashboardSession({
     if (!chatContextMenu) return;
 
     const { chat } = chatContextMenu;
+    logger.debug('Deleting chat', { chatId: chat.id, title: chat.title });
+
     deleteChat.mutate(
       { id: chat.id, projectId: chat.projectId, taskId: chat.taskId ?? undefined },
       {
         onSuccess: () => {
+          logger.info('Chat deleted successfully', { chatId: chat.id, title: chat.title });
           onSuccess?.('Chat deleted', 'The chat has been permanently deleted.');
           setChatContextMenu(null);
         },
         onError: (error) => {
+          logger.error('Failed to delete chat', { chatId: chat.id, error: error.message });
           onError?.('Failed to delete chat', error.message);
         },
       }
@@ -571,12 +601,17 @@ export function useDashboardSession({
   const handleArchiveTaskFromMenu = useCallback(() => {
     if (!taskContextMenu) return;
 
-    archiveTask.mutate(taskContextMenu.taskId, {
+    const { taskId, task } = taskContextMenu;
+    logger.debug('Archiving task', { taskId, title: task.title });
+
+    archiveTask.mutate(taskId, {
       onSuccess: () => {
+        logger.info('Task archived successfully', { taskId, title: task.title });
         onSuccess?.('Task archived', 'The task has been moved to the archive.');
         setTaskContextMenu(null);
       },
       onError: (error) => {
+        logger.error('Failed to archive task', { taskId, error: error.message });
         onError?.('Failed to archive task', error.message);
       },
     });
@@ -585,12 +620,17 @@ export function useDashboardSession({
   const handleDeleteTaskFromMenu = useCallback(() => {
     if (!taskContextMenu) return;
 
-    deleteTask.mutate(taskContextMenu.taskId, {
+    const { taskId, task } = taskContextMenu;
+    logger.debug('Deleting task', { taskId, title: task.title });
+
+    deleteTask.mutate(taskId, {
       onSuccess: () => {
+        logger.info('Task deleted successfully', { taskId, title: task.title });
         onSuccess?.('Task deleted', 'The task has been permanently deleted.');
         setTaskContextMenu(null);
       },
       onError: (error) => {
+        logger.error('Failed to delete task', { taskId, error: error.message });
         onError?.('Failed to delete task', error.message);
       },
     });
@@ -599,12 +639,21 @@ export function useDashboardSession({
   const handleDuplicateTask = useCallback(() => {
     if (!taskContextMenu) return;
 
-    duplicateTask.mutate(taskContextMenu.taskId, {
+    const { taskId, task } = taskContextMenu;
+    logger.debug('Duplicating task', { taskId, title: task.title });
+
+    duplicateTask.mutate(taskId, {
       onSuccess: (newTask) => {
+        logger.info('Task duplicated successfully', {
+          originalTaskId: taskId,
+          newTaskId: newTask.id,
+          newTitle: newTask.title,
+        });
         onSuccess?.('Task duplicated', `"${newTask.title}" has been created.`);
         setTaskContextMenu(null);
       },
       onError: (error) => {
+        logger.error('Failed to duplicate task', { taskId, error: error.message });
         onError?.('Failed to duplicate task', error.message);
       },
     });
@@ -613,17 +662,33 @@ export function useDashboardSession({
   const handleOpenInIDE = useCallback(() => {
     if (!taskContextMenu || !activeProject) return;
 
-    // Open the project's git repo path in the system's default editor
-    openInEditor.mutate(activeProject.gitRepoPath, {
-      onSuccess: () => {
-        onSuccess?.('Opened in IDE', `Opening "${activeProject.name}" in your default editor.`);
-        setTaskContextMenu(null);
-      },
-      onError: (error) => {
-        onError?.('Failed to open in IDE', error.message);
-      },
+    logger.debug('Opening project in IDE', {
+      projectId: activeProject.id,
+      projectName: activeProject.name,
+      path: activeProject.gitRepoPath,
     });
-  }, [taskContextMenu, activeProject, openInEditor, onSuccess, onError]);
+
+    // Open the project's git repo path in the system's default editor
+    // Note: Toast notifications are handled by useOpenInEditor hook internally
+    openInEditor.mutate(
+      {
+        path: activeProject.gitRepoPath,
+        displayName: activeProject.name,
+      },
+      {
+        onSuccess: () => {
+          logger.info('Opened project in IDE successfully', { projectName: activeProject.name });
+          setTaskContextMenu(null);
+        },
+        onError: (error) => {
+          logger.error('Failed to open in IDE', {
+            projectId: activeProject.id,
+            error: error.message,
+          });
+        },
+      }
+    );
+  }, [taskContextMenu, activeProject, openInEditor]);
 
   const handleViewTask = useCallback(() => {
     if (!taskContextMenu) return;
@@ -636,6 +701,8 @@ export function useDashboardSession({
   // ============================================================================
 
   const handleBrowseFolder = useCallback(async () => {
+    logger.debug('Opening folder picker for project path');
+
     try {
       const selected = await open({
         directory: true,
@@ -643,15 +710,20 @@ export function useDashboardSession({
         title: 'Select Git Repository',
       });
       if (selected && typeof selected === 'string') {
+        logger.debug('Folder selected', { path: selected });
         setNewProjectPath(selected);
         // Try to auto-fill project name from folder name if not set
         if (!newProjectName.trim()) {
           const folderName = selected.split('/').pop() || '';
           setNewProjectName(folderName);
+          logger.debug('Auto-filled project name from folder', { folderName });
         }
+      } else {
+        logger.debug('Folder picker cancelled');
       }
     } catch (error) {
-      console.error('Failed to open folder picker:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to open folder picker', { error: errorMessage });
       setCreateError('Failed to open folder picker. Please enter the path manually.');
     }
   }, [newProjectName]);
@@ -664,11 +736,13 @@ export function useDashboardSession({
     setCreateError(null);
 
     if (!newProjectName.trim()) {
+      logger.warn('Create project validation failed: name required');
       setCreateError('Project name is required');
       return;
     }
 
     if (!newProjectPath.trim()) {
+      logger.warn('Create project validation failed: path required');
       setCreateError('Git repository path is required');
       return;
     }
@@ -678,8 +752,11 @@ export function useDashboardSession({
       gitRepoPath: newProjectPath.trim(),
     };
 
+    logger.debug('Creating project', { name: request.name, path: request.gitRepoPath });
+
     createProject.mutate(request, {
       onSuccess: (project) => {
+        logger.info('Project created successfully', { projectId: project.id, name: project.name });
         setIsCreateProjectDialogOpen(false);
         setNewProjectName('');
         setNewProjectPath('');
@@ -687,6 +764,7 @@ export function useDashboardSession({
         onSuccess?.('Project created', `"${project.name}" has been created successfully.`);
       },
       onError: (error) => {
+        logger.error('Failed to create project', { name: request.name, error: error.message });
         setCreateError(error.message);
         onError?.('Failed to create project', error.message);
       },
@@ -710,11 +788,13 @@ export function useDashboardSession({
     setCreateError(null);
 
     if (!activeProjectId) {
+      logger.warn('Create task validation failed: no project selected');
       setCreateError('Please select or create a project first');
       return;
     }
 
     if (!newTaskTitle.trim()) {
+      logger.warn('Create task validation failed: title required');
       setCreateError('Task title is required');
       return;
     }
@@ -726,8 +806,15 @@ export function useDashboardSession({
       workflowTemplate: selectedWorkflow?.id,
     };
 
+    logger.debug('Creating task', {
+      projectId: request.projectId,
+      title: request.title,
+      workflowId: request.workflowTemplate,
+    });
+
     createTask.mutate(request, {
       onSuccess: (task) => {
+        logger.info('Task created successfully', { taskId: task.id, title: task.title });
         setIsCreateTaskDialogOpen(false);
         setNewTaskTitle('');
         setNewTaskDescription('');
@@ -740,6 +827,12 @@ export function useDashboardSession({
 
         // If a workflow is selected, create chats for each step
         if (selectedWorkflow && selectedWorkflow.steps.length > 0) {
+          logger.debug('Creating workflow step chats', {
+            taskId: task.id,
+            stepCount: selectedWorkflow.steps.length,
+            workflowName: selectedWorkflow.name,
+          });
+
           // Create chats for each workflow step sequentially
           const createStepChats = async () => {
             const steps = selectedWorkflow.steps;
@@ -760,8 +853,19 @@ export function useDashboardSession({
                     workflowStepIndex: i,
                   },
                   {
-                    onSuccess: () => resolve(),
+                    onSuccess: () => {
+                      logger.debug('Workflow step chat created', {
+                        stepIndex: i,
+                        stepName: step.name,
+                      });
+                      resolve();
+                    },
                     onError: (error) => {
+                      logger.error('Failed to create workflow step chat', {
+                        stepIndex: i,
+                        stepName: step.name,
+                        error: error.message,
+                      });
                       errors.push(`Step ${i + 1} "${step.name}": ${error.message}`);
                       resolve(); // Continue with remaining steps
                     },
@@ -772,7 +876,13 @@ export function useDashboardSession({
 
             // Report any errors that occurred during step creation
             if (errors.length > 0) {
+              logger.warn('Some workflow steps failed to create', { errorCount: errors.length });
               onError?.('Some workflow steps failed to create', errors.join('\n'));
+            } else {
+              logger.info('All workflow step chats created', {
+                taskId: task.id,
+                stepCount: steps.length,
+              });
             }
 
             navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
@@ -780,6 +890,7 @@ export function useDashboardSession({
           createStepChats();
         } else {
           // No workflow selected - create a single default step
+          logger.debug('Creating default step chat', { taskId: task.id });
           createChat.mutate(
             {
               taskId: task.id,
@@ -792,9 +903,14 @@ export function useDashboardSession({
             },
             {
               onSuccess: () => {
+                logger.debug('Default step chat created', { taskId: task.id });
                 navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
               },
-              onError: () => {
+              onError: (error) => {
+                logger.error('Failed to create default step chat', {
+                  taskId: task.id,
+                  error: error.message,
+                });
                 // Still navigate even if chat creation fails
                 navigate({ to: '/tasks/$taskId', params: { taskId: task.id } });
               },
@@ -803,6 +919,7 @@ export function useDashboardSession({
         }
       },
       onError: (error) => {
+        logger.error('Failed to create task', { title: request.title, error: error.message });
         setCreateError(error.message);
         onError?.('Failed to create task', error.message);
       },
@@ -830,6 +947,12 @@ export function useDashboardSession({
 
   const handleCreateChatFromDialog = useCallback(
     (data: { projectId: string; executorProfileId?: string; title?: string }) => {
+      logger.debug('Creating standalone chat', {
+        projectId: data.projectId,
+        executorProfileId: data.executorProfileId,
+        title: data.title,
+      });
+
       createChat.mutate(
         {
           projectId: data.projectId,
@@ -839,15 +962,19 @@ export function useDashboardSession({
         },
         {
           onSuccess: (chat) => {
+            logger.info('Standalone chat created successfully', {
+              chatId: chat.id,
+              title: chat.title,
+            });
             setIsNewChatDialogOpen(false);
             onSuccess?.('Chat created', 'New chat session started.');
             navigate({ to: '/chats/$chatId', params: { chatId: chat.id } });
-
-            if (import.meta.env.DEV) {
-              console.log('[Dashboard] Created standalone chat:', chat.id);
-            }
           },
           onError: (error) => {
+            logger.error('Failed to create standalone chat', {
+              projectId: data.projectId,
+              error: error.message,
+            });
             onError?.('Failed to create chat', error.message);
           },
         }
@@ -861,6 +988,7 @@ export function useDashboardSession({
   // ============================================================================
 
   const handleCommandSearch = useCallback((query: string) => {
+    logger.debug('Command palette search', { query: query.substring(0, 50) }); // Truncate for privacy
     setSearchQuery(query);
   }, []);
 

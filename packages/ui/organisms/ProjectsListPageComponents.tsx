@@ -3,12 +3,41 @@
  *
  * These components are pure UI without any data fetching or business logic.
  * All data and callbacks are passed as props from the useProjectsListSession hook.
+ *
+ * Accessibility:
+ * - Uses primitives (Heading, Text, VisuallyHidden, Flex) for semantic HTML
+ * - Proper heading hierarchy (h1 for page title, h2 for section)
+ * - Loading states with aria-busy and role="status"
+ * - Error states with role="alert" and aria-live="assertive"
+ * - Touch targets ≥44px for mobile (WCAG 2.5.5)
+ * - Focus rings with ring-offset for visibility
+ * - Screen reader announcements for state changes
+ * - Proper list semantics with role="list" and role="listitem"
+ * - Keyboard navigation (Enter/Space to activate cards)
+ *
+ * Features:
+ * - ProjectCard with accessible interactions
+ * - ProjectsGrid with responsive layout
+ * - Loading skeleton states
+ * - Error state with retry
+ * - Empty state with call-to-action
+ * - forwardRef support for all components
  */
 
 import type { Project } from '@openflow/generated';
-import { ChevronRight, FolderGit2, Plus, Settings } from 'lucide-react';
-import type { ReactNode } from 'react';
+import {
+  Box,
+  type Breakpoint,
+  Heading,
+  type ResponsiveValue,
+  Text,
+  VisuallyHidden,
+} from '@openflow/primitives';
+import { cn } from '@openflow/utils';
+import { AlertCircle, ChevronRight, FolderGit2, Plus, Settings } from 'lucide-react';
+import { type HTMLAttributes, type ReactNode, forwardRef, useId } from 'react';
 import { Button } from '../atoms/Button';
+import { Icon } from '../atoms/Icon';
 import { EmptyState } from '../molecules/EmptyState';
 import { SkeletonProjectCard } from '../molecules/SkeletonProjectCard';
 import { AppLayout } from '../templates/AppLayout';
@@ -17,8 +46,14 @@ import { CreateProjectDialog } from './DashboardPageComponents';
 import { Header } from './Header';
 
 // ============================================================================
-// Type Definitions
+// Types
 // ============================================================================
+
+/** Breakpoint names for responsive values */
+export type ProjectsListBreakpoint = Breakpoint;
+
+/** Size variants for projects list components */
+export type ProjectsListSize = 'sm' | 'md' | 'lg';
 
 /** Props for ProjectsListLayout */
 export interface ProjectsListLayoutProps {
@@ -31,25 +66,58 @@ export interface ProjectsListLayoutProps {
 }
 
 /** Props for ProjectsListHeader */
-export interface ProjectsListHeaderProps {
+export interface ProjectsListHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Callback to open create dialog */
   onCreateProject: () => void;
+  /** Size variant for responsive sizing */
+  size?: ResponsiveValue<ProjectsListSize>;
+  /** Data test ID for automated testing */
+  'data-testid'?: string;
 }
 
 /** Props for ProjectsListLoadingSkeleton */
-export interface ProjectsListLoadingSkeletonProps {
+export interface ProjectsListLoadingSkeletonProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Number of skeleton cards to show */
   count?: number;
+  /** Size variant for responsive sizing */
+  size?: ResponsiveValue<ProjectsListSize>;
+  /** Data test ID for automated testing */
+  'data-testid'?: string;
 }
 
 /** Props for ProjectsListEmptyState */
-export interface ProjectsListEmptyStateProps {
+export interface ProjectsListEmptyStateProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Callback to create project */
   onCreateProject: () => void;
+  /** Size variant for responsive sizing */
+  size?: ResponsiveValue<ProjectsListSize>;
+  /** Data test ID for automated testing */
+  'data-testid'?: string;
+}
+
+/** Props for ProjectsListErrorState */
+export interface ProjectsListErrorStateProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+  /** Error message to display */
+  message?: string;
+  /** Callback to retry loading */
+  onRetry?: () => void;
+  /** Size variant for responsive sizing */
+  size?: ResponsiveValue<ProjectsListSize>;
+  /** Data test ID for automated testing */
+  'data-testid'?: string;
+  /** Custom error title */
+  errorTitle?: string;
+  /** Custom retry button label */
+  retryLabel?: string;
 }
 
 /** Props for ProjectCard */
-export interface ProjectCardProps {
+export interface ProjectCardProps extends Omit<HTMLAttributes<HTMLButtonElement>, 'children'> {
+  /** Project ID for unique identification */
+  projectId?: string;
   /** Project name */
   name: string;
   /** Git repository path */
@@ -60,10 +128,14 @@ export interface ProjectCardProps {
   onSelect: () => void;
   /** Callback to open settings */
   onSettings: () => void;
+  /** Size variant for responsive sizing */
+  size?: ResponsiveValue<ProjectsListSize>;
+  /** Data test ID for automated testing */
+  'data-testid'?: string;
 }
 
 /** Props for ProjectsGrid */
-export interface ProjectsGridProps {
+export interface ProjectsGridProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** List of projects */
   projects: Project[];
   /** Callback when project is selected */
@@ -72,10 +144,16 @@ export interface ProjectsGridProps {
   onProjectSettings: (projectId: string) => void;
   /** Callback to delete project */
   onDeleteProject: (projectId: string, projectName: string) => void;
+  /** Size variant for responsive sizing */
+  size?: ResponsiveValue<ProjectsListSize>;
+  /** Data test ID for automated testing */
+  'data-testid'?: string;
+  /** Accessible label for the grid */
+  gridLabel?: string;
 }
 
 /** Props for ProjectsListContent */
-export interface ProjectsListContentProps {
+export interface ProjectsListContentProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Loading state */
   isLoading: boolean;
   /** List of projects */
@@ -88,6 +166,14 @@ export interface ProjectsListContentProps {
   onProjectSettings: (projectId: string) => void;
   /** Callback to delete project */
   onDeleteProject: (projectId: string, projectName: string) => void;
+  /** Error message if loading failed */
+  error?: string | null;
+  /** Callback to retry loading */
+  onRetry?: () => void;
+  /** Size variant for responsive sizing */
+  size?: ResponsiveValue<ProjectsListSize>;
+  /** Data test ID for automated testing */
+  'data-testid'?: string;
 }
 
 /** Props for ProjectsListCreateDialog */
@@ -118,6 +204,179 @@ export interface ProjectsListCreateDialogProps {
 export interface ProjectsListConfirmDialogProps {
   /** Confirm dialog props from useConfirmDialog hook */
   dialogProps: ConfirmDialogProps;
+}
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+/** Default labels */
+export const DEFAULT_PAGE_TITLE = 'All Projects';
+export const DEFAULT_NEW_PROJECT_LABEL = 'New Project';
+export const DEFAULT_EMPTY_TITLE = 'No projects yet';
+export const DEFAULT_EMPTY_DESCRIPTION =
+  'Get started by creating your first project. Projects link to your local git repositories.';
+export const DEFAULT_CREATE_PROJECT_LABEL = 'Create Project';
+export const DEFAULT_ERROR_TITLE = 'Failed to load projects';
+export const DEFAULT_ERROR_RETRY_LABEL = 'Retry';
+export const DEFAULT_GRID_LABEL = 'Projects list';
+export const DEFAULT_SKELETON_COUNT = 8;
+
+/** Screen reader announcements */
+export const SR_LOADING = 'Loading projects...';
+export const SR_ERROR = 'Error loading projects';
+export const SR_EMPTY = 'No projects. Create a new project to get started.';
+export const SR_PROJECTS_LOADED = 'Projects loaded';
+export const SR_PROJECT_COUNT_TEMPLATE = '{count} project{s}';
+export const SR_SETTINGS_LABEL = 'Open settings for {name}';
+export const SR_PROJECT_CARD_LABEL = 'Project: {name}, Path: {path}. Press Enter to open.';
+
+/** Size class constants */
+export const HEADER_MARGIN_CLASSES: Record<ProjectsListSize, string> = {
+  sm: 'mb-4',
+  md: 'mb-6',
+  lg: 'mb-8',
+};
+
+export const HEADER_TITLE_SIZE_MAP: Record<ProjectsListSize, 'lg' | 'xl' | '2xl'> = {
+  sm: 'lg',
+  md: 'xl',
+  lg: '2xl',
+};
+
+export const GRID_GAP_CLASSES: Record<ProjectsListSize, string> = {
+  sm: 'gap-3',
+  md: 'gap-4',
+  lg: 'gap-5',
+};
+
+export const CARD_PADDING_CLASSES: Record<ProjectsListSize, string> = {
+  sm: 'p-3',
+  md: 'p-4',
+  lg: 'p-5',
+};
+
+export const CARD_ICON_CONTAINER_CLASSES: Record<ProjectsListSize, string> = {
+  sm: 'h-8 w-8 mb-2',
+  md: 'h-10 w-10 mb-3',
+  lg: 'h-12 w-12 mb-4',
+};
+
+export const CARD_ICON_SIZE_CLASSES: Record<ProjectsListSize, string> = {
+  sm: 'h-4 w-4',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
+};
+
+export const CARD_TITLE_SIZE_MAP: Record<ProjectsListSize, 'sm' | 'base' | 'lg'> = {
+  sm: 'sm',
+  md: 'base',
+  lg: 'lg',
+};
+
+export const BUTTON_SIZE_MAP: Record<ProjectsListSize, 'sm' | 'md' | 'lg'> = {
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
+};
+
+/** Base class constants */
+export const HEADER_CONTAINER_CLASSES = 'flex items-center justify-between';
+
+export const GRID_BASE_CLASSES = 'grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+
+export const CARD_BASE_CLASSES =
+  'group relative flex flex-col rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] text-left motion-safe:transition-all hover:border-[rgb(var(--primary))]/50 hover:bg-[rgb(var(--muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 min-h-[44px]';
+
+export const CARD_ICON_CONTAINER_BASE_CLASSES =
+  'flex items-center justify-center rounded-lg bg-[rgb(var(--primary))]/10';
+
+export const CARD_SETTINGS_BUTTON_CLASSES =
+  'rounded p-1 text-[rgb(var(--muted-foreground))] hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center';
+
+export const CARD_ACTIONS_CONTAINER_CLASSES =
+  'absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100';
+
+export const CARD_CHEVRON_CLASSES =
+  'absolute bottom-4 right-4 h-4 w-4 text-[rgb(var(--muted-foreground))] opacity-0 transition-opacity group-hover:opacity-100';
+
+export const LOADING_CONTAINER_CLASSES = 'flex-1';
+
+export const ERROR_STATE_CLASSES =
+  'flex flex-1 flex-col items-center justify-center p-8 text-center';
+
+export const ERROR_ICON_CONTAINER_CLASSES =
+  'flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive mb-4';
+
+export const SKELETON_GRID_CLASSES = 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Get the base size from a responsive value
+ */
+export function getBaseSize(size: ResponsiveValue<ProjectsListSize>): ProjectsListSize {
+  if (typeof size === 'string') {
+    return size;
+  }
+  return size.base ?? 'md';
+}
+
+/**
+ * Generate responsive classes from a size value
+ */
+export function getResponsiveSizeClasses(
+  size: ResponsiveValue<ProjectsListSize>,
+  classMap: Record<ProjectsListSize, string>
+): string {
+  if (typeof size === 'string') {
+    return classMap[size];
+  }
+
+  const classes: string[] = [];
+  const breakpointOrder: ProjectsListBreakpoint[] = ['base', 'sm', 'md', 'lg', 'xl', '2xl'];
+
+  for (const breakpoint of breakpointOrder) {
+    const sizeValue = size[breakpoint];
+    if (sizeValue) {
+      const sizeClass = classMap[sizeValue];
+      if (breakpoint === 'base') {
+        classes.push(sizeClass);
+      } else {
+        // Split classes and add breakpoint prefix to each
+        const splitClasses = sizeClass.split(' ').map((c) => `${breakpoint}:${c}`);
+        classes.push(...splitClasses);
+      }
+    }
+  }
+
+  return classes.join(' ');
+}
+
+/**
+ * Build accessible label for project card
+ */
+export function buildProjectCardAccessibleLabel(name: string, path: string): string {
+  return SR_PROJECT_CARD_LABEL.replace('{name}', name).replace('{path}', path);
+}
+
+/**
+ * Build settings button accessible label
+ */
+export function buildSettingsAccessibleLabel(name: string): string {
+  return SR_SETTINGS_LABEL.replace('{name}', name);
+}
+
+/**
+ * Build project count announcement
+ */
+export function buildProjectCountAnnouncement(count: number): string {
+  return SR_PROJECT_COUNT_TEMPLATE.replace('{count}', String(count)).replace(
+    '{s}',
+    count === 1 ? '' : 's'
+  );
 }
 
 // ============================================================================
@@ -152,19 +411,57 @@ export function ProjectsListLayout({ projectCount, onSearch, children }: Project
 /**
  * ProjectsListHeader - Header section with title and create button
  */
-export function ProjectsListHeader({ onCreateProject }: ProjectsListHeaderProps) {
-  return (
-    <div className="mb-6 flex items-center justify-between">
-      <h1 className="text-xl font-semibold text-[rgb(var(--foreground))] md:text-2xl">
-        All Projects
-      </h1>
-      <Button variant="primary" onClick={onCreateProject}>
-        <Plus className="mr-2 h-4 w-4" />
-        New Project
-      </Button>
-    </div>
-  );
-}
+export const ProjectsListHeader = forwardRef<HTMLDivElement, ProjectsListHeaderProps>(
+  function ProjectsListHeader(
+    {
+      onCreateProject,
+      size = 'md',
+      className,
+      'data-testid': testId,
+      'aria-hidden': _,
+      'aria-busy': __,
+      'aria-expanded': ___,
+      'aria-pressed': ____,
+      'aria-selected': _____,
+      'aria-checked': ______,
+      'aria-disabled': _______,
+      'aria-required': ________,
+      'aria-invalid': _________,
+      'aria-haspopup': __________,
+      ...props
+    },
+    ref
+  ) {
+    const baseSize = getBaseSize(size);
+    const marginClasses = getResponsiveSizeClasses(size, HEADER_MARGIN_CLASSES);
+    const titleSize = HEADER_TITLE_SIZE_MAP[baseSize];
+    const buttonSize = BUTTON_SIZE_MAP[baseSize];
+
+    return (
+      <Box
+        ref={ref}
+        className={cn(HEADER_CONTAINER_CLASSES, marginClasses, className)}
+        data-testid={testId}
+        data-size={baseSize}
+        {...props}
+      >
+        <Heading level={1} size={titleSize} weight="semibold">
+          {DEFAULT_PAGE_TITLE}
+        </Heading>
+        <Button
+          variant="primary"
+          size={buttonSize}
+          onClick={onCreateProject}
+          icon={<Icon icon={Plus} size="sm" aria-hidden={true} />}
+          aria-label={DEFAULT_NEW_PROJECT_LABEL}
+          data-testid={testId ? `${testId}-create-button` : undefined}
+        >
+          {DEFAULT_NEW_PROJECT_LABEL}
+        </Button>
+      </Box>
+    );
+  }
+);
 
 // ============================================================================
 // Loading Component
@@ -173,15 +470,56 @@ export function ProjectsListHeader({ onCreateProject }: ProjectsListHeaderProps)
 /**
  * ProjectsListLoadingSkeleton - Loading skeleton for projects grid
  */
-export function ProjectsListLoadingSkeleton({ count = 8 }: ProjectsListLoadingSkeletonProps) {
+export const ProjectsListLoadingSkeleton = forwardRef<
+  HTMLDivElement,
+  ProjectsListLoadingSkeletonProps
+>(function ProjectsListLoadingSkeleton(
+  {
+    count = DEFAULT_SKELETON_COUNT,
+    size = 'md',
+    className,
+    'data-testid': testId,
+    'aria-hidden': _,
+    'aria-busy': __,
+    'aria-expanded': ___,
+    'aria-pressed': ____,
+    'aria-selected': _____,
+    'aria-checked': ______,
+    'aria-disabled': _______,
+    'aria-required': ________,
+    'aria-invalid': _________,
+    'aria-haspopup': __________,
+    ...props
+  },
+  ref
+) {
+  const baseSize = getBaseSize(size);
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {Array.from({ length: count }).map((_, i) => (
-        <SkeletonProjectCard key={`skeleton-project-card-${i}`} />
-      ))}
-    </div>
+    <Box
+      ref={ref}
+      className={cn(LOADING_CONTAINER_CLASSES, className)}
+      role="status"
+      aria-busy={true}
+      aria-label={SR_LOADING}
+      data-testid={testId}
+      data-size={baseSize}
+      data-count={count}
+      {...props}
+    >
+      <VisuallyHidden>
+        <Text as="span" aria-live="polite">
+          {SR_LOADING}
+        </Text>
+      </VisuallyHidden>
+      <Box className={SKELETON_GRID_CLASSES} aria-hidden={true}>
+        {Array.from({ length: count }).map((_, i) => (
+          <SkeletonProjectCard key={`skeleton-project-card-${i}`} />
+        ))}
+      </Box>
+    </Box>
   );
-}
+});
 
 // ============================================================================
 // Empty State Component
@@ -190,21 +528,132 @@ export function ProjectsListLoadingSkeleton({ count = 8 }: ProjectsListLoadingSk
 /**
  * ProjectsListEmptyState - Empty state when no projects exist
  */
-export function ProjectsListEmptyState({ onCreateProject }: ProjectsListEmptyStateProps) {
-  return (
-    <EmptyState
-      icon={FolderGit2}
-      title="No projects yet"
-      description="Get started by creating your first project. Projects link to your local git repositories."
-      action={{
-        label: 'Create Project',
-        onClick: onCreateProject,
-      }}
-      size="lg"
-      className="flex-1"
-    />
-  );
-}
+export const ProjectsListEmptyState = forwardRef<HTMLDivElement, ProjectsListEmptyStateProps>(
+  function ProjectsListEmptyState(
+    {
+      onCreateProject,
+      size = 'md',
+      className,
+      'data-testid': testId,
+      'aria-hidden': _,
+      'aria-busy': __,
+      'aria-expanded': ___,
+      'aria-pressed': ____,
+      'aria-selected': _____,
+      'aria-checked': ______,
+      'aria-disabled': _______,
+      'aria-required': ________,
+      'aria-invalid': _________,
+      'aria-haspopup': __________,
+      ...props
+    },
+    ref
+  ) {
+    const baseSize = getBaseSize(size);
+
+    return (
+      <Box
+        ref={ref}
+        className={cn('flex flex-1 flex-col', className)}
+        role="region"
+        aria-label="Empty projects"
+        data-testid={testId}
+        data-size={baseSize}
+        {...props}
+      >
+        <VisuallyHidden>
+          <Text as="span" role="status" aria-live="polite">
+            {SR_EMPTY}
+          </Text>
+        </VisuallyHidden>
+        <EmptyState
+          icon={FolderGit2}
+          title={DEFAULT_EMPTY_TITLE}
+          description={DEFAULT_EMPTY_DESCRIPTION}
+          action={{
+            label: DEFAULT_CREATE_PROJECT_LABEL,
+            onClick: onCreateProject,
+            'aria-label': DEFAULT_CREATE_PROJECT_LABEL,
+          }}
+          size={baseSize}
+          className="flex-1"
+        />
+      </Box>
+    );
+  }
+);
+
+// ============================================================================
+// Error State Component
+// ============================================================================
+
+/**
+ * ProjectsListErrorState - Error state when loading fails
+ */
+export const ProjectsListErrorState = forwardRef<HTMLDivElement, ProjectsListErrorStateProps>(
+  function ProjectsListErrorState(
+    {
+      message,
+      onRetry,
+      size = 'md',
+      className,
+      'data-testid': testId,
+      errorTitle = DEFAULT_ERROR_TITLE,
+      retryLabel = DEFAULT_ERROR_RETRY_LABEL,
+      'aria-hidden': _,
+      'aria-busy': __,
+      'aria-expanded': ___,
+      'aria-pressed': ____,
+      'aria-selected': _____,
+      'aria-checked': ______,
+      'aria-disabled': _______,
+      'aria-required': ________,
+      'aria-invalid': _________,
+      'aria-haspopup': __________,
+      ...props
+    },
+    ref
+  ) {
+    const baseSize = getBaseSize(size);
+
+    return (
+      <Box
+        ref={ref}
+        className={cn(ERROR_STATE_CLASSES, className)}
+        data-testid={testId}
+        data-size={baseSize}
+        role="alert"
+        aria-live="assertive"
+        {...props}
+      >
+        <VisuallyHidden>
+          <Text as="span">{SR_ERROR}</Text>
+        </VisuallyHidden>
+        <Box className={ERROR_ICON_CONTAINER_CLASSES}>
+          <Icon icon={AlertCircle} size="lg" aria-hidden={true} />
+        </Box>
+        <Heading level={2} size="lg" weight="semibold" className="mb-2">
+          {errorTitle}
+        </Heading>
+        {message && (
+          <Text color="muted-foreground" className="mb-4 max-w-md">
+            {message}
+          </Text>
+        )}
+        {onRetry && (
+          <Button
+            variant="primary"
+            size={BUTTON_SIZE_MAP[baseSize]}
+            onClick={onRetry}
+            aria-label={retryLabel}
+          >
+            {retryLabel}
+          </Button>
+        )}
+      </Box>
+    );
+  }
+);
 
 // ============================================================================
 // Project Card Component
@@ -213,48 +662,106 @@ export function ProjectsListEmptyState({ onCreateProject }: ProjectsListEmptySta
 /**
  * ProjectCard - Individual project card with icon, name, path, and actions
  */
-export function ProjectCard({ name, path, icon, onSelect, onSettings }: ProjectCardProps) {
+export const ProjectCard = forwardRef<HTMLButtonElement, ProjectCardProps>(function ProjectCard(
+  {
+    projectId,
+    name,
+    path,
+    icon,
+    onSelect,
+    onSettings,
+    size = 'md',
+    className,
+    'data-testid': testId,
+    'aria-hidden': _,
+    'aria-busy': __,
+    'aria-expanded': ___,
+    'aria-pressed': ____,
+    'aria-selected': _____,
+    'aria-checked': ______,
+    'aria-disabled': _______,
+    'aria-required': ________,
+    'aria-invalid': _________,
+    'aria-haspopup': __________,
+    ...props
+  },
+  ref
+) {
+  const baseSize = getBaseSize(size);
+  const paddingClasses = getResponsiveSizeClasses(size, CARD_PADDING_CLASSES);
+  const iconContainerClasses = getResponsiveSizeClasses(size, CARD_ICON_CONTAINER_CLASSES);
+  const iconSizeClasses = getResponsiveSizeClasses(size, CARD_ICON_SIZE_CLASSES);
+  const titleSize = CARD_TITLE_SIZE_MAP[baseSize];
+  const settingsId = useId();
+  const accessibleLabel = buildProjectCardAccessibleLabel(name, path);
+
   return (
-    <button
+    <Box
+      as="button"
+      ref={ref}
       type="button"
       onClick={onSelect}
-      className="group relative flex flex-col rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--card))] p-4 text-left transition-all hover:border-[rgb(var(--primary))]/50 hover:bg-[rgb(var(--muted))]"
+      className={cn(CARD_BASE_CLASSES, paddingClasses, className)}
+      aria-label={accessibleLabel}
+      data-testid={testId}
+      data-project-id={projectId}
+      data-size={baseSize}
+      {...props}
     >
       {/* Icon */}
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[rgb(var(--primary))]/10">
+      <Box
+        className={cn(CARD_ICON_CONTAINER_BASE_CLASSES, iconContainerClasses)}
+        aria-hidden={true}
+      >
         {icon === 'folder' ? (
-          <FolderGit2 className="h-5 w-5 text-[rgb(var(--primary))]" />
+          <FolderGit2 className={cn('text-[rgb(var(--primary))]', iconSizeClasses)} />
         ) : (
-          <span className="text-lg">{icon}</span>
+          <Text as="span" className={cn('text-lg', iconSizeClasses)}>
+            {icon}
+          </Text>
         )}
-      </div>
+      </Box>
 
       {/* Name */}
-      <h3 className="font-medium text-[rgb(var(--foreground))]">{name}</h3>
+      <Text as="span" size={titleSize} weight="medium" className="text-[rgb(var(--foreground))]">
+        {name}
+      </Text>
 
       {/* Path */}
-      <p className="mt-1 truncate text-xs text-[rgb(var(--muted-foreground))]">{path}</p>
+      <Text
+        as="span"
+        size="xs"
+        color="muted-foreground"
+        truncate
+        className="mt-1"
+        aria-label={`Repository path: ${path}`}
+      >
+        {path}
+      </Text>
 
       {/* Actions */}
-      <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
+      <Box className={CARD_ACTIONS_CONTAINER_CLASSES} role="group" aria-label="Project actions">
+        <Box
+          as="button"
+          id={settingsId}
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onSettings();
           }}
-          className="rounded p-1 text-[rgb(var(--muted-foreground))] hover:bg-[rgb(var(--muted))] hover:text-[rgb(var(--foreground))]"
-          aria-label="Project settings"
+          className={CARD_SETTINGS_BUTTON_CLASSES}
+          aria-label={buildSettingsAccessibleLabel(name)}
+          data-testid={testId ? `${testId}-settings` : undefined}
         >
-          <Settings className="h-4 w-4" />
-        </button>
-      </div>
+          <Settings className="h-4 w-4" aria-hidden={true} />
+        </Box>
+      </Box>
 
       {/* Chevron indicator */}
-      <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 text-[rgb(var(--muted-foreground))] opacity-0 transition-opacity group-hover:opacity-100" />
-    </button>
+      <ChevronRight className={CARD_CHEVRON_CLASSES} aria-hidden={true} />
+    </Box>
   );
-}
+});
 
 // ============================================================================
 // Projects Grid Component
@@ -263,22 +770,78 @@ export function ProjectCard({ name, path, icon, onSelect, onSettings }: ProjectC
 /**
  * ProjectsGrid - Grid of project cards
  */
-export function ProjectsGrid({ projects, onSelectProject, onProjectSettings }: ProjectsGridProps) {
+export const ProjectsGrid = forwardRef<HTMLDivElement, ProjectsGridProps>(function ProjectsGrid(
+  {
+    projects,
+    onSelectProject,
+    onProjectSettings,
+    size = 'md',
+    className,
+    'data-testid': testId,
+    gridLabel = DEFAULT_GRID_LABEL,
+    'aria-hidden': _,
+    'aria-busy': __,
+    'aria-expanded': ___,
+    'aria-pressed': ____,
+    'aria-selected': _____,
+    'aria-checked': ______,
+    'aria-disabled': _______,
+    'aria-required': ________,
+    'aria-invalid': _________,
+    'aria-haspopup': __________,
+    ...props
+  },
+  ref
+) {
+  const baseSize = getBaseSize(size);
+  const gapClasses = getResponsiveSizeClasses(size, GRID_GAP_CLASSES);
+  const listId = useId();
+  const headingId = useId();
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {projects.map((project) => (
-        <ProjectCard
-          key={project.id}
-          name={project.name}
-          path={project.gitRepoPath}
-          icon={project.icon}
-          onSelect={() => onSelectProject(project.id)}
-          onSettings={() => onProjectSettings(project.id)}
-        />
-      ))}
-    </div>
+    <Box
+      ref={ref}
+      className={cn('flex-1', className)}
+      data-testid={testId}
+      data-size={baseSize}
+      data-project-count={projects.length}
+      role="region"
+      aria-labelledby={headingId}
+      {...props}
+    >
+      <VisuallyHidden>
+        <Heading level={2} id={headingId}>
+          {gridLabel}
+        </Heading>
+        <Text as="span" role="status" aria-live="polite">
+          {buildProjectCountAnnouncement(projects.length)}
+        </Text>
+      </VisuallyHidden>
+      <Box
+        as="ul"
+        id={listId}
+        role="list"
+        aria-label={gridLabel}
+        className={cn(GRID_BASE_CLASSES, gapClasses)}
+      >
+        {projects.map((project) => (
+          <Box as="li" key={project.id} role="listitem">
+            <ProjectCard
+              projectId={project.id}
+              name={project.name}
+              path={project.gitRepoPath}
+              icon={project.icon}
+              onSelect={() => onSelectProject(project.id)}
+              onSettings={() => onProjectSettings(project.id)}
+              size={size}
+              data-testid={testId ? `${testId}-card-${project.id}` : undefined}
+            />
+          </Box>
+        ))}
+      </Box>
+    </Box>
   );
-}
+});
 
 // ============================================================================
 // Content Component
@@ -287,30 +850,104 @@ export function ProjectsGrid({ projects, onSelectProject, onProjectSettings }: P
 /**
  * ProjectsListContent - Main content area with conditional rendering
  */
-export function ProjectsListContent({
-  isLoading,
-  projects,
-  onCreateProject,
-  onSelectProject,
-  onProjectSettings,
-}: ProjectsListContentProps) {
-  if (isLoading) {
-    return <ProjectsListLoadingSkeleton />;
-  }
+export const ProjectsListContent = forwardRef<HTMLDivElement, ProjectsListContentProps>(
+  function ProjectsListContent(
+    {
+      isLoading,
+      projects,
+      onCreateProject,
+      onSelectProject,
+      onProjectSettings,
+      onDeleteProject,
+      error,
+      onRetry,
+      size = 'md',
+      className,
+      'data-testid': testId,
+      'aria-hidden': _,
+      'aria-busy': __,
+      'aria-expanded': ___,
+      'aria-pressed': ____,
+      'aria-selected': _____,
+      'aria-checked': ______,
+      'aria-disabled': _______,
+      'aria-required': ________,
+      'aria-invalid': _________,
+      'aria-haspopup': __________,
+      ...props
+    },
+    ref
+  ) {
+    const baseSize = getBaseSize(size);
 
-  if (projects.length === 0) {
-    return <ProjectsListEmptyState onCreateProject={onCreateProject} />;
-  }
+    // Error state
+    if (error) {
+      return (
+        <ProjectsListErrorState
+          ref={ref}
+          message={error}
+          onRetry={onRetry}
+          size={size}
+          className={className}
+          data-testid={testId ? `${testId}-error` : undefined}
+          {...props}
+        />
+      );
+    }
 
-  return (
-    <ProjectsGrid
-      projects={projects}
-      onSelectProject={onSelectProject}
-      onProjectSettings={onProjectSettings}
-      onDeleteProject={() => {}}
-    />
-  );
-}
+    // Loading state
+    if (isLoading) {
+      return (
+        <ProjectsListLoadingSkeleton
+          ref={ref}
+          size={size}
+          className={className}
+          data-testid={testId ? `${testId}-loading` : undefined}
+          {...props}
+        />
+      );
+    }
+
+    // Empty state
+    if (projects.length === 0) {
+      return (
+        <ProjectsListEmptyState
+          ref={ref}
+          onCreateProject={onCreateProject}
+          size={size}
+          className={className}
+          data-testid={testId ? `${testId}-empty` : undefined}
+          {...props}
+        />
+      );
+    }
+
+    // Projects grid
+    return (
+      <Box
+        ref={ref}
+        className={cn('flex-1', className)}
+        data-testid={testId}
+        data-size={baseSize}
+        {...props}
+      >
+        <VisuallyHidden>
+          <Text as="span" role="status" aria-live="polite">
+            {SR_PROJECTS_LOADED}. {buildProjectCountAnnouncement(projects.length)}
+          </Text>
+        </VisuallyHidden>
+        <ProjectsGrid
+          projects={projects}
+          onSelectProject={onSelectProject}
+          onProjectSettings={onProjectSettings}
+          onDeleteProject={onDeleteProject}
+          size={size}
+          data-testid={testId ? `${testId}-grid` : undefined}
+        />
+      </Box>
+    );
+  }
+);
 
 // ============================================================================
 // Dialog Components

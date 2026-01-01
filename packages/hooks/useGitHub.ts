@@ -1,11 +1,35 @@
+/**
+ * useGitHub - Hooks for GitHub CLI operations
+ *
+ * This module provides React Query hooks for GitHub-related operations,
+ * including checking CLI installation, authentication status, and creating PRs.
+ *
+ * Features:
+ * - Full logging at DEBUG/INFO/ERROR levels
+ * - Toast notifications for user feedback on mutations
+ * - Proper error handling with try/catch patterns
+ */
+
 import type { PullRequestResult } from '@openflow/generated';
 import { type CreatePullRequestInput, githubQueries } from '@openflow/queries';
+import { createLogger } from '@openflow/utils';
 import {
   type UseMutationResult,
   type UseQueryResult,
   useMutation,
   useQuery,
 } from '@tanstack/react-query';
+import { useToast } from './useToast';
+
+// ============================================================================
+// Logger
+// ============================================================================
+
+const logger = createLogger('useGitHub');
+
+// ============================================================================
+// Query Keys
+// ============================================================================
 
 /**
  * Query key factory for GitHub operations.
@@ -16,6 +40,10 @@ export const githubKeys = {
   ghCliInstalled: () => [...githubKeys.all, 'ghCliInstalled'] as const,
   ghAuthStatus: () => [...githubKeys.all, 'ghAuthStatus'] as const,
 };
+
+// ============================================================================
+// Query Hooks
+// ============================================================================
 
 /**
  * Check if the GitHub CLI is installed.
@@ -39,9 +67,25 @@ export const githubKeys = {
  * ```
  */
 export function useGhCliInstalled(): UseQueryResult<boolean> {
+  logger.debug('useGhCliInstalled hook called');
+
   return useQuery({
     queryKey: githubKeys.ghCliInstalled(),
-    queryFn: () => githubQueries.checkGhCliInstalled(),
+    queryFn: async () => {
+      logger.debug('Checking if GitHub CLI is installed');
+      try {
+        const isInstalled = await githubQueries.checkGhCliInstalled();
+        logger.info('GitHub CLI installation check complete', {
+          isInstalled,
+        });
+        return isInstalled;
+      } catch (error) {
+        logger.error('Failed to check GitHub CLI installation', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     staleTime: Number.POSITIVE_INFINITY, // CLI installation won't change during session
   });
 }
@@ -73,13 +117,30 @@ export function useGhCliInstalled(): UseQueryResult<boolean> {
  * ```
  */
 export function useGhAuthStatus(): UseQueryResult<void> {
+  logger.debug('useGhAuthStatus hook called');
+
   return useQuery({
     queryKey: githubKeys.ghAuthStatus(),
-    queryFn: () => githubQueries.checkGhAuthStatus(),
+    queryFn: async () => {
+      logger.debug('Checking GitHub CLI authentication status');
+      try {
+        await githubQueries.checkGhAuthStatus();
+        logger.info('GitHub CLI authentication check passed');
+      } catch (error) {
+        logger.warn('GitHub CLI authentication check failed', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
     staleTime: 60 * 1000, // Re-check auth status every minute
     retry: false, // Don't retry auth check failures
   });
 }
+
+// ============================================================================
+// Mutation Hooks
+// ============================================================================
 
 /**
  * Create a pull request for a task.
@@ -124,7 +185,45 @@ export function useCreatePullRequest(): UseMutationResult<
   Error,
   CreatePullRequestInput
 > {
+  const toast = useToast();
+
+  logger.debug('useCreatePullRequest hook initialized');
+
   return useMutation({
-    mutationFn: (input: CreatePullRequestInput) => githubQueries.createPullRequest(input),
+    mutationFn: async (input: CreatePullRequestInput) => {
+      logger.debug('Creating pull request', {
+        taskId: input.taskId,
+        title: input.title,
+        hasBody: Boolean(input.body),
+      });
+      try {
+        const result = await githubQueries.createPullRequest(input);
+        logger.info('Pull request created successfully', {
+          taskId: input.taskId,
+          prNumber: result.number,
+          prUrl: result.url,
+        });
+        return result;
+      } catch (error) {
+        logger.error('Failed to create pull request', {
+          taskId: input.taskId,
+          title: input.title,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
+    onSuccess: (data, input) => {
+      toast.success(
+        'Pull Request Created',
+        `PR #${data.number} "${input.title}" has been created.`
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        'Failed to Create Pull Request',
+        error instanceof Error ? error.message : 'Please try again.'
+      );
+    },
   });
 }

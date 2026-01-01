@@ -1,5 +1,12 @@
 import type { ExecutionProcess } from '@openflow/generated';
+import { createLogger } from '@openflow/utils';
 import { invoke } from './utils.js';
+
+/**
+ * Logger for terminal query operations.
+ * Logs at DEBUG level for query calls, INFO for successes, ERROR for failures.
+ */
+const logger = createLogger('queries:terminal');
 
 /**
  * Input for spawning a terminal session.
@@ -33,7 +40,32 @@ export interface ResizeTerminalInput {
 
 /**
  * Terminal query wrappers for Tauri IPC.
- * Thin wrappers around invoke() calls for terminal session management.
+ * Provides functions for managing terminal sessions, including spawning,
+ * resizing, and querying the default shell.
+ *
+ * All functions include:
+ * - Try/catch error handling with re-throw for React Query
+ * - Logging at appropriate levels (DEBUG on call, INFO on success, ERROR on failure)
+ *
+ * @example
+ * ```ts
+ * // Spawn a new terminal session
+ * const process = await terminalQueries.spawn({
+ *   projectId: 'project-123',
+ *   cols: 120,
+ *   rows: 30,
+ * });
+ *
+ * // Resize a terminal
+ * await terminalQueries.resize({
+ *   processId: process.id,
+ *   cols: 150,
+ *   rows: 40,
+ * });
+ *
+ * // Get the default shell
+ * const shell = await terminalQueries.getDefaultShell();
+ * ```
  */
 export const terminalQueries = {
   /**
@@ -44,9 +76,55 @@ export const terminalQueries = {
    *
    * @param input - Terminal spawn configuration
    * @returns The spawned execution process record
+   * @throws Error if the spawn operation fails (re-thrown for React Query)
+   *
+   * @example
+   * ```ts
+   * const process = await terminalQueries.spawn({
+   *   projectId: 'project-123',
+   *   chatId: 'chat-456',
+   *   cwd: '/custom/working/dir',
+   *   shell: '/bin/zsh',
+   *   cols: 120,
+   *   rows: 30,
+   * });
+   * console.log('Spawned terminal:', process.id);
+   * ```
    */
-  spawn: (input: SpawnTerminalInput): Promise<ExecutionProcess> =>
-    invoke('spawn_terminal', { input }),
+  spawn: async (input: SpawnTerminalInput): Promise<ExecutionProcess> => {
+    logger.debug('Spawning terminal session', {
+      projectId: input.projectId,
+      chatId: input.chatId,
+      cwd: input.cwd,
+      shell: input.shell,
+      cols: input.cols,
+      rows: input.rows,
+    });
+
+    try {
+      const process = await invoke<ExecutionProcess>('spawn_terminal', {
+        input,
+      });
+
+      logger.info('Terminal session spawned successfully', {
+        processId: process.id,
+        projectId: input.projectId,
+        chatId: input.chatId,
+        status: process.status,
+        pid: process.pid,
+      });
+
+      return process;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to spawn terminal session', {
+        projectId: input.projectId,
+        chatId: input.chatId,
+        error: errorMessage,
+      });
+      throw error;
+    }
+  },
 
   /**
    * Resize a terminal session.
@@ -55,13 +133,47 @@ export const terminalQueries = {
    * Uses the existing resize_process command.
    *
    * @param input - Resize configuration with processId and dimensions
+   * @throws Error if the resize operation fails (re-thrown for React Query)
+   *
+   * @example
+   * ```ts
+   * await terminalQueries.resize({
+   *   processId: 'process-123',
+   *   cols: 150,
+   *   rows: 40,
+   * });
+   * ```
    */
-  resize: (input: ResizeTerminalInput): Promise<void> =>
-    invoke('resize_process', {
+  resize: async (input: ResizeTerminalInput): Promise<void> => {
+    logger.debug('Resizing terminal session', {
       processId: input.processId,
       cols: input.cols,
       rows: input.rows,
-    }),
+    });
+
+    try {
+      await invoke<void>('resize_process', {
+        processId: input.processId,
+        cols: input.cols,
+        rows: input.rows,
+      });
+
+      logger.info('Terminal session resized successfully', {
+        processId: input.processId,
+        cols: input.cols,
+        rows: input.rows,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to resize terminal session', {
+        processId: input.processId,
+        cols: input.cols,
+        rows: input.rows,
+        error: errorMessage,
+      });
+      throw error;
+    }
+  },
 
   /**
    * Get the user's default shell.
@@ -70,6 +182,27 @@ export const terminalQueries = {
    * on the current platform.
    *
    * @returns The shell command path (e.g., "/bin/bash", "cmd.exe")
+   * @throws Error if the query fails (re-thrown for React Query)
+   *
+   * @example
+   * ```ts
+   * const shell = await terminalQueries.getDefaultShell();
+   * console.log('Default shell:', shell); // e.g., "/bin/zsh"
+   * ```
    */
-  getDefaultShell: (): Promise<string> => invoke('get_default_shell', {}),
+  getDefaultShell: async (): Promise<string> => {
+    logger.debug('Getting default shell');
+
+    try {
+      const shell = await invoke<string>('get_default_shell', {});
+
+      logger.info('Default shell retrieved successfully', { shell });
+
+      return shell;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to get default shell', { error: errorMessage });
+      throw error;
+    }
+  },
 };
