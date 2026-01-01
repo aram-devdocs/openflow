@@ -68,13 +68,13 @@ describe('queries/projects', () => {
       });
     });
 
-    it('throws on invalid request', () => {
+    it('throws on invalid request', async () => {
       const invalidRequest = {
         // missing required fields
       } as CreateProjectRequest;
 
-      // Zod validation throws synchronously
-      expect(() => projectQueries.create(invalidRequest)).toThrow();
+      // Zod validation throws in async function
+      await expect(projectQueries.create(invalidRequest)).rejects.toThrow();
     });
   });
 

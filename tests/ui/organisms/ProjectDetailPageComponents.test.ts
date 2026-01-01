@@ -151,7 +151,8 @@ describe('Screen Reader Constants', () => {
   });
 
   it('SR_TASKS_LOADED should provide context', () => {
-    expect(SR_TASKS_LOADED).toBe('tasks loaded');
+    // Just "loaded" since it's combined with count and singular/plural "task(s)"
+    expect(SR_TASKS_LOADED).toBe('loaded');
   });
 
   it('SR_EMPTY should announce empty state', () => {

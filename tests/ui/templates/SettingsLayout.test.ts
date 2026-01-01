@@ -367,7 +367,9 @@ describe('SettingsLayout - getBaseSize', () => {
 
   it('should follow breakpoint order when no base', () => {
     expect(getBaseSize({ lg: 'lg', sm: 'sm' })).toBe('sm');
-    expect(getBaseSize({ xl: 'lg', md: 'sm' })).toBe('md');
+    // When no base, returns the value at the earliest breakpoint in order (sm, md, lg, xl, 2xl)
+    // { xl: 'lg', md: 'sm' } -> md comes before xl, so returns value at md which is 'sm'
+    expect(getBaseSize({ xl: 'lg', md: 'sm' })).toBe('sm');
   });
 
   it('should return "md" for empty object', () => {

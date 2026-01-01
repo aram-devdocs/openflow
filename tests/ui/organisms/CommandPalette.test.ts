@@ -2,41 +2,41 @@ import { SearchResultType } from '@openflow/generated';
 import {
   COMMAND_PALETTE_BACKDROP_CLASSES,
   COMMAND_PALETTE_CLOSE_BUTTON_CLASSES,
+  COMMAND_PALETTE_DEFAULT_ACTIONS_LABEL,
+  COMMAND_PALETTE_DEFAULT_CLOSE_LABEL,
+  COMMAND_PALETTE_DEFAULT_DIALOG_LABEL,
+  COMMAND_PALETTE_DEFAULT_EMPTY_DESCRIPTION,
+  COMMAND_PALETTE_DEFAULT_EMPTY_TITLE,
+  COMMAND_PALETTE_DEFAULT_NO_RESULTS_TITLE,
+  // Constants
+  COMMAND_PALETTE_DEFAULT_PLACEHOLDER,
+  COMMAND_PALETTE_DEFAULT_RECENT_LABEL,
+  COMMAND_PALETTE_DEFAULT_RESULTS_LABEL,
+  COMMAND_PALETTE_DEFAULT_SEARCH_LABEL,
+  COMMAND_PALETTE_DEFAULT_SKELETON_COUNT,
   COMMAND_PALETTE_ICON_SIZE_MAP,
   COMMAND_PALETTE_INPUT_SIZE_CLASSES,
   COMMAND_PALETTE_ITEM_BASE_CLASSES,
   COMMAND_PALETTE_ITEM_SIZE_CLASSES,
   COMMAND_PALETTE_OVERLAY_CLASSES,
   COMMAND_PALETTE_PANEL_CLASSES,
+  COMMAND_PALETTE_RESULT_TYPE_ICONS,
+  COMMAND_PALETTE_RESULT_TYPE_LABELS,
   COMMAND_PALETTE_SIZE_CLASSES,
-  DEFAULT_ACTIONS_LABEL,
-  DEFAULT_CLOSE_LABEL,
-  DEFAULT_DIALOG_LABEL,
-  DEFAULT_EMPTY_DESCRIPTION,
-  DEFAULT_EMPTY_TITLE,
-  DEFAULT_NO_RESULTS_TITLE,
-  // Constants
-  DEFAULT_PLACEHOLDER,
-  DEFAULT_RECENT_LABEL,
-  DEFAULT_RESULTS_LABEL,
-  DEFAULT_SEARCH_LABEL,
-  DEFAULT_SKELETON_COUNT,
-  RESULT_TYPE_ICONS,
-  RESULT_TYPE_LABELS,
-  SR_ITEM_SELECTED,
-  SR_NO_RESULTS,
-  SR_PALETTE_OPENED,
-  SR_RESULTS_COUNT,
-  SR_SEARCHING,
+  COMMAND_PALETTE_SR_ITEM_SELECTED,
+  COMMAND_PALETTE_SR_NO_RESULTS,
+  COMMAND_PALETTE_SR_PALETTE_OPENED,
+  COMMAND_PALETTE_SR_RESULTS_COUNT,
+  COMMAND_PALETTE_SR_SEARCHING,
   // Utility functions
-  getBaseSize,
-  getItemIcon,
-  getItemTypeLabel,
-  getOptionId,
-  getResponsiveSizeClasses,
-  getResultsAnnouncement,
-  getSelectionAnnouncement,
-} from '@openflow/ui/organisms/CommandPalette';
+  getCommandPaletteBaseSize,
+  getCommandPaletteItemIcon,
+  getCommandPaletteItemTypeLabel,
+  getCommandPaletteOptionId,
+  getCommandPaletteResponsiveSizeClasses,
+  getCommandPaletteResultsAnnouncement,
+  getCommandPaletteSelectionAnnouncement,
+} from '@openflow/ui/organisms';
 import { describe, expect, it } from 'vitest';
 
 // =============================================================================
@@ -44,12 +44,14 @@ import { describe, expect, it } from 'vitest';
 // =============================================================================
 
 describe('CommandPalette default values', () => {
-  it('should have correct DEFAULT_PLACEHOLDER', () => {
-    expect(DEFAULT_PLACEHOLDER).toBe('Search tasks, projects, or type a command...');
+  it('should have correct COMMAND_PALETTE_DEFAULT_PLACEHOLDER', () => {
+    expect(COMMAND_PALETTE_DEFAULT_PLACEHOLDER).toBe(
+      'Search tasks, projects, or type a command...'
+    );
   });
 
-  it('should have correct DEFAULT_SKELETON_COUNT', () => {
-    expect(DEFAULT_SKELETON_COUNT).toBe(5);
+  it('should have correct COMMAND_PALETTE_DEFAULT_SKELETON_COUNT', () => {
+    expect(COMMAND_PALETTE_DEFAULT_SKELETON_COUNT).toBe(5);
   });
 });
 
@@ -58,40 +60,40 @@ describe('CommandPalette default values', () => {
 // =============================================================================
 
 describe('CommandPalette default labels', () => {
-  it('should have correct DEFAULT_DIALOG_LABEL', () => {
-    expect(DEFAULT_DIALOG_LABEL).toBe('Command palette');
+  it('should have correct COMMAND_PALETTE_DEFAULT_DIALOG_LABEL', () => {
+    expect(COMMAND_PALETTE_DEFAULT_DIALOG_LABEL).toBe('Command palette');
   });
 
-  it('should have correct DEFAULT_SEARCH_LABEL', () => {
-    expect(DEFAULT_SEARCH_LABEL).toBe('Search commands and items');
+  it('should have correct COMMAND_PALETTE_DEFAULT_SEARCH_LABEL', () => {
+    expect(COMMAND_PALETTE_DEFAULT_SEARCH_LABEL).toBe('Search commands and items');
   });
 
-  it('should have correct DEFAULT_CLOSE_LABEL', () => {
-    expect(DEFAULT_CLOSE_LABEL).toBe('Close command palette');
+  it('should have correct COMMAND_PALETTE_DEFAULT_CLOSE_LABEL', () => {
+    expect(COMMAND_PALETTE_DEFAULT_CLOSE_LABEL).toBe('Close command palette');
   });
 
-  it('should have correct DEFAULT_RECENT_LABEL', () => {
-    expect(DEFAULT_RECENT_LABEL).toBe('Recent items');
+  it('should have correct COMMAND_PALETTE_DEFAULT_RECENT_LABEL', () => {
+    expect(COMMAND_PALETTE_DEFAULT_RECENT_LABEL).toBe('Recent items');
   });
 
-  it('should have correct DEFAULT_ACTIONS_LABEL', () => {
-    expect(DEFAULT_ACTIONS_LABEL).toBe('Available actions');
+  it('should have correct COMMAND_PALETTE_DEFAULT_ACTIONS_LABEL', () => {
+    expect(COMMAND_PALETTE_DEFAULT_ACTIONS_LABEL).toBe('Available actions');
   });
 
-  it('should have correct DEFAULT_RESULTS_LABEL', () => {
-    expect(DEFAULT_RESULTS_LABEL).toBe('Search results');
+  it('should have correct COMMAND_PALETTE_DEFAULT_RESULTS_LABEL', () => {
+    expect(COMMAND_PALETTE_DEFAULT_RESULTS_LABEL).toBe('Search results');
   });
 
-  it('should have correct DEFAULT_NO_RESULTS_TITLE', () => {
-    expect(DEFAULT_NO_RESULTS_TITLE).toBe('No results found');
+  it('should have correct COMMAND_PALETTE_DEFAULT_NO_RESULTS_TITLE', () => {
+    expect(COMMAND_PALETTE_DEFAULT_NO_RESULTS_TITLE).toBe('No results found');
   });
 
-  it('should have correct DEFAULT_EMPTY_TITLE', () => {
-    expect(DEFAULT_EMPTY_TITLE).toBe('Start typing to search');
+  it('should have correct COMMAND_PALETTE_DEFAULT_EMPTY_TITLE', () => {
+    expect(COMMAND_PALETTE_DEFAULT_EMPTY_TITLE).toBe('Start typing to search');
   });
 
-  it('should have correct DEFAULT_EMPTY_DESCRIPTION', () => {
-    expect(DEFAULT_EMPTY_DESCRIPTION).toBe('Find tasks, projects, and more');
+  it('should have correct COMMAND_PALETTE_DEFAULT_EMPTY_DESCRIPTION', () => {
+    expect(COMMAND_PALETTE_DEFAULT_EMPTY_DESCRIPTION).toBe('Find tasks, projects, and more');
   });
 });
 
@@ -100,34 +102,34 @@ describe('CommandPalette default labels', () => {
 // =============================================================================
 
 describe('CommandPalette screen reader announcements', () => {
-  it('should have correct SR_PALETTE_OPENED', () => {
-    expect(SR_PALETTE_OPENED).toBe(
+  it('should have correct COMMAND_PALETTE_SR_PALETTE_OPENED', () => {
+    expect(COMMAND_PALETTE_SR_PALETTE_OPENED).toBe(
       'Command palette opened. Type to search or use arrow keys to navigate.'
     );
   });
 
-  it('should have correct SR_RESULTS_COUNT for multiple results', () => {
-    expect(SR_RESULTS_COUNT(5)).toBe('5 results found');
+  it('should have correct COMMAND_PALETTE_SR_RESULTS_COUNT for multiple results', () => {
+    expect(COMMAND_PALETTE_SR_RESULTS_COUNT(5)).toBe('5 results found');
   });
 
-  it('should have correct SR_RESULTS_COUNT for single result', () => {
-    expect(SR_RESULTS_COUNT(1)).toBe('1 result found');
+  it('should have correct COMMAND_PALETTE_SR_RESULTS_COUNT for single result', () => {
+    expect(COMMAND_PALETTE_SR_RESULTS_COUNT(1)).toBe('1 result found');
   });
 
-  it('should have correct SR_RESULTS_COUNT for zero results', () => {
-    expect(SR_RESULTS_COUNT(0)).toBe('0 results found');
+  it('should have correct COMMAND_PALETTE_SR_RESULTS_COUNT for zero results', () => {
+    expect(COMMAND_PALETTE_SR_RESULTS_COUNT(0)).toBe('0 results found');
   });
 
-  it('should have correct SR_NO_RESULTS', () => {
-    expect(SR_NO_RESULTS).toBe('No results found for your search');
+  it('should have correct COMMAND_PALETTE_SR_NO_RESULTS', () => {
+    expect(COMMAND_PALETTE_SR_NO_RESULTS).toBe('No results found for your search');
   });
 
-  it('should have correct SR_SEARCHING', () => {
-    expect(SR_SEARCHING).toBe('Searching...');
+  it('should have correct COMMAND_PALETTE_SR_SEARCHING', () => {
+    expect(COMMAND_PALETTE_SR_SEARCHING).toBe('Searching...');
   });
 
-  it('should have correct SR_ITEM_SELECTED', () => {
-    expect(SR_ITEM_SELECTED('My Task', 'Task')).toBe('Task: My Task');
+  it('should have correct COMMAND_PALETTE_SR_ITEM_SELECTED', () => {
+    expect(COMMAND_PALETTE_SR_ITEM_SELECTED('My Task', 'Task')).toBe('Task: My Task');
   });
 });
 
@@ -137,17 +139,17 @@ describe('CommandPalette screen reader announcements', () => {
 
 describe('CommandPalette result type configuration', () => {
   it('should have icons for all search result types', () => {
-    expect(RESULT_TYPE_ICONS[SearchResultType.Task]).toBeDefined();
-    expect(RESULT_TYPE_ICONS[SearchResultType.Project]).toBeDefined();
-    expect(RESULT_TYPE_ICONS[SearchResultType.Chat]).toBeDefined();
-    expect(RESULT_TYPE_ICONS[SearchResultType.Message]).toBeDefined();
+    expect(COMMAND_PALETTE_RESULT_TYPE_ICONS[SearchResultType.Task]).toBeDefined();
+    expect(COMMAND_PALETTE_RESULT_TYPE_ICONS[SearchResultType.Project]).toBeDefined();
+    expect(COMMAND_PALETTE_RESULT_TYPE_ICONS[SearchResultType.Chat]).toBeDefined();
+    expect(COMMAND_PALETTE_RESULT_TYPE_ICONS[SearchResultType.Message]).toBeDefined();
   });
 
   it('should have labels for all search result types', () => {
-    expect(RESULT_TYPE_LABELS[SearchResultType.Task]).toBe('Task');
-    expect(RESULT_TYPE_LABELS[SearchResultType.Project]).toBe('Project');
-    expect(RESULT_TYPE_LABELS[SearchResultType.Chat]).toBe('Chat');
-    expect(RESULT_TYPE_LABELS[SearchResultType.Message]).toBe('Message');
+    expect(COMMAND_PALETTE_RESULT_TYPE_LABELS[SearchResultType.Task]).toBe('Task');
+    expect(COMMAND_PALETTE_RESULT_TYPE_LABELS[SearchResultType.Project]).toBe('Project');
+    expect(COMMAND_PALETTE_RESULT_TYPE_LABELS[SearchResultType.Chat]).toBe('Chat');
+    expect(COMMAND_PALETTE_RESULT_TYPE_LABELS[SearchResultType.Message]).toBe('Message');
   });
 });
 
@@ -318,37 +320,37 @@ describe('CommandPalette base classes', () => {
 });
 
 // =============================================================================
-// getBaseSize Utility
+// getCommandPaletteBaseSize Utility
 // =============================================================================
 
-describe('getBaseSize utility', () => {
+describe('getCommandPaletteBaseSize utility', () => {
   it('should return size directly for string values', () => {
-    expect(getBaseSize('sm')).toBe('sm');
-    expect(getBaseSize('md')).toBe('md');
-    expect(getBaseSize('lg')).toBe('lg');
+    expect(getCommandPaletteBaseSize('sm')).toBe('sm');
+    expect(getCommandPaletteBaseSize('md')).toBe('md');
+    expect(getCommandPaletteBaseSize('lg')).toBe('lg');
   });
 
   it('should return base value from responsive object', () => {
-    expect(getBaseSize({ base: 'sm' })).toBe('sm');
-    expect(getBaseSize({ base: 'md' })).toBe('md');
-    expect(getBaseSize({ base: 'lg' })).toBe('lg');
+    expect(getCommandPaletteBaseSize({ base: 'sm' })).toBe('sm');
+    expect(getCommandPaletteBaseSize({ base: 'md' })).toBe('md');
+    expect(getCommandPaletteBaseSize({ base: 'lg' })).toBe('lg');
   });
 
   it('should default to md when base is not specified', () => {
-    expect(getBaseSize({ lg: 'lg' })).toBe('md');
-    expect(getBaseSize({})).toBe('md');
+    expect(getCommandPaletteBaseSize({ lg: 'lg' })).toBe('md');
+    expect(getCommandPaletteBaseSize({})).toBe('md');
   });
 
   it('should ignore other breakpoints when extracting base', () => {
-    expect(getBaseSize({ base: 'sm', md: 'md', lg: 'lg' })).toBe('sm');
+    expect(getCommandPaletteBaseSize({ base: 'sm', md: 'md', lg: 'lg' })).toBe('sm');
   });
 });
 
 // =============================================================================
-// getResponsiveSizeClasses Utility
+// getCommandPaletteResponsiveSizeClasses Utility
 // =============================================================================
 
-describe('getResponsiveSizeClasses utility', () => {
+describe('getCommandPaletteResponsiveSizeClasses utility', () => {
   const testClassMap = {
     sm: 'class-sm',
     md: 'class-md',
@@ -356,25 +358,28 @@ describe('getResponsiveSizeClasses utility', () => {
   };
 
   it('should return single class for string size', () => {
-    expect(getResponsiveSizeClasses('sm', testClassMap)).toBe('class-sm');
-    expect(getResponsiveSizeClasses('md', testClassMap)).toBe('class-md');
-    expect(getResponsiveSizeClasses('lg', testClassMap)).toBe('class-lg');
+    expect(getCommandPaletteResponsiveSizeClasses('sm', testClassMap)).toBe('class-sm');
+    expect(getCommandPaletteResponsiveSizeClasses('md', testClassMap)).toBe('class-md');
+    expect(getCommandPaletteResponsiveSizeClasses('lg', testClassMap)).toBe('class-lg');
   });
 
   it('should return base class without prefix for responsive object', () => {
-    const result = getResponsiveSizeClasses({ base: 'sm' }, testClassMap);
+    const result = getCommandPaletteResponsiveSizeClasses({ base: 'sm' }, testClassMap);
     expect(result).toBe('class-sm');
   });
 
   it('should add breakpoint prefixes for non-base breakpoints', () => {
-    const result = getResponsiveSizeClasses({ base: 'sm', md: 'md', lg: 'lg' }, testClassMap);
+    const result = getCommandPaletteResponsiveSizeClasses(
+      { base: 'sm', md: 'md', lg: 'lg' },
+      testClassMap
+    );
     expect(result).toContain('class-sm');
     expect(result).toContain('md:class-md');
     expect(result).toContain('lg:class-lg');
   });
 
   it('should maintain correct breakpoint order', () => {
-    const result = getResponsiveSizeClasses(
+    const result = getCommandPaletteResponsiveSizeClasses(
       { base: 'sm', sm: 'sm', md: 'md', lg: 'lg', xl: 'lg', '2xl': 'lg' },
       testClassMap
     );
@@ -385,7 +390,7 @@ describe('getResponsiveSizeClasses utility', () => {
   });
 
   it('should handle missing breakpoints gracefully', () => {
-    const result = getResponsiveSizeClasses({ base: 'sm', lg: 'lg' }, testClassMap);
+    const result = getCommandPaletteResponsiveSizeClasses({ base: 'sm', lg: 'lg' }, testClassMap);
     expect(result).toBe('class-sm lg:class-lg');
     expect(result).not.toContain('md:');
     expect(result).not.toContain('sm:');
@@ -397,7 +402,7 @@ describe('getResponsiveSizeClasses utility', () => {
       md: 'py-2 px-3',
       lg: 'py-3 px-4',
     };
-    const result = getResponsiveSizeClasses({ base: 'sm', lg: 'lg' }, multiClassMap);
+    const result = getCommandPaletteResponsiveSizeClasses({ base: 'sm', lg: 'lg' }, multiClassMap);
     expect(result).toContain('py-1');
     expect(result).toContain('px-2');
     expect(result).toContain('lg:py-3');
@@ -406,137 +411,149 @@ describe('getResponsiveSizeClasses utility', () => {
 });
 
 // =============================================================================
-// getItemIcon Utility
+// getCommandPaletteItemIcon Utility
 // =============================================================================
 
-describe('getItemIcon utility', () => {
+describe('getCommandPaletteItemIcon utility', () => {
   it('should return correct icon for task type', () => {
-    const icon = getItemIcon(SearchResultType.Task);
+    const icon = getCommandPaletteItemIcon(SearchResultType.Task);
     expect(icon).toBeDefined();
   });
 
   it('should return correct icon for project type', () => {
-    const icon = getItemIcon(SearchResultType.Project);
+    const icon = getCommandPaletteItemIcon(SearchResultType.Project);
     expect(icon).toBeDefined();
   });
 
   it('should return correct icon for chat type', () => {
-    const icon = getItemIcon(SearchResultType.Chat);
+    const icon = getCommandPaletteItemIcon(SearchResultType.Chat);
     expect(icon).toBeDefined();
   });
 
   it('should return correct icon for message type', () => {
-    const icon = getItemIcon(SearchResultType.Message);
+    const icon = getCommandPaletteItemIcon(SearchResultType.Message);
     expect(icon).toBeDefined();
   });
 
   it('should return fallback icon for unknown type', () => {
-    const icon = getItemIcon('unknown' as SearchResultType);
+    const icon = getCommandPaletteItemIcon('unknown' as SearchResultType);
     expect(icon).toBeDefined();
   });
 });
 
 // =============================================================================
-// getItemTypeLabel Utility
+// getCommandPaletteItemTypeLabel Utility
 // =============================================================================
 
-describe('getItemTypeLabel utility', () => {
+describe('getCommandPaletteItemTypeLabel utility', () => {
   it('should return correct label for task type', () => {
-    expect(getItemTypeLabel(SearchResultType.Task)).toBe('Task');
+    expect(getCommandPaletteItemTypeLabel(SearchResultType.Task)).toBe('Task');
   });
 
   it('should return correct label for project type', () => {
-    expect(getItemTypeLabel(SearchResultType.Project)).toBe('Project');
+    expect(getCommandPaletteItemTypeLabel(SearchResultType.Project)).toBe('Project');
   });
 
   it('should return correct label for chat type', () => {
-    expect(getItemTypeLabel(SearchResultType.Chat)).toBe('Chat');
+    expect(getCommandPaletteItemTypeLabel(SearchResultType.Chat)).toBe('Chat');
   });
 
   it('should return correct label for message type', () => {
-    expect(getItemTypeLabel(SearchResultType.Message)).toBe('Message');
+    expect(getCommandPaletteItemTypeLabel(SearchResultType.Message)).toBe('Message');
   });
 
   it('should return fallback label for unknown type', () => {
-    expect(getItemTypeLabel('unknown' as SearchResultType)).toBe('Item');
+    expect(getCommandPaletteItemTypeLabel('unknown' as SearchResultType)).toBe('Item');
   });
 });
 
 // =============================================================================
-// getOptionId Utility
+// getCommandPaletteOptionId Utility
 // =============================================================================
 
-describe('getOptionId utility', () => {
+describe('getCommandPaletteOptionId utility', () => {
   it('should generate correct ID format', () => {
-    expect(getOptionId('cmd', 'recent', 0)).toBe('cmd-recent-0');
-    expect(getOptionId('cmd', 'action', 5)).toBe('cmd-action-5');
-    expect(getOptionId('cmd', 'result', 10)).toBe('cmd-result-10');
+    expect(getCommandPaletteOptionId('cmd', 'recent', 0)).toBe('cmd-recent-0');
+    expect(getCommandPaletteOptionId('cmd', 'action', 5)).toBe('cmd-action-5');
+    expect(getCommandPaletteOptionId('cmd', 'result', 10)).toBe('cmd-result-10');
   });
 
   it('should handle different base IDs', () => {
-    expect(getOptionId('palette', 'recent', 0)).toBe('palette-recent-0');
-    expect(getOptionId(':r1:', 'action', 3)).toBe(':r1:-action-3');
+    expect(getCommandPaletteOptionId('palette', 'recent', 0)).toBe('palette-recent-0');
+    expect(getCommandPaletteOptionId(':r1:', 'action', 3)).toBe(':r1:-action-3');
   });
 
   it('should handle different section names', () => {
-    expect(getOptionId('cmd', 'recent', 0)).toContain('recent');
-    expect(getOptionId('cmd', 'action', 0)).toContain('action');
-    expect(getOptionId('cmd', 'result', 0)).toContain('result');
+    expect(getCommandPaletteOptionId('cmd', 'recent', 0)).toContain('recent');
+    expect(getCommandPaletteOptionId('cmd', 'action', 0)).toContain('action');
+    expect(getCommandPaletteOptionId('cmd', 'result', 0)).toContain('result');
   });
 });
 
 // =============================================================================
-// getSelectionAnnouncement Utility
+// getCommandPaletteSelectionAnnouncement Utility
 // =============================================================================
 
-describe('getSelectionAnnouncement utility', () => {
+describe('getCommandPaletteSelectionAnnouncement utility', () => {
   it('should format basic announcement', () => {
-    expect(getSelectionAnnouncement('My Task', 'Task')).toBe('Task: My Task');
+    expect(getCommandPaletteSelectionAnnouncement('My Task', 'Task')).toBe('Task: My Task');
   });
 
   it('should include shortcut when provided', () => {
-    const result = getSelectionAnnouncement('Create Task', 'Action', '⌘N');
+    const result = getCommandPaletteSelectionAnnouncement('Create Task', 'Action', '⌘N');
     expect(result).toBe('Action: Create Task. Keyboard shortcut: ⌘N');
   });
 
   it('should not include shortcut when undefined', () => {
-    const result = getSelectionAnnouncement('Open Settings', 'Action', undefined);
+    const result = getCommandPaletteSelectionAnnouncement('Open Settings', 'Action', undefined);
     expect(result).toBe('Action: Open Settings');
     expect(result).not.toContain('Keyboard shortcut');
   });
 
   it('should handle different type labels', () => {
-    expect(getSelectionAnnouncement('My Project', 'Project')).toBe('Project: My Project');
-    expect(getSelectionAnnouncement('My Chat', 'Chat')).toBe('Chat: My Chat');
-    expect(getSelectionAnnouncement('My Message', 'Message')).toBe('Message: My Message');
+    expect(getCommandPaletteSelectionAnnouncement('My Project', 'Project')).toBe(
+      'Project: My Project'
+    );
+    expect(getCommandPaletteSelectionAnnouncement('My Chat', 'Chat')).toBe('Chat: My Chat');
+    expect(getCommandPaletteSelectionAnnouncement('My Message', 'Message')).toBe(
+      'Message: My Message'
+    );
   });
 });
 
 // =============================================================================
-// getResultsAnnouncement Utility
+// getCommandPaletteResultsAnnouncement Utility
 // =============================================================================
 
-describe('getResultsAnnouncement utility', () => {
+describe('getCommandPaletteResultsAnnouncement utility', () => {
   it('should return searching message when isSearching is true', () => {
-    expect(getResultsAnnouncement(0, true, 'test')).toBe(SR_SEARCHING);
-    expect(getResultsAnnouncement(5, true, 'test')).toBe(SR_SEARCHING);
+    expect(getCommandPaletteResultsAnnouncement(0, true, 'test')).toBe(
+      COMMAND_PALETTE_SR_SEARCHING
+    );
+    expect(getCommandPaletteResultsAnnouncement(5, true, 'test')).toBe(
+      COMMAND_PALETTE_SR_SEARCHING
+    );
   });
 
   it('should return no results message when query exists but no results', () => {
-    expect(getResultsAnnouncement(0, false, 'test')).toBe(SR_NO_RESULTS);
+    expect(getCommandPaletteResultsAnnouncement(0, false, 'test')).toBe(
+      COMMAND_PALETTE_SR_NO_RESULTS
+    );
   });
 
   it('should return results count when results exist', () => {
-    expect(getResultsAnnouncement(5, false, 'test')).toBe('5 results found');
-    expect(getResultsAnnouncement(1, false, 'auth')).toBe('1 result found');
+    expect(getCommandPaletteResultsAnnouncement(5, false, 'test')).toBe('5 results found');
+    expect(getCommandPaletteResultsAnnouncement(1, false, 'auth')).toBe('1 result found');
   });
 
   it('should return empty string when no query and no results', () => {
-    expect(getResultsAnnouncement(0, false, '')).toBe('');
+    expect(getCommandPaletteResultsAnnouncement(0, false, '')).toBe('');
   });
 
   it('should prioritize isSearching over result count', () => {
-    expect(getResultsAnnouncement(10, true, 'test')).toBe(SR_SEARCHING);
+    expect(getCommandPaletteResultsAnnouncement(10, true, 'test')).toBe(
+      COMMAND_PALETTE_SR_SEARCHING
+    );
   });
 });
 
@@ -671,8 +688,8 @@ describe('CommandPalette props documentation', () => {
   });
 
   it('should have placeholder as optional with default value', () => {
-    expect(DEFAULT_PLACEHOLDER).toBeDefined();
-    expect(DEFAULT_PLACEHOLDER.length).toBeGreaterThan(0);
+    expect(COMMAND_PALETTE_DEFAULT_PLACEHOLDER).toBeDefined();
+    expect(COMMAND_PALETTE_DEFAULT_PLACEHOLDER.length).toBeGreaterThan(0);
   });
 
   it('should have size as optional with default md', () => {
@@ -680,7 +697,7 @@ describe('CommandPalette props documentation', () => {
   });
 
   it('should support aria-label prop', () => {
-    expect(DEFAULT_DIALOG_LABEL).toBe('Command palette');
+    expect(COMMAND_PALETTE_DEFAULT_DIALOG_LABEL).toBe('Command palette');
   });
 
   it('should support data-testid prop', () => {

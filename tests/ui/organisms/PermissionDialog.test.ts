@@ -1,37 +1,37 @@
 import {
-  // Constants
-  DEFAULT_APPROVE_LABEL,
-  DEFAULT_CLOSE_LABEL,
-  DEFAULT_DENY_LABEL,
-  DEFAULT_TOOL_CONFIG,
   PERMISSION_DIALOG_BACKDROP_CLASSES,
   PERMISSION_DIALOG_BUTTON_CLASSES,
   PERMISSION_DIALOG_CLOSE_BUTTON_CLASSES,
   PERMISSION_DIALOG_CONTAINER_CLASSES,
   PERMISSION_DIALOG_CONTENT_CLASSES,
+  // Constants
+  PERMISSION_DIALOG_DEFAULT_APPROVE_LABEL,
+  PERMISSION_DIALOG_DEFAULT_CLOSE_LABEL,
+  PERMISSION_DIALOG_DEFAULT_DENY_LABEL,
+  PERMISSION_DIALOG_DEFAULT_TOOL_CONFIG,
   PERMISSION_DIALOG_FILEPATH_CLASSES,
   PERMISSION_DIALOG_FOOTER_CLASSES,
   PERMISSION_DIALOG_HEADER_CLASSES,
   PERMISSION_DIALOG_PANEL_CLASSES,
   PERMISSION_DIALOG_SIZE_CLASSES,
+  PERMISSION_DIALOG_SR_APPROVING,
+  PERMISSION_DIALOG_SR_DENYING,
+  PERMISSION_DIALOG_SR_DIALOG_OPENED,
+  PERMISSION_DIALOG_SR_PERMISSION_REQUEST,
+  PERMISSION_DIALOG_SR_SECURITY_WARNING,
+  PERMISSION_DIALOG_TOOL_CONFIG,
   PERMISSION_DIALOG_TOOL_ICON_CLASSES,
   PERMISSION_DIALOG_WARNING_ICON_CLASSES,
   // Types
   type PermissionRequest,
-  SR_APPROVING,
-  SR_DENYING,
-  SR_DIALOG_OPENED,
-  SR_PERMISSION_REQUEST,
-  SR_SECURITY_WARNING,
-  TOOL_CONFIG,
-  buildAccessibleLabel,
-  buildDialogAnnouncement,
-  getActionDescription,
+  buildPermissionDialogAccessibleLabel,
+  buildPermissionDialogAnnouncement,
+  getPermissionDialogActionDescription,
   // Utility functions
-  getBaseSize,
-  getResponsiveSizeClasses,
-  getToolIcon,
-} from '@openflow/ui/organisms/PermissionDialog';
+  getPermissionDialogBaseSize,
+  getPermissionDialogResponsiveSizeClasses,
+  getPermissionDialogToolIcon,
+} from '@openflow/ui/organisms';
 import { describe, expect, it } from 'vitest';
 
 // ============================================================================
@@ -40,16 +40,16 @@ import { describe, expect, it } from 'vitest';
 
 describe('Default Label Constants', () => {
   it('DEFAULT_APPROVE_LABEL should be "Allow"', () => {
-    expect(DEFAULT_APPROVE_LABEL).toBe('Allow');
+    expect(PERMISSION_DIALOG_DEFAULT_APPROVE_LABEL).toBe('Allow');
   });
 
   it('DEFAULT_DENY_LABEL should be "Deny"', () => {
-    expect(DEFAULT_DENY_LABEL).toBe('Deny');
+    expect(PERMISSION_DIALOG_DEFAULT_DENY_LABEL).toBe('Deny');
   });
 
   it('DEFAULT_CLOSE_LABEL should be descriptive', () => {
-    expect(DEFAULT_CLOSE_LABEL).toBe('Close and deny permission');
-    expect(DEFAULT_CLOSE_LABEL.length).toBeGreaterThan(10);
+    expect(PERMISSION_DIALOG_DEFAULT_CLOSE_LABEL).toBe('Close and deny permission');
+    expect(PERMISSION_DIALOG_DEFAULT_CLOSE_LABEL.length).toBeGreaterThan(10);
   });
 });
 
@@ -59,28 +59,28 @@ describe('Default Label Constants', () => {
 
 describe('Screen Reader Announcement Constants', () => {
   it('SR_DIALOG_OPENED should announce dialog opening', () => {
-    expect(SR_DIALOG_OPENED).toBe('Permission request dialog opened.');
-    expect(SR_DIALOG_OPENED).toContain('dialog');
+    expect(PERMISSION_DIALOG_SR_DIALOG_OPENED).toBe('Permission request dialog opened.');
+    expect(PERMISSION_DIALOG_SR_DIALOG_OPENED).toContain('dialog');
   });
 
   it('SR_PERMISSION_REQUEST should describe permission context', () => {
-    expect(SR_PERMISSION_REQUEST).toBe('Claude is requesting permission to');
-    expect(SR_PERMISSION_REQUEST).toContain('permission');
+    expect(PERMISSION_DIALOG_SR_PERMISSION_REQUEST).toBe('Claude is requesting permission to');
+    expect(PERMISSION_DIALOG_SR_PERMISSION_REQUEST).toContain('permission');
   });
 
   it('SR_APPROVING should announce loading state', () => {
-    expect(SR_APPROVING).toBe('Approving permission, please wait...');
-    expect(SR_APPROVING).toContain('please wait');
+    expect(PERMISSION_DIALOG_SR_APPROVING).toBe('Approving permission, please wait...');
+    expect(PERMISSION_DIALOG_SR_APPROVING).toContain('please wait');
   });
 
   it('SR_DENYING should announce loading state', () => {
-    expect(SR_DENYING).toBe('Denying permission, please wait...');
-    expect(SR_DENYING).toContain('please wait');
+    expect(PERMISSION_DIALOG_SR_DENYING).toBe('Denying permission, please wait...');
+    expect(PERMISSION_DIALOG_SR_DENYING).toContain('please wait');
   });
 
   it('SR_SECURITY_WARNING should indicate security context', () => {
-    expect(SR_SECURITY_WARNING).toBe('Security warning:');
-    expect(SR_SECURITY_WARNING).toContain('Security');
+    expect(PERMISSION_DIALOG_SR_SECURITY_WARNING).toBe('Security warning:');
+    expect(PERMISSION_DIALOG_SR_SECURITY_WARNING).toContain('Security');
   });
 });
 
@@ -90,7 +90,7 @@ describe('Screen Reader Announcement Constants', () => {
 
 describe('TOOL_CONFIG', () => {
   it('should have configuration for write tool', () => {
-    const writeConfig = TOOL_CONFIG.write;
+    const writeConfig = PERMISSION_DIALOG_TOOL_CONFIG.write;
     expect(writeConfig).toBeDefined();
     expect(writeConfig?.action).toBe('write to');
     expect(writeConfig?.icon).toBeDefined();
@@ -98,7 +98,7 @@ describe('TOOL_CONFIG', () => {
   });
 
   it('should have configuration for read tool', () => {
-    const readConfig = TOOL_CONFIG.read;
+    const readConfig = PERMISSION_DIALOG_TOOL_CONFIG.read;
     expect(readConfig).toBeDefined();
     expect(readConfig?.action).toBe('read from');
     expect(readConfig?.icon).toBeDefined();
@@ -106,7 +106,7 @@ describe('TOOL_CONFIG', () => {
   });
 
   it('should have configuration for bash tool', () => {
-    const bashConfig = TOOL_CONFIG.bash;
+    const bashConfig = PERMISSION_DIALOG_TOOL_CONFIG.bash;
     expect(bashConfig).toBeDefined();
     expect(bashConfig?.action).toBe('execute command in');
     expect(bashConfig?.icon).toBeDefined();
@@ -114,16 +114,16 @@ describe('TOOL_CONFIG', () => {
   });
 
   it('should have 3 tool configurations', () => {
-    expect(Object.keys(TOOL_CONFIG)).toHaveLength(3);
+    expect(Object.keys(PERMISSION_DIALOG_TOOL_CONFIG)).toHaveLength(3);
   });
 });
 
 describe('DEFAULT_TOOL_CONFIG', () => {
   it('should provide fallback for unknown tools', () => {
-    expect(DEFAULT_TOOL_CONFIG).toBeDefined();
-    expect(DEFAULT_TOOL_CONFIG.action).toBe('access');
-    expect(DEFAULT_TOOL_CONFIG.icon).toBeDefined();
-    expect(DEFAULT_TOOL_CONFIG.srPrefix).toBe('Permission required:');
+    expect(PERMISSION_DIALOG_DEFAULT_TOOL_CONFIG).toBeDefined();
+    expect(PERMISSION_DIALOG_DEFAULT_TOOL_CONFIG.action).toBe('access');
+    expect(PERMISSION_DIALOG_DEFAULT_TOOL_CONFIG.icon).toBeDefined();
+    expect(PERMISSION_DIALOG_DEFAULT_TOOL_CONFIG.srPrefix).toBe('Permission required:');
   });
 });
 
@@ -418,26 +418,26 @@ describe('PERMISSION_DIALOG_CLOSE_BUTTON_CLASSES', () => {
 
 describe('getBaseSize', () => {
   it('should return md when undefined', () => {
-    expect(getBaseSize(undefined)).toBe('md');
+    expect(getPermissionDialogBaseSize(undefined)).toBe('md');
   });
 
   it('should return the string value directly', () => {
-    expect(getBaseSize('sm')).toBe('sm');
-    expect(getBaseSize('md')).toBe('md');
-    expect(getBaseSize('lg')).toBe('lg');
+    expect(getPermissionDialogBaseSize('sm')).toBe('sm');
+    expect(getPermissionDialogBaseSize('md')).toBe('md');
+    expect(getPermissionDialogBaseSize('lg')).toBe('lg');
   });
 
   it('should return base value from responsive object', () => {
-    expect(getBaseSize({ base: 'sm', md: 'lg' })).toBe('sm');
-    expect(getBaseSize({ base: 'lg' })).toBe('lg');
+    expect(getPermissionDialogBaseSize({ base: 'sm', md: 'lg' })).toBe('sm');
+    expect(getPermissionDialogBaseSize({ base: 'lg' })).toBe('lg');
   });
 
   it('should return md when responsive object has no base', () => {
-    expect(getBaseSize({ md: 'lg' })).toBe('md');
+    expect(getPermissionDialogBaseSize({ md: 'lg' })).toBe('md');
   });
 
   it('should handle empty object', () => {
-    expect(getBaseSize({})).toBe('md');
+    expect(getPermissionDialogBaseSize({})).toBe('md');
   });
 });
 
@@ -447,39 +447,39 @@ describe('getBaseSize', () => {
 
 describe('getResponsiveSizeClasses', () => {
   it('should return md classes when undefined', () => {
-    expect(getResponsiveSizeClasses(undefined)).toBe('max-w-md');
+    expect(getPermissionDialogResponsiveSizeClasses(undefined)).toBe('max-w-md');
   });
 
   it('should return size class for string value', () => {
-    expect(getResponsiveSizeClasses('sm')).toBe('max-w-sm');
-    expect(getResponsiveSizeClasses('md')).toBe('max-w-md');
-    expect(getResponsiveSizeClasses('lg')).toBe('max-w-lg');
+    expect(getPermissionDialogResponsiveSizeClasses('sm')).toBe('max-w-sm');
+    expect(getPermissionDialogResponsiveSizeClasses('md')).toBe('max-w-md');
+    expect(getPermissionDialogResponsiveSizeClasses('lg')).toBe('max-w-lg');
   });
 
   it('should generate responsive classes from object', () => {
-    const result = getResponsiveSizeClasses({ base: 'sm', md: 'md', lg: 'lg' });
+    const result = getPermissionDialogResponsiveSizeClasses({ base: 'sm', md: 'md', lg: 'lg' });
     expect(result).toContain('max-w-sm');
     expect(result).toContain('md:max-w-md');
     expect(result).toContain('lg:max-w-lg');
   });
 
   it('should handle partial responsive object', () => {
-    const result = getResponsiveSizeClasses({ base: 'sm', lg: 'lg' });
+    const result = getPermissionDialogResponsiveSizeClasses({ base: 'sm', lg: 'lg' });
     expect(result).toContain('max-w-sm');
     expect(result).toContain('lg:max-w-lg');
     expect(result).not.toContain('md:');
   });
 
   it('should handle object with only base', () => {
-    expect(getResponsiveSizeClasses({ base: 'lg' })).toBe('max-w-lg');
+    expect(getPermissionDialogResponsiveSizeClasses({ base: 'lg' })).toBe('max-w-lg');
   });
 
   it('should handle empty object', () => {
-    expect(getResponsiveSizeClasses({})).toBe('max-w-md');
+    expect(getPermissionDialogResponsiveSizeClasses({})).toBe('max-w-md');
   });
 
   it('should handle all breakpoints', () => {
-    const result = getResponsiveSizeClasses({
+    const result = getPermissionDialogResponsiveSizeClasses({
       base: 'sm',
       sm: 'sm',
       md: 'md',
@@ -502,32 +502,32 @@ describe('getResponsiveSizeClasses', () => {
 
 describe('getToolIcon', () => {
   it('should return icon for write tool', () => {
-    const icon = getToolIcon('write');
+    const icon = getPermissionDialogToolIcon('write');
     expect(icon).toBeDefined();
-    expect(icon).toBe(TOOL_CONFIG.write?.icon);
+    expect(icon).toBe(PERMISSION_DIALOG_TOOL_CONFIG.write?.icon);
   });
 
   it('should return icon for read tool', () => {
-    const icon = getToolIcon('read');
+    const icon = getPermissionDialogToolIcon('read');
     expect(icon).toBeDefined();
-    expect(icon).toBe(TOOL_CONFIG.read?.icon);
+    expect(icon).toBe(PERMISSION_DIALOG_TOOL_CONFIG.read?.icon);
   });
 
   it('should return icon for bash tool', () => {
-    const icon = getToolIcon('bash');
+    const icon = getPermissionDialogToolIcon('bash');
     expect(icon).toBeDefined();
-    expect(icon).toBe(TOOL_CONFIG.bash?.icon);
+    expect(icon).toBe(PERMISSION_DIALOG_TOOL_CONFIG.bash?.icon);
   });
 
   it('should return default icon for unknown tool', () => {
-    const icon = getToolIcon('unknown');
-    expect(icon).toBe(DEFAULT_TOOL_CONFIG.icon);
+    const icon = getPermissionDialogToolIcon('unknown');
+    expect(icon).toBe(PERMISSION_DIALOG_DEFAULT_TOOL_CONFIG.icon);
   });
 
   it('should be case-insensitive', () => {
-    expect(getToolIcon('Write')).toBe(TOOL_CONFIG.write?.icon);
-    expect(getToolIcon('WRITE')).toBe(TOOL_CONFIG.write?.icon);
-    expect(getToolIcon('BASH')).toBe(TOOL_CONFIG.bash?.icon);
+    expect(getPermissionDialogToolIcon('Write')).toBe(PERMISSION_DIALOG_TOOL_CONFIG.write?.icon);
+    expect(getPermissionDialogToolIcon('WRITE')).toBe(PERMISSION_DIALOG_TOOL_CONFIG.write?.icon);
+    expect(getPermissionDialogToolIcon('BASH')).toBe(PERMISSION_DIALOG_TOOL_CONFIG.bash?.icon);
   });
 });
 
@@ -537,25 +537,25 @@ describe('getToolIcon', () => {
 
 describe('getActionDescription', () => {
   it('should return action for write tool', () => {
-    expect(getActionDescription('write')).toBe('write to');
+    expect(getPermissionDialogActionDescription('write')).toBe('write to');
   });
 
   it('should return action for read tool', () => {
-    expect(getActionDescription('read')).toBe('read from');
+    expect(getPermissionDialogActionDescription('read')).toBe('read from');
   });
 
   it('should return action for bash tool', () => {
-    expect(getActionDescription('bash')).toBe('execute command in');
+    expect(getPermissionDialogActionDescription('bash')).toBe('execute command in');
   });
 
   it('should return default action for unknown tool', () => {
-    expect(getActionDescription('unknown')).toBe('access');
+    expect(getPermissionDialogActionDescription('unknown')).toBe('access');
   });
 
   it('should be case-insensitive', () => {
-    expect(getActionDescription('Write')).toBe('write to');
-    expect(getActionDescription('READ')).toBe('read from');
-    expect(getActionDescription('Bash')).toBe('execute command in');
+    expect(getPermissionDialogActionDescription('Write')).toBe('write to');
+    expect(getPermissionDialogActionDescription('READ')).toBe('read from');
+    expect(getPermissionDialogActionDescription('Bash')).toBe('execute command in');
   });
 });
 
@@ -585,38 +585,38 @@ describe('buildAccessibleLabel', () => {
   };
 
   it('should include tool prefix for write', () => {
-    const label = buildAccessibleLabel(writeRequest);
+    const label = buildPermissionDialogAccessibleLabel(writeRequest);
     expect(label).toContain('File write permission:');
   });
 
   it('should include tool prefix for read', () => {
-    const label = buildAccessibleLabel(readRequest);
+    const label = buildPermissionDialogAccessibleLabel(readRequest);
     expect(label).toContain('File read permission:');
   });
 
   it('should include action description', () => {
-    const label = buildAccessibleLabel(writeRequest);
+    const label = buildPermissionDialogAccessibleLabel(writeRequest);
     expect(label).toContain('Claude wants to write to');
   });
 
   it('should include file path when present', () => {
-    const label = buildAccessibleLabel(writeRequest);
+    const label = buildPermissionDialogAccessibleLabel(writeRequest);
     expect(label).toContain('/path/to/file.txt');
   });
 
   it('should not include file path when absent', () => {
-    const label = buildAccessibleLabel(noFileRequest);
+    const label = buildPermissionDialogAccessibleLabel(noFileRequest);
     expect(label).not.toContain('undefined');
     expect(label).not.toContain('null');
   });
 
   it('should include description', () => {
-    const label = buildAccessibleLabel(writeRequest);
+    const label = buildPermissionDialogAccessibleLabel(writeRequest);
     expect(label).toContain('Test description');
   });
 
   it('should use default prefix for unknown tools', () => {
-    const label = buildAccessibleLabel(noFileRequest);
+    const label = buildPermissionDialogAccessibleLabel(noFileRequest);
     expect(label).toContain('Permission required:');
   });
 });
@@ -634,24 +634,24 @@ describe('buildDialogAnnouncement', () => {
   };
 
   it('should return approving message when approving', () => {
-    const announcement = buildDialogAnnouncement(request, true, false);
-    expect(announcement).toBe(SR_APPROVING);
+    const announcement = buildPermissionDialogAnnouncement(request, true, false);
+    expect(announcement).toBe(PERMISSION_DIALOG_SR_APPROVING);
   });
 
   it('should return denying message when denying', () => {
-    const announcement = buildDialogAnnouncement(request, false, true);
-    expect(announcement).toBe(SR_DENYING);
+    const announcement = buildPermissionDialogAnnouncement(request, false, true);
+    expect(announcement).toBe(PERMISSION_DIALOG_SR_DENYING);
   });
 
   it('should return full announcement when neither loading', () => {
-    const announcement = buildDialogAnnouncement(request, false, false);
-    expect(announcement).toContain(SR_DIALOG_OPENED);
+    const announcement = buildPermissionDialogAnnouncement(request, false, false);
+    expect(announcement).toContain(PERMISSION_DIALOG_SR_DIALOG_OPENED);
     expect(announcement).toContain('File write permission:');
   });
 
   it('should prioritize approving over denying', () => {
-    const announcement = buildDialogAnnouncement(request, true, true);
-    expect(announcement).toBe(SR_APPROVING);
+    const announcement = buildPermissionDialogAnnouncement(request, true, true);
+    expect(announcement).toBe(PERMISSION_DIALOG_SR_APPROVING);
   });
 });
 

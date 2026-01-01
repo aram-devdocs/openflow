@@ -5,21 +5,8 @@
 
 import { type Task, TaskStatus } from '@openflow/generated';
 import {
-  DEFAULT_ARCHIVE_LABEL,
-  DEFAULT_COLLAPSE_LABEL,
-  DEFAULT_EMPTY_CHATS_TITLE,
-  DEFAULT_EMPTY_TASKS_DESCRIPTION,
-  DEFAULT_EMPTY_TASKS_TITLE,
-  DEFAULT_EXPAND_LABEL,
-  DEFAULT_FILTER_LABEL,
-  DEFAULT_NEW_CHAT_LABEL,
-  DEFAULT_NEW_TASK_LABEL,
-  DEFAULT_SETTINGS_LABEL,
   // Constants
   DEFAULT_SIDEBAR_LABEL,
-  DEFAULT_SKELETON_CHAT_COUNT,
-  DEFAULT_SKELETON_TASK_COUNT,
-  DEFAULT_VIEW_ALL_CHATS_LABEL,
   // Class constants
   SIDEBAR_BASE_CLASSES,
   SIDEBAR_CHATS_HEADER_CLASSES,
@@ -27,6 +14,19 @@ import {
   SIDEBAR_CHAT_ITEM_CLASSES,
   SIDEBAR_CHAT_MORE_BUTTON_CLASSES,
   SIDEBAR_CONTENT_CLASSES,
+  SIDEBAR_DEFAULT_ARCHIVE_LABEL,
+  SIDEBAR_DEFAULT_COLLAPSE_LABEL,
+  SIDEBAR_DEFAULT_EMPTY_CHATS_TITLE,
+  SIDEBAR_DEFAULT_EMPTY_TASKS_DESCRIPTION,
+  SIDEBAR_DEFAULT_EMPTY_TASKS_TITLE,
+  SIDEBAR_DEFAULT_EXPAND_LABEL,
+  SIDEBAR_DEFAULT_FILTER_LABEL,
+  SIDEBAR_DEFAULT_NEW_CHAT_LABEL,
+  SIDEBAR_DEFAULT_NEW_TASK_LABEL,
+  SIDEBAR_DEFAULT_SETTINGS_LABEL,
+  SIDEBAR_DEFAULT_SKELETON_CHAT_COUNT,
+  SIDEBAR_DEFAULT_SKELETON_TASK_COUNT,
+  SIDEBAR_DEFAULT_VIEW_ALL_CHATS_LABEL,
   SIDEBAR_FILTER_BUTTON_ACTIVE_CLASSES,
   SIDEBAR_FILTER_BUTTON_BASE_CLASSES,
   SIDEBAR_FILTER_BUTTON_INACTIVE_CLASSES,
@@ -54,12 +54,12 @@ import {
   buildFilterAnnouncement,
   filterTasksByStatus,
   // Utility functions
-  getBaseSize,
-  getIconSize,
-  getResponsiveSizeClasses,
+  getSidebarBaseSize,
+  getSidebarIconSize,
+  getSidebarResponsiveSizeClasses,
   getStatusFilterLabel,
   getTaskCounts,
-} from '@openflow/ui/organisms/Sidebar';
+} from '@openflow/ui/organisms';
 import { describe, expect, it } from 'vitest';
 
 // ============================================================================
@@ -100,58 +100,58 @@ describe('Sidebar Constants', () => {
       expect(DEFAULT_SIDEBAR_LABEL).toBe('Main navigation');
     });
 
-    it('exports DEFAULT_EXPAND_LABEL for expand button', () => {
-      expect(DEFAULT_EXPAND_LABEL).toBe('Expand sidebar');
+    it('exports SIDEBAR_DEFAULT_EXPAND_LABEL for expand button', () => {
+      expect(SIDEBAR_DEFAULT_EXPAND_LABEL).toBe('Expand sidebar');
     });
 
-    it('exports DEFAULT_COLLAPSE_LABEL for collapse button', () => {
-      expect(DEFAULT_COLLAPSE_LABEL).toBe('Collapse sidebar');
+    it('exports SIDEBAR_DEFAULT_COLLAPSE_LABEL for collapse button', () => {
+      expect(SIDEBAR_DEFAULT_COLLAPSE_LABEL).toBe('Collapse sidebar');
     });
 
-    it('exports DEFAULT_NEW_TASK_LABEL for new task button', () => {
-      expect(DEFAULT_NEW_TASK_LABEL).toBe('Create new task');
+    it('exports SIDEBAR_DEFAULT_NEW_TASK_LABEL for new task button', () => {
+      expect(SIDEBAR_DEFAULT_NEW_TASK_LABEL).toBe('Create new task');
     });
 
-    it('exports DEFAULT_NEW_CHAT_LABEL for new chat button', () => {
-      expect(DEFAULT_NEW_CHAT_LABEL).toBe('Create new chat');
+    it('exports SIDEBAR_DEFAULT_NEW_CHAT_LABEL for new chat button', () => {
+      expect(SIDEBAR_DEFAULT_NEW_CHAT_LABEL).toBe('Create new chat');
     });
 
-    it('exports DEFAULT_ARCHIVE_LABEL for archive button', () => {
-      expect(DEFAULT_ARCHIVE_LABEL).toBe('View archive');
+    it('exports SIDEBAR_DEFAULT_ARCHIVE_LABEL for archive button', () => {
+      expect(SIDEBAR_DEFAULT_ARCHIVE_LABEL).toBe('View archive');
     });
 
-    it('exports DEFAULT_SETTINGS_LABEL for settings button', () => {
-      expect(DEFAULT_SETTINGS_LABEL).toBe('Open settings');
+    it('exports SIDEBAR_DEFAULT_SETTINGS_LABEL for settings button', () => {
+      expect(SIDEBAR_DEFAULT_SETTINGS_LABEL).toBe('Open settings');
     });
 
-    it('exports DEFAULT_VIEW_ALL_CHATS_LABEL for view all chats button', () => {
-      expect(DEFAULT_VIEW_ALL_CHATS_LABEL).toBe('View all chats');
+    it('exports SIDEBAR_DEFAULT_VIEW_ALL_CHATS_LABEL for view all chats button', () => {
+      expect(SIDEBAR_DEFAULT_VIEW_ALL_CHATS_LABEL).toBe('View all chats');
     });
 
-    it('exports DEFAULT_EMPTY_TASKS_TITLE for empty task state', () => {
-      expect(DEFAULT_EMPTY_TASKS_TITLE).toBe('No tasks yet');
+    it('exports SIDEBAR_DEFAULT_EMPTY_TASKS_TITLE for empty task state', () => {
+      expect(SIDEBAR_DEFAULT_EMPTY_TASKS_TITLE).toBe('No tasks yet');
     });
 
-    it('exports DEFAULT_EMPTY_TASKS_DESCRIPTION for empty task state', () => {
-      expect(DEFAULT_EMPTY_TASKS_DESCRIPTION).toBe('Create a new task to get started');
+    it('exports SIDEBAR_DEFAULT_EMPTY_TASKS_DESCRIPTION for empty task state', () => {
+      expect(SIDEBAR_DEFAULT_EMPTY_TASKS_DESCRIPTION).toBe('Create a new task to get started');
     });
 
-    it('exports DEFAULT_EMPTY_CHATS_TITLE for empty chat state', () => {
-      expect(DEFAULT_EMPTY_CHATS_TITLE).toBe('No chats yet');
+    it('exports SIDEBAR_DEFAULT_EMPTY_CHATS_TITLE for empty chat state', () => {
+      expect(SIDEBAR_DEFAULT_EMPTY_CHATS_TITLE).toBe('No chats yet');
     });
 
-    it('exports DEFAULT_FILTER_LABEL for filter section', () => {
-      expect(DEFAULT_FILTER_LABEL).toBe('Filter by Status');
+    it('exports SIDEBAR_DEFAULT_FILTER_LABEL for filter section', () => {
+      expect(SIDEBAR_DEFAULT_FILTER_LABEL).toBe('Filter by Status');
     });
   });
 
   describe('Skeleton Default Counts', () => {
-    it('exports DEFAULT_SKELETON_TASK_COUNT as 4', () => {
-      expect(DEFAULT_SKELETON_TASK_COUNT).toBe(4);
+    it('exports SIDEBAR_DEFAULT_SKELETON_TASK_COUNT as 4', () => {
+      expect(SIDEBAR_DEFAULT_SKELETON_TASK_COUNT).toBe(4);
     });
 
-    it('exports DEFAULT_SKELETON_CHAT_COUNT as 3', () => {
-      expect(DEFAULT_SKELETON_CHAT_COUNT).toBe(3);
+    it('exports SIDEBAR_DEFAULT_SKELETON_CHAT_COUNT as 3', () => {
+      expect(SIDEBAR_DEFAULT_SKELETON_CHAT_COUNT).toBe(3);
     });
   });
 
@@ -378,29 +378,29 @@ describe('Sidebar Class Constants', () => {
 describe('Sidebar Utility Functions', () => {
   describe('getBaseSize', () => {
     it('returns "md" for undefined size', () => {
-      expect(getBaseSize(undefined)).toBe('md');
+      expect(getSidebarBaseSize(undefined)).toBe('md');
     });
 
     it('returns the size directly for string value', () => {
-      expect(getBaseSize('sm')).toBe('sm');
-      expect(getBaseSize('md')).toBe('md');
-      expect(getBaseSize('lg')).toBe('lg');
+      expect(getSidebarBaseSize('sm')).toBe('sm');
+      expect(getSidebarBaseSize('md')).toBe('md');
+      expect(getSidebarBaseSize('lg')).toBe('lg');
     });
 
     it('returns base from responsive object when present', () => {
-      expect(getBaseSize({ base: 'sm', md: 'lg' })).toBe('sm');
+      expect(getSidebarBaseSize({ base: 'sm', md: 'lg' })).toBe('sm');
     });
 
     it('returns first defined breakpoint when base is not present', () => {
-      expect(getBaseSize({ sm: 'sm', lg: 'lg' })).toBe('sm');
+      expect(getSidebarBaseSize({ sm: 'sm', lg: 'lg' })).toBe('sm');
     });
 
     it('falls back to "md" for empty responsive object', () => {
-      expect(getBaseSize({})).toBe('md');
+      expect(getSidebarBaseSize({})).toBe('md');
     });
 
     it('handles null-like objects gracefully', () => {
-      expect(getBaseSize({} as Record<string, SidebarSize>)).toBe('md');
+      expect(getSidebarBaseSize({} as Record<string, SidebarSize>)).toBe('md');
     });
   });
 
@@ -412,35 +412,39 @@ describe('Sidebar Utility Functions', () => {
     };
 
     it('returns md class for undefined size', () => {
-      expect(getResponsiveSizeClasses(undefined, testClassMap)).toBe('class-md');
+      expect(getSidebarResponsiveSizeClasses(undefined, testClassMap)).toBe('class-md');
     });
 
     it('returns correct class for string size', () => {
-      expect(getResponsiveSizeClasses('sm', testClassMap)).toBe('class-sm');
-      expect(getResponsiveSizeClasses('md', testClassMap)).toBe('class-md');
-      expect(getResponsiveSizeClasses('lg', testClassMap)).toBe('class-lg');
+      expect(getSidebarResponsiveSizeClasses('sm', testClassMap)).toBe('class-sm');
+      expect(getSidebarResponsiveSizeClasses('md', testClassMap)).toBe('class-md');
+      expect(getSidebarResponsiveSizeClasses('lg', testClassMap)).toBe('class-lg');
     });
 
     it('returns base class without prefix for responsive object', () => {
-      const result = getResponsiveSizeClasses({ base: 'sm' }, testClassMap);
+      const result = getSidebarResponsiveSizeClasses({ base: 'sm' }, testClassMap);
       expect(result).toBe('class-sm');
     });
 
     it('adds breakpoint prefix for non-base breakpoints', () => {
-      const result = getResponsiveSizeClasses({ base: 'sm', md: 'lg' }, testClassMap);
+      const result = getSidebarResponsiveSizeClasses({ base: 'sm', md: 'lg' }, testClassMap);
       expect(result).toContain('class-sm');
       expect(result).toContain('md:class-lg');
     });
 
     it('handles multiple breakpoints correctly', () => {
-      const result = getResponsiveSizeClasses({ base: 'sm', sm: 'md', lg: 'lg' }, testClassMap);
+      const result = getSidebarResponsiveSizeClasses(
+        { base: 'sm', sm: 'md', lg: 'lg' },
+        testClassMap
+      );
       expect(result).toContain('class-sm');
       expect(result).toContain('sm:class-md');
       expect(result).toContain('lg:class-lg');
     });
 
-    it('returns md class for empty responsive object', () => {
-      expect(getResponsiveSizeClasses({}, testClassMap)).toBe('class-md');
+    it('returns empty string for empty responsive object', () => {
+      // Empty object has no breakpoints defined, so no classes are generated
+      expect(getSidebarResponsiveSizeClasses({}, testClassMap)).toBe('');
     });
   });
 
@@ -674,15 +678,15 @@ describe('Sidebar Utility Functions', () => {
 
   describe('getIconSize', () => {
     it('returns "xs" for sm sidebar size', () => {
-      expect(getIconSize('sm')).toBe('xs');
+      expect(getSidebarIconSize('sm')).toBe('xs');
     });
 
     it('returns "sm" for md sidebar size', () => {
-      expect(getIconSize('md')).toBe('sm');
+      expect(getSidebarIconSize('md')).toBe('sm');
     });
 
     it('returns "md" for lg sidebar size', () => {
-      expect(getIconSize('lg')).toBe('md');
+      expect(getSidebarIconSize('lg')).toBe('md');
     });
   });
 });
@@ -716,8 +720,8 @@ describe('Sidebar Utility Integration', () => {
     it('getBaseSize and getResponsiveSizeClasses are consistent', () => {
       const responsiveValue = { base: 'sm', lg: 'lg' } as const;
 
-      const baseSize = getBaseSize(responsiveValue);
-      const classes = getResponsiveSizeClasses(responsiveValue, SIDEBAR_PADDING_CLASSES);
+      const baseSize = getSidebarBaseSize(responsiveValue);
+      const classes = getSidebarResponsiveSizeClasses(responsiveValue, SIDEBAR_PADDING_CLASSES);
 
       // Base size should be the first defined size
       expect(baseSize).toBe('sm');

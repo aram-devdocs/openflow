@@ -89,13 +89,13 @@ describe('queries/chats', () => {
       });
     });
 
-    it('throws on missing projectId', () => {
+    it('throws on missing projectId', async () => {
       const invalidRequest = {
         title: 'Chat without project',
       } as CreateChatRequest;
 
-      // Zod validation throws synchronously
-      expect(() => chatQueries.create(invalidRequest)).toThrow();
+      // Zod validation throws in async function
+      await expect(chatQueries.create(invalidRequest)).rejects.toThrow();
     });
   });
 

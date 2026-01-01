@@ -1,30 +1,36 @@
 import type { ExecutorProfile } from '@openflow/generated';
 import {
-  ACTION_BUTTON_SIZE_MAP,
-  ACTION_ICON_SIZE_MAP,
-  DEFAULT_CREATE_LABEL,
-  DEFAULT_DELETE_LABEL,
-  DEFAULT_EDIT_LABEL,
-  DEFAULT_EMPTY_DESCRIPTION,
-  DEFAULT_EMPTY_TITLE,
-  DEFAULT_ERROR_TITLE,
-  DEFAULT_LIST_LABEL,
-  DEFAULT_PAGE_LABEL,
-  DEFAULT_RETRY_LABEL,
-  DEFAULT_SET_DEFAULT_LABEL,
+  PROFILES_ACTION_BUTTON_SIZE_MAP,
+  PROFILES_ACTION_ICON_SIZE_MAP,
+  PROFILES_DEFAULT_CREATE_LABEL,
+  PROFILES_DEFAULT_DELETE_LABEL,
+  PROFILES_DEFAULT_EDIT_LABEL,
+  PROFILES_DEFAULT_EMPTY_DESCRIPTION,
+  PROFILES_DEFAULT_EMPTY_TITLE,
+  PROFILES_DEFAULT_ERROR_TITLE,
+  PROFILES_DEFAULT_LIST_LABEL,
+  PROFILES_DEFAULT_PAGE_LABEL,
+  PROFILES_DEFAULT_RETRY_LABEL,
+  PROFILES_DEFAULT_SET_DEFAULT_LABEL,
   // Constants
-  DEFAULT_SKELETON_COUNT,
-  FORM_CHECKBOX_CONTAINER_CLASSES,
-  FORM_FIELD_GAP_CLASSES,
-  FORM_FOOTER_CLASSES,
+  PROFILES_DEFAULT_SKELETON_COUNT,
   PROFILES_DESCRIPTION_CLASSES,
   PROFILES_ERROR_CLASSES,
   PROFILES_ERROR_ICON_CLASSES,
+  PROFILES_FORM_CHECKBOX_CONTAINER_CLASSES,
+  PROFILES_FORM_FIELD_GAP_CLASSES,
+  PROFILES_FORM_FOOTER_CLASSES,
   PROFILES_GRID_CLASSES,
   PROFILES_HEADER_CLASSES,
   PROFILES_LAYOUT_BASE_CLASSES,
   PROFILES_SIZE_CLASSES,
   PROFILES_SKELETON_CONTAINER_CLASSES,
+  PROFILES_SR_DEFAULT_BADGE,
+  PROFILES_SR_EMPTY,
+  PROFILES_SR_LOADING,
+  PROFILES_SR_PROFILES_LOADED,
+  PROFILES_SR_PROFILE_PREFIX,
+  PROFILES_SR_SET_AS_DEFAULT,
   PROFILE_ACTION_BUTTON_CLASSES,
   PROFILE_CARD_ACTIONS_CLASSES,
   PROFILE_CARD_COMMAND_CLASSES,
@@ -37,19 +43,13 @@ import {
   type ProfilesBreakpoint,
   // Types
   type ProfilesSize,
-  SR_DEFAULT_BADGE,
-  SR_EMPTY,
-  SR_LOADING,
-  SR_PROFILES_LOADED,
-  SR_PROFILE_PREFIX,
-  SR_SET_AS_DEFAULT,
   buildProfileAccessibleLabel,
   buildProfilesCountAnnouncement,
-  // Utility functions
-  getBaseSize,
   getProfileIcon,
-  getResponsiveSizeClasses,
-} from '@openflow/ui/organisms/ProfilesPageComponents';
+  // Utility functions
+  getProfilesBaseSize,
+  getProfilesResponsiveSizeClasses,
+} from '@openflow/ui/organisms';
 import { describe, expect, it } from 'vitest';
 
 // ============================================================================
@@ -58,37 +58,37 @@ import { describe, expect, it } from 'vitest';
 
 describe('Default Label Constants', () => {
   it('DEFAULT_SKELETON_COUNT should be 4', () => {
-    expect(DEFAULT_SKELETON_COUNT).toBe(4);
+    expect(PROFILES_DEFAULT_SKELETON_COUNT).toBe(4);
   });
 
   it('DEFAULT_PAGE_LABEL should describe the page', () => {
-    expect(DEFAULT_PAGE_LABEL).toBe('Executor Profiles Settings');
-    expect(DEFAULT_PAGE_LABEL).toContain('Profiles');
+    expect(PROFILES_DEFAULT_PAGE_LABEL).toBe('Executor Profiles Settings');
+    expect(PROFILES_DEFAULT_PAGE_LABEL).toContain('Profiles');
   });
 
   it('DEFAULT_LIST_LABEL should describe the list', () => {
-    expect(DEFAULT_LIST_LABEL).toBe('Executor profiles');
-    expect(DEFAULT_LIST_LABEL).toContain('profiles');
+    expect(PROFILES_DEFAULT_LIST_LABEL).toBe('Executor profiles');
+    expect(PROFILES_DEFAULT_LIST_LABEL).toContain('profiles');
   });
 
   it('DEFAULT_CREATE_LABEL should be actionable', () => {
-    expect(DEFAULT_CREATE_LABEL).toBe('New Profile');
-    expect(DEFAULT_CREATE_LABEL).toContain('Profile');
+    expect(PROFILES_DEFAULT_CREATE_LABEL).toBe('New Profile');
+    expect(PROFILES_DEFAULT_CREATE_LABEL).toContain('Profile');
   });
 
   it('DEFAULT_EDIT_LABEL should describe edit action', () => {
-    expect(DEFAULT_EDIT_LABEL).toBe('Edit profile');
-    expect(DEFAULT_EDIT_LABEL.toLowerCase()).toContain('edit');
+    expect(PROFILES_DEFAULT_EDIT_LABEL).toBe('Edit profile');
+    expect(PROFILES_DEFAULT_EDIT_LABEL.toLowerCase()).toContain('edit');
   });
 
   it('DEFAULT_DELETE_LABEL should describe delete action', () => {
-    expect(DEFAULT_DELETE_LABEL).toBe('Delete profile');
-    expect(DEFAULT_DELETE_LABEL.toLowerCase()).toContain('delete');
+    expect(PROFILES_DEFAULT_DELETE_LABEL).toBe('Delete profile');
+    expect(PROFILES_DEFAULT_DELETE_LABEL.toLowerCase()).toContain('delete');
   });
 
   it('DEFAULT_SET_DEFAULT_LABEL should describe set default action', () => {
-    expect(DEFAULT_SET_DEFAULT_LABEL).toBe('Set as default');
-    expect(DEFAULT_SET_DEFAULT_LABEL.toLowerCase()).toContain('default');
+    expect(PROFILES_DEFAULT_SET_DEFAULT_LABEL).toBe('Set as default');
+    expect(PROFILES_DEFAULT_SET_DEFAULT_LABEL.toLowerCase()).toContain('default');
   });
 });
 
@@ -98,25 +98,25 @@ describe('Default Label Constants', () => {
 
 describe('Empty/Error State Constants', () => {
   it('DEFAULT_EMPTY_TITLE should describe empty state', () => {
-    expect(DEFAULT_EMPTY_TITLE).toBe('No executor profiles');
-    expect(DEFAULT_EMPTY_TITLE.toLowerCase()).toContain('no');
+    expect(PROFILES_DEFAULT_EMPTY_TITLE).toBe('No executor profiles');
+    expect(PROFILES_DEFAULT_EMPTY_TITLE.toLowerCase()).toContain('no');
   });
 
   it('DEFAULT_EMPTY_DESCRIPTION should provide guidance', () => {
-    expect(DEFAULT_EMPTY_DESCRIPTION).toBe(
+    expect(PROFILES_DEFAULT_EMPTY_DESCRIPTION).toBe(
       'Create your first profile to start using AI CLI tools.'
     );
-    expect(DEFAULT_EMPTY_DESCRIPTION).toContain('Create');
+    expect(PROFILES_DEFAULT_EMPTY_DESCRIPTION).toContain('Create');
   });
 
   it('DEFAULT_ERROR_TITLE should describe error', () => {
-    expect(DEFAULT_ERROR_TITLE).toBe('Failed to load profiles');
-    expect(DEFAULT_ERROR_TITLE.toLowerCase()).toContain('failed');
+    expect(PROFILES_DEFAULT_ERROR_TITLE).toBe('Failed to load profiles');
+    expect(PROFILES_DEFAULT_ERROR_TITLE.toLowerCase()).toContain('failed');
   });
 
   it('DEFAULT_RETRY_LABEL should be actionable', () => {
-    expect(DEFAULT_RETRY_LABEL).toBe('Try again');
-    expect(DEFAULT_RETRY_LABEL.length).toBeGreaterThan(0);
+    expect(PROFILES_DEFAULT_RETRY_LABEL).toBe('Try again');
+    expect(PROFILES_DEFAULT_RETRY_LABEL.length).toBeGreaterThan(0);
   });
 });
 
@@ -126,33 +126,33 @@ describe('Empty/Error State Constants', () => {
 
 describe('Screen Reader Announcement Constants', () => {
   it('SR_LOADING should announce loading state', () => {
-    expect(SR_LOADING).toBe('Loading executor profiles...');
-    expect(SR_LOADING).toContain('Loading');
+    expect(PROFILES_SR_LOADING).toBe('Loading executor profiles...');
+    expect(PROFILES_SR_LOADING).toContain('Loading');
   });
 
   it('SR_PROFILES_LOADED should describe loaded state', () => {
-    expect(SR_PROFILES_LOADED).toBe('profiles loaded');
-    expect(SR_PROFILES_LOADED).toContain('loaded');
+    expect(PROFILES_SR_PROFILES_LOADED).toBe('profiles loaded');
+    expect(PROFILES_SR_PROFILES_LOADED).toContain('loaded');
   });
 
   it('SR_EMPTY should describe empty state', () => {
-    expect(SR_EMPTY).toBe('No executor profiles. Create one to get started.');
-    expect(SR_EMPTY).toContain('Create');
+    expect(PROFILES_SR_EMPTY).toBe('No executor profiles. Create one to get started.');
+    expect(PROFILES_SR_EMPTY).toContain('Create');
   });
 
   it('SR_DEFAULT_BADGE should describe default badge', () => {
-    expect(SR_DEFAULT_BADGE).toBe('Default profile');
-    expect(SR_DEFAULT_BADGE).toContain('Default');
+    expect(PROFILES_SR_DEFAULT_BADGE).toBe('Default profile');
+    expect(PROFILES_SR_DEFAULT_BADGE).toContain('Default');
   });
 
   it('SR_SET_AS_DEFAULT should describe set default action', () => {
-    expect(SR_SET_AS_DEFAULT).toBe('Set as default profile');
-    expect(SR_SET_AS_DEFAULT).toContain('default');
+    expect(PROFILES_SR_SET_AS_DEFAULT).toBe('Set as default profile');
+    expect(PROFILES_SR_SET_AS_DEFAULT).toContain('default');
   });
 
   it('SR_PROFILE_PREFIX should prefix profile cards', () => {
-    expect(SR_PROFILE_PREFIX).toBe('Executor profile:');
-    expect(SR_PROFILE_PREFIX).toContain('profile');
+    expect(PROFILES_SR_PROFILE_PREFIX).toBe('Executor profile:');
+    expect(PROFILES_SR_PROFILE_PREFIX).toContain('profile');
   });
 });
 
@@ -227,37 +227,37 @@ describe('PROFILE_CARD_PADDING_CLASSES', () => {
 
 describe('ACTION_BUTTON_SIZE_MAP', () => {
   it('should map sm to sm', () => {
-    expect(ACTION_BUTTON_SIZE_MAP.sm).toBe('sm');
+    expect(PROFILES_ACTION_BUTTON_SIZE_MAP.sm).toBe('sm');
   });
 
   it('should map md to sm', () => {
-    expect(ACTION_BUTTON_SIZE_MAP.md).toBe('sm');
+    expect(PROFILES_ACTION_BUTTON_SIZE_MAP.md).toBe('sm');
   });
 
   it('should map lg to md', () => {
-    expect(ACTION_BUTTON_SIZE_MAP.lg).toBe('md');
+    expect(PROFILES_ACTION_BUTTON_SIZE_MAP.lg).toBe('md');
   });
 
   it('should have 3 size mappings', () => {
-    expect(Object.keys(ACTION_BUTTON_SIZE_MAP)).toHaveLength(3);
+    expect(Object.keys(PROFILES_ACTION_BUTTON_SIZE_MAP)).toHaveLength(3);
   });
 });
 
 describe('ACTION_ICON_SIZE_MAP', () => {
   it('should map sm to xs', () => {
-    expect(ACTION_ICON_SIZE_MAP.sm).toBe('xs');
+    expect(PROFILES_ACTION_ICON_SIZE_MAP.sm).toBe('xs');
   });
 
   it('should map md to sm', () => {
-    expect(ACTION_ICON_SIZE_MAP.md).toBe('sm');
+    expect(PROFILES_ACTION_ICON_SIZE_MAP.md).toBe('sm');
   });
 
   it('should map lg to sm', () => {
-    expect(ACTION_ICON_SIZE_MAP.lg).toBe('sm');
+    expect(PROFILES_ACTION_ICON_SIZE_MAP.lg).toBe('sm');
   });
 
   it('should have 3 size mappings', () => {
-    expect(Object.keys(ACTION_ICON_SIZE_MAP)).toHaveLength(3);
+    expect(Object.keys(PROFILES_ACTION_ICON_SIZE_MAP)).toHaveLength(3);
   });
 });
 
@@ -502,19 +502,19 @@ describe('PROFILES_SKELETON_CONTAINER_CLASSES', () => {
 
 describe('FORM_FIELD_GAP_CLASSES', () => {
   it('should have sm spacing', () => {
-    expect(FORM_FIELD_GAP_CLASSES.sm).toBe('space-y-3');
+    expect(PROFILES_FORM_FIELD_GAP_CLASSES.sm).toBe('space-y-3');
   });
 
   it('should have md spacing', () => {
-    expect(FORM_FIELD_GAP_CLASSES.md).toBe('space-y-4');
+    expect(PROFILES_FORM_FIELD_GAP_CLASSES.md).toBe('space-y-4');
   });
 
   it('should have lg spacing', () => {
-    expect(FORM_FIELD_GAP_CLASSES.lg).toBe('space-y-5');
+    expect(PROFILES_FORM_FIELD_GAP_CLASSES.lg).toBe('space-y-5');
   });
 
   it('should use Tailwind space-y- pattern', () => {
-    Object.values(FORM_FIELD_GAP_CLASSES).forEach((value) => {
+    Object.values(PROFILES_FORM_FIELD_GAP_CLASSES).forEach((value) => {
       expect(value).toMatch(/^space-y-/);
     });
   });
@@ -522,41 +522,41 @@ describe('FORM_FIELD_GAP_CLASSES', () => {
 
 describe('FORM_FOOTER_CLASSES', () => {
   it('should include flex layout', () => {
-    expect(FORM_FOOTER_CLASSES).toContain('flex');
+    expect(PROFILES_FORM_FOOTER_CLASSES).toContain('flex');
   });
 
   it('should stack vertically on mobile', () => {
-    expect(FORM_FOOTER_CLASSES).toContain('flex-col');
+    expect(PROFILES_FORM_FOOTER_CLASSES).toContain('flex-col');
   });
 
   it('should be horizontal on sm+ breakpoint', () => {
-    expect(FORM_FOOTER_CLASSES).toContain('sm:flex-row');
+    expect(PROFILES_FORM_FOOTER_CLASSES).toContain('sm:flex-row');
   });
 
   it('should include gap', () => {
-    expect(FORM_FOOTER_CLASSES).toContain('gap-2');
+    expect(PROFILES_FORM_FOOTER_CLASSES).toContain('gap-2');
   });
 
   it('should include padding top', () => {
-    expect(FORM_FOOTER_CLASSES).toContain('pt-4');
+    expect(PROFILES_FORM_FOOTER_CLASSES).toContain('pt-4');
   });
 
   it('should justify end on sm+', () => {
-    expect(FORM_FOOTER_CLASSES).toContain('sm:justify-end');
+    expect(PROFILES_FORM_FOOTER_CLASSES).toContain('sm:justify-end');
   });
 });
 
 describe('FORM_CHECKBOX_CONTAINER_CLASSES', () => {
   it('should include flex layout', () => {
-    expect(FORM_CHECKBOX_CONTAINER_CLASSES).toContain('flex');
+    expect(PROFILES_FORM_CHECKBOX_CONTAINER_CLASSES).toContain('flex');
   });
 
   it('should center items', () => {
-    expect(FORM_CHECKBOX_CONTAINER_CLASSES).toContain('items-center');
+    expect(PROFILES_FORM_CHECKBOX_CONTAINER_CLASSES).toContain('items-center');
   });
 
   it('should include gap', () => {
-    expect(FORM_CHECKBOX_CONTAINER_CLASSES).toContain('gap-2');
+    expect(PROFILES_FORM_CHECKBOX_CONTAINER_CLASSES).toContain('gap-2');
   });
 });
 
@@ -566,26 +566,26 @@ describe('FORM_CHECKBOX_CONTAINER_CLASSES', () => {
 
 describe('getBaseSize', () => {
   it('should return md when undefined', () => {
-    expect(getBaseSize(undefined)).toBe('md');
+    expect(getProfilesBaseSize(undefined)).toBe('md');
   });
 
   it('should return the string value directly', () => {
-    expect(getBaseSize('sm')).toBe('sm');
-    expect(getBaseSize('md')).toBe('md');
-    expect(getBaseSize('lg')).toBe('lg');
+    expect(getProfilesBaseSize('sm')).toBe('sm');
+    expect(getProfilesBaseSize('md')).toBe('md');
+    expect(getProfilesBaseSize('lg')).toBe('lg');
   });
 
   it('should return base value from responsive object', () => {
-    expect(getBaseSize({ base: 'sm', md: 'lg' })).toBe('sm');
-    expect(getBaseSize({ base: 'lg' })).toBe('lg');
+    expect(getProfilesBaseSize({ base: 'sm', md: 'lg' })).toBe('sm');
+    expect(getProfilesBaseSize({ base: 'lg' })).toBe('lg');
   });
 
   it('should return md when responsive object has no base', () => {
-    expect(getBaseSize({ md: 'lg' })).toBe('md');
+    expect(getProfilesBaseSize({ md: 'lg' })).toBe('md');
   });
 
   it('should handle empty object', () => {
-    expect(getBaseSize({})).toBe('md');
+    expect(getProfilesBaseSize({})).toBe('md');
   });
 });
 
@@ -595,17 +595,17 @@ describe('getBaseSize', () => {
 
 describe('getResponsiveSizeClasses', () => {
   it('should return md classes when undefined', () => {
-    expect(getResponsiveSizeClasses(undefined, PROFILES_SIZE_CLASSES)).toBe('gap-4');
+    expect(getProfilesResponsiveSizeClasses(undefined, PROFILES_SIZE_CLASSES)).toBe('gap-4');
   });
 
   it('should return size class for string value', () => {
-    expect(getResponsiveSizeClasses('sm', PROFILES_SIZE_CLASSES)).toBe('gap-3');
-    expect(getResponsiveSizeClasses('md', PROFILES_SIZE_CLASSES)).toBe('gap-4');
-    expect(getResponsiveSizeClasses('lg', PROFILES_SIZE_CLASSES)).toBe('gap-6');
+    expect(getProfilesResponsiveSizeClasses('sm', PROFILES_SIZE_CLASSES)).toBe('gap-3');
+    expect(getProfilesResponsiveSizeClasses('md', PROFILES_SIZE_CLASSES)).toBe('gap-4');
+    expect(getProfilesResponsiveSizeClasses('lg', PROFILES_SIZE_CLASSES)).toBe('gap-6');
   });
 
   it('should generate responsive classes from object', () => {
-    const result = getResponsiveSizeClasses(
+    const result = getProfilesResponsiveSizeClasses(
       { base: 'sm', md: 'md', lg: 'lg' },
       PROFILES_SIZE_CLASSES
     );
@@ -615,22 +615,25 @@ describe('getResponsiveSizeClasses', () => {
   });
 
   it('should handle partial responsive object', () => {
-    const result = getResponsiveSizeClasses({ base: 'sm', lg: 'lg' }, PROFILES_SIZE_CLASSES);
+    const result = getProfilesResponsiveSizeClasses(
+      { base: 'sm', lg: 'lg' },
+      PROFILES_SIZE_CLASSES
+    );
     expect(result).toContain('gap-3');
     expect(result).toContain('lg:gap-6');
     expect(result).not.toContain('md:');
   });
 
   it('should handle object with only base', () => {
-    expect(getResponsiveSizeClasses({ base: 'lg' }, PROFILES_SIZE_CLASSES)).toBe('gap-6');
+    expect(getProfilesResponsiveSizeClasses({ base: 'lg' }, PROFILES_SIZE_CLASSES)).toBe('gap-6');
   });
 
   it('should handle empty object', () => {
-    expect(getResponsiveSizeClasses({}, PROFILES_SIZE_CLASSES)).toBe('gap-4');
+    expect(getProfilesResponsiveSizeClasses({}, PROFILES_SIZE_CLASSES)).toBe('gap-4');
   });
 
   it('should handle all breakpoints', () => {
-    const result = getResponsiveSizeClasses(
+    const result = getProfilesResponsiveSizeClasses(
       {
         base: 'sm',
         sm: 'sm',
@@ -650,7 +653,10 @@ describe('getResponsiveSizeClasses', () => {
   });
 
   it('should work with multi-class values like grid classes', () => {
-    const result = getResponsiveSizeClasses({ base: 'sm', lg: 'lg' }, PROFILES_GRID_CLASSES);
+    const result = getProfilesResponsiveSizeClasses(
+      { base: 'sm', lg: 'lg' },
+      PROFILES_GRID_CLASSES
+    );
     expect(result).toContain('gap-3');
     expect(result).toContain('sm:grid-cols-2');
     expect(result).toContain('lg:gap-6');
@@ -689,7 +695,7 @@ describe('buildProfileAccessibleLabel', () => {
 
   it('should include profile prefix', () => {
     const label = buildProfileAccessibleLabel(defaultProfile);
-    expect(label).toContain(SR_PROFILE_PREFIX);
+    expect(label).toContain(PROFILES_SR_PROFILE_PREFIX);
   });
 
   it('should include profile name', () => {
@@ -737,7 +743,7 @@ describe('buildProfileAccessibleLabel', () => {
 describe('buildProfilesCountAnnouncement', () => {
   it('should return empty announcement for 0 profiles', () => {
     const announcement = buildProfilesCountAnnouncement(0);
-    expect(announcement).toBe(SR_EMPTY);
+    expect(announcement).toBe(PROFILES_SR_EMPTY);
   });
 
   it('should include count for 1 profile', () => {
@@ -752,7 +758,7 @@ describe('buildProfilesCountAnnouncement', () => {
 
   it('should include profiles loaded text', () => {
     const announcement = buildProfilesCountAnnouncement(10);
-    expect(announcement).toContain(SR_PROFILES_LOADED);
+    expect(announcement).toContain(PROFILES_SR_PROFILES_LOADED);
   });
 });
 
@@ -779,9 +785,10 @@ describe('getProfileIcon', () => {
     // Terminal icon is always returned
   });
 
-  it('should be a function (React component)', () => {
+  it('should return a React component (function or object)', () => {
     const icon = getProfileIcon(profile);
-    expect(typeof icon).toBe('function');
+    // React components can be either functions or objects (e.g., forwardRef components)
+    expect(['function', 'object'].includes(typeof icon)).toBe(true);
   });
 });
 

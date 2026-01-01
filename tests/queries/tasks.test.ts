@@ -98,23 +98,23 @@ describe('queries/tasks', () => {
       });
     });
 
-    it('throws on missing required fields', () => {
+    it('throws on missing required fields', async () => {
       const invalidRequest = {
         title: 'Task without project',
       } as CreateTaskRequest;
 
-      // Zod validation throws synchronously
-      expect(() => taskQueries.create(invalidRequest)).toThrow();
+      // Zod validation throws in async function
+      await expect(taskQueries.create(invalidRequest)).rejects.toThrow();
     });
 
-    it('throws on empty title', () => {
+    it('throws on empty title', async () => {
       const invalidRequest = {
         projectId: '550e8400-e29b-41d4-a716-446655440000',
         title: '',
       } as CreateTaskRequest;
 
-      // Zod validation throws synchronously
-      expect(() => taskQueries.create(invalidRequest)).toThrow();
+      // Zod validation throws in async function
+      await expect(taskQueries.create(invalidRequest)).rejects.toThrow();
     });
   });
 
