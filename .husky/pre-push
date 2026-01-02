@@ -115,8 +115,9 @@ echo ""
 
 # Run blocking validators via the orchestrator
 # Exit codes: 0 = pass, 1 = error (fail), 2 = warnings (pass with warnings)
-pnpm validate:blocking
-VALIDATION_EXIT=$?
+# Use || true pattern to prevent shell from exiting on non-zero, then capture exit code
+VALIDATION_EXIT=0
+pnpm validate:blocking || VALIDATION_EXIT=$?
 
 if [ $VALIDATION_EXIT -eq 1 ]; then
   echo ""

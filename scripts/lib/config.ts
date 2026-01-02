@@ -426,6 +426,22 @@ export const PRIMITIVES_CONFIG: ValidatorConfig = createValidatorConfig(
 );
 
 /**
+ * Configuration for the CLAUDE.md length validator
+ * Ensures CLAUDE.md files stay within line limits by depth
+ */
+export const CLAUDE_MD_CONFIG: ValidatorConfig = createValidatorConfig(
+  'claude-md',
+  'Ensures CLAUDE.md files stay within configured line limits by depth',
+  [
+    createRule('claude-md/root-length', 'Root CLAUDE.md exceeds 100 lines'),
+    createRule('claude-md/directory-length', 'Directory-level CLAUDE.md exceeds 60 lines'),
+    createRule('claude-md/subdirectory-length', 'Subdirectory CLAUDE.md exceeds 40 lines'),
+  ],
+  ['**/CLAUDE.md'],
+  [...COMMON_EXCLUDES]
+);
+
+/**
  * Configuration for the accessibility (a11y) validator
  * Static analysis for common accessibility issues in JSX
  */
@@ -485,6 +501,7 @@ export const VALIDATOR_CONFIGS: Record<string, ValidatorConfig> = {
   'rust-services': RUST_SERVICES_CONFIG,
   primitives: PRIMITIVES_CONFIG,
   a11y: A11Y_CONFIG,
+  'claude-md': CLAUDE_MD_CONFIG,
 };
 
 /**
@@ -600,6 +617,7 @@ export const NON_BLOCKING_VALIDATORS = [
   'rust-services', // Rust refactoring requires separate work
   'primitives', // Primitives migration in progress
   'a11y', // A11y issues fixed incrementally during component audit
+  'claude-md', // Documentation structure validation
 ] as const;
 
 /**

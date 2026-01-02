@@ -43,6 +43,7 @@
     "validate:primitives": "tsx scripts/validate-primitives.ts",
     "validate:a11y": "tsx scripts/validate-a11y.ts",
     "validate:contracts": "tsx scripts/validate-contracts.ts",
+    "validate:claude-md": "tsx scripts/validate-claude-md.ts",
     "validate:all": "tsx scripts/validate-all.ts",
     "validate:all:report": "tsx scripts/validate-all.ts --report",
     "validate:all:parallel": "tsx scripts/validate-all.ts --parallel",
