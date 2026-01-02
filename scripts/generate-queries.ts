@@ -381,8 +381,9 @@ function generateQueryFunction(endpoint: Endpoint): string {
     if (endpoint.responseType.endsWith('[]')) {
       lines.push(`    logger.info('${endpoint.command} completed', { count: result.length });`);
     } else if (!isPrimitiveType(tsResponseType)) {
+      // Cast via unknown to satisfy TypeScript strict type checking
       lines.push(
-        `    logger.info('${endpoint.command} completed', { id: (result as Record<string, unknown>).id });`
+        `    logger.info('${endpoint.command} completed', { id: (result as unknown as Record<string, unknown>).id });`
       );
     } else {
       lines.push(`    logger.info('${endpoint.command} completed');`);

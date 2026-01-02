@@ -328,6 +328,10 @@ export function createHttpTransport(config?: HttpTransportConfig): Transport {
 
       // Get endpoint mapping (already validated by isKnownCommand above)
       const mapping = getMapping(cmd);
+      if (!mapping) {
+        // This should never happen since isKnownCommand already validated
+        throw new Error(`No mapping found for command: ${cmd}`);
+      }
       const url = `${baseUrl}${buildPath(cmd, args)}`;
 
       logger.debug('HTTP request', {

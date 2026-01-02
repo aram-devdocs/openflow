@@ -148,9 +148,9 @@ export const chatQueries = {
 
       logger.info('Chat retrieved successfully', {
         id,
-        title: result.chat.title,
+        title: result.title,
         messageCount: result.messages.length,
-        hasTask: !!result.chat.taskId,
+        hasTask: !!result.taskId,
       });
 
       return result;
