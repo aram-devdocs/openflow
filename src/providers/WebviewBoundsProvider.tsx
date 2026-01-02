@@ -12,6 +12,7 @@
  * after window state changes.
  */
 
+import { isTauriContext } from '@openflow/queries';
 import { Window } from '@tauri-apps/api/window';
 import { type PropsWithChildren, useEffect } from 'react';
 
@@ -51,6 +52,7 @@ export interface WebviewBoundsProviderProps extends PropsWithChildren {
 export function WebviewBoundsProvider({ children, enabled = true }: WebviewBoundsProviderProps) {
   useEffect(() => {
     if (!enabled) return;
+    if (!isTauriContext()) return;
 
     const appWindow = Window.getCurrent();
     const cleanupFunctions: Array<() => void> = [];

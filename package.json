@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tauri dev",
+    "dev": "kill $(lsof -ti :3001) 2>/dev/null || true; tauri dev",
     "dev:mcp": "rm -f /tmp/openflow-mcp.sock && tauri dev --features mcp-gui",
     "dev:frontend": "vite",
     "dev:server": "cargo run -p openflow-server",

@@ -314,16 +314,22 @@ export function useDashboardSession({
   // Task context menu state
   const [taskContextMenu, setTaskContextMenu] = useState<TaskContextMenuState | null>(null);
 
-  // Data fetching
+  // Data fetching - projects first to compute activeProjectId
   const { data: projects = [], isLoading: isLoadingProjects } = useProjects();
-  const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(selectedProjectId ?? '');
-  const { data: standaloneChats = [] } = useStandaloneChats(selectedProjectId ?? '');
+
+  // Auto-select first project if none selected (must come before other queries that depend on it)
+  const activeProjectId = selectedProjectId ?? projects[0]?.id;
+  const activeProject = projects.find((p) => p.id === activeProjectId);
+
+  // Fetch tasks and chats for the active project
+  const { data: tasks = [], isLoading: isLoadingTasks } = useTasks(activeProjectId ?? '');
+  const { data: standaloneChats = [] } = useStandaloneChats(activeProjectId ?? '');
   const { data: executorProfiles = [] } = useExecutorProfiles();
 
   // Workflow templates - only fetch when Create Task dialog is open and project is selected
   const { data: workflowTemplates = [], isLoading: isLoadingWorkflows } = useWorkflowTemplates(
-    selectedProjectId ?? '',
-    { enabled: isCreateTaskDialogOpen && !!selectedProjectId }
+    activeProjectId ?? '',
+    { enabled: isCreateTaskDialogOpen && !!activeProjectId }
   );
 
   // Mutations
@@ -338,10 +344,6 @@ export function useDashboardSession({
   const deleteTask = useDeleteTask();
   const duplicateTask = useDuplicateTask();
   const openInEditor = useOpenInEditor();
-
-  // Auto-select first project if none selected
-  const activeProjectId = selectedProjectId ?? projects[0]?.id;
-  const activeProject = projects.find((p) => p.id === activeProjectId);
 
   // Search - scoped to active project if one is selected
   const { data: searchResults = [], isLoading: isSearching } = useSearch(searchQuery, {
