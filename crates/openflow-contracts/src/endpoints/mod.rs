@@ -1311,19 +1311,17 @@ mod tests {
         ];
 
         for ep in ENDPOINTS {
-            if matches!(ep.method, HttpMethod::Post | HttpMethod::Patch | HttpMethod::Put) {
-                if !exceptions.contains(&ep.command) {
-                    // Only check CRUD operations (create/update), not action endpoints
-                    if ep.tags.contains(&"create") || ep.tags.contains(&"update") {
-                        if ep.request_type.is_none() && !ep.has_query_params() {
-                            // Allow endpoints that use query params instead of body
-                            panic!(
-                                "Endpoint {} is a mutation but has no request type",
-                                ep.command
-                            );
-                        }
-                    }
-                }
+            if matches!(ep.method, HttpMethod::Post | HttpMethod::Patch | HttpMethod::Put)
+                && !exceptions.contains(&ep.command)
+                && (ep.tags.contains(&"create") || ep.tags.contains(&"update"))
+                && ep.request_type.is_none()
+                && !ep.has_query_params()
+            {
+                // Allow endpoints that use query params instead of body
+                panic!(
+                    "Endpoint {} is a mutation but has no request type",
+                    ep.command
+                );
             }
         }
     }

@@ -239,8 +239,7 @@ impl ProcessSpawner {
     ) -> SpawnResult<(String, String, i32)> {
         tokio::task::spawn_blocking(move || Self::run_capture(config))
             .await
-            .map_err(|e| SpawnError::SpawnFailed(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            .map_err(|e| SpawnError::SpawnFailed(std::io::Error::other(
                 format!("Task join error: {}", e),
             )))?
     }
@@ -251,8 +250,7 @@ impl ProcessSpawner {
     pub async fn run_async(config: PipeSpawnConfig) -> SpawnResult<i32> {
         tokio::task::spawn_blocking(move || Self::run(config))
             .await
-            .map_err(|e| SpawnError::SpawnFailed(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            .map_err(|e| SpawnError::SpawnFailed(std::io::Error::other(
                 format!("Task join error: {}", e),
             )))?
     }

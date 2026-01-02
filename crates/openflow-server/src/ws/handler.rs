@@ -70,7 +70,7 @@ async fn handle_socket(socket: WebSocket, manager: Arc<ClientManager>) {
     // Send connected message
     let connected_msg = WsServerMessage::connected(&client_id);
     if let Ok(json) = serde_json::to_string(&connected_msg) {
-        if let Err(e) = sender.send(Message::Text(json.into())).await {
+        if let Err(e) = sender.send(Message::Text(json)).await {
             tracing::error!(client_id = %client_id, error = %e, "Failed to send connected message");
             manager.remove_client(&client_id).await;
             return;
@@ -83,7 +83,7 @@ async fn handle_socket(socket: WebSocket, manager: Arc<ClientManager>) {
         while let Some(msg) = rx.recv().await {
             match serde_json::to_string(&msg) {
                 Ok(json) => {
-                    if sender.send(Message::Text(json.into())).await.is_err() {
+                    if sender.send(Message::Text(json)).await.is_err() {
                         tracing::debug!(
                             client_id = %client_id_send,
                             "WebSocket send failed, closing connection"
@@ -190,7 +190,7 @@ async fn handle_message(manager: &ClientManager, client_id: &str, message: Messa
             if let Some(cf) = frame {
                 tracing::debug!(
                     client_id = %client_id,
-                    code = u16::from(cf.code),
+                    code = cf.code,
                     reason = %cf.reason,
                     "Client initiated close"
                 );

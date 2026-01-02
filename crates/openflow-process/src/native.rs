@@ -256,9 +256,7 @@ impl NativePtyExecutor {
         if config.inherit_env {
             for (key, value) in std::env::vars() {
                 // Don't override explicitly set variables
-                if !env.contains_key(&key) {
-                    env.insert(key, value);
-                }
+                env.entry(key).or_insert(value);
             }
         }
 
@@ -301,7 +299,7 @@ impl ProcessExecutor for NativePtyExecutor {
         // Create the PTY
         self.pty_manager
             .create(id, pty_config)
-            .map_err(|e| ProcessError::from(e))?;
+            .map_err(ProcessError::from)?;
 
         // Create process handle
         let handle = ProcessHandle::new(id, config.clone());
@@ -342,7 +340,7 @@ impl ProcessExecutor for NativePtyExecutor {
         // Write to PTY
         self.pty_manager
             .write(id, data)
-            .map_err(|e| ProcessError::from(e))?;
+            .map_err(ProcessError::from)?;
 
         Ok(())
     }
@@ -359,7 +357,7 @@ impl ProcessExecutor for NativePtyExecutor {
         let size = PtySize { cols, rows };
         self.pty_manager
             .resize(id, size)
-            .map_err(|e| ProcessError::from(e))?;
+            .map_err(ProcessError::from)?;
 
         Ok(())
     }
@@ -381,7 +379,7 @@ impl ProcessExecutor for NativePtyExecutor {
         // Kill the PTY process
         self.pty_manager
             .kill(id)
-            .map_err(|e| ProcessError::from(e))?;
+            .map_err(ProcessError::from)?;
 
         Ok(())
     }
@@ -408,7 +406,7 @@ impl ProcessExecutor for NativePtyExecutor {
         let exit_status = tokio::task::spawn_blocking(move || pty_manager.wait(&id_owned))
             .await
             .map_err(|e| ProcessError::Internal(format!("Task join error: {}", e)))?
-            .map_err(|e| ProcessError::from(e))?;
+            .map_err(ProcessError::from)?;
 
         let exit_code = exit_status.exit_code() as i32;
 
@@ -458,7 +456,7 @@ impl ProcessExecutor for NativePtyExecutor {
         // Close the PTY
         self.pty_manager
             .close(id)
-            .map_err(|e| ProcessError::from(e))?;
+            .map_err(ProcessError::from)?;
 
         info!(process_id = %id, "Process closed");
 

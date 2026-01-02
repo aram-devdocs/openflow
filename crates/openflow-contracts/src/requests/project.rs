@@ -32,7 +32,7 @@ use crate::validation::{
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateProjectRequest {
     /// Project name (required, 1-255 chars)
@@ -82,25 +82,6 @@ pub struct CreateProjectRequest {
     /// JSON object with verification command configuration
     /// @validate: max_length=50000
     pub verification_config: Option<String>,
-}
-
-impl Default for CreateProjectRequest {
-    fn default() -> Self {
-        Self {
-            name: String::new(),
-            git_repo_path: String::new(),
-            base_branch: None,
-            setup_script: None,
-            dev_script: None,
-            cleanup_script: None,
-            copy_files: None,
-            icon: None,
-            rule_folders: None,
-            always_included_rules: None,
-            workflows_folder: None,
-            verification_config: None,
-        }
-    }
 }
 
 impl Validate for CreateProjectRequest {

@@ -644,8 +644,8 @@ mod tests {
         let bool_setting = Setting::new("flag", "true");
         assert_eq!(bool_setting.as_bool(), Some(true));
 
-        let float_setting = Setting::new("rate", "3.14");
-        assert!((float_setting.as_f64().unwrap() - 3.14).abs() < f64::EPSILON);
+        let float_setting = Setting::new("rate", "3.14159265");
+        assert!((float_setting.as_f64().unwrap() - std::f64::consts::PI).abs() < 0.0001);
     }
 
     #[tokio::test]

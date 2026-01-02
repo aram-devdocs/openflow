@@ -34,7 +34,7 @@ use crate::validation::{
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateTaskRequest {
     /// Parent project ID (required)
@@ -60,19 +60,6 @@ pub struct CreateTaskRequest {
     /// Base git branch for this task's worktrees
     /// @validate: max_length=255
     pub base_branch: Option<String>,
-}
-
-impl Default for CreateTaskRequest {
-    fn default() -> Self {
-        Self {
-            project_id: String::new(),
-            title: String::new(),
-            description: None,
-            workflow_template: None,
-            parent_task_id: None,
-            base_branch: None,
-        }
-    }
 }
 
 impl CreateTaskRequest {

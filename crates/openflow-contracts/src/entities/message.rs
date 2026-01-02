@@ -178,14 +178,14 @@ impl Message {
 
     /// Check if the message has tool calls
     pub fn has_tool_calls(&self) -> bool {
-        self.tool_calls.as_ref().map_or(false, |tc| !tc.is_empty())
+        self.tool_calls.as_ref().is_some_and(|tc| !tc.is_empty())
     }
 
     /// Check if the message has tool results
     pub fn has_tool_results(&self) -> bool {
         self.tool_results
             .as_ref()
-            .map_or(false, |tr| !tr.is_empty())
+            .is_some_and(|tr| !tr.is_empty())
     }
 
     /// Check if the message is from a user

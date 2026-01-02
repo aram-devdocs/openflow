@@ -184,7 +184,7 @@ mod tests {
     #[test]
     fn test_setting_as_f64() {
         let setting = Setting::new("rate", "3.14");
-        assert!((setting.as_f64().unwrap() - 3.14).abs() < f64::EPSILON);
+        assert!((setting.as_f64().unwrap() - std::f64::consts::PI).abs() < 0.01);
 
         let int_setting = Setting::new("rate", "42");
         assert_eq!(int_setting.as_f64(), Some(42.0));
@@ -201,7 +201,7 @@ mod tests {
         }
 
         let config: Config = setting.parse().unwrap();
-        assert_eq!(config.enabled, true);
+        assert!(config.enabled);
         assert_eq!(config.count, 5);
     }
 

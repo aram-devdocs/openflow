@@ -298,18 +298,12 @@ impl Validate for UpdateProcessRequest {
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct KillProcessRequest {
     /// Signal to send (optional, defaults to SIGTERM)
     /// @validate: max_length=20
     pub signal: Option<String>,
-}
-
-impl Default for KillProcessRequest {
-    fn default() -> Self {
-        Self { signal: None }
-    }
 }
 
 impl KillProcessRequest {
@@ -622,7 +616,7 @@ impl Validate for ListProcessesRequest {
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct StartProcessRequest {
     /// Command to execute (e.g., "claude", "npm", "cargo")
@@ -646,20 +640,6 @@ pub struct StartProcessRequest {
 
     /// PTY rows (height) - only used if use_pty is true
     pub pty_rows: Option<u16>,
-}
-
-impl Default for StartProcessRequest {
-    fn default() -> Self {
-        Self {
-            command: String::new(),
-            args: Vec::new(),
-            cwd: None,
-            env: std::collections::HashMap::new(),
-            use_pty: false,
-            pty_cols: None,
-            pty_rows: None,
-        }
-    }
 }
 
 impl StartProcessRequest {

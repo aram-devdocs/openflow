@@ -46,7 +46,7 @@ use crate::validation::{
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateChatRequest {
     /// Parent task ID (optional, for task-linked chats)
@@ -89,24 +89,6 @@ pub struct CreateChatRequest {
 
     /// Index of this chat's step in the workflow
     pub workflow_step_index: Option<i32>,
-}
-
-impl Default for CreateChatRequest {
-    fn default() -> Self {
-        Self {
-            task_id: None,
-            project_id: String::new(),
-            title: None,
-            chat_role: None,
-            executor_profile_id: None,
-            base_branch: None,
-            initial_prompt: None,
-            hidden_prompt: None,
-            is_plan_container: None,
-            main_chat_id: None,
-            workflow_step_index: None,
-        }
-    }
 }
 
 impl CreateChatRequest {

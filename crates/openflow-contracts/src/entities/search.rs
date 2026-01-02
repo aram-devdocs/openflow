@@ -34,7 +34,7 @@ impl SearchResultType {
     }
 
     /// Parse from database string representation.
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn parse(s: &str) -> Option<Self> {
         match s {
             "task" => Some(SearchResultType::Task),
             "project" => Some(SearchResultType::Project),
@@ -65,7 +65,7 @@ impl std::str::FromStr for SearchResultType {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        SearchResultType::from_str(s)
+        SearchResultType::parse(s)
             .ok_or_else(|| format!("Unknown search result type: {}", s))
     }
 }
@@ -153,11 +153,11 @@ mod tests {
 
     #[test]
     fn test_search_result_type_from_str() {
-        assert_eq!(SearchResultType::from_str("task"), Some(SearchResultType::Task));
-        assert_eq!(SearchResultType::from_str("project"), Some(SearchResultType::Project));
-        assert_eq!(SearchResultType::from_str("chat"), Some(SearchResultType::Chat));
-        assert_eq!(SearchResultType::from_str("message"), Some(SearchResultType::Message));
-        assert_eq!(SearchResultType::from_str("unknown"), None);
+        assert_eq!(SearchResultType::parse("task"), Some(SearchResultType::Task));
+        assert_eq!(SearchResultType::parse("project"), Some(SearchResultType::Project));
+        assert_eq!(SearchResultType::parse("chat"), Some(SearchResultType::Chat));
+        assert_eq!(SearchResultType::parse("message"), Some(SearchResultType::Message));
+        assert_eq!(SearchResultType::parse("unknown"), None);
     }
 
     #[test]

@@ -37,7 +37,7 @@ use crate::validation::{
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct SpawnTerminalRequest {
     /// The project ID to spawn the terminal in (determines default working directory)
@@ -62,19 +62,6 @@ pub struct SpawnTerminalRequest {
 
     /// Terminal height in rows (default: 30)
     pub rows: Option<u16>,
-}
-
-impl Default for SpawnTerminalRequest {
-    fn default() -> Self {
-        Self {
-            project_id: String::new(),
-            chat_id: None,
-            cwd: None,
-            shell: None,
-            cols: None,
-            rows: None,
-        }
-    }
 }
 
 impl SpawnTerminalRequest {

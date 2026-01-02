@@ -440,7 +440,7 @@ async fn search_with_many_types(
 
 /// Convert raw database result to SearchResult.
 fn raw_to_search_result(raw: RawSearchResult) -> SearchResult {
-    let result_type = SearchResultType::from_str(&raw.result_type).unwrap_or_else(|| {
+    let result_type = SearchResultType::parse(&raw.result_type).unwrap_or_else(|| {
         warn!(
             result_type = %raw.result_type,
             "Unknown search result type, defaulting to Task"

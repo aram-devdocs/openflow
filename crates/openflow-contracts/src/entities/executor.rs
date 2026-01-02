@@ -88,17 +88,17 @@ pub struct ExecutorProfile {
 impl ExecutorProfile {
     /// Check if this profile has custom arguments
     pub fn has_args(&self) -> bool {
-        self.args.as_ref().map_or(false, |a| !a.is_empty())
+        self.args.as_ref().is_some_and(|a| !a.is_empty())
     }
 
     /// Check if this profile has custom environment variables
     pub fn has_env(&self) -> bool {
-        self.env.as_ref().map_or(false, |e| !e.is_empty())
+        self.env.as_ref().is_some_and(|e| !e.is_empty())
     }
 
     /// Check if this profile has a model specified
     pub fn has_model(&self) -> bool {
-        self.model.as_ref().map_or(false, |m| !m.is_empty())
+        self.model.as_ref().is_some_and(|m| !m.is_empty())
     }
 
     /// Parse the args JSON string into a Vec of strings
