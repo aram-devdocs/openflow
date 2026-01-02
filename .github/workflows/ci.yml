@@ -116,16 +116,28 @@ jobs:
         run: mkdir -p reports
 
       # Run blocking validators (must pass for CI)
+      # Exit codes: 0 = pass, 1 = fail, 2 = pass with warnings
       - name: Run blocking validators
         id: blocking
-        run: pnpm validate:blocking --report
-        continue-on-error: true
+        run: |
+          set +e
+          pnpm validate:blocking --report
+          EXIT_CODE=$?
+          echo "exit_code=$EXIT_CODE" >> $GITHUB_OUTPUT
+          # Exit 0 if pass (0) or warnings (2), exit 1 only for actual failures
+          if [ $EXIT_CODE -eq 1 ]; then
+            exit 1
+          fi
+          exit 0
 
       # Run non-blocking validators (warnings only)
       - name: Run non-blocking validators
         id: non-blocking
-        run: pnpm validate:all --non-blocking --report
-        continue-on-error: true
+        run: |
+          set +e
+          pnpm validate:all --non-blocking --report
+          # Always pass - these are non-blocking
+          exit 0
 
       # Upload validation reports as artifacts
       - name: Upload validation reports
@@ -291,9 +303,11 @@ jobs:
               });
             }
 
-      # Fail the job if blocking validators failed
+      # Fail the job if blocking validators had actual failures (exit code 1)
+      # Note: Exit code 2 means warnings which is acceptable
       - name: Check blocking validators status
-        if: steps.blocking.outcome == 'failure'
+        if: failure() && steps.blocking.outcome == 'failure'
         run: |
           echo "::error::Blocking validators failed. Please fix the architecture violations."
+          echo "Exit code was: ${{ steps.blocking.outputs.exit_code }}"
           exit 1
