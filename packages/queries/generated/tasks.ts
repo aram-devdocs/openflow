@@ -15,9 +15,14 @@
 // @see CLAUDE.md - Query Layer Patterns section
 // =============================================================================
 
-import type { CreateTaskRequest, Task, TaskWithChats, UpdateTaskRequest } from '@openflow/generated';
-import { createTaskRequestSchema, updateTaskRequestSchema } from '@openflow/validation';
+import type {
+  CreateTaskRequest,
+  Task,
+  TaskWithChats,
+  UpdateTaskRequest,
+} from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
+import { createTaskRequestSchema, updateTaskRequestSchema } from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:tasks:generated');
@@ -37,7 +42,9 @@ export async function archiveTask(id: string): Promise<Task> {
   try {
     const result = await invoke<Task>('archive_task', { id: id });
 
-    logger.info('archive_task completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('archive_task completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -111,7 +118,9 @@ export async function duplicateTask(id: string): Promise<Task> {
   try {
     const result = await invoke<Task>('duplicate_task', { id: id });
 
-    logger.info('duplicate_task completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('duplicate_task completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -160,7 +169,10 @@ export async function listTasks(projectId?: string, includeArchived?: string): P
   logger.debug('Calling list_tasks');
 
   try {
-    const result = await invoke<Task[]>('list_tasks', { project_id: projectId, include_archived: includeArchived });
+    const result = await invoke<Task[]>('list_tasks', {
+      project_id: projectId,
+      include_archived: includeArchived,
+    });
 
     logger.info('list_tasks completed', { count: result.length });
 
@@ -187,7 +199,9 @@ export async function unarchiveTask(id: string): Promise<Task> {
   try {
     const result = await invoke<Task>('unarchive_task', { id: id });
 
-    logger.info('unarchive_task completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('unarchive_task completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {

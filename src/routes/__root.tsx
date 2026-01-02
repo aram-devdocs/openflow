@@ -14,8 +14,8 @@
  * - Mixed Tauri + browser environments
  */
 
-import { ErrorBoundary, RouteError } from '@openflow/ui';
 import { useDataSync } from '@openflow/hooks';
+import { ErrorBoundary, RouteError } from '@openflow/ui';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { Outlet, createRootRouteWithContext } from '@tanstack/react-router';

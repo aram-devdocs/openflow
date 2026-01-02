@@ -16,8 +16,8 @@
 // =============================================================================
 
 import type { CreatePullRequestRequest, PullRequestResult } from '@openflow/generated';
-import { createPullRequestRequestSchema } from '@openflow/validation';
 import { createLogger } from '@openflow/utils';
+import { createPullRequestRequestSchema } from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:github:generated');
@@ -31,14 +31,18 @@ const logger = createLogger('queries:github:generated');
  * @returns Promise resolving to PullRequestResult
  * @throws Error if validation or query fails
  */
-export async function createPullRequest(request: CreatePullRequestRequest): Promise<PullRequestResult> {
+export async function createPullRequest(
+  request: CreatePullRequestRequest
+): Promise<PullRequestResult> {
   logger.debug('Calling create_pull_request');
 
   try {
     const validated = createPullRequestRequestSchema.parse(request);
     const result = await invoke<PullRequestResult>('create_pull_request', { request: validated });
 
-    logger.info('create_pull_request completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('create_pull_request completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {

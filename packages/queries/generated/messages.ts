@@ -15,9 +15,18 @@
 // @see CLAUDE.md - Query Layer Patterns section
 // =============================================================================
 
-import type { AppendMessageContentRequest, CreateMessageRequest, Message, SetMessageStreamingRequest } from '@openflow/generated';
-import { appendMessageContentRequestSchema, createMessageRequestSchema, setMessageStreamingRequestSchema } from '@openflow/validation';
+import type {
+  AppendMessageContentRequest,
+  CreateMessageRequest,
+  Message,
+  SetMessageStreamingRequest,
+} from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
+import {
+  appendMessageContentRequestSchema,
+  createMessageRequestSchema,
+  setMessageStreamingRequestSchema,
+} from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:messages:generated');
@@ -32,14 +41,19 @@ const logger = createLogger('queries:messages:generated');
  * @returns Promise resolving to Message
  * @throws Error if validation or query fails
  */
-export async function appendMessageContent(id: string, request: AppendMessageContentRequest): Promise<Message> {
+export async function appendMessageContent(
+  id: string,
+  request: AppendMessageContentRequest
+): Promise<Message> {
   logger.debug('Calling append_message_content', { id });
 
   try {
     const validated = appendMessageContentRequestSchema.parse(request);
     const result = await invoke<Message>('append_message_content', { id: id, request: validated });
 
-    logger.info('append_message_content completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('append_message_content completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -65,7 +79,9 @@ export async function createMessage(request: CreateMessageRequest): Promise<Mess
     const validated = createMessageRequestSchema.parse(request);
     const result = await invoke<Message>('create_message', { request: validated });
 
-    logger.info('create_message completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('create_message completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -158,14 +174,19 @@ export async function listMessages(chatId?: string): Promise<Message[]> {
  * @returns Promise resolving to Message
  * @throws Error if validation or query fails
  */
-export async function setMessageStreaming(id: string, request: SetMessageStreamingRequest): Promise<Message> {
+export async function setMessageStreaming(
+  id: string,
+  request: SetMessageStreamingRequest
+): Promise<Message> {
   logger.debug('Calling set_message_streaming', { id });
 
   try {
     const validated = setMessageStreamingRequestSchema.parse(request);
     const result = await invoke<Message>('set_message_streaming', { id: id, request: validated });
 
-    logger.info('set_message_streaming completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('set_message_streaming completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -186,13 +207,23 @@ export async function setMessageStreaming(id: string, request: SetMessageStreami
  * @returns Promise resolving to Message
  * @throws Error if validation or query fails
  */
-export async function setMessageTokens(id: string, inputTokens?: string, outputTokens?: string): Promise<Message> {
+export async function setMessageTokens(
+  id: string,
+  inputTokens?: string,
+  outputTokens?: string
+): Promise<Message> {
   logger.debug('Calling set_message_tokens', { id });
 
   try {
-    const result = await invoke<Message>('set_message_tokens', { id: id, input_tokens: inputTokens, output_tokens: outputTokens });
+    const result = await invoke<Message>('set_message_tokens', {
+      id: id,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+    });
 
-    logger.info('set_message_tokens completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('set_message_tokens completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {

@@ -31,13 +31,21 @@ const logger = createLogger('queries:terminal:generated');
  * @returns Promise resolving to ExecutionProcess
  * @throws Error if validation or query fails
  */
-export async function spawnTerminal(chatId?: string, workingDir?: string): Promise<ExecutionProcess> {
+export async function spawnTerminal(
+  chatId?: string,
+  workingDir?: string
+): Promise<ExecutionProcess> {
   logger.debug('Calling spawn_terminal');
 
   try {
-    const result = await invoke<ExecutionProcess>('spawn_terminal', { chat_id: chatId, working_dir: workingDir });
+    const result = await invoke<ExecutionProcess>('spawn_terminal', {
+      chat_id: chatId,
+      working_dir: workingDir,
+    });
 
-    logger.info('spawn_terminal completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('spawn_terminal completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {

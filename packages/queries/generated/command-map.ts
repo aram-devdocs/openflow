@@ -25,532 +25,532 @@ export interface EndpointMapping {
  * Used by the HTTP transport to convert IPC calls to REST requests.
  */
 export const COMMAND_MAP: Record<string, EndpointMapping> = {
-  'append_message_content': {
+  append_message_content: {
     method: 'POST',
     path: '/api/messages/:id/append',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: true,
   },
-  'archive_chat': {
+  archive_chat: {
     method: 'POST',
     path: '/api/chats/:id/archive',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'archive_project': {
+  archive_project: {
     method: 'POST',
     path: '/api/projects/:id/archive',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'archive_task': {
+  archive_task: {
     method: 'POST',
     path: '/api/tasks/:id/archive',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'create_chat': {
+  create_chat: {
     method: 'POST',
     path: '/api/chats',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'create_executor_profile': {
+  create_executor_profile: {
     method: 'POST',
     path: '/api/executor-profiles',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'create_message': {
+  create_message: {
     method: 'POST',
     path: '/api/messages',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'create_project': {
+  create_project: {
     method: 'POST',
     path: '/api/projects',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'create_pull_request': {
+  create_pull_request: {
     method: 'POST',
     path: '/api/github/pull-requests',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'create_task': {
+  create_task: {
     method: 'POST',
     path: '/api/tasks',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'create_worktree': {
+  create_worktree: {
     method: 'POST',
     path: '/api/git/worktrees',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'delete_chat': {
+  delete_chat: {
     method: 'DELETE',
     path: '/api/chats/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'delete_executor_profile': {
+  delete_executor_profile: {
     method: 'DELETE',
     path: '/api/executor-profiles/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'delete_message': {
+  delete_message: {
     method: 'DELETE',
     path: '/api/messages/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'delete_project': {
+  delete_project: {
     method: 'DELETE',
     path: '/api/projects/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'delete_setting': {
+  delete_setting: {
     method: 'DELETE',
     path: '/api/settings/:key',
     pathParams: ['key'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'delete_task': {
+  delete_task: {
     method: 'DELETE',
     path: '/api/tasks/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'delete_worktree': {
+  delete_worktree: {
     method: 'DELETE',
     path: '/api/git/worktrees',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'duplicate_task': {
+  duplicate_task: {
     method: 'POST',
     path: '/api/tasks/:id/duplicate',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_all_settings': {
+  get_all_settings: {
     method: 'GET',
     path: '/api/settings',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_builtin_workflow_templates': {
+  get_builtin_workflow_templates: {
     method: 'GET',
     path: '/api/workflows/templates/builtin',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_chat': {
+  get_chat: {
     method: 'GET',
     path: '/api/chats/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_commits': {
+  get_commits: {
     method: 'GET',
     path: '/api/git/commits',
     pathParams: [],
     queryParams: ['worktree_path', 'limit', 'base_ref'],
     hasRequestBody: false,
   },
-  'get_current_branch': {
+  get_current_branch: {
     method: 'GET',
     path: '/api/git/branch/current',
     pathParams: [],
     queryParams: ['repo_path'],
     hasRequestBody: false,
   },
-  'get_default_executor_profile': {
+  get_default_executor_profile: {
     method: 'GET',
     path: '/api/executor-profiles/default',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_diff': {
+  get_diff: {
     method: 'GET',
     path: '/api/git/diff',
     pathParams: [],
     queryParams: ['worktree_path', 'base_ref'],
     hasRequestBody: false,
   },
-  'get_executor_profile': {
+  get_executor_profile: {
     method: 'GET',
     path: '/api/executor-profiles/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_head_commit': {
+  get_head_commit: {
     method: 'GET',
     path: '/api/git/head',
     pathParams: [],
     queryParams: ['repo_path'],
     hasRequestBody: false,
   },
-  'get_message': {
+  get_message: {
     method: 'GET',
     path: '/api/messages/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_process': {
+  get_process: {
     method: 'GET',
     path: '/api/processes/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_project': {
+  get_project: {
     method: 'GET',
     path: '/api/projects/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_setting': {
+  get_setting: {
     method: 'GET',
     path: '/api/settings/:key',
     pathParams: ['key'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_setting_or_default': {
+  get_setting_or_default: {
     method: 'GET',
     path: '/api/settings/:key/default',
     pathParams: ['key'],
     queryParams: ['default_value'],
     hasRequestBody: false,
   },
-  'get_task': {
+  get_task: {
     method: 'GET',
     path: '/api/tasks/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_task_commits': {
+  get_task_commits: {
     method: 'GET',
     path: '/api/git/tasks/:task_id/commits',
     pathParams: ['task_id'],
     queryParams: ['limit'],
     hasRequestBody: false,
   },
-  'get_task_diff': {
+  get_task_diff: {
     method: 'GET',
     path: '/api/git/tasks/:task_id/diff',
     pathParams: ['task_id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'get_workflow_template': {
+  get_workflow_template: {
     method: 'GET',
     path: '/api/workflows/templates/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'has_uncommitted_changes': {
+  has_uncommitted_changes: {
     method: 'GET',
     path: '/api/git/status/dirty',
     pathParams: [],
     queryParams: ['repo_path'],
     hasRequestBody: false,
   },
-  'is_process_running': {
+  is_process_running: {
     method: 'GET',
     path: '/api/processes/:id/running',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'kill_process': {
+  kill_process: {
     method: 'POST',
     path: '/api/processes/:id/kill',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'list_archived_chats': {
+  list_archived_chats: {
     method: 'GET',
     path: '/api/chats/archived',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'list_archived_projects': {
+  list_archived_projects: {
     method: 'GET',
     path: '/api/projects/archived',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'list_chats': {
+  list_chats: {
     method: 'GET',
     path: '/api/chats',
     pathParams: [],
     queryParams: ['task_id'],
     hasRequestBody: false,
   },
-  'list_chats_by_project': {
+  list_chats_by_project: {
     method: 'GET',
     path: '/api/projects/:project_id/chats',
     pathParams: ['project_id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'list_executor_profiles': {
+  list_executor_profiles: {
     method: 'GET',
     path: '/api/executor-profiles',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'list_messages': {
+  list_messages: {
     method: 'GET',
     path: '/api/messages',
     pathParams: [],
     queryParams: ['chat_id'],
     hasRequestBody: false,
   },
-  'list_processes': {
+  list_processes: {
     method: 'GET',
     path: '/api/processes',
     pathParams: [],
     queryParams: ['chat_id'],
     hasRequestBody: false,
   },
-  'list_projects': {
+  list_projects: {
     method: 'GET',
     path: '/api/projects',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'list_running_processes': {
+  list_running_processes: {
     method: 'GET',
     path: '/api/processes/running',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'list_standalone_chats': {
+  list_standalone_chats: {
     method: 'GET',
     path: '/api/chats/standalone',
     pathParams: [],
     queryParams: ['project_id'],
     hasRequestBody: false,
   },
-  'list_tasks': {
+  list_tasks: {
     method: 'GET',
     path: '/api/tasks',
     pathParams: [],
     queryParams: ['project_id', 'include_archived'],
     hasRequestBody: false,
   },
-  'list_workflow_templates': {
+  list_workflow_templates: {
     method: 'GET',
     path: '/api/workflows/templates',
     pathParams: [],
     queryParams: ['project_id'],
     hasRequestBody: false,
   },
-  'list_worktrees': {
+  list_worktrees: {
     method: 'GET',
     path: '/api/git/worktrees',
     pathParams: [],
     queryParams: ['repo_path'],
     hasRequestBody: false,
   },
-  'open_in_editor': {
+  open_in_editor: {
     method: 'POST',
     path: '/api/system/open-editor',
     pathParams: [],
     queryParams: ['path'],
     hasRequestBody: false,
   },
-  'parse_workflow_content': {
+  parse_workflow_content: {
     method: 'POST',
     path: '/api/workflows/parse',
     pathParams: [],
     queryParams: ['content'],
     hasRequestBody: false,
   },
-  'push_branch': {
+  push_branch: {
     method: 'POST',
     path: '/api/git/push',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'resize_process': {
+  resize_process: {
     method: 'POST',
     path: '/api/processes/:id/resize',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: true,
   },
-  'reveal_in_explorer': {
+  reveal_in_explorer: {
     method: 'POST',
     path: '/api/system/reveal',
     pathParams: [],
     queryParams: ['path'],
     hasRequestBody: false,
   },
-  'run_executor': {
+  run_executor: {
     method: 'POST',
     path: '/api/executor/run',
     pathParams: [],
     queryParams: [],
     hasRequestBody: true,
   },
-  'running_process_count': {
+  running_process_count: {
     method: 'GET',
     path: '/api/processes/count/running',
     pathParams: [],
     queryParams: [],
     hasRequestBody: false,
   },
-  'search': {
+  search: {
     method: 'GET',
     path: '/api/search',
     pathParams: [],
     queryParams: ['query', 'project_id'],
     hasRequestBody: false,
   },
-  'send_process_input': {
+  send_process_input: {
     method: 'POST',
     path: '/api/processes/:id/input',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: true,
   },
-  'set_message_streaming': {
+  set_message_streaming: {
     method: 'PATCH',
     path: '/api/messages/:id/streaming',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: true,
   },
-  'set_message_tokens': {
+  set_message_tokens: {
     method: 'PATCH',
     path: '/api/messages/:id/tokens',
     pathParams: ['id'],
     queryParams: ['input_tokens', 'output_tokens'],
     hasRequestBody: false,
   },
-  'set_setting': {
+  set_setting: {
     method: 'PUT',
     path: '/api/settings/:key',
     pathParams: ['key'],
     queryParams: ['value'],
     hasRequestBody: false,
   },
-  'setting_exists': {
+  setting_exists: {
     method: 'GET',
     path: '/api/settings/:key/exists',
     pathParams: ['key'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'spawn_terminal': {
+  spawn_terminal: {
     method: 'POST',
     path: '/api/terminal/spawn',
     pathParams: [],
     queryParams: ['chat_id', 'working_dir'],
     hasRequestBody: false,
   },
-  'start_workflow_step': {
+  start_workflow_step: {
     method: 'POST',
     path: '/api/chats/:id/start-step',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'toggle_step_complete': {
+  toggle_step_complete: {
     method: 'POST',
     path: '/api/chats/:id/toggle-step',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'unarchive_chat': {
+  unarchive_chat: {
     method: 'POST',
     path: '/api/chats/:id/unarchive',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'unarchive_project': {
+  unarchive_project: {
     method: 'POST',
     path: '/api/projects/:id/unarchive',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'unarchive_task': {
+  unarchive_task: {
     method: 'POST',
     path: '/api/tasks/:id/unarchive',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: false,
   },
-  'update_chat': {
+  update_chat: {
     method: 'PATCH',
     path: '/api/chats/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: true,
   },
-  'update_executor_profile': {
+  update_executor_profile: {
     method: 'PATCH',
     path: '/api/executor-profiles/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: true,
   },
-  'update_project': {
+  update_project: {
     method: 'PATCH',
     path: '/api/projects/:id',
     pathParams: ['id'],
     queryParams: [],
     hasRequestBody: true,
   },
-  'update_task': {
+  update_task: {
     method: 'PATCH',
     path: '/api/tasks/:id',
     pathParams: ['id'],
@@ -603,7 +603,10 @@ export function buildPath(command: string, args: Record<string, unknown> = {}): 
  * @param args - All arguments
  * @returns The request body object or undefined
  */
-export function getRequestBody(command: string, args: Record<string, unknown> = {}): unknown | undefined {
+export function getRequestBody(
+  command: string,
+  args: Record<string, unknown> = {}
+): unknown | undefined {
   const mapping = COMMAND_MAP[command];
   if (!mapping || !mapping.hasRequestBody) {
     return undefined;

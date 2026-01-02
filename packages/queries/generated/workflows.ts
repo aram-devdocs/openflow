@@ -60,7 +60,9 @@ export async function getWorkflowTemplate(id: string): Promise<WorkflowTemplate>
   try {
     const result = await invoke<WorkflowTemplate>('get_workflow_template', { id: id });
 
-    logger.info('get_workflow_template completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('get_workflow_template completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -83,7 +85,9 @@ export async function listWorkflowTemplates(projectId?: string): Promise<Workflo
   logger.debug('Calling list_workflow_templates');
 
   try {
-    const result = await invoke<WorkflowTemplate[]>('list_workflow_templates', { project_id: projectId });
+    const result = await invoke<WorkflowTemplate[]>('list_workflow_templates', {
+      project_id: projectId,
+    });
 
     logger.info('list_workflow_templates completed', { count: result.length });
 
@@ -110,7 +114,9 @@ export async function parseWorkflowContent(content?: string): Promise<WorkflowTe
   try {
     const result = await invoke<WorkflowTemplate>('parse_workflow_content', { content: content });
 
-    logger.info('parse_workflow_content completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('parse_workflow_content completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
