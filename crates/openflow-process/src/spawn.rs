@@ -43,7 +43,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::RwLock;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 use crate::error::{ProcessError, ProcessResult};
 use crate::executor::{OutputSink, ProcessExecutor};

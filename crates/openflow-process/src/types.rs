@@ -9,10 +9,11 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 /// Process status.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProcessStatus {
     /// Process is starting up.
+    #[default]
     Starting,
     /// Process is running.
     Running,
@@ -41,11 +42,6 @@ impl ProcessStatus {
     }
 }
 
-impl Default for ProcessStatus {
-    fn default() -> Self {
-        Self::Starting
-    }
-}
 
 /// Configuration for spawning a process.
 #[derive(Debug, Clone)]
