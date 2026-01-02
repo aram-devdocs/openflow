@@ -38,6 +38,10 @@ pub mod validation;
 // Re-export commonly used types for convenience
 // Entity types
 pub use entities::{Chat, ChatRole, ChatSummary, ChatWithMessageCount};
+pub use entities::{
+    ExecutionProcess, OutputType, ProcessOutputEvent, ProcessStatus, ProcessStatusEvent,
+    ProcessSummary, RunReason,
+};
 pub use entities::{Message, MessageRole, MessageSummary};
 pub use entities::{Project, ProjectSummary, ProjectWithStats};
 pub use entities::{Task, TaskStatus, TaskSummary, TaskWithChatCount};
@@ -46,6 +50,10 @@ pub use requests::{CreateChatRequest, UpdateChatRequest};
 pub use requests::{
     AppendMessageContentRequest, CreateMessageRequest, SetMessageStreamingRequest,
     UpdateMessageRequest,
+};
+pub use requests::{
+    CreateProcessRequest, KillProcessRequest, ListProcessesRequest, ResizeProcessRequest,
+    SendProcessInputRequest, UpdateProcessRequest,
 };
 pub use requests::{CreateProjectRequest, UpdateProjectRequest};
 pub use requests::{CreateTaskRequest, UpdateTaskRequest};
