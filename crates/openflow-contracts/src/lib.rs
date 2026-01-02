@@ -35,8 +35,9 @@ pub mod requests;
 pub mod responses;
 pub mod validation;
 
-// Re-export commonly used items for convenience
-pub use entities::*;
-pub use events::*;
-pub use requests::*;
-pub use responses::*;
+// Re-export commonly used types for convenience
+// Entity types
+pub use entities::{Project, ProjectSummary, ProjectWithStats};
+// Request types
+pub use requests::{CreateProjectRequest, UpdateProjectRequest};
+// Validation module is accessible via openflow_contracts::validation::

@@ -3,8 +3,12 @@
 //! Request types for API operations. These define the shape of
 //! data sent from frontend to backend for mutations.
 
+pub mod project;
+
+// Re-export request types for convenience
+pub use project::{CreateProjectRequest, UpdateProjectRequest};
+
 // Request modules will be added in subsequent steps:
-// - project.rs (Step 0.3)
 // - task.rs (Step 0.4)
 // - chat.rs (Step 0.5)
 // - message.rs (Step 0.6)

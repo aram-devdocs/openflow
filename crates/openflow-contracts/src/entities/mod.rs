@@ -4,8 +4,12 @@
 //! These are the primary data structures stored in the database
 //! and transferred between frontend and backend.
 
+pub mod project;
+
+// Re-export entity types for convenience
+pub use project::{Project, ProjectSummary, ProjectWithStats};
+
 // Entity modules will be added in subsequent steps:
-// - project.rs (Step 0.3)
 // - task.rs (Step 0.4)
 // - chat.rs (Step 0.5)
 // - message.rs (Step 0.6)
