@@ -11,8 +11,8 @@
 use tauri::{AppHandle, Emitter, State};
 
 use crate::commands::AppState;
-use crate::services::{ProcessService, TerminalService};
-use crate::types::ExecutionProcess;
+use openflow_contracts::{ExecutionProcess, SpawnTerminalRequest};
+use openflow_core::services::{process, terminal};
 
 /// Request structure for spawning a terminal.
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -32,16 +32,25 @@ pub struct SpawnTerminalInput {
     pub rows: Option<u16>,
 }
 
-impl From<SpawnTerminalInput> for crate::services::terminal_service::SpawnTerminalRequest {
+impl From<SpawnTerminalInput> for SpawnTerminalRequest {
     fn from(input: SpawnTerminalInput) -> Self {
-        Self {
-            project_id: input.project_id,
-            chat_id: input.chat_id,
-            cwd: input.cwd.map(std::path::PathBuf::from),
-            shell: input.shell,
-            cols: input.cols,
-            rows: input.rows,
+        let mut request = SpawnTerminalRequest::new(&input.project_id);
+        if let Some(chat_id) = input.chat_id {
+            request = request.with_chat_id(chat_id);
         }
+        if let Some(cwd) = input.cwd {
+            request = request.with_cwd(cwd);
+        }
+        if let Some(shell) = input.shell {
+            request = request.with_shell(shell);
+        }
+        if let Some(cols) = input.cols {
+            request = request.with_cols(cols);
+        }
+        if let Some(rows) = input.rows {
+            request = request.with_rows(rows);
+        }
+        request
     }
 }
 
@@ -72,12 +81,12 @@ pub async fn spawn_terminal(
     let pool = state.db.lock().await;
     let request = input.into();
 
-    let process = TerminalService::spawn_terminal(&pool, &state.process_service, request)
+    let process = terminal::spawn_terminal(&pool, &state.process_service, request)
         .await
         .map_err(|e| e.to_string())?;
 
     // Emit process status event for the newly spawned terminal
-    let event = ProcessService::create_status_event(&process).map_err(|e| e.to_string())?;
+    let event = process::create_status_event(&process);
     let _ = app_handle.emit(&format!("process-status-{}", process.id), &event);
 
     Ok(process)
@@ -92,5 +101,20 @@ pub async fn spawn_terminal(
 /// The shell command path (e.g., "/bin/bash", "cmd.exe").
 #[tauri::command]
 pub fn get_default_shell() -> Result<String, String> {
-    TerminalService::get_default_shell().map_err(|e| e.to_string())
+    terminal::get_default_shell().map_err(|e| e.to_string())
+}
+
+/// Get the user's default shell with detailed response.
+///
+/// Returns the shell command along with the extracted shell name
+/// and whether the shell is a recognized type.
+///
+/// # Returns
+/// A `DefaultShellResponse` containing:
+/// - `shell`: Full path to the shell (e.g., "/bin/bash")
+/// - `shell_name`: Just the shell name (e.g., "bash")
+/// - `is_recognized`: Whether this is a known shell type
+#[tauri::command]
+pub fn get_default_shell_response() -> Result<openflow_contracts::DefaultShellResponse, String> {
+    terminal::get_default_shell_response().map_err(|e| e.to_string())
 }

@@ -43,7 +43,7 @@ use typeshare::typeshare;
 /// @entity
 /// @table: executor_profiles
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct ExecutorProfile {
     /// Unique identifier (UUID)

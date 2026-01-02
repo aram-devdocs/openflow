@@ -10,11 +10,13 @@ pub mod git;
 pub mod message;
 pub mod process;
 pub mod project;
+pub mod search;
+pub mod settings;
 pub mod task;
 pub mod workflow;
 
 // Re-export entity types for convenience
-pub use chat::{Chat, ChatRole, ChatSummary, ChatWithMessageCount};
+pub use chat::{Chat, ChatRole, ChatSummary, ChatWithMessageCount, ChatWithMessages};
 pub use executor::{CliToolType, ExecutorProfile, ExecutorProfileSummary};
 pub use git::{
     Branch, Commit, CommitSummary, DiffHunk, FileChangeType, FileDiff, FileDiffSummary,
@@ -27,7 +29,9 @@ pub use process::{
     ProcessSummary, RunReason,
 };
 pub use project::{Project, ProjectSummary, ProjectWithStats};
-pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount};
+pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
+pub use search::{SearchResult, SearchResultType};
+pub use settings::{Setting, SettingsMap};
 pub use workflow::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,

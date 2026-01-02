@@ -14,6 +14,7 @@ export * from './useChats';
 export * from './useMessages';
 export * from './useProcesses';
 export * from './useProcessOutput';
+export * from './useDataSync';
 export * from './useExecutorProfiles';
 export * from './useClaudeEvents';
 export * from './useSettings';

@@ -26,8 +26,9 @@ use crate::validation::{
 /// # Serialization
 /// Serialized as lowercase strings: "user", "assistant", "system"
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
+#[sqlx(rename_all = "lowercase")]
 pub enum MessageRole {
     /// Human user input
     User,
@@ -126,7 +127,7 @@ impl MessageRole {
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Message {
     /// Unique identifier (UUID v4)

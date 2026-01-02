@@ -6,10 +6,10 @@
 use tauri::State;
 
 use crate::commands::AppState;
-use crate::services::ChatService;
-use crate::types::{
+use openflow_contracts::{
     Chat, ChatWithMessages, CreateChatRequest, ExecutionProcess, UpdateChatRequest,
 };
+use openflow_core::services::chat;
 
 /// List chats for a task.
 ///
@@ -20,7 +20,7 @@ use crate::types::{
 #[tauri::command]
 pub async fn list_chats(state: State<'_, AppState>, task_id: String) -> Result<Vec<Chat>, String> {
     let pool = state.db.lock().await;
-    ChatService::list(&pool, &task_id)
+    chat::list(&pool, &task_id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -31,7 +31,7 @@ pub async fn list_chats(state: State<'_, AppState>, task_id: String) -> Result<V
 #[tauri::command]
 pub async fn get_chat(state: State<'_, AppState>, id: String) -> Result<ChatWithMessages, String> {
     let pool = state.db.lock().await;
-    ChatService::get(&pool, &id)
+    chat::get(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -45,7 +45,7 @@ pub async fn create_chat(
     request: CreateChatRequest,
 ) -> Result<Chat, String> {
     let pool = state.db.lock().await;
-    ChatService::create(&pool, request)
+    chat::create(&pool, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -60,7 +60,7 @@ pub async fn update_chat(
     request: UpdateChatRequest,
 ) -> Result<Chat, String> {
     let pool = state.db.lock().await;
-    ChatService::update(&pool, &id, request)
+    chat::update(&pool, &id, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -71,7 +71,7 @@ pub async fn update_chat(
 #[tauri::command]
 pub async fn delete_chat(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    ChatService::delete(&pool, &id)
+    chat::delete(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -82,7 +82,7 @@ pub async fn delete_chat(state: State<'_, AppState>, id: String) -> Result<(), S
 #[tauri::command]
 pub async fn archive_chat(state: State<'_, AppState>, id: String) -> Result<Chat, String> {
     let pool = state.db.lock().await;
-    ChatService::archive(&pool, &id)
+    chat::archive(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -93,7 +93,7 @@ pub async fn archive_chat(state: State<'_, AppState>, id: String) -> Result<Chat
 #[tauri::command]
 pub async fn unarchive_chat(state: State<'_, AppState>, id: String) -> Result<Chat, String> {
     let pool = state.db.lock().await;
-    ChatService::unarchive(&pool, &id)
+    chat::unarchive(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -111,7 +111,7 @@ pub async fn list_standalone_chats(
     project_id: String,
 ) -> Result<Vec<Chat>, String> {
     let pool = state.db.lock().await;
-    ChatService::list_standalone(&pool, &project_id)
+    chat::list_standalone(&pool, &project_id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -129,7 +129,7 @@ pub async fn list_chats_by_project(
     project_id: String,
 ) -> Result<Vec<Chat>, String> {
     let pool = state.db.lock().await;
-    ChatService::list_by_project(&pool, &project_id)
+    chat::list_by_project(&pool, &project_id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -140,7 +140,7 @@ pub async fn list_chats_by_project(
 #[tauri::command]
 pub async fn list_archived_chats(state: State<'_, AppState>) -> Result<Vec<Chat>, String> {
     let pool = state.db.lock().await;
-    ChatService::list_archived(&pool)
+    chat::list_archived(&pool)
         .await
         .map_err(|e| e.to_string())
 }
@@ -158,7 +158,7 @@ pub async fn list_archived_chats(state: State<'_, AppState>) -> Result<Vec<Chat>
 #[tauri::command]
 pub async fn toggle_step_complete(state: State<'_, AppState>, id: String) -> Result<Chat, String> {
     let pool = state.db.lock().await;
-    ChatService::toggle_step_complete(&pool, &id)
+    chat::toggle_step_complete(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }

@@ -37,7 +37,7 @@ pub mod validation;
 
 // Re-export commonly used types for convenience
 // Entity types
-pub use entities::{Chat, ChatRole, ChatSummary, ChatWithMessageCount};
+pub use entities::{Chat, ChatRole, ChatSummary, ChatWithMessageCount, ChatWithMessages};
 pub use entities::{CliToolType, ExecutorProfile, ExecutorProfileSummary};
 pub use entities::{
     ExecutionProcess, OutputType, ProcessOutputEvent, ProcessStatus, ProcessStatusEvent,
@@ -50,7 +50,9 @@ pub use entities::{
 };
 pub use entities::{Message, MessageRole, MessageSummary};
 pub use entities::{Project, ProjectSummary, ProjectWithStats};
-pub use entities::{Task, TaskStatus, TaskSummary, TaskWithChatCount};
+pub use entities::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
+pub use entities::{SearchResult, SearchResultType};
+pub use entities::{Setting, SettingsMap};
 pub use entities::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,
@@ -73,10 +75,17 @@ pub use requests::{
 };
 pub use requests::{
     CreateProcessRequest, KillProcessRequest, ListProcessesRequest, ResizeProcessRequest,
-    SendProcessInputRequest, UpdateProcessRequest,
+    SendProcessInputRequest, StartProcessRequest, UpdateProcessRequest,
 };
 pub use requests::{CreateProjectRequest, UpdateProjectRequest};
+pub use requests::SearchRequest;
+pub use requests::{
+    DeleteAllSettingsRequest, DeleteAllSettingsResponse, DeleteSettingRequest,
+    GetAllSettingsRequest, GetSettingOrDefaultRequest, GetSettingRequest, SetSettingRequest,
+    SettingExistsRequest, SettingExistsResponse,
+};
 pub use requests::{CreateTaskRequest, UpdateTaskRequest};
+pub use requests::{DefaultShellResponse, GetDefaultShellRequest, SpawnTerminalRequest};
 pub use requests::{
     ApplyWorkflowToTaskRequest, CreateWorkflowTemplateRequest, DeleteWorkflowTemplateRequest,
     GetWorkflowTemplateRequest, ListWorkflowTemplatesRequest, ParseWorkflowRequest,

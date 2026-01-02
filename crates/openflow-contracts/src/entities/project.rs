@@ -51,7 +51,7 @@ use crate::validation::{
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
     /// Unique identifier (UUID v4)
@@ -217,8 +217,10 @@ impl From<&Project> for ProjectSummary {
 /// Extends the base Project with aggregated task counts,
 /// useful for dashboard views.
 ///
+/// Note: Not using #[typeshare] due to flatten not being supported.
+/// TypeScript type is manually defined in packages/generated/types-manual.ts
+///
 /// @derived_from: Project
-#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectWithStats {

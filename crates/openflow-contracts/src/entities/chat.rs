@@ -27,8 +27,9 @@ use crate::validation::{
 /// # Serialization
 /// Serialized as lowercase strings: "main", "review", "test", "terminal"
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
+#[sqlx(rename_all = "lowercase")]
 pub enum ChatRole {
     /// Primary development chat
     Main,
@@ -150,7 +151,7 @@ impl ChatRole {
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Chat {
     /// Unique identifier (UUID v4)
@@ -355,8 +356,10 @@ impl From<&Chat> for ChatSummary {
 /// Extends the base Chat with the number of associated messages,
 /// useful for displaying chat cards in the UI.
 ///
+/// Note: Not using #[typeshare] due to flatten not being supported.
+/// TypeScript type is manually defined in packages/generated/types-manual.ts
+///
 /// @derived_from: Chat
-#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatWithMessageCount {
@@ -380,6 +383,64 @@ impl ChatWithMessageCount {
     /// Create with a specific message count
     pub fn with_count(chat: Chat, message_count: i32) -> Self {
         Self { chat, message_count }
+    }
+}
+
+// =============================================================================
+// Chat with Messages
+// =============================================================================
+
+/// Chat with its associated messages
+///
+/// Used when returning a chat along with all its messages from the service layer.
+/// This is the typical response type for `get` operations that need to include
+/// the full conversation history.
+///
+/// Note: Not using #[typeshare] due to flatten not being supported.
+/// TypeScript type is manually defined in packages/generated/types-manual.ts
+///
+/// @derived_from: Chat
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatWithMessages {
+    /// The chat data
+    #[serde(flatten)]
+    pub chat: Chat,
+
+    /// All messages in this chat, ordered by created_at ASC
+    pub messages: Vec<super::message::Message>,
+}
+
+impl ChatWithMessages {
+    /// Create a new ChatWithMessages with no messages
+    pub fn new(chat: Chat) -> Self {
+        Self {
+            chat,
+            messages: Vec::new(),
+        }
+    }
+
+    /// Create with messages
+    pub fn with_messages(chat: Chat, messages: Vec<super::message::Message>) -> Self {
+        Self { chat, messages }
+    }
+
+    /// Get the number of messages
+    pub fn message_count(&self) -> usize {
+        self.messages.len()
+    }
+
+    /// Check if the chat has any messages
+    pub fn has_messages(&self) -> bool {
+        !self.messages.is_empty()
+    }
+
+    /// Convert to ChatWithMessageCount
+    pub fn into_with_count(self) -> ChatWithMessageCount {
+        ChatWithMessageCount {
+            message_count: self.messages.len() as i32,
+            chat: self.chat,
+        }
     }
 }
 

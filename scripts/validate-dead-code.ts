@@ -160,6 +160,8 @@ const IGNORED_DEPENDENCIES = [
   // Router CLI (used in scripts)
   '@tanstack/router-cli',
   '@tanstack/router-plugin',
+  // Scripts (used in npm scripts, not TypeScript imports)
+  'concurrently',
 ];
 
 /**

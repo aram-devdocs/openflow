@@ -495,16 +495,16 @@ impl DataChangedEvent {
 ///
 /// # Example (Subscribe)
 /// ```json
-/// { "type": "subscribe", "channel": "data-changed" }
+/// { "type": "subscribe", "content": { "channel": "data-changed" } }
 /// ```
 ///
 /// # Example (Unsubscribe)
 /// ```json
-/// { "type": "unsubscribe", "channel": "process-output-abc123" }
+/// { "type": "unsubscribe", "content": { "channel": "process-output-abc123" } }
 /// ```
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(tag = "type", content = "content", rename_all = "snake_case")]
 pub enum WsClientMessage {
     /// Subscribe to an event channel
     Subscribe {
@@ -547,20 +547,27 @@ impl WsClientMessage {
 ///
 /// # Example (Connected)
 /// ```json
-/// { "type": "connected", "clientId": "abc-123" }
+/// { "type": "connected", "content": { "clientId": "abc-123" } }
 /// ```
 ///
 /// # Example (Event)
 /// ```json
 /// {
 ///   "type": "event",
-///   "channel": "data-changed",
-///   "payload": { "entity": "project", "action": "created", ... }
+///   "content": {
+///     "channel": "data-changed",
+///     "payload": { "entity": "project", "action": "created", ... }
+///   }
 /// }
+/// ```
+///
+/// # Example (Shutdown)
+/// ```json
+/// { "type": "shutdown", "content": { "reason": "Server is shutting down" } }
 /// ```
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "type", rename_all = "snake_case")]
+#[serde(tag = "type", content = "content", rename_all = "snake_case")]
 pub enum WsServerMessage {
     /// Connection established
     Connected {
@@ -590,6 +597,14 @@ pub enum WsServerMessage {
     Error {
         /// Error description
         error: String,
+    },
+    /// Server shutdown notification
+    ///
+    /// Sent to all clients when the server is gracefully shutting down.
+    /// Clients should close their connections and attempt to reconnect later.
+    Shutdown {
+        /// Reason for shutdown
+        reason: String,
     },
 }
 
@@ -635,6 +650,15 @@ impl WsServerMessage {
         }
     }
 
+    /// Create a shutdown message
+    ///
+    /// Used to notify clients that the server is shutting down gracefully.
+    pub fn shutdown(reason: impl Into<String>) -> Self {
+        WsServerMessage::Shutdown {
+            reason: reason.into(),
+        }
+    }
+
     /// Create an event message from a DataChangedEvent
     pub fn data_changed(event: &DataChangedEvent) -> Self {
         WsServerMessage::Event {
@@ -670,7 +694,7 @@ impl WsServerMessage {
 /// The backend can use this to broadcast any type of event.
 #[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "eventType", rename_all = "snake_case")]
+#[serde(tag = "eventType", content = "data", rename_all = "snake_case")]
 pub enum Event {
     /// Data changed event
     DataChanged(DataChangedEvent),
@@ -1103,6 +1127,17 @@ mod tests {
     }
 
     #[test]
+    fn test_ws_server_message_shutdown() {
+        let msg = WsServerMessage::shutdown("Server is shutting down");
+
+        if let WsServerMessage::Shutdown { reason } = msg {
+            assert_eq!(reason, "Server is shutting down");
+        } else {
+            panic!("Expected Shutdown variant");
+        }
+    }
+
+    #[test]
     fn test_ws_server_message_serialization() {
         let connected = WsServerMessage::connected("client-123");
         let json = serde_json::to_string(&connected).unwrap();
@@ -1113,6 +1148,15 @@ mod tests {
         let pong = WsServerMessage::pong();
         let pong_json = serde_json::to_string(&pong).unwrap();
         assert!(pong_json.contains("\"type\":\"pong\""));
+
+        // Test shutdown serialization
+        let shutdown = WsServerMessage::shutdown("Maintenance");
+        let shutdown_json = serde_json::to_string(&shutdown).unwrap();
+        assert!(shutdown_json.contains("\"type\":\"shutdown\""));
+        assert!(shutdown_json.contains("\"reason\":\"Maintenance\""));
+
+        let deserialized: WsServerMessage = serde_json::from_str(&shutdown_json).unwrap();
+        assert_eq!(shutdown, deserialized);
     }
 
     // =========================================================================

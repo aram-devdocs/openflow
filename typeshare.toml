@@ -1,0 +1,38 @@
+# Typeshare Configuration
+#
+# This configuration controls how Rust types are converted to TypeScript.
+# See: https://1password.github.io/typeshare/usage/configuration.html
+#
+# Primary source: crates/openflow-contracts/src
+# Output: packages/generated/types.ts
+
+[typescript]
+# Type mappings for custom types
+# Map Rust types to TypeScript types when needed
+
+[typescript.type_mappings]
+# DateTime types - using ISO 8601 strings
+"DateTime<Utc>" = "string"
+"DateTime" = "string"
+"NaiveDateTime" = "string"
+
+# UUID - using string representation
+"Uuid" = "string"
+
+# Duration types
+"Duration" = "number"
+
+# Integer types - TypeScript uses number for all numeric types
+"i64" = "number"
+"u64" = "number"
+
+# Path types - using string representation
+"PathBuf" = "string"
+"Path" = "string"
+
+# JSON value types - using unknown for arbitrary JSON
+"Value" = "unknown"
+"serde_json::Value" = "unknown"
+
+# Generic Result type - we handle errors at the application level
+"Result" = "T"

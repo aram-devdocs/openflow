@@ -7,6 +7,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use super::chat::Chat;
 use crate::validation::{
     validate_required_string, validate_string_length, Validate, ValidationCollector,
     ValidationResult,
@@ -24,8 +25,9 @@ use crate::validation::{
 /// # Serialization
 /// Serialized as lowercase strings: "todo", "inprogress", "inreview", "done", "cancelled"
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
+#[sqlx(rename_all = "lowercase")]
 pub enum TaskStatus {
     /// Task has not been started
     Todo,
@@ -137,7 +139,7 @@ impl TaskStatus {
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Task {
     /// Unique identifier (UUID v4)
@@ -298,8 +300,10 @@ impl From<&Task> for TaskSummary {
 /// Extends the base Task with the number of associated chats,
 /// useful for displaying task cards in the UI.
 ///
+/// Note: Not using #[typeshare] due to flatten not being supported.
+/// TypeScript type is manually defined in packages/generated/types-manual.ts
+///
 /// @derived_from: Task
-#[typeshare]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TaskWithChatCount {
@@ -323,6 +327,47 @@ impl TaskWithChatCount {
     /// Create with a specific chat count
     pub fn with_count(task: Task, chat_count: i32) -> Self {
         Self { task, chat_count }
+    }
+}
+
+// =============================================================================
+// Task with Chats (for get operations)
+// =============================================================================
+
+/// Task with its associated chats
+///
+/// Used for the `get` operation to return a task with all its chats.
+/// This is the primary response type when fetching a single task.
+///
+/// @derived_from: Task
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskWithChats {
+    /// The task data
+    pub task: Task,
+
+    /// All chats associated with this task
+    pub chats: Vec<Chat>,
+}
+
+impl TaskWithChats {
+    /// Create a new TaskWithChats with empty chats
+    pub fn new(task: Task) -> Self {
+        Self {
+            task,
+            chats: Vec::new(),
+        }
+    }
+
+    /// Create with chats
+    pub fn with_chats(task: Task, chats: Vec<Chat>) -> Self {
+        Self { task, chats }
+    }
+
+    /// Get the number of chats
+    pub fn chat_count(&self) -> usize {
+        self.chats.len()
     }
 }
 

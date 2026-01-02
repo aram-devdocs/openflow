@@ -1,0 +1,41 @@
+[package]
+name = "openflow-process"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Process management and PTY execution for OpenFlow"
+
+[dependencies]
+# Internal crates
+openflow-contracts.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Async runtime
+tokio = { workspace = true, features = ["sync", "io-util", "time", "process"] }
+
+# Error handling
+thiserror.workspace = true
+
+# PTY management
+portable-pty.workspace = true
+
+# Logging
+tracing.workspace = true
+
+# Time & IDs
+chrono.workspace = true
+uuid.workspace = true
+
+# Utilities
+async-trait = "0.1"
+
+# Static assertions for type checking
+static_assertions = "1.1"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tempfile.workspace = true

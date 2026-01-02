@@ -331,6 +331,8 @@ function validate(verbose = false): ValidationResult {
       // Exclude types files
       `${PACKAGE_PATHS.QUERIES}/**/types.ts`,
       `${PACKAGE_PATHS.QUERIES}/**/types/**`,
+      // Exclude transport layer (implements transport, not queries)
+      `${PACKAGE_PATHS.QUERIES}/transport/**`,
     ],
   });
 

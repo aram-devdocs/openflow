@@ -1,13 +1,13 @@
 //! Tauri commands for task operations.
 //!
 //! These commands provide the IPC interface for task CRUD operations.
-//! Each command is a thin wrapper around TaskService methods.
+//! Each command is a thin wrapper around openflow_core::services::task functions.
 
 use tauri::State;
 
 use crate::commands::AppState;
-use crate::services::TaskService;
-use crate::types::{CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest};
+use openflow_contracts::{CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest};
+use openflow_core::services::task;
 
 /// List tasks for a project with optional filters.
 ///
@@ -23,7 +23,7 @@ pub async fn list_tasks(
     include_archived: Option<bool>,
 ) -> Result<Vec<Task>, String> {
     let pool = state.db.lock().await;
-    TaskService::list(
+    task::list(
         &pool,
         &project_id,
         status,
@@ -39,9 +39,7 @@ pub async fn list_tasks(
 #[tauri::command]
 pub async fn get_task(state: State<'_, AppState>, id: String) -> Result<TaskWithChats, String> {
     let pool = state.db.lock().await;
-    TaskService::get(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    task::get(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Create a new task.
@@ -53,7 +51,7 @@ pub async fn create_task(
     request: CreateTaskRequest,
 ) -> Result<Task, String> {
     let pool = state.db.lock().await;
-    TaskService::create(&pool, request)
+    task::create(&pool, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -68,7 +66,7 @@ pub async fn update_task(
     request: UpdateTaskRequest,
 ) -> Result<Task, String> {
     let pool = state.db.lock().await;
-    TaskService::update(&pool, &id, request)
+    task::update(&pool, &id, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -79,7 +77,7 @@ pub async fn update_task(
 #[tauri::command]
 pub async fn archive_task(state: State<'_, AppState>, id: String) -> Result<Task, String> {
     let pool = state.db.lock().await;
-    TaskService::archive(&pool, &id)
+    task::archive(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -90,7 +88,7 @@ pub async fn archive_task(state: State<'_, AppState>, id: String) -> Result<Task
 #[tauri::command]
 pub async fn unarchive_task(state: State<'_, AppState>, id: String) -> Result<Task, String> {
     let pool = state.db.lock().await;
-    TaskService::unarchive(&pool, &id)
+    task::unarchive(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -101,7 +99,7 @@ pub async fn unarchive_task(state: State<'_, AppState>, id: String) -> Result<Ta
 #[tauri::command]
 pub async fn delete_task(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    TaskService::delete(&pool, &id)
+    task::delete(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -118,7 +116,7 @@ pub async fn delete_task(state: State<'_, AppState>, id: String) -> Result<(), S
 #[tauri::command]
 pub async fn duplicate_task(state: State<'_, AppState>, id: String) -> Result<Task, String> {
     let pool = state.db.lock().await;
-    TaskService::duplicate(&pool, &id)
+    task::duplicate(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }

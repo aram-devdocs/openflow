@@ -1,0 +1,42 @@
+[package]
+name = "openflow-server"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "HTTP/WebSocket server for OpenFlow"
+
+[[bin]]
+name = "openflow-server"
+path = "src/main.rs"
+
+[features]
+default = []
+# Enable test utilities (e.g., AppState::new_test)
+test-utils = []
+
+[dependencies]
+openflow-contracts.workspace = true
+openflow-db.workspace = true
+openflow-core.workspace = true
+openflow-process.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tokio-tungstenite.workspace = true
+futures.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+openflow-db = { workspace = true, features = ["test-utils"] }
+tempfile.workspace = true
+reqwest.workspace = true

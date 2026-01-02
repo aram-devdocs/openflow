@@ -9,7 +9,10 @@ pub mod git;
 pub mod message;
 pub mod process;
 pub mod project;
+pub mod search;
+pub mod settings;
 pub mod task;
+pub mod terminal;
 pub mod workflow;
 
 // Re-export request types for convenience
@@ -30,10 +33,17 @@ pub use message::{
 };
 pub use process::{
     CreateProcessRequest, KillProcessRequest, ListProcessesRequest, ResizeProcessRequest,
-    SendProcessInputRequest, UpdateProcessRequest,
+    SendProcessInputRequest, StartProcessRequest, UpdateProcessRequest,
 };
 pub use project::{CreateProjectRequest, UpdateProjectRequest};
+pub use search::SearchRequest;
+pub use settings::{
+    DeleteAllSettingsRequest, DeleteAllSettingsResponse, DeleteSettingRequest,
+    GetAllSettingsRequest, GetSettingOrDefaultRequest, GetSettingRequest, SetSettingRequest,
+    SettingExistsRequest, SettingExistsResponse,
+};
 pub use task::{CreateTaskRequest, UpdateTaskRequest};
+pub use terminal::{DefaultShellResponse, GetDefaultShellRequest, SpawnTerminalRequest};
 pub use workflow::{
     ApplyWorkflowToTaskRequest, CreateWorkflowTemplateRequest, DeleteWorkflowTemplateRequest,
     GetWorkflowTemplateRequest, ListWorkflowTemplatesRequest, ParseWorkflowRequest,

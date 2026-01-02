@@ -23,8 +23,9 @@ use crate::validation::{
 /// # Serialization
 /// Serialized as lowercase strings: "running", "completed", "failed", "killed"
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
+#[sqlx(rename_all = "lowercase")]
 pub enum ProcessStatus {
     /// Process is currently running
     Running,
@@ -128,8 +129,9 @@ impl ProcessStatus {
 /// # Serialization
 /// Serialized as lowercase strings: "setupscript", "cleanupscript", etc.
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
+#[sqlx(rename_all = "lowercase")]
 pub enum RunReason {
     /// Setup script executed when creating a worktree
     Setupscript,
@@ -344,7 +346,7 @@ impl OutputType {
 /// }
 /// ```
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct ExecutionProcess {
     /// Unique identifier (UUID v4)

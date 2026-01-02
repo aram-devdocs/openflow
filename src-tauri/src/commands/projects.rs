@@ -1,13 +1,13 @@
 //! Tauri commands for project operations.
 //!
 //! These commands provide the IPC interface for project CRUD operations.
-//! Each command is a thin wrapper around ProjectService methods.
+//! Each command is a thin wrapper around openflow_core::services::project functions.
 
 use tauri::State;
 
 use crate::commands::AppState;
-use crate::services::ProjectService;
-use crate::types::{CreateProjectRequest, Project, UpdateProjectRequest};
+use openflow_contracts::{CreateProjectRequest, Project, UpdateProjectRequest};
+use openflow_core::services::project;
 
 /// List all projects.
 ///
@@ -15,7 +15,7 @@ use crate::types::{CreateProjectRequest, Project, UpdateProjectRequest};
 #[tauri::command]
 pub async fn list_projects(state: State<'_, AppState>) -> Result<Vec<Project>, String> {
     let pool = state.db.lock().await;
-    ProjectService::list(&pool).await.map_err(|e| e.to_string())
+    project::list(&pool).await.map_err(|e| e.to_string())
 }
 
 /// Get a single project by ID.
@@ -24,9 +24,7 @@ pub async fn list_projects(state: State<'_, AppState>) -> Result<Vec<Project>, S
 #[tauri::command]
 pub async fn get_project(state: State<'_, AppState>, id: String) -> Result<Project, String> {
     let pool = state.db.lock().await;
-    ProjectService::get(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    project::get(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Create a new project.
@@ -38,7 +36,7 @@ pub async fn create_project(
     request: CreateProjectRequest,
 ) -> Result<Project, String> {
     let pool = state.db.lock().await;
-    ProjectService::create(&pool, request)
+    project::create(&pool, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -53,7 +51,7 @@ pub async fn update_project(
     request: UpdateProjectRequest,
 ) -> Result<Project, String> {
     let pool = state.db.lock().await;
-    ProjectService::update(&pool, &id, request)
+    project::update(&pool, &id, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -64,7 +62,7 @@ pub async fn update_project(
 #[tauri::command]
 pub async fn delete_project(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    ProjectService::delete(&pool, &id)
+    project::delete(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -76,7 +74,7 @@ pub async fn delete_project(state: State<'_, AppState>, id: String) -> Result<()
 #[tauri::command]
 pub async fn archive_project(state: State<'_, AppState>, id: String) -> Result<Project, String> {
     let pool = state.db.lock().await;
-    ProjectService::archive(&pool, &id)
+    project::archive(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -88,7 +86,7 @@ pub async fn archive_project(state: State<'_, AppState>, id: String) -> Result<P
 #[tauri::command]
 pub async fn unarchive_project(state: State<'_, AppState>, id: String) -> Result<Project, String> {
     let pool = state.db.lock().await;
-    ProjectService::unarchive(&pool, &id)
+    project::unarchive(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -99,7 +97,7 @@ pub async fn unarchive_project(state: State<'_, AppState>, id: String) -> Result
 #[tauri::command]
 pub async fn list_archived_projects(state: State<'_, AppState>) -> Result<Vec<Project>, String> {
     let pool = state.db.lock().await;
-    ProjectService::list_archived(&pool)
+    project::list_archived(&pool)
         .await
         .map_err(|e| e.to_string())
 }

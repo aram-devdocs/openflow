@@ -1,9 +1,45 @@
+/**
+ * Vite Configuration
+ *
+ * This config supports both Tauri and standalone browser modes.
+ *
+ * ## Environment Variables
+ *
+ * The following environment variables are supported:
+ *
+ * | Variable | Default | Description |
+ * |----------|---------|-------------|
+ * | `VITE_BACKEND_URL` | `http://localhost:3001` | Backend server URL (HTTP mode only) |
+ *
+ * ## Development Modes
+ *
+ * 1. **Tauri Mode** (default): `pnpm dev`
+ *    - Frontend connects to backend via Tauri IPC
+ *    - VITE_BACKEND_URL is ignored (IPC is used instead)
+ *
+ * 2. **Browser Mode**: `pnpm dev:web` (with separate `pnpm dev:server`)
+ *    - Frontend connects to backend via HTTP/WebSocket
+ *    - Uses VITE_BACKEND_URL to connect to the server
+ *
+ * @see packages/queries/transport/index.ts - Transport abstraction
+ * @see CLAUDE.md - Flexible Backend Architecture
+ */
+
 import { resolve } from 'node:path';
 import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env file based on mode
+  const env = loadEnv(mode, process.cwd(), '');
+
+  // Log backend URL in development for debugging
+  if (mode === 'development' && env.VITE_BACKEND_URL) {
+    console.log(`[vite] Using backend URL: ${env.VITE_BACKEND_URL}`);
+  }
+
+  return {
   plugins: [TanStackRouterVite(), react()],
 
   resolve: {
@@ -40,4 +76,5 @@ export default defineConfig({
     // Produce sourcemaps for debug builds
     sourcemap: !!process.env.TAURI_DEBUG,
   },
+};
 });

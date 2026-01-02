@@ -598,6 +598,170 @@ impl Validate for ListProcessesRequest {
 }
 
 // =============================================================================
+// Start Process Request
+// =============================================================================
+
+/// Request to start (spawn) a process with specific configuration
+///
+/// This is used internally to configure how a process should be spawned,
+/// including PTY settings, working directory, and environment.
+///
+/// Unlike `CreateProcessRequest` which creates a database record,
+/// this defines the actual execution parameters.
+///
+/// # Example
+/// ```json
+/// {
+///   "command": "claude",
+///   "args": ["--output-format", "stream-json", "-p", "Hello"],
+///   "cwd": "/path/to/project",
+///   "env": {"NO_COLOR": "1"},
+///   "usePty": true,
+///   "ptyCols": 120,
+///   "ptyRows": 40
+/// }
+/// ```
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct StartProcessRequest {
+    /// Command to execute (e.g., "claude", "npm", "cargo")
+    /// @validate: required, min_length=1, max_length=1000
+    pub command: String,
+
+    /// Arguments to pass to the command
+    pub args: Vec<String>,
+
+    /// Working directory for the process
+    pub cwd: Option<std::path::PathBuf>,
+
+    /// Environment variables to set
+    pub env: std::collections::HashMap<String, String>,
+
+    /// Whether to use a PTY (pseudo-terminal)
+    pub use_pty: bool,
+
+    /// PTY columns (width) - only used if use_pty is true
+    pub pty_cols: Option<u16>,
+
+    /// PTY rows (height) - only used if use_pty is true
+    pub pty_rows: Option<u16>,
+}
+
+impl Default for StartProcessRequest {
+    fn default() -> Self {
+        Self {
+            command: String::new(),
+            args: Vec::new(),
+            cwd: None,
+            env: std::collections::HashMap::new(),
+            use_pty: false,
+            pty_cols: None,
+            pty_rows: None,
+        }
+    }
+}
+
+impl StartProcessRequest {
+    /// Create a new request with just a command
+    pub fn new(command: impl Into<String>) -> Self {
+        Self {
+            command: command.into(),
+            ..Default::default()
+        }
+    }
+
+    /// Create a request for a PTY-based process
+    pub fn pty(command: impl Into<String>, cols: u16, rows: u16) -> Self {
+        Self {
+            command: command.into(),
+            use_pty: true,
+            pty_cols: Some(cols),
+            pty_rows: Some(rows),
+            ..Default::default()
+        }
+    }
+
+    /// Create a request for a standard terminal (120x40)
+    pub fn terminal(command: impl Into<String>) -> Self {
+        Self::pty(command, 120, 40)
+    }
+
+    /// Add arguments to the command
+    pub fn with_args<I, S>(mut self, args: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        self.args = args.into_iter().map(|s| s.into()).collect();
+        self
+    }
+
+    /// Set the working directory
+    pub fn with_cwd(mut self, cwd: impl Into<std::path::PathBuf>) -> Self {
+        self.cwd = Some(cwd.into());
+        self
+    }
+
+    /// Set environment variables
+    pub fn with_env(mut self, env: std::collections::HashMap<String, String>) -> Self {
+        self.env = env;
+        self
+    }
+
+    /// Add a single environment variable
+    pub fn with_env_var(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        self.env.insert(key.into(), value.into());
+        self
+    }
+
+    /// Enable PTY mode with specified dimensions
+    pub fn with_pty(mut self, cols: u16, rows: u16) -> Self {
+        self.use_pty = true;
+        self.pty_cols = Some(cols);
+        self.pty_rows = Some(rows);
+        self
+    }
+}
+
+impl Validate for StartProcessRequest {
+    fn validate(&self) -> ValidationResult<()> {
+        ValidationCollector::new()
+            .validate(|| validate_required_string("command", &self.command))
+            .validate(|| validate_string_length("command", &self.command, None, Some(1000)))
+            .validate(|| {
+                if self.use_pty {
+                    if let Some(cols) = self.pty_cols {
+                        if cols == 0 {
+                            return Err(crate::validation::ValidationError::NumberMin {
+                                field: "pty_cols".to_string(),
+                                min: 1.0,
+                                actual: 0.0,
+                            });
+                        }
+                    }
+                }
+                Ok(())
+            })
+            .validate(|| {
+                if self.use_pty {
+                    if let Some(rows) = self.pty_rows {
+                        if rows == 0 {
+                            return Err(crate::validation::ValidationError::NumberMin {
+                                field: "pty_rows".to_string(),
+                                min: 1.0,
+                                actual: 0.0,
+                            });
+                        }
+                    }
+                }
+                Ok(())
+            })
+            .finish()
+    }
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 
@@ -1088,6 +1252,140 @@ mod tests {
         assert!(json.contains("\"limit\":10"));
 
         let deserialized: ListProcessesRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(request, deserialized);
+    }
+
+    // =========================================================================
+    // StartProcessRequest Tests
+    // =========================================================================
+
+    #[test]
+    fn test_start_process_request_new() {
+        let request = StartProcessRequest::new("claude");
+
+        assert!(request.validate().is_ok());
+        assert_eq!(request.command, "claude");
+        assert!(!request.use_pty);
+    }
+
+    #[test]
+    fn test_start_process_request_pty() {
+        let request = StartProcessRequest::pty("claude", 120, 40);
+
+        assert!(request.validate().is_ok());
+        assert_eq!(request.command, "claude");
+        assert!(request.use_pty);
+        assert_eq!(request.pty_cols, Some(120));
+        assert_eq!(request.pty_rows, Some(40));
+    }
+
+    #[test]
+    fn test_start_process_request_terminal() {
+        let request = StartProcessRequest::terminal("claude");
+
+        assert!(request.validate().is_ok());
+        assert!(request.use_pty);
+        assert_eq!(request.pty_cols, Some(120));
+        assert_eq!(request.pty_rows, Some(40));
+    }
+
+    #[test]
+    fn test_start_process_request_with_args() {
+        let request =
+            StartProcessRequest::new("claude").with_args(["--verbose", "-p", "hello"]);
+
+        assert!(request.validate().is_ok());
+        assert_eq!(request.args.len(), 3);
+        assert_eq!(request.args[0], "--verbose");
+    }
+
+    #[test]
+    fn test_start_process_request_with_cwd() {
+        let request = StartProcessRequest::new("claude").with_cwd("/path/to/project");
+
+        assert!(request.validate().is_ok());
+        assert_eq!(
+            request.cwd,
+            Some(std::path::PathBuf::from("/path/to/project"))
+        );
+    }
+
+    #[test]
+    fn test_start_process_request_with_env() {
+        let mut env = std::collections::HashMap::new();
+        env.insert("NO_COLOR".to_string(), "1".to_string());
+
+        let request = StartProcessRequest::new("claude").with_env(env);
+
+        assert!(request.validate().is_ok());
+        assert_eq!(request.env.get("NO_COLOR"), Some(&"1".to_string()));
+    }
+
+    #[test]
+    fn test_start_process_request_with_env_var() {
+        let request = StartProcessRequest::new("claude")
+            .with_env_var("NO_COLOR", "1")
+            .with_env_var("TERM", "dumb");
+
+        assert!(request.validate().is_ok());
+        assert_eq!(request.env.len(), 2);
+        assert_eq!(request.env.get("NO_COLOR"), Some(&"1".to_string()));
+        assert_eq!(request.env.get("TERM"), Some(&"dumb".to_string()));
+    }
+
+    #[test]
+    fn test_start_process_request_with_pty() {
+        let request = StartProcessRequest::new("claude").with_pty(80, 24);
+
+        assert!(request.validate().is_ok());
+        assert!(request.use_pty);
+        assert_eq!(request.pty_cols, Some(80));
+        assert_eq!(request.pty_rows, Some(24));
+    }
+
+    #[test]
+    fn test_start_process_request_empty_command() {
+        let request = StartProcessRequest::new("");
+
+        assert!(request.validate().is_err());
+    }
+
+    #[test]
+    fn test_start_process_request_command_too_long() {
+        let request = StartProcessRequest::new("a".repeat(1001));
+
+        assert!(request.validate().is_err());
+    }
+
+    #[test]
+    fn test_start_process_request_zero_cols() {
+        let request = StartProcessRequest::pty("claude", 0, 40);
+
+        assert!(request.validate().is_err());
+    }
+
+    #[test]
+    fn test_start_process_request_zero_rows() {
+        let request = StartProcessRequest::pty("claude", 120, 0);
+
+        assert!(request.validate().is_err());
+    }
+
+    #[test]
+    fn test_start_process_request_serialization() {
+        let request = StartProcessRequest::terminal("claude")
+            .with_args(["--verbose"])
+            .with_cwd("/tmp")
+            .with_env_var("NO_COLOR", "1");
+
+        let json = serde_json::to_string(&request).unwrap();
+
+        assert!(json.contains("\"command\":\"claude\""));
+        assert!(json.contains("\"usePty\":true"));
+        assert!(json.contains("\"ptyCols\":120"));
+        assert!(json.contains("\"ptyRows\":40"));
+
+        let deserialized: StartProcessRequest = serde_json::from_str(&json).unwrap();
         assert_eq!(request, deserialized);
     }
 }
