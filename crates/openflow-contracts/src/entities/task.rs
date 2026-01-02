@@ -25,11 +25,12 @@ use crate::validation::{
 /// # Serialization
 /// Serialized as lowercase strings: "todo", "inprogress", "inreview", "done", "cancelled"
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
 pub enum TaskStatus {
     /// Task has not been started
+    #[default]
     Todo,
     /// Task is currently being worked on
     Inprogress,
@@ -41,11 +42,6 @@ pub enum TaskStatus {
     Cancelled,
 }
 
-impl Default for TaskStatus {
-    fn default() -> Self {
-        Self::Todo
-    }
-}
 
 impl std::fmt::Display for TaskStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

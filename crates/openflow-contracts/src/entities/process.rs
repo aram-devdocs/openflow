@@ -23,11 +23,12 @@ use crate::validation::{
 /// # Serialization
 /// Serialized as lowercase strings: "running", "completed", "failed", "killed"
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
 pub enum ProcessStatus {
     /// Process is currently running
+    #[default]
     Running,
     /// Process completed successfully (exit code 0)
     Completed,
@@ -37,11 +38,6 @@ pub enum ProcessStatus {
     Killed,
 }
 
-impl Default for ProcessStatus {
-    fn default() -> Self {
-        Self::Running
-    }
-}
 
 impl std::fmt::Display for ProcessStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -129,7 +125,7 @@ impl ProcessStatus {
 /// # Serialization
 /// Serialized as lowercase strings: "setupscript", "cleanupscript", etc.
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
 pub enum RunReason {
@@ -142,16 +138,12 @@ pub enum RunReason {
     /// Development server process
     Devserver,
     /// Interactive terminal session
+    #[default]
     Terminal,
     /// Verification/test script
     Verification,
 }
 
-impl Default for RunReason {
-    fn default() -> Self {
-        Self::Terminal
-    }
-}
 
 impl std::fmt::Display for RunReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -251,20 +243,16 @@ impl RunReason {
 /// # Serialization
 /// Serialized as lowercase strings: "stdout", "stderr"
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum OutputType {
     /// Standard output stream
+    #[default]
     Stdout,
     /// Standard error stream
     Stderr,
 }
 
-impl Default for OutputType {
-    fn default() -> Self {
-        Self::Stdout
-    }
-}
 
 impl std::fmt::Display for OutputType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

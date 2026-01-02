@@ -26,11 +26,12 @@ use crate::validation::{
 /// # Serialization
 /// Serialized as lowercase strings: "user", "assistant", "system"
 #[typeshare]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(rename_all = "lowercase")]
 pub enum MessageRole {
     /// Human user input
+    #[default]
     User,
     /// AI assistant response
     Assistant,
@@ -38,11 +39,6 @@ pub enum MessageRole {
     System,
 }
 
-impl Default for MessageRole {
-    fn default() -> Self {
-        Self::User
-    }
-}
 
 impl std::fmt::Display for MessageRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
