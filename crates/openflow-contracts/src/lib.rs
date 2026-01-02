@@ -43,6 +43,11 @@ pub use entities::{
     ExecutionProcess, OutputType, ProcessOutputEvent, ProcessStatus, ProcessStatusEvent,
     ProcessSummary, RunReason,
 };
+pub use entities::{
+    Branch, Commit, CommitSummary, DiffHunk, FileChangeType, FileDiff, FileDiffSummary,
+    GitFileStatus, GitStatus, GitStatusFile, PullRequestResult, Worktree, WorktreeStatus,
+    WorktreeSummary,
+};
 pub use entities::{Message, MessageRole, MessageSummary};
 pub use entities::{Project, ProjectSummary, ProjectWithStats};
 pub use entities::{Task, TaskStatus, TaskSummary, TaskWithChatCount};
@@ -51,6 +56,12 @@ pub use requests::{CreateChatRequest, UpdateChatRequest};
 pub use requests::{
     CreateExecutorProfileRequest, RunExecutorRequest, SetDefaultExecutorProfileRequest,
     UpdateExecutorProfileRequest,
+};
+pub use requests::{
+    CreatePullRequestRequest, CreateWorktreeRequest, DeleteWorktreeRequest,
+    GenerateBranchNameRequest, GenerateWorktreePathRequest, GetCommitsRequest,
+    GetCurrentBranchRequest, GetDiffRequest, GetHeadCommitRequest, GetTaskCommitsRequest,
+    GetTaskDiffRequest, HasUncommittedChangesRequest, ListWorktreesRequest, PushBranchRequest,
 };
 pub use requests::{
     AppendMessageContentRequest, CreateMessageRequest, SetMessageStreamingRequest,

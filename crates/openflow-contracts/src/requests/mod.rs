@@ -5,6 +5,7 @@
 
 pub mod chat;
 pub mod executor;
+pub mod git;
 pub mod message;
 pub mod process;
 pub mod project;
@@ -16,6 +17,12 @@ pub use executor::{
     CreateExecutorProfileRequest, RunExecutorRequest, SetDefaultExecutorProfileRequest,
     UpdateExecutorProfileRequest,
 };
+pub use git::{
+    CreatePullRequestRequest, CreateWorktreeRequest, DeleteWorktreeRequest,
+    GenerateBranchNameRequest, GenerateWorktreePathRequest, GetCommitsRequest,
+    GetCurrentBranchRequest, GetDiffRequest, GetHeadCommitRequest, GetTaskCommitsRequest,
+    GetTaskDiffRequest, HasUncommittedChangesRequest, ListWorktreesRequest, PushBranchRequest,
+};
 pub use message::{
     AppendMessageContentRequest, CreateMessageRequest, SetMessageStreamingRequest,
     UpdateMessageRequest,
@@ -26,6 +33,3 @@ pub use process::{
 };
 pub use project::{CreateProjectRequest, UpdateProjectRequest};
 pub use task::{CreateTaskRequest, UpdateTaskRequest};
-
-// Request modules will be added in subsequent steps:
-// - git.rs (Step 0.9)
