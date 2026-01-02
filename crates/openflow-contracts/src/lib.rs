@@ -82,4 +82,15 @@ pub use requests::{
     GetWorkflowTemplateRequest, ListWorkflowTemplatesRequest, ParseWorkflowRequest,
     SubstituteWorkflowVariablesRequest, UpdateWorkflowStepRequest, UpdateWorkflowTemplateRequest,
 };
+// Event types
+pub use events::{
+    DataAction, DataChangedEvent, EntityType, Event, WsClientMessage, WsServerMessage,
+};
+pub use events::{
+    process_output_channel, process_status_channel, parse_process_output_channel,
+    parse_process_status_channel,
+};
+pub use events::{
+    CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT, CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
+};
 // Validation module is accessible via openflow_contracts::validation::
