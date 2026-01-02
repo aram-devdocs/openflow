@@ -238,11 +238,11 @@ export const Empty: Story = {
     return {
       ...defaults,
       content: {
-        ...defaults.content,
+        ...defaults.content!,
         projects: [],
       },
       projectCount: 0,
-    };
+    } as ProjectsListPageProps;
   })(),
 };
 
@@ -269,11 +269,11 @@ export const SingleProject: Story = {
     return {
       ...defaults,
       content: {
-        ...defaults.content,
+        ...defaults.content!,
         projects: mockProjects[0] ? [mockProjects[0]] : [],
       },
       projectCount: 1,
-    };
+    } as ProjectsListPageProps;
   })(),
 };
 
@@ -301,11 +301,11 @@ export const ManyProjects: Story = {
     return {
       ...defaults,
       content: {
-        ...defaults.content,
+        ...defaults.content!,
         projects: manyProjects,
       },
       projectCount: manyProjects.length,
-    };
+    } as ProjectsListPageProps;
   })(),
 };
 
@@ -322,10 +322,10 @@ export const CreateDialogOpen: Story = {
     return {
       ...defaults,
       createDialog: {
-        ...defaults.createDialog,
+        ...defaults.createDialog!,
         isOpen: true,
       },
-    };
+    } as ProjectsListPageProps;
   })(),
 };
 
@@ -338,12 +338,12 @@ export const CreateDialogFilled: Story = {
     return {
       ...defaults,
       createDialog: {
-        ...defaults.createDialog,
+        ...defaults.createDialog!,
         isOpen: true,
         projectName: 'New Feature App',
         projectPath: '/Users/dev/new-feature-app',
       },
-    };
+    } as ProjectsListPageProps;
   })(),
 };
 
@@ -356,13 +356,13 @@ export const CreateDialogPending: Story = {
     return {
       ...defaults,
       createDialog: {
-        ...defaults.createDialog,
+        ...defaults.createDialog!,
         isOpen: true,
         projectName: 'New Feature App',
         projectPath: '/Users/dev/new-feature-app',
         isPending: true,
       },
-    };
+    } as ProjectsListPageProps;
   })(),
 };
 
@@ -375,13 +375,13 @@ export const CreateDialogError: Story = {
     return {
       ...defaults,
       createDialog: {
-        ...defaults.createDialog,
+        ...defaults.createDialog!,
         isOpen: true,
         projectName: 'New Feature App',
         projectPath: '/invalid/path',
         error: 'The specified path is not a valid git repository',
       },
-    };
+    } as ProjectsListPageProps;
   })(),
 };
 
@@ -601,9 +601,9 @@ export const ScreenReaderDemo: Story = {
               const defaults = createDefaultProps();
               return {
                 ...defaults,
-                content: { ...defaults.content, projects: [] },
+                content: { ...defaults.content!, projects: [] },
                 projectCount: 0,
-              };
+              } as ProjectsListPageProps;
             })()}
           />
         </div>
@@ -744,9 +744,9 @@ export const DataAttributesDemo: Story = {
               const defaults = createDefaultProps();
               return {
                 ...defaults,
-                content: { ...defaults.content, projects: [] },
+                content: { ...defaults.content!, projects: [] },
                 projectCount: 0,
-              };
+              } as ProjectsListPageProps;
             })()}
             data-testid="empty-demo"
           />
@@ -782,11 +782,11 @@ export const FirstTimeUser: Story = {
     return {
       ...defaults,
       content: {
-        ...defaults.content,
+        ...defaults.content!,
         projects: [],
       },
       projectCount: 0,
-    };
+    } as ProjectsListPageProps;
   })(),
   parameters: {
     docs: {
@@ -818,11 +818,11 @@ export const PowerUser: Story = {
     return {
       ...defaults,
       content: {
-        ...defaults.content,
+        ...defaults.content!,
         projects: manyProjects,
       },
       projectCount: manyProjects.length,
-    };
+    } as ProjectsListPageProps;
   })(),
   parameters: {
     docs: {
@@ -862,12 +862,12 @@ export const ContentLoading: Story = {
     return {
       ...defaults,
       content: {
-        ...defaults.content,
+        ...defaults.content!,
         isLoading: true,
         projects: [],
       },
       projectCount: 0,
-    };
+    } as ProjectsListPageProps;
   })(),
   parameters: {
     docs: {
