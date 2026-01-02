@@ -93,4 +93,7 @@ pub use events::{
 pub use events::{
     CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT, CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
 };
+// Endpoint metadata
+pub use endpoints::{Endpoint, HttpMethod, ENDPOINTS, endpoint_count, endpoints_by_domain};
+pub use endpoints::{validate_unique_commands, validate_unique_path_methods};
 // Validation module is accessible via openflow_contracts::validation::
