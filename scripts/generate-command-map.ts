@@ -349,7 +349,7 @@ function generateCommandMap(endpoints: Endpoint[]): string {
   lines.push('  }');
   lines.push('');
   lines.push('  if (queryParts.length > 0) {');
-  lines.push(`    path += '?' + queryParts.join('&');`);
+  lines.push("    path += `?${queryParts.join('&')}`;");
   lines.push('  }');
   lines.push('');
   lines.push('  return path;');

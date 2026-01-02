@@ -591,7 +591,7 @@ export function buildPath(command: string, args: Record<string, unknown> = {}): 
   }
 
   if (queryParts.length > 0) {
-    path += '?' + queryParts.join('&');
+    path += `?${queryParts.join('&')}`;
   }
 
   return path;
