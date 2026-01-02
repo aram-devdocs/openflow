@@ -344,7 +344,8 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   const { data: messages = [] } = useMessages(chatId);
   const { data: executorProfiles = [] } = useExecutorProfiles();
 
-  const chat = chatData?.chat;
+  // ChatWithMessages extends Chat, so properties are directly available
+  const chat = chatData;
   const projectId = chat?.projectId ?? '';
   const { data: project } = useProject(projectId);
 

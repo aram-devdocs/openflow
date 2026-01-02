@@ -1,0 +1,47 @@
+# OpenFlow Docker Compose Configuration
+#
+# Development and deployment configuration for the OpenFlow server.
+#
+# Usage:
+#   Development:   docker-compose up
+#   Production:    docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+#   Build only:    docker-compose build
+#   Background:    docker-compose up -d
+#   Logs:          docker-compose logs -f
+#   Stop:          docker-compose down
+#   Clean:         docker-compose down -v  (removes volumes)
+#
+# Environment:
+#   Copy .env.example to .env and customize as needed.
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openflow-server:latest
+    container_name: openflow-server
+    ports:
+      - "${OPENFLOW_PORT:-3001}:3001"
+    volumes:
+      - openflow-data:/app/data
+    environment:
+      # Server configuration
+      - OPENFLOW_HOST=0.0.0.0
+      - OPENFLOW_PORT=3001
+      - DATABASE_PATH=/app/data/openflow.db
+      # Logging configuration
+      - RUST_LOG=${RUST_LOG:-info}
+      - OPENFLOW_VERBOSE=${OPENFLOW_VERBOSE:-0}
+      - OPENFLOW_JSON_LOGS=${OPENFLOW_JSON_LOGS:-0}
+    healthcheck:
+      test: ["CMD", "/app/openflow-server", "--help"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  openflow-data:
+    name: openflow-data

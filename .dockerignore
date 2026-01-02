@@ -1,0 +1,87 @@
+# OpenFlow Docker Build Exclusions
+#
+# Excludes unnecessary files from Docker build context
+# to speed up builds and reduce image size.
+
+# Rust build artifacts
+target/
+**/*.rs.bk
+
+# Node.js dependencies and build artifacts
+node_modules/
+dist/
+.next/
+out/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Test and coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Tauri-specific (not needed for server-only build)
+src-tauri/target/
+src-tauri/icons/
+src-tauri/gen/
+
+# Frontend source (not needed for server-only build)
+src/
+public/
+index.html
+
+# Config files not needed in container
+biome.json
+tsconfig*.json
+vite.config.ts
+tailwind.config.ts
+postcss.config.js
+components.json
+
+# Package manager files
+package.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
+# Scripts not needed in container
+scripts/
+
+# Packages (TypeScript frontend code)
+packages/
+
+# Stories and tests
+**/*.stories.tsx
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# ZenFlow task artifacts
+.zenflow/

@@ -11,12 +11,12 @@ use serde::{Deserialize, Serialize};
 use tauri::{Emitter, State};
 
 use crate::commands::AppState;
-use crate::services::executor_service::RunExecutorRequest;
-use crate::services::{ExecutorProfileService, ExecutorService, ProcessService};
-use crate::types::{
+use openflow_contracts::{
     CreateExecutorProfileRequest, ExecutionProcess, ExecutorProfile, ProcessStatus,
     ProcessStatusEvent, UpdateExecutorProfileRequest,
 };
+use openflow_core::services::process::ProcessService;
+use openflow_core::services::{executor, executor_profile};
 
 /// List all executor profiles.
 ///
@@ -26,7 +26,7 @@ pub async fn list_executor_profiles(
     state: State<'_, AppState>,
 ) -> Result<Vec<ExecutorProfile>, String> {
     let pool = state.db.lock().await;
-    ExecutorProfileService::list(&pool)
+    executor_profile::list(&pool)
         .await
         .map_err(|e| e.to_string())
 }
@@ -40,7 +40,7 @@ pub async fn get_executor_profile(
     id: String,
 ) -> Result<ExecutorProfile, String> {
     let pool = state.db.lock().await;
-    ExecutorProfileService::get(&pool, &id)
+    executor_profile::get(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -53,7 +53,7 @@ pub async fn get_default_executor_profile(
     state: State<'_, AppState>,
 ) -> Result<Option<ExecutorProfile>, String> {
     let pool = state.db.lock().await;
-    ExecutorProfileService::get_default(&pool)
+    executor_profile::get_default(&pool)
         .await
         .map_err(|e| e.to_string())
 }
@@ -68,7 +68,7 @@ pub async fn create_executor_profile(
     request: CreateExecutorProfileRequest,
 ) -> Result<ExecutorProfile, String> {
     let pool = state.db.lock().await;
-    ExecutorProfileService::create(&pool, request)
+    executor_profile::create(&pool, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -85,7 +85,7 @@ pub async fn update_executor_profile(
     request: UpdateExecutorProfileRequest,
 ) -> Result<ExecutorProfile, String> {
     let pool = state.db.lock().await;
-    ExecutorProfileService::update(&pool, &id, request)
+    executor_profile::update(&pool, &id, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -96,7 +96,7 @@ pub async fn update_executor_profile(
 #[tauri::command]
 pub async fn delete_executor_profile(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    ExecutorProfileService::delete(&pool, &id)
+    executor_profile::delete(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -159,18 +159,13 @@ async fn prepare_and_start_executor(
     executor_profile_id: Option<String>,
 ) -> Result<ExecutionProcess, String> {
     let pool = state.db.lock().await;
-    let context = ExecutorService::prepare(
-        &pool,
-        RunExecutorRequest {
-            chat_id,
-            prompt,
-            executor_profile_id,
-        },
-    )
-    .await
-    .map_err(|e| e.to_string())?;
+    let context = executor::prepare(&pool, &chat_id, &prompt, executor_profile_id)
+        .await
+        .map_err(|e| e.to_string())?;
 
-    ExecutorService::start(&pool, &state.process_service, context)
+    state
+        .process_service
+        .start(&pool, context.create_request, context.start_request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -212,13 +207,7 @@ fn spawn_json_output_streamer(
     process_id: String,
 ) {
     std::thread::spawn(move || {
-        let pty_manager = match process_service.pty_manager() {
-            Ok(pm) => pm,
-            Err(e) => {
-                eprintln!("Failed to get PTY manager for {}: {}", process_id, e);
-                return;
-            }
-        };
+        let pty_manager = process_service.pty_manager();
 
         // Get reader from PTY
         let reader = match pty_manager.try_clone_reader(&process_id) {

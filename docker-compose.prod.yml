@@ -1,0 +1,32 @@
+# OpenFlow Docker Compose - Production Overrides
+#
+# Production-specific configuration for deployment.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Features:
+#   - JSON logging for log aggregation
+#   - Resource limits
+#   - More conservative restart policy
+
+services:
+  server:
+    environment:
+      # Enable JSON logs for production log aggregation
+      - OPENFLOW_JSON_LOGS=1
+      - RUST_LOG=info
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

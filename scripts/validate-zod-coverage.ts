@@ -82,6 +82,7 @@ const _RULES: ZodRule[] = [
 /**
  * Convert a schema name to its corresponding type name
  * e.g., createProjectSchema -> CreateProjectRequest
+ *       createProjectRequestSchema -> CreateProjectRequest
  *       taskStatusSchema -> TaskStatus
  */
 function schemaNameToTypeName(schemaName: string): string {
@@ -91,15 +92,21 @@ function schemaNameToTypeName(schemaName: string): string {
   // Convert from camelCase to PascalCase
   const pascalCase = baseName.charAt(0).toUpperCase() + baseName.slice(1);
 
-  // Handle common patterns
+  // Handle generated schemas that already have Request suffix
+  // e.g., createWorktreeRequestSchema -> CreateWorktreeRequest
+  if (baseName.endsWith('Request')) {
+    return pascalCase;
+  }
+
+  // Handle common patterns (manual shorter schema names)
   // createFooSchema -> CreateFooRequest
   if (baseName.startsWith('create')) {
-    return `${pascalCase.replace(/^Create/, 'Create')}Request`;
+    return `${pascalCase}Request`;
   }
 
   // updateFooSchema -> UpdateFooRequest
   if (baseName.startsWith('update')) {
-    return `${pascalCase.replace(/^Update/, 'Update')}Request`;
+    return `${pascalCase}Request`;
   }
 
   // searchQuerySchema -> SearchQuery (but often used for input validation)
@@ -109,7 +116,7 @@ function schemaNameToTypeName(schemaName: string): string {
 
   // setFooSchema -> SetFooRequest
   if (baseName.startsWith('set')) {
-    return `${pascalCase.replace(/^Set/, 'Set')}Request`;
+    return `${pascalCase}Request`;
   }
 
   // Enum schemas: taskStatusSchema -> TaskStatus

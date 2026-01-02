@@ -1,0 +1,18 @@
+[package]
+name = "openflow-contracts"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "API contracts and type definitions for OpenFlow"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+typeshare.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+
+# Database (for FromRow derive on entities)
+sqlx.workspace = true

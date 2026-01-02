@@ -1,13 +1,13 @@
 //! Tauri commands for message operations.
 //!
 //! These commands provide the IPC interface for message CRUD operations.
-//! Each command is a thin wrapper around MessageService methods.
+//! Each command is a thin wrapper around openflow_core::services::message functions.
 
 use tauri::State;
 
 use crate::commands::AppState;
-use crate::services::MessageService;
-use crate::types::{CreateMessageRequest, Message};
+use openflow_contracts::{CreateMessageRequest, Message, UpdateMessageRequest};
+use openflow_core::services::message;
 
 /// List messages for a chat.
 ///
@@ -21,7 +21,7 @@ pub async fn list_messages(
     chat_id: String,
 ) -> Result<Vec<Message>, String> {
     let pool = state.db.lock().await;
-    MessageService::list(&pool, &chat_id)
+    message::list(&pool, &chat_id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -32,7 +32,7 @@ pub async fn list_messages(
 #[tauri::command]
 pub async fn get_message(state: State<'_, AppState>, id: String) -> Result<Message, String> {
     let pool = state.db.lock().await;
-    MessageService::get(&pool, &id)
+    message::get(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -46,7 +46,26 @@ pub async fn create_message(
     request: CreateMessageRequest,
 ) -> Result<Message, String> {
     let pool = state.db.lock().await;
-    MessageService::create(&pool, request)
+    message::create(&pool, request)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Update an existing message.
+///
+/// Allows partial updates - only provided fields will be updated.
+///
+/// # Arguments
+/// * `id` - The message ID to update
+/// * `request` - Update request with optional fields
+#[tauri::command]
+pub async fn update_message(
+    state: State<'_, AppState>,
+    id: String,
+    request: UpdateMessageRequest,
+) -> Result<Message, String> {
+    let pool = state.db.lock().await;
+    message::update(&pool, &id, request)
         .await
         .map_err(|e| e.to_string())
 }
@@ -57,7 +76,7 @@ pub async fn create_message(
 #[tauri::command]
 pub async fn delete_message(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    MessageService::delete(&pool, &id)
+    message::delete(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -76,7 +95,7 @@ pub async fn set_message_streaming(
     is_streaming: bool,
 ) -> Result<Message, String> {
     let pool = state.db.lock().await;
-    MessageService::set_streaming(&pool, &id, is_streaming)
+    message::set_streaming(&pool, &id, is_streaming)
         .await
         .map_err(|e| e.to_string())
 }
@@ -95,7 +114,7 @@ pub async fn append_message_content(
     content: String,
 ) -> Result<Message, String> {
     let pool = state.db.lock().await;
-    MessageService::append_content(&pool, &id, &content)
+    message::append_content(&pool, &id, &content)
         .await
         .map_err(|e| e.to_string())
 }
@@ -114,7 +133,57 @@ pub async fn set_message_tokens(
     tokens_used: i32,
 ) -> Result<Message, String> {
     let pool = state.db.lock().await;
-    MessageService::set_tokens_used(&pool, &id, tokens_used)
+    message::set_tokens_used(&pool, &id, tokens_used)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Count messages for a chat.
+///
+/// Returns the total number of messages in the specified chat.
+///
+/// # Arguments
+/// * `chat_id` - The chat to count messages for
+#[tauri::command]
+pub async fn count_messages(state: State<'_, AppState>, chat_id: String) -> Result<i64, String> {
+    let pool = state.db.lock().await;
+    message::count(&pool, &chat_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Get the latest message for a chat.
+///
+/// Returns the most recent message by created_at timestamp,
+/// or None if the chat has no messages.
+///
+/// # Arguments
+/// * `chat_id` - The chat to get the latest message for
+#[tauri::command]
+pub async fn get_latest_message(
+    state: State<'_, AppState>,
+    chat_id: String,
+) -> Result<Option<Message>, String> {
+    let pool = state.db.lock().await;
+    message::get_latest(&pool, &chat_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Delete all messages for a chat.
+///
+/// Removes all messages belonging to the specified chat.
+/// Returns the number of messages deleted.
+///
+/// # Arguments
+/// * `chat_id` - The chat to delete messages from
+#[tauri::command]
+pub async fn delete_messages_by_chat(
+    state: State<'_, AppState>,
+    chat_id: String,
+) -> Result<u64, String> {
+    let pool = state.db.lock().await;
+    message::delete_by_chat(&pool, &chat_id)
         .await
         .map_err(|e| e.to_string())
 }

@@ -1,4 +1,4 @@
-import { TauriContextError, invoke, isTauriContext } from '@openflow/queries';
+import { TauriContextError, invoke, isTauriContext, resetTransport } from '@openflow/queries';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the Tauri API
@@ -16,7 +16,8 @@ describe('queries/utils', () => {
     it('creates error with descriptive message', () => {
       const error = new TauriContextError();
       expect(error.message).toContain('Tauri context is not available');
-      expect(error.message).toContain('desktop app');
+      // The message now mentions HTTP transport as the fallback
+      expect(error.message).toContain('HTTP transport');
     });
 
     it('is an instance of Error', () => {
@@ -62,6 +63,8 @@ describe('queries/utils', () => {
 
     beforeEach(() => {
       vi.clearAllMocks();
+      // Reset transport to ensure clean state for each test
+      resetTransport();
     });
 
     afterEach(() => {
@@ -72,17 +75,8 @@ describe('queries/utils', () => {
         // @ts-expect-error - setting window to undefined for cleanup
         global.window = undefined;
       }
-    });
-
-    it('throws TauriContextError when not in Tauri context', async () => {
-      // @ts-expect-error - testing undefined window
-      global.window = undefined;
-      await expect(invoke('test_command')).rejects.toThrow(TauriContextError);
-    });
-
-    it('throws TauriContextError with descriptive message', async () => {
-      global.window = {} as Window & typeof globalThis;
-      await expect(invoke('test_command')).rejects.toThrow('Tauri context is not available');
+      // Reset transport after each test
+      resetTransport();
     });
 
     it('calls tauriInvoke when in Tauri context', async () => {
@@ -94,9 +88,10 @@ describe('queries/utils', () => {
       const mockInvoke = tauriInvoke as ReturnType<typeof vi.fn>;
       mockInvoke.mockResolvedValueOnce({ result: 'success' });
 
-      const result = await invoke('test_command', { key: 'value' });
+      // Use a real command name for consistency
+      const result = await invoke('list_projects', {});
 
-      expect(mockInvoke).toHaveBeenCalledWith('test_command', { key: 'value' });
+      expect(mockInvoke).toHaveBeenCalledWith('list_projects', {});
       expect(result).toEqual({ result: 'success' });
     });
 
@@ -109,10 +104,10 @@ describe('queries/utils', () => {
       const mockInvoke = tauriInvoke as ReturnType<typeof vi.fn>;
       mockInvoke.mockResolvedValueOnce(null);
 
-      const args = { id: '123', data: { nested: true } };
-      await invoke('complex_command', args);
+      const args = { id: '123' };
+      await invoke('get_project', args);
 
-      expect(mockInvoke).toHaveBeenCalledWith('complex_command', args);
+      expect(mockInvoke).toHaveBeenCalledWith('get_project', args);
     });
 
     it('works without arguments', async () => {
@@ -124,9 +119,9 @@ describe('queries/utils', () => {
       const mockInvoke = tauriInvoke as ReturnType<typeof vi.fn>;
       mockInvoke.mockResolvedValueOnce([]);
 
-      await invoke('no_args_command');
+      await invoke('list_projects');
 
-      expect(mockInvoke).toHaveBeenCalledWith('no_args_command', undefined);
+      expect(mockInvoke).toHaveBeenCalledWith('list_projects', undefined);
     });
 
     it('propagates errors from Tauri', async () => {
@@ -138,7 +133,8 @@ describe('queries/utils', () => {
       const mockInvoke = tauriInvoke as ReturnType<typeof vi.fn>;
       mockInvoke.mockRejectedValueOnce(new Error('Backend error'));
 
-      await expect(invoke('failing_command')).rejects.toThrow('Backend error');
+      // Use a real command name
+      await expect(invoke('list_projects')).rejects.toThrow('Backend error');
     });
   });
 });

@@ -9,8 +9,8 @@
 use tauri::State;
 
 use crate::commands::AppState;
-use crate::services::SearchService;
-use crate::types::{SearchResult, SearchResultType};
+use openflow_contracts::{SearchRequest, SearchResult, SearchResultType};
+use openflow_core::services::search;
 
 /// Search across tasks and projects using full-text search.
 ///
@@ -40,7 +40,105 @@ pub async fn search(
     limit: Option<i32>,
 ) -> Result<Vec<SearchResult>, String> {
     let pool = state.db.lock().await;
-    SearchService::search(&pool, &query, project_id.as_deref(), result_types, limit)
+
+    let mut request = SearchRequest::new(query);
+    if let Some(pid) = project_id {
+        request = request.in_project(pid);
+    }
+    if let Some(types) = result_types {
+        request = request.with_types(types);
+    }
+    if let Some(lim) = limit {
+        request.limit = Some(lim);
+    }
+
+    search::search(&pool, request)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Simple search with just a query string.
+///
+/// Convenience command for basic searches without filters.
+///
+/// # Arguments
+/// * `query` - The search query string
+///
+/// # Returns
+/// Vector of SearchResult ordered by relevance (highest score first)
+#[tauri::command]
+pub async fn search_simple(
+    state: State<'_, AppState>,
+    query: String,
+) -> Result<Vec<SearchResult>, String> {
+    let pool = state.db.lock().await;
+
+    search::search_simple(&pool, &query)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Search for tasks only.
+///
+/// Convenience command that filters results to task type only.
+///
+/// # Arguments
+/// * `query` - The search query string
+///
+/// # Returns
+/// Vector of task SearchResult ordered by relevance
+#[tauri::command]
+pub async fn search_tasks(
+    state: State<'_, AppState>,
+    query: String,
+) -> Result<Vec<SearchResult>, String> {
+    let pool = state.db.lock().await;
+
+    search::search_tasks(&pool, &query)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Search for projects only.
+///
+/// Convenience command that filters results to project type only.
+///
+/// # Arguments
+/// * `query` - The search query string
+///
+/// # Returns
+/// Vector of project SearchResult ordered by relevance
+#[tauri::command]
+pub async fn search_projects(
+    state: State<'_, AppState>,
+    query: String,
+) -> Result<Vec<SearchResult>, String> {
+    let pool = state.db.lock().await;
+
+    search::search_projects(&pool, &query)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Search within a specific project.
+///
+/// Convenience command that scopes search to a single project.
+///
+/// # Arguments
+/// * `query` - The search query string
+/// * `project_id` - The project ID to search within
+///
+/// # Returns
+/// Vector of SearchResult ordered by relevance (includes the project itself if matching)
+#[tauri::command]
+pub async fn search_in_project(
+    state: State<'_, AppState>,
+    query: String,
+    project_id: String,
+) -> Result<Vec<SearchResult>, String> {
+    let pool = state.db.lock().await;
+
+    search::search_in_project(&pool, &query, &project_id)
         .await
         .map_err(|e| e.to_string())
 }

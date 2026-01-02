@@ -528,10 +528,6 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
               const optionId = getOptionId(listboxId, option.value);
 
               return (
-                // biome-ignore lint/a11y/useSemanticElements: Standard accessible option pattern
-                // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: Required for accessible listbox
-                // biome-ignore lint/a11y/useFocusableInteractive: Focus managed by parent listbox via aria-activedescendant
-                // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handled by parent listbox
                 <ListItem
                   key={option.value}
                   id={optionId}

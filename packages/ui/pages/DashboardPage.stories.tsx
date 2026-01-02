@@ -936,6 +936,7 @@ export const RefForwardingDemo: Story = {
       <div className="flex h-screen flex-col">
         <div className="border-b bg-[rgb(var(--muted))] p-4">
           <button
+            type="button"
             onClick={handleFocusPage}
             className="rounded bg-[rgb(var(--primary))] px-4 py-2 text-[rgb(var(--primary-foreground))]"
           >
@@ -1026,6 +1027,7 @@ export const ScreenReaderDemo: Story = {
           <span className="mr-4 font-medium">State:</span>
           {(['loading', 'error', 'empty', 'loaded'] as const).map((s) => (
             <button
+              type="button"
               key={s}
               onClick={() => setState(s)}
               className={`mr-2 rounded px-3 py-1 text-sm ${

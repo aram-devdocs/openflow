@@ -1,22 +1,65 @@
-import type {
-  OutputType,
-  ProcessOutputEvent,
-  ProcessStatus,
-  ProcessStatusEvent,
-} from '@openflow/generated';
+/**
+ * useProcessOutput Hook
+ *
+ * Subscribes to real-time process output for a specific process.
+ *
+ * This hook uses the transport abstraction layer, which means it works in both:
+ * - **Tauri context**: Uses Tauri event listener via IPC
+ * - **Browser context**: Uses WebSocket subscription to standalone server
+ *
+ * ## Usage
+ *
+ * ```tsx
+ * function ProcessTerminal({ processId }: { processId: string }) {
+ *   const { output, status, isRunning, clearOutput } = useProcessOutput(processId);
+ *
+ *   return (
+ *     <div>
+ *       <div className="terminal">
+ *         {output.map((line, i) => (
+ *           <div key={i} className={line.outputType}>
+ *             {line.content}
+ *           </div>
+ *         ))}
+ *       </div>
+ *       <div>Status: {status} {isRunning && '(running)'}</div>
+ *       <button onClick={clearOutput}>Clear</button>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @see CLAUDE.md - Flexible Backend Architecture section
+ */
+
+import { type ProcessOutputEvent, type ProcessStatusEvent, subscribe } from '@openflow/queries';
 import { createLogger } from '@openflow/utils';
-import { type UnlistenFn, listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Create logger for this hook
 const logger = createLogger('useProcessOutput');
 
 /**
+ * Output type for process output lines.
+ * Matches the Rust ProcessOutputEvent.outputType field.
+ */
+export type OutputType = 'stdout' | 'stderr';
+
+/**
+ * Process status type.
+ * Matches the Rust ProcessStatus enum.
+ */
+export type ProcessStatus = 'starting' | 'running' | 'completed' | 'failed' | 'killed';
+
+/**
  * Output line with metadata for rendering.
  */
 export interface OutputLine {
+  /** The text content of the output line */
   content: string;
+  /** Whether this is stdout or stderr */
   outputType: OutputType;
+  /** ISO timestamp when the output was received */
   timestamp: string;
 }
 
@@ -39,7 +82,36 @@ export interface ProcessOutputState {
 }
 
 /**
- * Hook to subscribe to real-time process output via Tauri events.
+ * Options for the useProcessOutput hook.
+ */
+export interface UseProcessOutputOptions {
+  /**
+   * Maximum number of output lines to keep in memory.
+   * Older lines will be trimmed when this limit is reached.
+   * @default 10000
+   */
+  maxLines?: number;
+
+  /**
+   * Whether the subscription is enabled.
+   * @default true
+   */
+  enabled?: boolean;
+
+  /**
+   * Callback when new output is received.
+   * Useful for custom processing like searching or filtering.
+   */
+  onOutput?: (line: OutputLine) => void;
+
+  /**
+   * Callback when process status changes.
+   */
+  onStatusChange?: (status: ProcessStatus, exitCode: number | null) => void;
+}
+
+/**
+ * Hook to subscribe to real-time process output.
  *
  * This hook listens to two event channels:
  * - `process-output-{processId}`: Receives stdout/stderr output lines
@@ -47,11 +119,13 @@ export interface ProcessOutputState {
  *
  * Output is accumulated in state and cleaned up when the component unmounts.
  *
- * @param processId - The ID of the process to subscribe to
+ * @param processId - The ID of the process to subscribe to, or null to skip subscription
+ * @param options - Optional configuration
  * @returns ProcessOutputState with output lines, status, and utilities
  *
  * @example
  * ```tsx
+ * // Basic usage
  * function ProcessTerminal({ processId }: { processId: string }) {
  *   const { output, status, isRunning, clearOutput } = useProcessOutput(processId);
  *
@@ -70,14 +144,48 @@ export interface ProcessOutputState {
  *   );
  * }
  * ```
+ *
+ * @example
+ * ```tsx
+ * // With options
+ * function ProcessViewer({ processId }: { processId: string }) {
+ *   const { output, status } = useProcessOutput(processId, {
+ *     maxLines: 1000,
+ *     onOutput: (line) => {
+ *       if (line.content.includes('error')) {
+ *         console.warn('Error detected:', line.content);
+ *       }
+ *     },
+ *     onStatusChange: (status, exitCode) => {
+ *       if (status === 'failed') {
+ *         toast.error(`Process failed with exit code ${exitCode}`);
+ *       }
+ *     }
+ *   });
+ *
+ *   // ...
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Conditional subscription
+ * function OptionalProcessView({ processId, enabled }: Props) {
+ *   const { output } = useProcessOutput(processId, { enabled });
+ *   // ...
+ * }
+ * ```
  */
-export function useProcessOutput(processId: string): ProcessOutputState {
+export function useProcessOutput(
+  processId: string | null,
+  options: UseProcessOutputOptions = {}
+): ProcessOutputState {
+  const { maxLines = 10000, enabled = true, onOutput, onStatusChange } = options;
+
   const [output, setOutput] = useState<OutputLine[]>([]);
   const [status, setStatus] = useState<ProcessStatus | null>(null);
   const [exitCode, setExitCode] = useState<number | null>(null);
 
-  // Use ref to track if we're still mounted
-  const mountedRef = useRef(true);
   // Track output line count for logging
   const outputCountRef = useRef(0);
   // Track initialization logging
@@ -91,12 +199,9 @@ export function useProcessOutput(processId: string): ProcessOutputState {
   }, [processId]);
 
   useEffect(() => {
-    mountedRef.current = true;
-    const unlistenFns: UnlistenFn[] = [];
-
-    // Skip if no process ID
-    if (!processId) {
-      logger.debug('No process ID provided, skipping subscription');
+    // Skip if no process ID or disabled
+    if (!processId || !enabled) {
+      logger.debug('Skipping subscription', { processId, enabled });
       return;
     }
 
@@ -106,121 +211,121 @@ export function useProcessOutput(processId: string): ProcessOutputState {
       initializedRef.current = true;
     }
 
+    // Channel names for this process
+    const outputChannel = `process-output-${processId}`;
+    const statusChannel = `process-status-${processId}`;
+
+    logger.debug('Setting up output listener', { processId, channel: outputChannel });
+    logger.debug('Setting up status listener', { processId, channel: statusChannel });
+
     // Subscribe to process output events
-    const setupOutputListener = async () => {
-      try {
-        logger.debug('Setting up output listener', {
+    const unsubscribeOutput = subscribe(outputChannel, (event) => {
+      const { content, outputType, timestamp } = event as ProcessOutputEvent;
+      outputCountRef.current += 1;
+
+      // Create the output line
+      const line: OutputLine = {
+        content,
+        outputType: outputType as OutputType,
+        timestamp,
+      };
+
+      // Log every 100 lines to avoid noise, but always log first line
+      if (outputCountRef.current === 1 || outputCountRef.current % 100 === 0) {
+        logger.debug('Received output', {
           processId,
-          channel: `process-output-${processId}`,
-        });
-
-        const unlisten = await listen<ProcessOutputEvent>(
-          `process-output-${processId}`,
-          (event) => {
-            if (!mountedRef.current) return;
-
-            const { content, outputType, timestamp } = event.payload;
-            outputCountRef.current += 1;
-
-            // Log every 100 lines to avoid noise, but always log first line
-            if (outputCountRef.current === 1 || outputCountRef.current % 100 === 0) {
-              logger.debug('Received output', {
-                processId,
-                outputType,
-                lineCount: outputCountRef.current,
-                contentLength: content.length,
-              });
-            }
-
-            setOutput((prev) => [...prev, { content, outputType, timestamp }]);
-          }
-        );
-        unlistenFns.push(unlisten);
-        logger.info('Output listener established', { processId });
-      } catch (error) {
-        logger.error('Failed to subscribe to process output', {
-          processId,
-          error: error instanceof Error ? error.message : String(error),
+          outputType,
+          lineCount: outputCountRef.current,
+          contentLength: content.length,
         });
       }
-    };
+
+      // Call the optional callback
+      if (onOutput) {
+        try {
+          onOutput(line);
+        } catch (error) {
+          logger.error('Error in onOutput callback', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
+      // Add to state, trimming if necessary
+      setOutput((prev) => {
+        const newOutput = [...prev, line];
+        if (newOutput.length > maxLines) {
+          // Trim from the beginning to keep the most recent lines
+          return newOutput.slice(-maxLines);
+        }
+        return newOutput;
+      });
+    });
 
     // Subscribe to process status events
-    const setupStatusListener = async () => {
-      try {
-        logger.debug('Setting up status listener', {
-          processId,
-          channel: `process-status-${processId}`,
-        });
+    const unsubscribeStatus = subscribe(statusChannel, (event) => {
+      const { status: newStatus, exitCode: newExitCode } = event as ProcessStatusEvent;
 
-        const unlisten = await listen<ProcessStatusEvent>(
-          `process-status-${processId}`,
-          (event) => {
-            if (!mountedRef.current) return;
+      logger.info('Process status changed', {
+        processId,
+        previousStatus: status,
+        newStatus,
+        exitCode: newExitCode,
+      });
 
-            const { status: newStatus, exitCode: newExitCode } = event.payload;
+      setStatus(newStatus as ProcessStatus);
 
-            logger.info('Process status changed', {
-              processId,
-              previousStatus: status,
-              newStatus,
-              exitCode: newExitCode,
-            });
+      if (newExitCode !== undefined && newExitCode !== null) {
+        setExitCode(newExitCode);
 
-            setStatus(newStatus);
-            if (newExitCode !== undefined && newExitCode !== null) {
-              setExitCode(newExitCode);
-
-              // Log completion with exit code
-              if (newExitCode === 0) {
-                logger.info('Process completed successfully', {
-                  processId,
-                  exitCode: newExitCode,
-                  totalLines: outputCountRef.current,
-                });
-              } else {
-                logger.warn('Process completed with non-zero exit code', {
-                  processId,
-                  exitCode: newExitCode,
-                  totalLines: outputCountRef.current,
-                });
-              }
-            }
-          }
-        );
-        unlistenFns.push(unlisten);
-        logger.info('Status listener established', { processId });
-      } catch (error) {
-        logger.error('Failed to subscribe to process status', {
-          processId,
-          error: error instanceof Error ? error.message : String(error),
-        });
+        // Log completion with exit code
+        if (newExitCode === 0) {
+          logger.info('Process completed successfully', {
+            processId,
+            exitCode: newExitCode,
+            totalLines: outputCountRef.current,
+          });
+        } else {
+          logger.warn('Process completed with non-zero exit code', {
+            processId,
+            exitCode: newExitCode,
+            totalLines: outputCountRef.current,
+          });
+        }
       }
-    };
 
-    // Set up both listeners
-    setupOutputListener();
-    setupStatusListener();
+      // Call the optional callback
+      if (onStatusChange) {
+        try {
+          onStatusChange(newStatus as ProcessStatus, newExitCode ?? null);
+        } catch (error) {
+          logger.error('Error in onStatusChange callback', {
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+    });
 
-    // Cleanup on unmount or processId change
+    logger.info('Process output listeners established', { processId });
+
+    // Cleanup on unmount or processId/enabled change
     return () => {
       logger.debug('Cleaning up process output subscription', {
         processId,
         totalLinesReceived: outputCountRef.current,
       });
-      mountedRef.current = false;
       initializedRef.current = false;
-      for (const unlisten of unlistenFns) {
-        unlisten();
-      }
+      unsubscribeOutput();
+      unsubscribeStatus();
     };
-  }, [processId, status]);
+  }, [processId, enabled, maxLines, onOutput, onStatusChange, status]);
 
   // Compute raw output as combined string
   const rawOutput = output.map((line) => line.content).join('');
 
   // Determine if process is running
-  const isRunning = status === 'running' || status === null;
+  // null status means we haven't received a status event yet (assumed running)
+  const isRunning = status === null || status === 'starting' || status === 'running';
 
   return {
     output,
@@ -238,6 +343,7 @@ export function useProcessOutput(processId: string): ProcessOutputState {
  * Useful for monitoring multiple parallel processes in a workflow.
  *
  * @param processIds - Array of process IDs to subscribe to
+ * @param options - Optional configuration (applies to all processes)
  * @returns Map of processId to ProcessOutputState
  *
  * @example
@@ -247,31 +353,48 @@ export function useProcessOutput(processId: string): ProcessOutputState {
  *
  *   return (
  *     <div>
- *       {processIds.map((id) => (
- *         <div key={id}>
- *           <h3>Process {id}</h3>
- *           <pre>{outputs.get(id)?.rawOutput}</pre>
- *         </div>
- *       ))}
+ *       {processIds.map((id) => {
+ *         const processState = outputs.get(id);
+ *         return (
+ *           <div key={id}>
+ *             <h3>Process {id}</h3>
+ *             <div>Status: {processState?.status ?? 'unknown'}</div>
+ *             <pre>{processState?.rawOutput}</pre>
+ *           </div>
+ *         );
+ *       })}
  *     </div>
  *   );
  * }
  * ```
  */
-export function useMultipleProcessOutput(processIds: string[]): Map<string, ProcessOutputState> {
+export function useMultipleProcessOutput(
+  processIds: string[],
+  options: Omit<UseProcessOutputOptions, 'onOutput' | 'onStatusChange'> = {}
+): Map<string, ProcessOutputState> {
+  const { maxLines = 10000, enabled = true } = options;
+
   const [outputs, setOutputs] = useState<Map<string, ProcessOutputState>>(new Map());
-  const mountedRef = useRef(true);
+
   // Track output counts per process
   const outputCountsRef = useRef<Map<string, number>>(new Map());
   // Track initialization
   const initializedRef = useRef(false);
 
+  // Create stable clear functions for each process
+  const clearFunctionsRef = useRef<Map<string, () => void>>(new Map());
+
   useEffect(() => {
-    mountedRef.current = true;
-    const unlistenFns: UnlistenFn[] = [];
+    if (!enabled || processIds.length === 0) {
+      logger.debug('Skipping multi-process subscription', {
+        enabled,
+        processCount: processIds.length,
+      });
+      return;
+    }
 
     // Log initialization
-    if (!initializedRef.current && processIds.length > 0) {
+    if (!initializedRef.current) {
       logger.debug('Initializing multi-process output subscription', {
         processCount: processIds.length,
         processIds,
@@ -286,16 +409,10 @@ export function useMultipleProcessOutput(processIds: string[]): Map<string, Proc
       }
     }
 
-    // Initialize state for each process
-    const initialState = new Map<string, ProcessOutputState>();
+    // Create clear functions for each process
     for (const id of processIds) {
-      initialState.set(id, {
-        output: [],
-        rawOutput: '',
-        status: null,
-        exitCode: null,
-        isRunning: true,
-        clearOutput: () => {
+      if (!clearFunctionsRef.current.has(id)) {
+        clearFunctionsRef.current.set(id, () => {
           logger.debug('Clearing output for process', {
             processId: id,
             lineCount: outputCountsRef.current.get(id) ?? 0,
@@ -309,129 +426,139 @@ export function useMultipleProcessOutput(processIds: string[]): Map<string, Proc
             }
             return updated;
           });
-        },
+        });
+      }
+    }
+
+    // Initialize state for each process
+    const initialState = new Map<string, ProcessOutputState>();
+    for (const id of processIds) {
+      const clearFn = clearFunctionsRef.current.get(id);
+      initialState.set(id, {
+        output: [],
+        rawOutput: '',
+        status: null,
+        exitCode: null,
+        isRunning: true,
+        clearOutput: clearFn ?? (() => {}),
       });
     }
     setOutputs(initialState);
 
+    // Collect unsubscribe functions
+    const unsubscribeFns: (() => void)[] = [];
+
     // Set up listeners for each process
-    const setupListeners = async () => {
-      for (const processId of processIds) {
-        if (!processId) continue;
+    for (const processId of processIds) {
+      if (!processId) continue;
 
-        try {
-          logger.debug('Setting up listeners for process', { processId });
+      const outputChannel = `process-output-${processId}`;
+      const statusChannel = `process-status-${processId}`;
 
-          // Output listener
-          const outputUnlisten = await listen<ProcessOutputEvent>(
-            `process-output-${processId}`,
-            (event) => {
-              if (!mountedRef.current) return;
+      logger.debug('Setting up listeners for process', { processId });
 
-              const { content, outputType, timestamp } = event.payload;
-              const currentCount = (outputCountsRef.current.get(processId) ?? 0) + 1;
-              outputCountsRef.current.set(processId, currentCount);
+      // Output listener
+      const unsubscribeOutput = subscribe(outputChannel, (event) => {
+        const { content, outputType, timestamp } = event as ProcessOutputEvent;
+        const currentCount = (outputCountsRef.current.get(processId) ?? 0) + 1;
+        outputCountsRef.current.set(processId, currentCount);
 
-              // Log every 100 lines to avoid noise
-              if (currentCount === 1 || currentCount % 100 === 0) {
-                logger.debug('Received output (multi)', {
-                  processId,
-                  outputType,
-                  lineCount: currentCount,
-                  contentLength: content.length,
-                });
-              }
-
-              setOutputs((prev) => {
-                const updated = new Map(prev);
-                const current = updated.get(processId);
-                if (current) {
-                  const newOutput = [...current.output, { content, outputType, timestamp }];
-                  updated.set(processId, {
-                    ...current,
-                    output: newOutput,
-                    rawOutput: newOutput.map((l) => l.content).join(''),
-                  });
-                }
-                return updated;
-              });
-            }
-          );
-          unlistenFns.push(outputUnlisten);
-
-          // Status listener
-          const statusUnlisten = await listen<ProcessStatusEvent>(
-            `process-status-${processId}`,
-            (event) => {
-              if (!mountedRef.current) return;
-
-              const { status, exitCode } = event.payload;
-
-              logger.info('Process status changed (multi)', {
-                processId,
-                newStatus: status,
-                exitCode,
-              });
-
-              // Log completion
-              if (exitCode !== undefined && exitCode !== null) {
-                const totalLines = outputCountsRef.current.get(processId) ?? 0;
-                if (exitCode === 0) {
-                  logger.info('Process completed successfully (multi)', {
-                    processId,
-                    exitCode,
-                    totalLines,
-                  });
-                } else {
-                  logger.warn('Process completed with non-zero exit code (multi)', {
-                    processId,
-                    exitCode,
-                    totalLines,
-                  });
-                }
-              }
-
-              setOutputs((prev) => {
-                const updated = new Map(prev);
-                const current = updated.get(processId);
-                if (current) {
-                  updated.set(processId, {
-                    ...current,
-                    status,
-                    exitCode: exitCode ?? current.exitCode,
-                    isRunning: status === 'running',
-                  });
-                }
-                return updated;
-              });
-            }
-          );
-          unlistenFns.push(statusUnlisten);
-
-          logger.info('Listeners established for process', { processId });
-        } catch (error) {
-          logger.error('Failed to subscribe to process', {
+        // Log every 100 lines to avoid noise
+        if (currentCount === 1 || currentCount % 100 === 0) {
+          logger.debug('Received output (multi)', {
             processId,
-            error: error instanceof Error ? error.message : String(error),
+            outputType,
+            lineCount: currentCount,
+            contentLength: content.length,
           });
         }
-      }
-    };
 
-    setupListeners();
+        setOutputs((prev) => {
+          const updated = new Map(prev);
+          const current = updated.get(processId);
+          if (current) {
+            const line: OutputLine = {
+              content,
+              outputType: outputType as OutputType,
+              timestamp,
+            };
+            let newOutput = [...current.output, line];
+
+            // Trim if necessary
+            if (newOutput.length > maxLines) {
+              newOutput = newOutput.slice(-maxLines);
+            }
+
+            updated.set(processId, {
+              ...current,
+              output: newOutput,
+              rawOutput: newOutput.map((l) => l.content).join(''),
+            });
+          }
+          return updated;
+        });
+      });
+      unsubscribeFns.push(unsubscribeOutput);
+
+      // Status listener
+      const unsubscribeStatus = subscribe(statusChannel, (event) => {
+        const { status, exitCode } = event as ProcessStatusEvent;
+
+        logger.info('Process status changed (multi)', {
+          processId,
+          newStatus: status,
+          exitCode,
+        });
+
+        // Log completion
+        if (exitCode !== undefined && exitCode !== null) {
+          const totalLines = outputCountsRef.current.get(processId) ?? 0;
+          if (exitCode === 0) {
+            logger.info('Process completed successfully (multi)', {
+              processId,
+              exitCode,
+              totalLines,
+            });
+          } else {
+            logger.warn('Process completed with non-zero exit code (multi)', {
+              processId,
+              exitCode,
+              totalLines,
+            });
+          }
+        }
+
+        setOutputs((prev) => {
+          const updated = new Map(prev);
+          const current = updated.get(processId);
+          if (current) {
+            const newStatus = status as ProcessStatus;
+            updated.set(processId, {
+              ...current,
+              status: newStatus,
+              exitCode: exitCode ?? current.exitCode,
+              isRunning: newStatus === null || newStatus === 'starting' || newStatus === 'running',
+            });
+          }
+          return updated;
+        });
+      });
+      unsubscribeFns.push(unsubscribeStatus);
+
+      logger.info('Listeners established for process', { processId });
+    }
 
     return () => {
       logger.debug('Cleaning up multi-process output subscriptions', {
         processCount: processIds.length,
         totalLinesPerProcess: Object.fromEntries(outputCountsRef.current),
       });
-      mountedRef.current = false;
       initializedRef.current = false;
-      for (const unlisten of unlistenFns) {
-        unlisten();
+      for (const unsubscribe of unsubscribeFns) {
+        unsubscribe();
       }
     };
-  }, [processIds]);
+  }, [processIds, enabled, maxLines]);
 
   return outputs;
 }

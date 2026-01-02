@@ -102,9 +102,9 @@ function SampleNavigation() {
         <p className="text-sm text-[rgb(var(--muted-foreground))]">AI Task Orchestration</p>
       </div>
 
-      <ul className="space-y-1" role="list">
+      <ul className="space-y-1">
         {navItems.map((item) => (
-          <li key={item.label} role="listitem">
+          <li key={item.label}>
             <a
               href={item.href}
               className="flex min-h-[44px] items-center gap-3 rounded-md px-3 py-2 text-[rgb(var(--foreground))] hover:bg-[rgb(var(--surface-1))] transition-colors focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2"

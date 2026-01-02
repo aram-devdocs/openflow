@@ -297,7 +297,8 @@ const mockCommands: Record<string, (args: InvokeArgs) => unknown> = {
       throw new Error(`Chat not found: ${id}`);
     }
     const messages = Array.from(testDb.messages.values()).filter((msg) => msg.chatId === id);
-    const result: ChatWithMessages = { chat, messages };
+    // ChatWithMessages extends Chat, so spread chat properties and add messages
+    const result: ChatWithMessages = { ...chat, messages };
     return result;
   },
 

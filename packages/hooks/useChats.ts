@@ -199,7 +199,7 @@ export function useChat(id: string): UseQueryResult<ChatWithMessages> {
         const chat = await chatQueries.get(id);
         logger.info('Chat detail fetched successfully', {
           id,
-          title: chat.chat.title,
+          title: chat.title,
           messageCount: chat.messages.length,
         });
         return chat;

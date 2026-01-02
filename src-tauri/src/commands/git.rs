@@ -22,8 +22,8 @@
 use tauri::State;
 
 use crate::commands::AppState;
-use crate::services::GitService;
-use crate::types::{Commit, FileDiff};
+use openflow_contracts::{Commit, FileDiff, Worktree};
+use openflow_core::services::git;
 
 /// Create a new git worktree with a new branch.
 ///
@@ -47,7 +47,7 @@ pub async fn create_worktree(
     base_branch: String,
     worktree_path: String,
 ) -> Result<String, String> {
-    GitService::create_worktree(&repo_path, &branch_name, &base_branch, &worktree_path)
+    git::create_worktree(&repo_path, &branch_name, &base_branch, &worktree_path)
         .await
         .map_err(|e| e.to_string())
 }
@@ -66,7 +66,7 @@ pub async fn delete_worktree(
     repo_path: String,
     worktree_path: String,
 ) -> Result<(), String> {
-    GitService::delete_worktree(&repo_path, &worktree_path)
+    git::delete_worktree(&repo_path, &worktree_path)
         .await
         .map_err(|e| e.to_string())
 }
@@ -87,7 +87,7 @@ pub async fn get_diff(
     _state: State<'_, AppState>,
     worktree_path: String,
 ) -> Result<Vec<FileDiff>, String> {
-    GitService::get_diff(&worktree_path)
+    git::get_diff(&worktree_path)
         .await
         .map_err(|e| e.to_string())
 }
@@ -109,7 +109,7 @@ pub async fn get_commits(
     worktree_path: String,
     limit: Option<usize>,
 ) -> Result<Vec<Commit>, String> {
-    GitService::get_commits(&worktree_path, limit)
+    git::get_commits(&worktree_path, limit)
         .await
         .map_err(|e| e.to_string())
 }
@@ -128,7 +128,7 @@ pub async fn push_branch(
     worktree_path: String,
     remote: Option<String>,
 ) -> Result<(), String> {
-    GitService::push_branch(&worktree_path, remote.as_deref())
+    git::push_branch(&worktree_path, remote.as_deref())
         .await
         .map_err(|e| e.to_string())
 }
@@ -145,7 +145,7 @@ pub async fn get_current_branch(
     _state: State<'_, AppState>,
     worktree_path: String,
 ) -> Result<String, String> {
-    GitService::get_current_branch(&worktree_path)
+    git::get_current_branch(&worktree_path)
         .await
         .map_err(|e| e.to_string())
 }
@@ -162,7 +162,7 @@ pub async fn get_head_commit(
     _state: State<'_, AppState>,
     worktree_path: String,
 ) -> Result<Option<String>, String> {
-    GitService::get_head_commit(&worktree_path)
+    git::get_head_commit(&worktree_path)
         .await
         .map_err(|e| e.to_string())
 }
@@ -181,26 +181,26 @@ pub async fn has_uncommitted_changes(
     _state: State<'_, AppState>,
     worktree_path: String,
 ) -> Result<bool, String> {
-    GitService::has_uncommitted_changes(&worktree_path)
+    git::has_uncommitted_changes(&worktree_path)
         .await
         .map_err(|e| e.to_string())
 }
 
 /// List all worktrees for a repository.
 ///
-/// Returns the paths of all worktrees associated with the repository.
+/// Returns the worktrees associated with the repository.
 ///
 /// # Arguments
 /// * `repo_path` - Path to the main repository
 ///
 /// # Returns
-/// A vector of worktree paths.
+/// A vector of worktree information.
 #[tauri::command]
 pub async fn list_worktrees(
     _state: State<'_, AppState>,
     repo_path: String,
-) -> Result<Vec<String>, String> {
-    GitService::list_worktrees(&repo_path)
+) -> Result<Vec<Worktree>, String> {
+    git::list_worktrees(&repo_path)
         .await
         .map_err(|e| e.to_string())
 }
@@ -220,7 +220,7 @@ pub async fn list_worktrees(
 /// Returns an error if the task_id or chat_role is empty.
 #[tauri::command]
 pub fn generate_branch_name(task_id: String, chat_role: String) -> Result<String, String> {
-    GitService::generate_branch_name(&task_id, &chat_role).map_err(|e| e.to_string())
+    git::generate_branch_name(&task_id, &chat_role).map_err(|e| e.to_string())
 }
 
 /// Generate a worktree path following OpenFlow conventions.
@@ -242,7 +242,7 @@ pub fn generate_worktree_path(
     task_id: String,
     chat_role: String,
 ) -> String {
-    GitService::generate_worktree_path(&base_path, &project_id, &task_id, &chat_role)
+    git::generate_worktree_path(&base_path, &project_id, &task_id, &chat_role)
 }
 
 /// Get the diff for uncommitted changes in a task's worktree.
@@ -261,7 +261,7 @@ pub async fn get_task_diff(
     task_id: String,
 ) -> Result<Vec<FileDiff>, String> {
     let pool = state.db.lock().await;
-    GitService::get_task_diff(&pool, &task_id)
+    git::get_task_diff(&pool, &task_id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -284,7 +284,7 @@ pub async fn get_task_commits(
     limit: Option<usize>,
 ) -> Result<Vec<Commit>, String> {
     let pool = state.db.lock().await;
-    GitService::get_task_commits(&pool, &task_id, limit)
+    git::get_task_commits(&pool, &task_id, limit)
         .await
         .map_err(|e| e.to_string())
 }

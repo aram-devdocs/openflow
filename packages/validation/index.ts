@@ -3,8 +3,16 @@
  *
  * Zod schemas for form validation derived from generated types.
  * Used for validating user input before sending to Tauri commands.
+ *
+ * Exports:
+ * - Manual schemas (shorter names like createProjectSchema)
+ * - Generated schemas (full names like createProjectRequestSchema)
  */
 
+// Re-export all generated schemas (with full names like createProjectRequestSchema)
+export * from './schemas-generated.js';
+
+// Re-export manual schemas (with preferred shorter names for backward compatibility)
 export {
   // Enum schemas
   taskStatusSchema,

@@ -1,20 +1,21 @@
 //! Tauri commands for process management.
 //!
 //! These commands provide the IPC interface for process execution and control.
-//! Each command is a thin wrapper around ProcessService methods.
+//! Each command is a thin wrapper around ProcessService methods from openflow_core.
 //!
 //! Process management includes:
 //! - Retrieving process information
-//! - Listing processes by chat
+//! - Listing processes (all, by chat, running)
 //! - Killing running processes
 //! - Sending input to PTY processes
 //! - Resizing PTY windows
+//! - Deleting process records
 
 use tauri::{AppHandle, Emitter, State};
 
 use crate::commands::AppState;
-use crate::services::ProcessService;
-use crate::types::ExecutionProcess;
+use openflow_contracts::ExecutionProcess;
+use openflow_core::services::process;
 
 /// Get a process by ID.
 ///
@@ -25,7 +26,20 @@ pub async fn get_process(
     id: String,
 ) -> Result<ExecutionProcess, String> {
     let pool = state.db.lock().await;
-    ProcessService::get(&pool, &id)
+    process::get(&pool, &id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// List all processes.
+///
+/// Returns all processes ordered by creation time descending (newest first).
+#[tauri::command]
+pub async fn list_all_processes(
+    state: State<'_, AppState>,
+) -> Result<Vec<ExecutionProcess>, String> {
+    let pool = state.db.lock().await;
+    process::list(&pool)
         .await
         .map_err(|e| e.to_string())
 }
@@ -39,7 +53,20 @@ pub async fn list_processes(
     chat_id: String,
 ) -> Result<Vec<ExecutionProcess>, String> {
     let pool = state.db.lock().await;
-    ProcessService::list_by_chat(&pool, &chat_id)
+    process::list_by_chat(&pool, &chat_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// List all running processes.
+///
+/// Returns all processes with status "running", ordered by creation time descending.
+#[tauri::command]
+pub async fn list_all_running_processes(
+    state: State<'_, AppState>,
+) -> Result<Vec<ExecutionProcess>, String> {
+    let pool = state.db.lock().await;
+    process::list_running(&pool)
         .await
         .map_err(|e| e.to_string())
 }
@@ -53,7 +80,7 @@ pub async fn list_running_processes(
     chat_id: String,
 ) -> Result<Vec<ExecutionProcess>, String> {
     let pool = state.db.lock().await;
-    ProcessService::list_running_by_chat(&pool, &chat_id)
+    process::list_running_by_chat(&pool, &chat_id)
         .await
         .map_err(|e| e.to_string())
 }
@@ -76,7 +103,7 @@ pub async fn kill_process(
         .map_err(|e| e.to_string())?;
 
     // Emit process status event
-    let event = ProcessService::create_status_event(&process).map_err(|e| e.to_string())?;
+    let event = process::create_status_event(&process);
     let _ = app_handle.emit(&format!("process-status-{}", id), &event);
 
     Ok(process)
@@ -123,11 +150,7 @@ pub async fn is_process_running(
     state: State<'_, AppState>,
     process_id: String,
 ) -> Result<bool, String> {
-    state
-        .process_service
-        .is_running(&process_id)
-        .await
-        .map_err(|e| e.to_string())
+    Ok(state.process_service.is_running(&process_id).await)
 }
 
 /// Get the count of currently running processes.
@@ -135,9 +158,20 @@ pub async fn is_process_running(
 /// Returns the number of processes being tracked by the ProcessService.
 #[tauri::command]
 pub async fn running_process_count(state: State<'_, AppState>) -> Result<usize, String> {
-    state
-        .process_service
-        .running_count()
+    Ok(state.process_service.running_count().await)
+}
+
+/// Delete a process record.
+///
+/// Removes the process from the database. This only affects the database record,
+/// not any running process. The process must exist.
+#[tauri::command]
+pub async fn delete_process(
+    state: State<'_, AppState>,
+    id: String,
+) -> Result<(), String> {
+    let pool = state.db.lock().await;
+    process::delete(&pool, &id)
         .await
         .map_err(|e| e.to_string())
 }

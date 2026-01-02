@@ -6,8 +6,8 @@
 use tauri::State;
 
 use crate::commands::AppState;
-use crate::services::GitHubService;
-use crate::types::PullRequestResult;
+use openflow_contracts::{CreatePullRequestRequest, PullRequestResult};
+use openflow_core::services::github;
 
 /// Request structure for creating a pull request.
 #[derive(Debug, Clone, serde::Deserialize)]
@@ -58,16 +58,17 @@ pub async fn create_pull_request(
 ) -> Result<PullRequestResult, String> {
     let pool = state.db.lock().await;
 
-    GitHubService::create_pull_request(
-        &pool,
-        &input.task_id,
-        input.title,
-        input.body,
-        input.base,
-        input.draft,
-    )
-    .await
-    .map_err(|e| e.to_string())
+    let request = CreatePullRequestRequest {
+        task_id: input.task_id,
+        title: input.title,
+        body: input.body,
+        base: input.base,
+        draft: input.draft,
+    };
+
+    github::create_pull_request(&pool, request)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 /// Check if the GitHub CLI is installed and available.
@@ -76,7 +77,7 @@ pub async fn create_pull_request(
 /// `true` if the `gh` CLI is installed and executable.
 #[tauri::command]
 pub fn check_gh_cli_installed() -> Result<bool, String> {
-    GitHubService::check_gh_cli_installed().map_err(|e| e.to_string())
+    github::check_gh_cli_installed().map_err(|e| e.to_string())
 }
 
 /// Check if the user is authenticated with GitHub CLI.
@@ -85,5 +86,64 @@ pub fn check_gh_cli_installed() -> Result<bool, String> {
 /// Empty result on success, error message if not authenticated.
 #[tauri::command]
 pub fn check_gh_auth_status() -> Result<(), String> {
-    GitHubService::check_gh_auth_status().map_err(|e| e.to_string())
+    github::check_gh_auth_status().map_err(|e| e.to_string())
+}
+
+/// Get the remote repository URL for a worktree.
+///
+/// # Arguments
+/// * `worktree_path` - Path to the worktree
+/// * `remote` - Remote name (default: "origin")
+///
+/// # Returns
+/// The remote URL if found.
+#[tauri::command]
+pub fn get_remote_url(worktree_path: String, remote: Option<String>) -> Result<String, String> {
+    github::get_remote_url(&worktree_path, remote.as_deref()).map_err(|e| e.to_string())
+}
+
+/// Check if a pull request already exists for a branch.
+///
+/// # Arguments
+/// * `worktree_path` - Path to the worktree
+/// * `branch` - Branch name to check (defaults to current branch)
+///
+/// # Returns
+/// The PR URL if one exists, None otherwise.
+#[tauri::command]
+pub async fn get_existing_pr(
+    worktree_path: String,
+    branch: Option<String>,
+) -> Result<Option<String>, String> {
+    github::get_existing_pr(&worktree_path, branch.as_deref())
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Get the URL for viewing the current branch's PR in the browser.
+///
+/// # Arguments
+/// * `worktree_path` - Path to the worktree
+///
+/// # Returns
+/// The URL to view the PR, or an error if no PR exists.
+#[tauri::command]
+pub async fn get_pr_url(worktree_path: String) -> Result<String, String> {
+    github::get_pr_url(&worktree_path)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Get PR details for the current branch.
+///
+/// # Arguments
+/// * `worktree_path` - Path to the worktree
+///
+/// # Returns
+/// The PR details as JSON, or None if no PR exists.
+#[tauri::command]
+pub async fn get_pr_details(worktree_path: String) -> Result<Option<serde_json::Value>, String> {
+    github::get_pr_details(&worktree_path)
+        .await
+        .map_err(|e| e.to_string())
 }

@@ -10,11 +10,471 @@ OpenFlow orchestrates AI coding CLI tools (Claude Code, Gemini CLI, Codex CLI, C
 
 ### System Design
 
-OpenFlow follows a Tauri 2 architecture with a Rust backend and React TypeScript frontend. The system is divided into two main layers:
+OpenFlow follows a flexible backend architecture that supports multiple deployment modes:
 
-**Backend (Rust):** Handles IPC commands, database operations, process management (PTY/spawning), git worktree lifecycle, and CLI tool execution. Business logic lives in services that are called by thin command handlers.
+1. **Desktop App (Default):** Tauri 2 application with embedded HTTP/WebSocket server
+2. **Standalone Server:** HTTP/WebSocket server for cloud or multi-client deployments
+3. **Web Frontend:** React app that can connect to any backend via HTTP/WebSocket
 
-**Frontend (React/TypeScript):** Stateless UI components composed into pages. Data flows one direction from Rust types through generated TypeScript to validation schemas to query wrappers to hooks to UI.
+**Backend (Rust):** Modular crate architecture with business logic in `openflow-core`, shared by both Tauri commands and HTTP routes. Supports database operations, process management (PTY/spawning), git worktree lifecycle, and CLI tool execution.
+
+**Frontend (React/TypeScript):** Stateless UI components with transport abstraction that automatically detects runtime context (Tauri IPC vs HTTP) and uses the appropriate communication method.
+
+### Flexible Backend Modes
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DEPLOYMENT MODES                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  Mode 1: Desktop App (pnpm dev)                                              │
+│  ┌─────────────────────────────────────────────────────────────────────────┐│
+│  │  Tauri Desktop App                                                      ││
+│  │  ├── React Frontend (webview)     ←─── Tauri IPC ───┐                   ││
+│  │  ├── Embedded HTTP Server (:3001) ←─── HTTP/WS ─────┼── Browser Clients ││
+│  │  └── Shared Database & Services   ←─────────────────┘                   ││
+│  └─────────────────────────────────────────────────────────────────────────┘│
+│                                                                              │
+│  Mode 2: Standalone Server (pnpm dev:server)                                 │
+│  ┌─────────────────────────────────────────────────────────────────────────┐│
+│  │  openflow-server binary                                                 ││
+│  │  └── HTTP/WS Server (:3001) ←─── HTTP/WS ─── Multiple Browser Clients   ││
+│  └─────────────────────────────────────────────────────────────────────────┘│
+│                                                                              │
+│  Mode 3: Full Web Stack (pnpm dev:all)                                       │
+│  ┌─────────────────────────────────────────────────────────────────────────┐│
+│  │  Standalone Server + Vite Frontend                                      ││
+│  │  ├── openflow-server (:3001)                                            ││
+│  │  └── Vite dev server (:5173) ←─── HTTP/WS ─── Server                    ││
+│  └─────────────────────────────────────────────────────────────────────────┘│
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Crate Architecture
+
+The Rust backend is organized into modular crates:
+
+```
+crates/
+├── openflow-contracts/  # API contracts (single source of truth)
+│   ├── entities/        # Domain entities (Project, Task, Chat, etc.)
+│   ├── requests/        # Request types with validation annotations
+│   ├── events/          # WebSocket/Tauri event types
+│   └── endpoints/       # Endpoint metadata for code generation
+│
+├── openflow-db/         # Database layer
+│   ├── config.rs        # Database configuration
+│   ├── pool.rs          # Connection pool initialization
+│   └── migrations/      # SQL migration files
+│
+├── openflow-process/    # Process management
+│   ├── pty.rs           # PTY execution (portable-pty)
+│   ├── spawn.rs         # Process spawning
+│   ├── executor.rs      # ProcessExecutor trait
+│   └── output.rs        # Output streaming
+│
+├── openflow-core/       # Business logic (shared)
+│   ├── services/        # Service layer (CRUD, workflows, git)
+│   └── events/          # Event broadcaster trait
+│
+└── openflow-server/     # HTTP/WebSocket server
+    ├── routes/          # Axum route handlers
+    ├── ws/              # WebSocket handler + client manager
+    └── main.rs          # Standalone binary entry point
+```
+
+**Dependency Flow:**
+```
+openflow-server ──┐
+                  ├──▶ openflow-core ──▶ openflow-contracts
+src-tauri (Tauri) ┘                   ├──▶ openflow-db
+                                      └──▶ openflow-process
+```
+
+### Data Flow Architecture
+
+The following diagram shows how data flows through the system for a typical CRUD operation:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           DATA FLOW (CREATE PROJECT)                             │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌──────────────┐     ┌───────────────┐     ┌─────────────────┐                 │
+│  │   Frontend   │     │   Transport   │     │     Backend     │                 │
+│  │   (React)    │     │   Abstraction │     │     (Rust)      │                 │
+│  └──────┬───────┘     └───────┬───────┘     └────────┬────────┘                 │
+│         │                     │                      │                           │
+│         │  1. User Action     │                      │                           │
+│         │  (click "Create")   │                      │                           │
+│         ▼                     │                      │                           │
+│  ┌──────────────┐             │                      │                           │
+│  │  useMutation │             │                      │                           │
+│  │  (TanStack)  │             │                      │                           │
+│  └──────┬───────┘             │                      │                           │
+│         │                     │                      │                           │
+│         │  2. invoke('create_project', {...})        │                           │
+│         ├────────────────────►│                      │                           │
+│         │                     │                      │                           │
+│         │        ┌────────────┴────────────┐         │                           │
+│         │        │  Tauri IPC or HTTP POST │         │                           │
+│         │        └────────────┬────────────┘         │                           │
+│         │                     │                      │                           │
+│         │                     │  3. Request arrives  │                           │
+│         │                     ├─────────────────────►│                           │
+│         │                     │                      │                           │
+│         │                     │               ┌──────┴──────┐                    │
+│         │                     │               │   Command/  │                    │
+│         │                     │               │   Route     │                    │
+│         │                     │               │   Handler   │                    │
+│         │                     │               └──────┬──────┘                    │
+│         │                     │                      │                           │
+│         │                     │               ┌──────▼──────┐                    │
+│         │                     │               │   Service   │                    │
+│         │                     │               │   Layer     │                    │
+│         │                     │               │ (openflow-  │                    │
+│         │                     │               │   core)     │                    │
+│         │                     │               └──────┬──────┘                    │
+│         │                     │                      │                           │
+│         │                     │               ┌──────▼──────┐                    │
+│         │                     │               │  Database   │                    │
+│         │                     │               │  (SQLite)   │                    │
+│         │                     │               └──────┬──────┘                    │
+│         │                     │                      │                           │
+│         │                     │  4. Entity created   │                           │
+│         │                     │◄─────────────────────┤                           │
+│         │                     │                      │                           │
+│         │  5. Return project  │                      │                           │
+│         │◄────────────────────┤                      │                           │
+│         │                     │                      │                           │
+│         │                     │               ┌──────┴──────┐                    │
+│         │                     │               │  Broadcast  │                    │
+│         │                     │               │   Event     │                    │
+│         │                     │               └──────┬──────┘                    │
+│         │                     │                      │                           │
+│         │                     │  6. data-changed     │                           │
+│         │                     │     event via WS     │                           │
+│  ┌──────┴───────┐             │◄─────────────────────┤                           │
+│  │ useDataSync  │◄────────────┤                      │                           │
+│  │   (hook)     │             │                      │                           │
+│  └──────┬───────┘             │                      │                           │
+│         │                     │                      │                           │
+│         │  7. Invalidate      │                      │                           │
+│         │     query cache     │                      │                           │
+│         ▼                     │                      │                           │
+│  ┌──────────────┐             │                      │                           │
+│  │    UI        │             │                      │                           │
+│  │  Re-renders  │             │                      │                           │
+│  └──────────────┘             │                      │                           │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Real-Time Synchronization Flow
+
+Shows how changes propagate to all connected clients:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                        REAL-TIME SYNC (MULTI-CLIENT)                             │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       ┌─────────────────┐    │
+│  │   Tauri     │  │   Browser   │  │   Browser   │       │     Backend     │    │
+│  │   Desktop   │  │   Client 1  │  │   Client 2  │       │                 │    │
+│  │   (IPC)     │  │   (HTTP)    │  │   (HTTP)    │       │                 │    │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘       └────────┬────────┘    │
+│         │                │                │                       │             │
+│         │                │                │    WebSocket Connect  │             │
+│         │                ├────────────────┼──────────────────────►│             │
+│         │                │                │◄──────────────────────┤             │
+│         │                │                │    { type: connected } │             │
+│         │                │                │                       │             │
+│         │                │    Subscribe   │                       │             │
+│         │                ├────────────────┼──────────────────────►│             │
+│         │                │                │    data-changed       │             │
+│         │                │                │                       │             │
+│         │                │                │    Subscribe          │             │
+│         │                │                ├──────────────────────►│             │
+│         │                │                │    data-changed       │             │
+│         │                │                │                       │             │
+│         │  HTTP POST /api/projects        │                       │             │
+│         ├────────────────────────────────────────────────────────►│             │
+│         │                │                │                       │             │
+│         │                │                │              ┌────────┴────────┐    │
+│         │                │                │              │ Create Project  │    │
+│         │                │                │              │ in Database     │    │
+│         │                │                │              └────────┬────────┘    │
+│         │                │                │                       │             │
+│         │◄───────────────┼────────────────┼───────────────────────┤             │
+│         │   JSON Response│                │                       │             │
+│         │                │                │                       │             │
+│         │                │                │              ┌────────┴────────┐    │
+│         │                │                │              │ Broadcast Event │    │
+│         │                │                │              │ to Subscribers  │    │
+│         │                │                │              └────────┬────────┘    │
+│         │                │                │                       │             │
+│         │                │◄───────────────┼───────────────────────┤             │
+│         │                │   data-changed │                       │             │
+│         │                │   { entity: "project", action: "created", id, data } │
+│         │                │                │                       │             │
+│         │                │                │◄──────────────────────┤             │
+│         │                │                │   data-changed        │             │
+│         │                │                │   (same event)        │             │
+│         │                │                │                       │             │
+│   ┌─────┴─────┐    ┌─────┴─────┐    ┌─────┴─────┐                 │             │
+│   │ Cache     │    │ Cache     │    │ Cache     │                 │             │
+│   │ Invalidate│    │ Invalidate│    │ Invalidate│                 │             │
+│   └─────┬─────┘    └─────┬─────┘    └─────┬─────┘                 │             │
+│         │                │                │                       │             │
+│   ┌─────┴─────┐    ┌─────┴─────┐    ┌─────┴─────┐                 │             │
+│   │ UI        │    │ UI        │    │ UI        │                 │             │
+│   │ Updates   │    │ Updates   │    │ Updates   │                 │             │
+│   │ (instant) │    │ (instant) │    │ (instant) │                 │             │
+│   └───────────┘    └───────────┘    └───────────┘                 │             │
+│                                                                                  │
+│   All clients see the new project at the same time!                              │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Domain Entity Relationships
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           ENTITY RELATIONSHIP DIAGRAM                            │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌─────────────────┐                                                             │
+│  │ ExecutorProfile │                                                             │
+│  ├─────────────────┤         ┌────────────────┐                                 │
+│  │ id              │         │     Project    │                                 │
+│  │ name            │         ├────────────────┤                                 │
+│  │ cli_tool        │         │ id             │                                 │
+│  │ command         │         │ name           │                                 │
+│  │ args            │         │ git_repo_path  │                                 │
+│  │ env             │         │ setup_script   │                                 │
+│  │ model           │         │ cleanup_script │                                 │
+│  │ is_default      │         │ rules          │                                 │
+│  └─────────────────┘         │ is_archived    │                                 │
+│         │                    │ created_at     │                                 │
+│         │ used by            │ updated_at     │                                 │
+│         │                    └───────┬────────┘                                 │
+│         │                            │                                           │
+│         │                            │ has many                                  │
+│         ▼                            ▼                                           │
+│  ┌──────────────────┐         ┌────────────────┐                                │
+│  │ExecutionProcess  │         │      Task      │◄──────────┐                    │
+│  ├──────────────────┤         ├────────────────┤           │                    │
+│  │ id               │         │ id             │           │ parent_task_id     │
+│  │ chat_id          │◄────────│ project_id     │           │ (self-reference    │
+│  │ executor_profile │         │ parent_task_id ├───────────┘  for subtasks)     │
+│  │ status           │         │ title          │                                │
+│  │ exit_code        │         │ description    │                                │
+│  │ working_dir      │         │ status         │                                │
+│  │ command          │         │ workflow_name  │                                │
+│  │ started_at       │         │ artifacts_path │                                │
+│  │ completed_at     │         │ is_archived    │                                │
+│  └──────────────────┘         │ created_at     │                                │
+│                               │ updated_at     │                                │
+│                               └───────┬────────┘                                │
+│                                       │                                          │
+│                                       │ has many                                 │
+│                                       ▼                                          │
+│                               ┌────────────────┐                                │
+│                               │      Chat      │                                │
+│  ┌──────────────────┐         ├────────────────┤                                │
+│  │     Setting      │         │ id             │                                │
+│  ├──────────────────┤         │ task_id        │ (nullable for standalone)      │
+│  │ key (PK)         │         │ project_id     │ (nullable)                     │
+│  │ value            │         │ title          │                                │
+│  │ updated_at       │         │ role           │ (requirements/spec/impl/etc)   │
+│  └──────────────────┘         │ branch_name    │                                │
+│                               │ worktree_path  │                                │
+│                               │ worktree_status│                                │
+│                               │ is_archived    │                                │
+│                               │ claude_session │                                │
+│                               │ created_at     │                                │
+│                               │ updated_at     │                                │
+│                               └───────┬────────┘                                │
+│                                       │                                          │
+│                                       │ has many                                 │
+│                                       ▼                                          │
+│                               ┌────────────────┐                                │
+│                               │    Message     │                                │
+│                               ├────────────────┤                                │
+│                               │ id             │                                │
+│                               │ chat_id        │                                │
+│                               │ role           │ (user/assistant/system)        │
+│                               │ content        │                                │
+│                               │ tool_calls     │ (JSON)                         │
+│                               │ tokens_used    │                                │
+│                               │ is_streaming   │                                │
+│                               │ created_at     │                                │
+│                               │ updated_at     │                                │
+│                               └────────────────┘                                │
+│                                                                                  │
+│  Legend:                                                                         │
+│  ───────► : Foreign key relationship (one-to-many)                              │
+│  ◄──────  : References (belongs to)                                             │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Process Management Flow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          PROCESS OUTPUT STREAMING                                │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │                        openflow-process Crate                               │ │
+│  │                                                                              │ │
+│  │  ┌─────────────────┐                                                        │ │
+│  │  │   PtyManager    │ ◄─── Manages all PTY processes                         │ │
+│  │  │   (executor)    │                                                        │ │
+│  │  └────────┬────────┘                                                        │ │
+│  │           │                                                                  │ │
+│  │           │ spawn()                                                          │ │
+│  │           ▼                                                                  │ │
+│  │  ┌─────────────────┐     ┌──────────────────────────────────────────────┐   │ │
+│  │  │  PTY Process    │────►│  Background Task                              │   │ │
+│  │  │  (child proc)   │     │  (reads output continuously)                  │   │ │
+│  │  └─────────────────┘     └────────────────────┬─────────────────────────┘   │ │
+│  │                                               │                              │ │
+│  └───────────────────────────────────────────────┼──────────────────────────────┘ │
+│                                                  │                                │
+│                                                  │ OutputChunk { type, content }  │
+│                                                  ▼                                │
+│  ┌────────────────────────────────────────────────────────────────────────────┐ │
+│  │                        openflow-core Crate                                  │ │
+│  │                                                                              │ │
+│  │  ┌─────────────────┐                                                        │ │
+│  │  │ ProcessService  │ ◄─── Wraps PTY, adds DB tracking                       │ │
+│  │  │                 │                                                        │ │
+│  │  └────────┬────────┘                                                        │ │
+│  │           │                                                                  │ │
+│  │           │ broadcast(ProcessOutput event)                                   │ │
+│  │           ▼                                                                  │ │
+│  │  ┌─────────────────┐                                                        │ │
+│  │  │EventBroadcaster │ ◄─── Trait implemented by:                             │ │
+│  │  │    (trait)      │      - TauriBroadcaster (emits Tauri events)           │ │
+│  │  │                 │      - WsBroadcaster (sends to WebSocket)              │ │
+│  │  └────────┬────────┘                                                        │ │
+│  │           │                                                                  │ │
+│  └───────────┼──────────────────────────────────────────────────────────────────┘ │
+│              │                                                                    │
+│              │ Event: process-output-{id}                                         │
+│              │ { processId, outputType, content, timestamp }                      │
+│              │                                                                    │
+│    ┌─────────┴─────────┬──────────────────────────────────────┐                  │
+│    │                   │                                      │                  │
+│    ▼                   ▼                                      ▼                  │
+│  ┌───────────┐   ┌──────────────┐                      ┌──────────────┐          │
+│  │  Tauri    │   │  WebSocket   │                      │  WebSocket   │          │
+│  │  Event    │   │  Client 1    │                      │  Client 2    │          │
+│  │  (IPC)    │   │              │                      │              │          │
+│  └─────┬─────┘   └──────┬───────┘                      └──────┬───────┘          │
+│        │                │                                     │                  │
+│        ▼                ▼                                     ▼                  │
+│  ┌───────────────────────────────────────────────────────────────────────────┐  │
+│  │                         Frontend (React)                                   │  │
+│  │                                                                            │  │
+│  │  ┌──────────────────┐     ┌──────────────────┐     ┌────────────────────┐ │  │
+│  │  │ useProcessOutput │────►│ Output State     │────►│ Terminal UI        │ │  │
+│  │  │ (hook)           │     │ [line1, line2..] │     │ <ProcessOutput />  │ │  │
+│  │  └──────────────────┘     └──────────────────┘     └────────────────────┘ │  │
+│  │                                                                            │  │
+│  └───────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Transport Abstraction
+
+The frontend uses a transport abstraction that automatically detects the runtime context:
+
+```typescript
+// packages/queries/transport/index.ts
+export interface Transport {
+  invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T>;
+  subscribe(channel: string, handler: (event: unknown) => void): () => void;
+}
+
+// Automatic detection
+export function isTauriContext(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+```
+
+**Tauri Transport:** Uses `@tauri-apps/api/core` invoke and `@tauri-apps/api/event` listen.
+
+**HTTP Transport:** Uses `fetch()` for REST API calls and WebSocket for real-time events. Commands are mapped to HTTP endpoints via the generated command map.
+
+### Real-Time Synchronization
+
+All data mutations broadcast events to connected clients via WebSocket:
+
+```typescript
+// Event types
+interface DataChangedEvent {
+  entity: 'project' | 'task' | 'chat' | 'message' | 'setting';
+  action: 'created' | 'updated' | 'deleted';
+  id: string;
+  data?: unknown;  // Full entity for create/update
+}
+
+interface ProcessOutputEvent {
+  processId: string;
+  outputType: 'stdout' | 'stderr';
+  content: string;
+  timestamp: string;
+}
+```
+
+**Event Channels:**
+- `data-changed` - All entity CRUD operations
+- `process-output-{id}` - Process stdout/stderr streaming
+- `process-status-{id}` - Process lifecycle events
+
+The `useDataSync` hook subscribes to `data-changed` and automatically invalidates TanStack Query caches.
+
+### API Contract System
+
+Types are defined once in Rust with `#[typeshare]` and validation annotations, then generated to TypeScript:
+
+```rust
+// crates/openflow-contracts/src/requests/project.rs
+
+/// Request to create a new project
+///
+/// @endpoint: POST /api/projects
+/// @command: create_project
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateProjectRequest {
+    /// Project name (required, 1-255 chars)
+    /// @validate: required, min_length=1, max_length=255
+    pub name: String,
+
+    /// Path to git repository (required)
+    /// @validate: required, format=path
+    pub git_repo_path: String,
+}
+```
+
+**Generation Pipeline:**
+```
+Rust Contracts ──▶ typeshare ──▶ TypeScript Types
+                └──▶ generate-zod.ts ──▶ Zod Schemas
+                └──▶ generate-queries.ts ──▶ Query Functions
+                └──▶ generate-command-map.ts ──▶ HTTP Mapping
+```
+
+Run `pnpm generate:all` to regenerate all TypeScript from Rust sources.
 
 ### Dependency Hierarchy
 
@@ -248,6 +708,54 @@ pub fn create(pool: &DbPool, input: CreateProjectInput) -> ServiceResult<Project
     Ok(project)
 }
 ```
+
+### Backend Logging Configuration
+
+The Rust backend uses `tracing` for structured logging. Configure logging via environment variables or CLI flags.
+
+**Environment Variables:**
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `RUST_LOG` | Log level filter | `debug`, `info`, `warn`, `error` |
+| `OPENFLOW_VERBOSE` | Enable debug logging | `1` |
+| `OPENFLOW_JSON_LOGS` | Enable JSON log format | `1` |
+
+**RUST_LOG Filter Syntax:**
+
+```bash
+# Set global log level
+RUST_LOG=debug cargo run -p openflow-server
+
+# Set per-crate log levels
+RUST_LOG=openflow_server=debug,openflow_core=info cargo run -p openflow-server
+
+# Filter to specific targets
+RUST_LOG=openflow_server::routes=debug cargo run -p openflow-server
+```
+
+**JSON Log Format:**
+
+For production/log aggregation, enable JSON output:
+
+```bash
+# Via CLI flag
+cargo run -p openflow-server -- --json
+
+# Via environment variable
+OPENFLOW_JSON_LOGS=1 cargo run -p openflow-server
+```
+
+JSON output includes structured fields:
+```json
+{"timestamp":"2024-01-15T10:30:00Z","level":"INFO","target":"openflow_server","message":"Server starting","version":"0.1.0","host":"127.0.0.1","port":3001}
+```
+
+**Default Log Levels:**
+
+- Development (`pnpm dev`): `info` for all OpenFlow crates
+- Verbose (`--verbose`): `debug` for all OpenFlow crates
+- Production: Configure via `RUST_LOG` as needed
 
 ### What NOT to Log
 
@@ -483,12 +991,20 @@ Variables like `{@artifacts_path}` are substituted at runtime.
 ## Commands Reference
 
 ```bash
-# Development
-pnpm dev              # Start Tauri dev mode
+# Development Modes
+pnpm dev              # Start Tauri desktop app with embedded HTTP server on port 3001
+pnpm dev:server       # Start standalone HTTP server only (no Tauri, no GUI)
+pnpm dev:web          # Start Vite frontend only (expects backend at localhost:3001)
+pnpm dev:all          # Start standalone server + frontend (no Tauri desktop app)
 pnpm storybook        # Component development
+
+# Build Commands
+pnpm build            # Build Tauri desktop app
+pnpm build:server     # Build standalone server binary (target/release/openflow-server)
 
 # Type generation
 pnpm generate:types   # Regenerate TS from Rust
+pnpm generate:all     # Run all generators (types, zod, queries, command-map, routes)
 
 # Route generation
 pnpm tsr generate     # Regenerate TanStack Router routes after adding/modifying route files
@@ -505,6 +1021,1185 @@ pnpm validate:blocking # Run blocking validators only
 cd src-tauri && cargo check
 cd src-tauri && cargo test
 cd src-tauri && cargo clippy -- -D warnings
+cargo run -p openflow-server -- --help  # Run standalone server with CLI options
+
+# Docker
+docker compose up                    # Start server with Docker Compose
+docker compose -f docker-compose.prod.yml up  # Production mode with resource limits
+docker build -t openflow-server .    # Build server image
+```
+
+### Development Modes Explained
+
+OpenFlow supports flexible deployment through multiple development modes:
+
+| Mode | Command | Description | Use Case |
+|------|---------|-------------|----------|
+| **Desktop (Default)** | `pnpm dev` | Tauri app with embedded HTTP server | Local desktop development |
+| **Server Only** | `pnpm dev:server` | Standalone HTTP/WS server | Cloud deployment, testing |
+| **Web Only** | `pnpm dev:web` | Vite frontend only | Frontend development |
+| **Full Web Stack** | `pnpm dev:all` | Server + Frontend (no Tauri) | Browser-based development |
+
+**Embedded Server Behavior:**
+- When running `pnpm dev`, an HTTP/WebSocket server starts on port 3001
+- Browser clients can connect to `http://localhost:3001` for REST API
+- WebSocket available at `ws://localhost:3001/ws` for real-time updates
+- Both Tauri IPC and HTTP clients share the same database and state
+- Data changes in Tauri app instantly sync to browser clients and vice versa
+
+## REST API Reference
+
+The HTTP server exposes a REST API at `http://localhost:3001/api/`.
+
+All request and response bodies use JSON with `camelCase` field names. All endpoints return JSON responses.
+
+### Common Response Patterns
+
+**Success (200 OK):**
+```json
+{ "id": "uuid", "name": "Example", ... }
+```
+
+**Not Found (404):**
+```json
+{ "error": "Not found: Project abc123" }
+```
+
+**Validation Error (400):**
+```json
+{ "error": "Name is required" }
+```
+
+---
+
+### Health
+
+#### GET /api/health
+Check server and database status.
+
+**Response:**
+```json
+{
+  "status": "ok",
+  "version": "0.1.0",
+  "database": "connected"
+}
+```
+
+---
+
+### Projects
+
+#### GET /api/projects
+List all non-archived projects (ordered by name).
+
+**Response:**
+```json
+[
+  {
+    "id": "proj_abc123",
+    "name": "My Project",
+    "gitRepoPath": "/path/to/repo",
+    "baseBranch": "main",
+    "setupScript": "npm install",
+    "devScript": "npm run dev",
+    "cleanupScript": null,
+    "copyFiles": null,
+    "icon": "folder",
+    "ruleFolders": null,
+    "alwaysIncludedRules": null,
+    "workflowsFolder": ".workflows",
+    "verificationConfig": null,
+    "archivedAt": null,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+#### GET /api/projects/archived
+List all archived projects (ordered by archived_at).
+
+#### GET /api/projects/:id
+Get a project by ID.
+
+**Response:** Single project object (same structure as above)
+
+#### POST /api/projects
+Create a new project.
+
+**Request:**
+```json
+{
+  "name": "My Project",
+  "gitRepoPath": "/path/to/repo",
+  "baseBranch": "main",
+  "setupScript": "npm install",
+  "devScript": "npm run dev",
+  "cleanupScript": "npm run clean",
+  "copyFiles": "[\"config.json\"]",
+  "icon": "rocket",
+  "ruleFolders": "[\".rules\"]",
+  "alwaysIncludedRules": "[\"base.md\"]",
+  "workflowsFolder": ".workflows",
+  "verificationConfig": "{\"test\": \"npm test\"}"
+}
+```
+
+Required fields: `name`, `gitRepoPath`
+
+#### PATCH /api/projects/:id
+Update a project (partial update).
+
+**Request:**
+```json
+{
+  "name": "Updated Name",
+  "setupScript": "pnpm install"
+}
+```
+
+#### DELETE /api/projects/:id
+Delete a project permanently.
+
+#### POST /api/projects/:id/archive
+Archive a project (sets `archivedAt` timestamp).
+
+#### POST /api/projects/:id/unarchive
+Unarchive a project (clears `archivedAt`).
+
+---
+
+### Tasks
+
+#### GET /api/tasks
+List tasks with optional filters.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `projectId` | string | Filter by project (required) |
+| `status` | string | Filter by status: `pending`, `in_progress`, `completed`, `archived` |
+| `includeArchived` | boolean | Include archived tasks (default: false) |
+
+**Example:** `GET /api/tasks?projectId=proj_abc&status=in_progress`
+
+**Response:**
+```json
+[
+  {
+    "id": "task_xyz789",
+    "projectId": "proj_abc123",
+    "parentTaskId": null,
+    "title": "Implement feature X",
+    "description": "Detailed description here",
+    "status": "in_progress",
+    "workflowTemplate": "builtin:feature",
+    "artifactsPath": "/path/to/artifacts",
+    "baseBranch": "main",
+    "isArchived": false,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+#### GET /api/tasks/archived?projectId=xxx
+List archived tasks for a project.
+
+#### GET /api/tasks/:id
+Get a task by ID.
+
+#### GET /api/tasks/:id/children
+Get child tasks (subtasks) of a task.
+
+#### POST /api/tasks
+Create a new task.
+
+**Request:**
+```json
+{
+  "projectId": "proj_abc123",
+  "title": "Implement feature X",
+  "description": "Detailed description",
+  "workflowTemplate": "builtin:feature",
+  "parentTaskId": null,
+  "baseBranch": "develop"
+}
+```
+
+Required fields: `projectId`, `title`
+
+#### PATCH /api/tasks/:id
+Update a task (partial update).
+
+**Request:**
+```json
+{
+  "title": "Updated title",
+  "status": "completed"
+}
+```
+
+#### DELETE /api/tasks/:id
+Delete a task permanently.
+
+#### POST /api/tasks/:id/archive
+Archive a task.
+
+#### POST /api/tasks/:id/unarchive
+Unarchive a task.
+
+#### POST /api/tasks/:id/duplicate
+Duplicate a task (creates a copy with "(copy)" suffix).
+
+**Response:** The newly created duplicate task.
+
+---
+
+### Chats
+
+#### GET /api/chats
+List chats with optional filters.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `taskId` | string | Filter by task ID |
+
+**Response:**
+```json
+[
+  {
+    "id": "chat_def456",
+    "projectId": "proj_abc123",
+    "taskId": "task_xyz789",
+    "title": "Requirements Discussion",
+    "chatRole": "requirements",
+    "executorProfileId": null,
+    "branchName": "openflow/task_xyz/requirements",
+    "worktreePath": "/worktrees/chat_def456",
+    "worktreeStatus": "active",
+    "claudeSession": null,
+    "initialPrompt": null,
+    "hiddenPrompt": null,
+    "isPlanContainer": false,
+    "mainChatId": null,
+    "workflowStepIndex": 0,
+    "isArchived": false,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+#### GET /api/chats/standalone
+List standalone chats (not associated with any task).
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `projectId` | string | Filter by project (optional) |
+
+#### GET /api/chats/by-project?projectId=xxx
+List all chats for a project (across all tasks).
+
+#### GET /api/chats/archived
+List archived chats.
+
+#### GET /api/chats/:id
+Get a chat by ID.
+
+#### POST /api/chats
+Create a new chat.
+
+**Request:**
+```json
+{
+  "projectId": "proj_abc123",
+  "taskId": "task_xyz789",
+  "title": "Implementation Chat",
+  "chatRole": "implementation",
+  "executorProfileId": "profile_123",
+  "baseBranch": "develop",
+  "initialPrompt": "Let's implement the feature",
+  "hiddenPrompt": "Follow TDD practices",
+  "isPlanContainer": false,
+  "mainChatId": null,
+  "workflowStepIndex": 2
+}
+```
+
+Required fields: `projectId`
+
+**Chat Roles:** `requirements`, `spec`, `implementation`, `review`, `testing`, `general`
+
+#### PATCH /api/chats/:id
+Update a chat.
+
+#### DELETE /api/chats/:id
+Delete a chat.
+
+#### POST /api/chats/:id/archive
+Archive a chat.
+
+#### POST /api/chats/:id/unarchive
+Unarchive a chat.
+
+---
+
+### Messages
+
+#### GET /api/messages?chatId=xxx
+List messages for a chat (ordered by created_at).
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `chatId` | string | Yes | Chat ID to list messages for |
+
+**Response:**
+```json
+[
+  {
+    "id": "msg_123",
+    "chatId": "chat_def456",
+    "role": "user",
+    "content": "Please implement the login feature",
+    "model": null,
+    "toolCalls": null,
+    "tokensUsed": null,
+    "isStreaming": false,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  },
+  {
+    "id": "msg_124",
+    "chatId": "chat_def456",
+    "role": "assistant",
+    "content": "I'll implement the login feature...",
+    "model": "claude-3-opus",
+    "toolCalls": "[{\"name\":\"write_file\",\"arguments\":{...}}]",
+    "tokensUsed": 1500,
+    "isStreaming": false,
+    "createdAt": "2024-01-15T10:31:00Z",
+    "updatedAt": "2024-01-15T10:31:00Z"
+  }
+]
+```
+
+**Message Roles:** `user`, `assistant`, `system`
+
+#### GET /api/messages/:id
+Get a message by ID.
+
+#### GET /api/messages/count?chatId=xxx
+Get message count for a chat.
+
+**Response:**
+```json
+{ "count": 42 }
+```
+
+#### GET /api/messages/latest?chatId=xxx
+Get the latest message for a chat.
+
+**Response:** Single message object or `null`
+
+#### POST /api/messages
+Create a new message.
+
+**Request:**
+```json
+{
+  "chatId": "chat_def456",
+  "role": "user",
+  "content": "Hello, please help me with...",
+  "model": null,
+  "toolCalls": null,
+  "isStreaming": false
+}
+```
+
+Required fields: `chatId`, `role`, `content`
+
+#### PATCH /api/messages/:id
+Update a message.
+
+**Request:**
+```json
+{
+  "content": "Updated content",
+  "tokensUsed": 500
+}
+```
+
+#### DELETE /api/messages/:id
+Delete a message.
+
+#### DELETE /api/messages/by-chat?chatId=xxx
+Delete all messages for a chat.
+
+**Response:**
+```json
+5
+```
+(Number of deleted messages)
+
+#### PATCH /api/messages/:id/streaming
+Set streaming status of a message.
+
+**Request:**
+```json
+{ "isStreaming": false }
+```
+
+#### POST /api/messages/:id/append
+Append content to a streaming message.
+
+**Request:**
+```json
+{ "content": " more text here" }
+```
+
+#### PATCH /api/messages/:id/tokens
+Set token usage for a message.
+
+**Request:**
+```json
+{ "tokensUsed": 1500 }
+```
+
+---
+
+### Processes
+
+#### GET /api/processes
+List execution processes with optional filters.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `chatId` | string | Filter by chat ID |
+| `runningOnly` | boolean | Only return running processes |
+
+**Response:**
+```json
+[
+  {
+    "id": "proc_789",
+    "chatId": "chat_def456",
+    "executorProfileId": "profile_123",
+    "status": "running",
+    "exitCode": null,
+    "workingDir": "/path/to/worktree",
+    "command": "claude",
+    "args": "[\"--verbose\"]",
+    "startedAt": "2024-01-15T10:30:00Z",
+    "completedAt": null,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+**Process Status:** `pending`, `running`, `completed`, `failed`, `killed`
+
+#### GET /api/processes/:id
+Get a process by ID.
+
+#### POST /api/processes/:id/kill
+Kill a running process.
+
+**Response:** Updated process object with `status: "killed"`
+
+#### POST /api/processes/:id/input
+Send input to a running process (PTY).
+
+**Request:**
+```json
+{ "input": "yes\n" }
+```
+
+#### POST /api/processes/:id/resize
+Resize the PTY terminal.
+
+**Request:**
+```json
+{ "cols": 120, "rows": 40 }
+```
+
+---
+
+### Git Operations
+
+#### GET /api/git/worktrees?repoPath=xxx
+List all git worktrees for a repository.
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `repoPath` | string | Yes | Path to the git repository |
+
+**Response:**
+```json
+[
+  {
+    "path": "/worktrees/feature-branch",
+    "branch": "feature/login",
+    "head": "abc123def456",
+    "isMainWorktree": false,
+    "isLocked": false,
+    "isBare": false
+  }
+]
+```
+
+#### POST /api/git/worktrees
+Create a new worktree.
+
+**Request:**
+```json
+{
+  "repoPath": "/path/to/repo",
+  "path": "/worktrees/new-feature",
+  "branch": "feature/new-feature",
+  "baseBranch": "main"
+}
+```
+
+#### DELETE /api/git/worktrees
+Delete a worktree.
+
+**Request:**
+```json
+{
+  "repoPath": "/path/to/repo",
+  "path": "/worktrees/old-feature"
+}
+```
+
+#### GET /api/git/diff?repoPath=xxx
+Get the diff for a repository.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `repoPath` | string | Path to the repository (required) |
+| `worktreePath` | string | Worktree path (optional) |
+| `staged` | boolean | Get staged changes only |
+
+**Response:**
+```json
+{
+  "diff": "diff --git a/file.rs b/file.rs\n...",
+  "stats": { "filesChanged": 3, "insertions": 42, "deletions": 10 }
+}
+```
+
+#### GET /api/git/commits?repoPath=xxx
+Get recent commits.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `repoPath` | string | Required |
+| `limit` | number | Max commits (default: 10) |
+| `branch` | string | Branch name (optional) |
+
+#### GET /api/git/branches?repoPath=xxx
+List branches.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `repoPath` | string | Required |
+| `remote` | boolean | Include remote branches |
+
+#### GET /api/git/current-branch?repoPath=xxx
+Get the current branch name.
+
+---
+
+### Executor Profiles
+
+#### GET /api/executor/profiles
+List all executor profiles (ordered by name).
+
+**Response:**
+```json
+[
+  {
+    "id": "profile_123",
+    "name": "Claude Code",
+    "description": "Default Claude Code profile",
+    "command": "claude",
+    "args": "[\"--verbose\", \"--no-confirm\"]",
+    "env": "{\"ANTHROPIC_API_KEY\": \"...\"}",
+    "model": "claude-3-opus",
+    "isDefault": true,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+]
+```
+
+#### GET /api/executor/profiles/default
+Get the default executor profile.
+
+**Response:** Single profile object or `null`
+
+#### GET /api/executor/profiles/:id
+Get a profile by ID.
+
+#### POST /api/executor/profiles
+Create a new executor profile.
+
+**Request:**
+```json
+{
+  "name": "Gemini CLI",
+  "description": "Google Gemini CLI",
+  "command": "gemini",
+  "args": "[\"--model\", \"gemini-pro\"]",
+  "env": "{\"GOOGLE_API_KEY\": \"...\"}",
+  "model": "gemini-pro",
+  "isDefault": false
+}
+```
+
+Required fields: `name`, `command`
+
+#### PATCH /api/executor/profiles/:id
+Update an executor profile.
+
+#### DELETE /api/executor/profiles/:id
+Delete an executor profile.
+
+#### POST /api/executor/run
+Run an executor (AI agent) in a chat.
+
+**Request:**
+```json
+{
+  "chatId": "chat_def456",
+  "prompt": "Please implement the login feature",
+  "executorProfileId": "profile_123"
+}
+```
+
+**Response:** ExecutionProcess object (see Processes section)
+
+---
+
+### Settings
+
+#### GET /api/settings
+Get all settings.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `prefix` | string | Filter by key prefix (e.g., `app.`) |
+
+**Response:**
+```json
+{
+  "app.theme": "dark",
+  "app.language": "en",
+  "user.name": "John"
+}
+```
+
+#### GET /api/settings/:key
+Get a setting value by key.
+
+**Response:**
+```json
+"dark"
+```
+(Returns `null` if not found)
+
+#### GET /api/settings/:key/full
+Get full setting with metadata.
+
+**Response:**
+```json
+{
+  "key": "app.theme",
+  "value": "dark",
+  "updatedAt": "2024-01-15T10:30:00Z"
+}
+```
+
+#### GET /api/settings/:key/exists
+Check if a setting exists.
+
+**Response:**
+```json
+true
+```
+
+#### GET /api/settings/:key/or-default?default=xxx
+Get a setting with fallback.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `default` | string | Default value if key doesn't exist |
+
+#### PUT /api/settings/:key
+Set a setting value.
+
+**Request:**
+```json
+{ "value": "dark" }
+```
+
+**Response:** Full setting object
+
+#### PUT /api/settings/batch
+Set multiple settings atomically.
+
+**Request:**
+```json
+{
+  "app.theme": "dark",
+  "app.language": "en",
+  "app.fontSize": "14"
+}
+```
+
+#### DELETE /api/settings/:key
+Delete a setting.
+
+#### DELETE /api/settings/all
+Delete all settings (requires confirmation).
+
+**Request:**
+```json
+{ "confirm": true }
+```
+
+**Response:**
+```json
+{ "deletedCount": 42 }
+```
+
+---
+
+### Search
+
+#### GET /api/search
+Full-text search across all entities.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `q` | string | Search query (required) |
+| `projectId` | string | Filter by project |
+| `types` | string | Comma-separated types: `task,project,chat,message` |
+| `limit` | number | Maximum results |
+
+**Example:** `GET /api/search?q=login&types=task,chat&limit=20`
+
+**Response:**
+```json
+[
+  {
+    "id": "task_xyz",
+    "type": "task",
+    "title": "Implement login",
+    "snippet": "...user login feature...",
+    "projectId": "proj_abc",
+    "score": 0.95
+  }
+]
+```
+
+#### GET /api/search/tasks?q=xxx
+Search tasks only.
+
+#### GET /api/search/projects?q=xxx
+Search projects only.
+
+---
+
+### Terminal
+
+#### POST /api/terminal/spawn
+Spawn a new terminal session.
+
+**Request:**
+```json
+{
+  "workingDir": "/path/to/directory",
+  "command": "/bin/bash",
+  "args": [],
+  "env": {}
+}
+```
+
+**Response:** ExecutionProcess object
+
+#### GET /api/terminal/shell
+Get the default shell path.
+
+**Response:**
+```json
+"/bin/zsh"
+```
+
+#### GET /api/terminal/shell/details
+Get detailed shell information.
+
+**Response:**
+```json
+{
+  "shell": "/bin/zsh",
+  "name": "zsh",
+  "args": []
+}
+```
+
+---
+
+### Workflows
+
+#### GET /api/workflows/templates
+List workflow templates.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `folder` | string | Path to custom templates folder |
+| `includeBuiltin` | boolean | Include built-in templates |
+
+Without `folder`, returns built-in templates only.
+
+**Response:**
+```json
+[
+  {
+    "id": "builtin:feature",
+    "name": "Feature",
+    "description": "Standard feature development workflow",
+    "isBuiltin": true,
+    "content": "# Feature Workflow\n...",
+    "steps": [
+      {
+        "name": "Requirements",
+        "description": "Gather requirements...",
+        "status": "pending",
+        "chatId": null
+      },
+      {
+        "name": "Technical Specification",
+        "description": "Create tech spec...",
+        "status": "pending",
+        "chatId": null
+      }
+    ]
+  }
+]
+```
+
+**Built-in Templates:** `builtin:feature`, `builtin:bugfix`, `builtin:refactor`
+
+#### GET /api/workflows/templates/builtin
+Get all built-in workflow templates.
+
+#### GET /api/workflows/templates/builtin/:id
+Get a specific built-in template.
+
+#### GET /api/workflows/templates/:id
+Get a template by ID.
+
+**Query Parameters:**
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `folder` | string | Required for file-based templates (`file:*`) |
+
+#### POST /api/workflows/parse
+Parse workflow markdown into steps.
+
+**Request:**
+```json
+{
+  "content": "# Workflow\n\n### [ ] Step: First\nDo first thing.\n\n### [-] Step: Second\nIn progress.\n\n### [x] Step: Third\nCompleted."
+}
+```
+
+**Response:**
+```json
+[
+  { "name": "First", "description": "Do first thing.", "status": "pending", "chatId": null },
+  { "name": "Second", "description": "In progress.", "status": "in_progress", "chatId": null },
+  { "name": "Third", "description": "Completed.", "status": "completed", "chatId": null }
+]
+```
+
+**Step Markers:**
+- `[ ]` - Pending
+- `[-]` - In Progress
+- `[x]` - Completed
+
+#### POST /api/workflows/substitute
+Substitute variables in content.
+
+**Request:**
+```json
+{
+  "content": "Save to {@artifacts_path}/spec.md",
+  "variables": {
+    "artifacts_path": "/tasks/123"
+  }
+}
+```
+
+**Response:**
+```json
+"Save to /tasks/123/spec.md"
+```
+
+#### POST /api/workflows/substitute/context
+Substitute using WorkflowContext.
+
+**Request:**
+```json
+{
+  "content": "{@artifacts_path} in {@project_root}",
+  "context": {
+    "artifactsPath": "/tasks/123",
+    "projectRoot": "/home/project",
+    "worktreePath": "/worktrees/chat_abc",
+    "taskId": "task_xyz",
+    "taskTitle": "My Task",
+    "projectName": "My Project"
+  }
+}
+```
+
+---
+
+### WebSocket Protocol
+
+Connect to `ws://localhost:3001/ws` for real-time events.
+
+#### Client Messages
+
+**Subscribe to a channel:**
+```json
+{ "type": "subscribe", "content": { "channel": "data-changed" } }
+```
+
+**Unsubscribe from a channel:**
+```json
+{ "type": "unsubscribe", "content": { "channel": "data-changed" } }
+```
+
+**Ping (keepalive):**
+```json
+{ "type": "ping" }
+```
+
+#### Server Messages
+
+**Connection established:**
+```json
+{ "type": "connected", "content": { "clientId": "uuid-here" } }
+```
+
+**Subscription confirmed:**
+```json
+{ "type": "subscribed", "content": { "channel": "data-changed" } }
+```
+
+**Event received:**
+```json
+{
+  "type": "event",
+  "content": {
+    "channel": "data-changed",
+    "payload": {
+      "entity": "project",
+      "action": "created",
+      "id": "proj_abc123",
+      "data": { "id": "proj_abc123", "name": "New Project", ... }
+    }
+  }
+}
+```
+
+**Pong response:**
+```json
+{ "type": "pong" }
+```
+
+#### Event Channels
+
+| Channel | Description |
+|---------|-------------|
+| `data-changed` | All entity CRUD operations |
+| `process-output-{id}` | Process stdout/stderr streaming |
+| `process-status-{id}` | Process lifecycle events |
+
+#### Data Changed Event Payload
+
+```json
+{
+  "entity": "project",
+  "action": "created",
+  "id": "proj_abc123",
+  "data": { ... }
+}
+```
+
+**Entities:** `project`, `task`, `chat`, `message`, `setting`, `executor_profile`, `process`
+
+**Actions:** `created`, `updated`, `deleted`
+
+## Environment Variables
+
+OpenFlow supports environment variables for configuration in all deployment modes. Copy `.env.example` to `.env` or `.env.local` to set values.
+
+### Backend Server
+
+These variables configure the standalone server (`pnpm dev:server`) or the embedded server in Tauri.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENFLOW_HOST` | Server bind address. Use `0.0.0.0` to listen on all interfaces. | `127.0.0.1` |
+| `OPENFLOW_PORT` | Server port for HTTP/WebSocket | `3001` |
+| `DATABASE_PATH` | SQLite database file path | `./openflow.db` |
+| `DATABASE_URL` | SQLite connection URL (e.g., `sqlite:/path/to/db`) | - |
+| `OPENFLOW_DATA_DIR` | Directory for database (appends `openflow.db`) | - |
+| `DATABASE_MAX_CONNECTIONS` | Maximum database connection pool size | `5` |
+| `OPENFLOW_VERBOSE` | Enable debug logging (`1`, `true`, `yes`) | - |
+| `OPENFLOW_JSON_LOGS` | Enable JSON log format for log aggregation (`1`) | - |
+| `RUST_LOG` | Log level filter (see Logging section) | `info` |
+| `OPENFLOW_CORS_ORIGINS` | Allowed CORS origins (comma-separated) | `localhost:5173,localhost:1420` |
+
+**Database Path Priority:**
+1. `DATABASE_URL` (if set, parsed as SQLite URL)
+2. `DATABASE_PATH` (direct file path)
+3. `OPENFLOW_DATA_DIR` (directory, appends `openflow.db`)
+4. Default: `./openflow.db`
+
+**Example Usage:**
+```bash
+# Start server on custom port with verbose logging
+OPENFLOW_PORT=8080 OPENFLOW_VERBOSE=1 pnpm dev:server
+
+# Start server listening on all interfaces (for Docker/remote access)
+OPENFLOW_HOST=0.0.0.0 pnpm dev:server
+
+# Production with JSON logs
+OPENFLOW_JSON_LOGS=1 RUST_LOG=info pnpm dev:server
+
+# Custom database location
+DATABASE_PATH=/var/lib/openflow/data.db pnpm dev:server
+```
+
+### Frontend
+
+These variables configure the web frontend (`pnpm dev:web`).
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_BACKEND_URL` | Backend server URL for HTTP/WebSocket | `http://localhost:3001` |
+
+**Note:** `VITE_BACKEND_URL` is only used when running in browser mode (outside Tauri). When running in Tauri (`pnpm dev`), the app uses IPC and ignores this variable.
+
+**Example Usage:**
+```bash
+# Connect to a remote server
+VITE_BACKEND_URL=https://api.openflow.example.com pnpm dev:web
+
+# Connect to custom local port
+VITE_BACKEND_URL=http://localhost:8080 pnpm dev:web
+```
+
+### Docker
+
+These variables are used by `docker-compose.yml`.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENFLOW_PORT` | Host port to expose (maps to container port 3001) | `3001` |
+
+All `OPENFLOW_*` backend variables are also used inside the container.
+
+**Example Usage:**
+```bash
+# Run on custom port
+OPENFLOW_PORT=8080 docker compose up
+
+# Run with production settings
+OPENFLOW_JSON_LOGS=1 docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+```
+
+### Variable Reference by Deployment Mode
+
+| Variable | Desktop (`pnpm dev`) | Server (`pnpm dev:server`) | Web (`pnpm dev:web`) | Docker |
+|----------|:-------------------:|:--------------------------:|:--------------------:|:------:|
+| `OPENFLOW_HOST` | - | ✓ | - | ✓ |
+| `OPENFLOW_PORT` | - | ✓ | - | ✓ |
+| `DATABASE_PATH` | ✓ | ✓ | - | ✓ |
+| `DATABASE_URL` | ✓ | ✓ | - | ✓ |
+| `OPENFLOW_DATA_DIR` | ✓ | ✓ | - | ✓ |
+| `DATABASE_MAX_CONNECTIONS` | ✓ | ✓ | - | ✓ |
+| `OPENFLOW_VERBOSE` | ✓ | ✓ | - | ✓ |
+| `OPENFLOW_JSON_LOGS` | - | ✓ | - | ✓ |
+| `RUST_LOG` | ✓ | ✓ | - | ✓ |
+| `OPENFLOW_CORS_ORIGINS` | ✓ | ✓ | - | ✓ |
+| `VITE_BACKEND_URL` | - | - | ✓ | - |
+
+## Docker Deployment
+
+### Quick Start
+
+```bash
+# Development with Docker Compose
+docker compose up
+
+# Production mode (with resource limits and JSON logs)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Build image only
+docker build -t openflow-server .
+
+# Run standalone container
+docker run -p 3001:3001 -v openflow-data:/app/data openflow-server
+```
+
+### Configuration
+
+**docker-compose.yml:**
+```yaml
+services:
+  server:
+    build: .
+    ports:
+      - "${OPENFLOW_PORT:-3001}:3001"
+    volumes:
+      - openflow-data:/app/data
+    environment:
+      - RUST_LOG=info
+      - DATABASE_PATH=/app/data/openflow.db
+```
+
+**Production Overrides (docker-compose.prod.yml):**
+- JSON logging enabled for log aggregation
+- Resource limits: 2 CPU, 1GB memory
+- Log rotation: 10MB max, 5 files
+- Restart policy: `always`
+
+### Health Check
+
+```bash
+curl http://localhost:3001/api/health
+# {"status":"ok","version":"0.1.0","database":"connected"}
 ```
 
 ## Validation Suite
@@ -883,21 +2578,86 @@ The MCP server automatically cleans up on graceful shutdown (SIGINT/SIGTERM). Al
 
 ## Implementation Notes
 
-When implementing new features:
+### Adding New Features (Contract-First)
 
-1. Start with Rust types marked `#[typeshare]`
-2. Run type generation to update TypeScript
-3. Add Zod schemas if needed for validation
-4. Create query wrappers for new commands
-5. Add hooks for React integration
-6. Build UI components (stateless, props-only)
-7. Compose in route pages
+1. **Define contracts in Rust** (`crates/openflow-contracts/`)
+   - Add entity types in `src/entities/`
+   - Add request types in `src/requests/` with `@validate:` annotations
+   - Add to `src/endpoints/mod.rs` for code generation metadata
 
-When modifying existing code:
+2. **Implement service layer** (`crates/openflow-core/src/services/`)
+   - Create service module with CRUD functions
+   - Use `ServiceResult<T>` for error handling
+   - Add unit tests with in-memory database
+
+3. **Add HTTP routes** (`crates/openflow-server/src/routes/`)
+   - Create route handlers using openflow-core services
+   - Broadcast `DataChanged` events for mutations
+   - Add to router in `routes/mod.rs`
+
+4. **Add Tauri commands** (`src-tauri/src/commands/`)
+   - Create thin command handlers calling openflow-core services
+   - Register in `src-tauri/src/lib.rs`
+
+5. **Generate TypeScript**
+   ```bash
+   pnpm generate:all  # Types, Zod, queries, command map
+   ```
+
+6. **Add frontend integration**
+   - Create hooks in `packages/hooks/`
+   - Build UI components (stateless, props-only)
+   - Compose in route pages
+
+### Modifying Existing Code
 
 1. Read the file first to understand context
 2. Follow existing patterns in the codebase
-3. Update types at the source (Rust) first
-4. Run verification before committing
+3. Update types at the source (Rust contracts) first
+4. Run `pnpm generate:all` after Rust changes
+5. Run `cargo test --workspace` to verify backend
+6. Run `pnpm validate:all` before committing
+
+### Service Layer Guidelines
+
+```rust
+// crates/openflow-core/src/services/example.rs
+
+pub async fn create(pool: &SqlitePool, request: CreateRequest) -> ServiceResult<Entity> {
+    // 1. Validate input
+    if request.name.is_empty() {
+        return Err(ServiceError::validation("Name is required"));
+    }
+
+    // 2. Perform operation
+    let entity = sqlx::query_as!(...)
+        .fetch_one(pool)
+        .await
+        .map_err(ServiceError::from)?;
+
+    // 3. Return result (caller handles events)
+    Ok(entity)
+}
+```
+
+### Route Handler Guidelines
+
+```rust
+// crates/openflow-server/src/routes/example.rs
+
+pub async fn create(
+    State(state): State<AppState>,
+    Json(request): Json<CreateRequest>,
+) -> Result<Json<Entity>, ServerError> {
+    // 1. Call service
+    let entity = example::create(&state.pool, request).await?;
+
+    // 2. Broadcast event
+    state.broadcast(Event::created(EntityType::Example, &entity.id, &entity));
+
+    // 3. Return response
+    Ok(Json(entity))
+}
+```
 
 

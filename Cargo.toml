@@ -1,0 +1,86 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/openflow-contracts",
+    "crates/openflow-db",
+    "crates/openflow-core",
+    "crates/openflow-process",
+    "crates/openflow-server",
+    "src-tauri",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["OpenFlow Team"]
+
+[workspace.dependencies]
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Type generation
+typeshare = "1"
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Time & IDs
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Logging
+log = "0.4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# HTTP server
+axum = { version = "0.7", features = ["ws"] }
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+tokio-tungstenite = "0.24"
+futures = "0.3"
+
+# Process management
+portable-pty = "0.8"
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Utilities
+regex = "1"
+shellexpand = "3"
+
+# Testing
+tempfile = "3"
+reqwest = { version = "0.12", features = ["json"] }
+
+# Tauri
+tauri = { version = "2", features = [] }
+tauri-build = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-mcp-gui = { version = "0.1" }
+
+# Internal crates
+openflow-contracts = { path = "crates/openflow-contracts" }
+openflow-db = { path = "crates/openflow-db" }
+openflow-core = { path = "crates/openflow-core" }
+openflow-process = { path = "crates/openflow-process" }
+openflow-server = { path = "crates/openflow-server" }
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

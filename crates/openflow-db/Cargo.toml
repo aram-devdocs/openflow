@@ -1,0 +1,27 @@
+[package]
+name = "openflow-db"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Database layer for OpenFlow"
+
+[features]
+default = []
+# Enable test utilities for use in other crates' tests
+test-utils = []
+
+[dependencies]
+openflow-contracts.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+tokio.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+log.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

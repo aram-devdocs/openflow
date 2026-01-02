@@ -8,10 +8,15 @@
     ".": {
       "types": "./index.ts",
       "import": "./index.ts"
+    },
+    "./transport": {
+      "types": "./transport/index.ts",
+      "import": "./transport/index.ts"
     }
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",
-    "@openflow/generated": "workspace:*"
+    "@openflow/generated": "workspace:*",
+    "@openflow/utils": "workspace:*"
   }
 }
