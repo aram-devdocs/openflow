@@ -11,6 +11,7 @@ pub mod message;
 pub mod process;
 pub mod project;
 pub mod task;
+pub mod workflow;
 
 // Re-export entity types for convenience
 pub use chat::{Chat, ChatRole, ChatSummary, ChatWithMessageCount};
@@ -27,6 +28,7 @@ pub use process::{
 };
 pub use project::{Project, ProjectSummary, ProjectWithStats};
 pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount};
-
-// Entity modules will be added in subsequent steps:
-// - workflow.rs (Step 0.10)
+pub use workflow::{
+    WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
+    WorkflowVariable,
+};

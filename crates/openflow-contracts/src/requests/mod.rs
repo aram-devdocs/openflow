@@ -10,6 +10,7 @@ pub mod message;
 pub mod process;
 pub mod project;
 pub mod task;
+pub mod workflow;
 
 // Re-export request types for convenience
 pub use chat::{CreateChatRequest, UpdateChatRequest};
@@ -33,3 +34,8 @@ pub use process::{
 };
 pub use project::{CreateProjectRequest, UpdateProjectRequest};
 pub use task::{CreateTaskRequest, UpdateTaskRequest};
+pub use workflow::{
+    ApplyWorkflowToTaskRequest, CreateWorkflowTemplateRequest, DeleteWorkflowTemplateRequest,
+    GetWorkflowTemplateRequest, ListWorkflowTemplatesRequest, ParseWorkflowRequest,
+    SubstituteWorkflowVariablesRequest, UpdateWorkflowStepRequest, UpdateWorkflowTemplateRequest,
+};

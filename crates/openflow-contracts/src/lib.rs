@@ -51,6 +51,10 @@ pub use entities::{
 pub use entities::{Message, MessageRole, MessageSummary};
 pub use entities::{Project, ProjectSummary, ProjectWithStats};
 pub use entities::{Task, TaskStatus, TaskSummary, TaskWithChatCount};
+pub use entities::{
+    WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
+    WorkflowVariable,
+};
 // Request types
 pub use requests::{CreateChatRequest, UpdateChatRequest};
 pub use requests::{
@@ -73,4 +77,9 @@ pub use requests::{
 };
 pub use requests::{CreateProjectRequest, UpdateProjectRequest};
 pub use requests::{CreateTaskRequest, UpdateTaskRequest};
+pub use requests::{
+    ApplyWorkflowToTaskRequest, CreateWorkflowTemplateRequest, DeleteWorkflowTemplateRequest,
+    GetWorkflowTemplateRequest, ListWorkflowTemplatesRequest, ParseWorkflowRequest,
+    SubstituteWorkflowVariablesRequest, UpdateWorkflowStepRequest, UpdateWorkflowTemplateRequest,
+};
 // Validation module is accessible via openflow_contracts::validation::
