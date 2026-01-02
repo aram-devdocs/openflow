@@ -317,10 +317,7 @@ export const Menu = forwardRef(function Menu(
         {items.map((item) => {
           // Handle divider
           if (item.divider) {
-            return (
-              // biome-ignore lint/a11y/useFocusableInteractive: Separator is not interactive
-              <Box key={item.id} role="separator" className={MENU_DIVIDER_CLASSES} />
-            );
+            return <Box key={item.id} role="separator" className={MENU_DIVIDER_CLASSES} />;
           }
 
           const enabledIndex = enabledItems.findIndex((i) => i.id === item.id);

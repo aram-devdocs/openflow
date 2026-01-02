@@ -1,6 +1,4 @@
 #!/usr/bin/env tsx
-// biome-ignore-all lint/suspicious/noAssignInExpressions: Regex exec loop is idiomatic JS
-// biome-ignore-all lint/suspicious/noImplicitAnyLet: Used for regex match results
 /**
  * Command-to-Endpoint Mapping Generator
  *

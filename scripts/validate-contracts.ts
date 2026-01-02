@@ -1,5 +1,3 @@
-// biome-ignore-all lint/suspicious/noAssignInExpressions: Regex exec loop is idiomatic JS
-// biome-ignore-all lint/suspicious/noImplicitAnyLet: Used for regex match results
 /**
  * Contract Validation Script
  *
@@ -39,12 +37,6 @@ interface Endpoint {
   path: string;
   requestType: string | null;
   responseType: string;
-}
-
-interface GeneratedFile {
-  path: string;
-  type: 'zod' | 'queries' | 'command-map';
-  timestamp?: Date;
 }
 
 // =============================================================================

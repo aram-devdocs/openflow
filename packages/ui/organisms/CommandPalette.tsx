@@ -588,7 +588,6 @@ export const CommandPalette = forwardRef(function CommandPalette(
   if (!isOpen) return null;
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard handling is done on the inner dialog
     <Box
       ref={ref}
       role="presentation"

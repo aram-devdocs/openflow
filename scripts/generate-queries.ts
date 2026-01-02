@@ -1,6 +1,4 @@
 #!/usr/bin/env tsx
-// biome-ignore-all lint/suspicious/noAssignInExpressions: Regex exec loop is idiomatic JS
-// biome-ignore-all lint/suspicious/noImplicitAnyLet: Used for regex match results
 /**
  * TypeScript Query Generator
  *
@@ -194,14 +192,6 @@ function snakeToCamel(str: string): string {
 }
 
 /**
- * Convert snake_case to PascalCase
- */
-function snakeToPascal(str: string): string {
-  const camel = snakeToCamel(str);
-  return camel.charAt(0).toUpperCase() + camel.slice(1);
-}
-
-/**
  * Convert CamelCase to camelCase (for schema names)
  */
 function toLowerCamelCase(str: string): string {
@@ -361,8 +351,8 @@ function generateQueryFunction(endpoint: Endpoint): string {
   lines.push('  try {');
 
   // Add validation for request body
-  if (hasRequestBody) {
-    const schemaName = getSchemaName(endpoint.requestType!);
+  if (hasRequestBody && endpoint.requestType) {
+    const schemaName = getSchemaName(endpoint.requestType);
     lines.push(`    const validated = ${schemaName}.parse(request);`);
   }
 

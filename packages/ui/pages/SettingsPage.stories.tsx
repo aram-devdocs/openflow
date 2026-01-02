@@ -493,18 +493,21 @@ export const FullPageFlowDemo: Story = {
       <div>
         <div className="mb-4 flex gap-2">
           <button
+            type="button"
             onClick={() => setState('loading')}
             className="rounded bg-blue-500 px-3 py-1 text-sm text-white"
           >
             Show Loading
           </button>
           <button
+            type="button"
             onClick={() => setState('error')}
             className="rounded bg-red-500 px-3 py-1 text-sm text-white"
           >
             Show Error
           </button>
           <button
+            type="button"
             onClick={() => setState('ready')}
             className="rounded bg-green-500 px-3 py-1 text-sm text-white"
           >
