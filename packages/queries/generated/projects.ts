@@ -16,8 +16,8 @@
 // =============================================================================
 
 import type { CreateProjectRequest, Project, UpdateProjectRequest } from '@openflow/generated';
-import { createProjectRequestSchema, updateProjectRequestSchema } from '@openflow/validation';
 import { createLogger } from '@openflow/utils';
+import { createProjectRequestSchema, updateProjectRequestSchema } from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:projects:generated');

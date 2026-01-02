@@ -83,7 +83,9 @@ export async function listWorkflowTemplates(projectId?: string): Promise<Workflo
   logger.debug('Calling list_workflow_templates');
 
   try {
-    const result = await invoke<WorkflowTemplate[]>('list_workflow_templates', { project_id: projectId });
+    const result = await invoke<WorkflowTemplate[]>('list_workflow_templates', {
+      project_id: projectId,
+    });
 
     logger.info('list_workflow_templates completed', { count: result.length });
 

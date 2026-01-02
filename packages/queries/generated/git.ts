@@ -15,9 +15,20 @@
 // @see CLAUDE.md - Query Layer Patterns section
 // =============================================================================
 
-import type { Commit, CreateWorktreeRequest, DeleteWorktreeRequest, FileDiff, PushBranchRequest, Worktree } from '@openflow/generated';
-import { createWorktreeRequestSchema, deleteWorktreeRequestSchema, pushBranchRequestSchema } from '@openflow/validation';
+import type {
+  Commit,
+  CreateWorktreeRequest,
+  DeleteWorktreeRequest,
+  FileDiff,
+  PushBranchRequest,
+  Worktree,
+} from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
+import {
+  createWorktreeRequestSchema,
+  deleteWorktreeRequestSchema,
+  pushBranchRequestSchema,
+} from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:git:generated');
@@ -83,11 +94,19 @@ export async function deleteWorktree(request: DeleteWorktreeRequest): Promise<vo
  * @returns Promise resolving to Commit[]
  * @throws Error if validation or query fails
  */
-export async function getCommits(worktreePath?: string, limit?: string, baseRef?: string): Promise<Commit[]> {
+export async function getCommits(
+  worktreePath?: string,
+  limit?: string,
+  baseRef?: string
+): Promise<Commit[]> {
   logger.debug('Calling get_commits');
 
   try {
-    const result = await invoke<Commit[]>('get_commits', { worktree_path: worktreePath, limit: limit, base_ref: baseRef });
+    const result = await invoke<Commit[]>('get_commits', {
+      worktree_path: worktreePath,
+      limit: limit,
+      base_ref: baseRef,
+    });
 
     logger.info('get_commits completed', { count: result.length });
 
@@ -138,7 +157,10 @@ export async function getDiff(worktreePath?: string, baseRef?: string): Promise<
   logger.debug('Calling get_diff');
 
   try {
-    const result = await invoke<FileDiff[]>('get_diff', { worktree_path: worktreePath, base_ref: baseRef });
+    const result = await invoke<FileDiff[]>('get_diff', {
+      worktree_path: worktreePath,
+      base_ref: baseRef,
+    });
 
     logger.info('get_diff completed', { count: result.length });
 

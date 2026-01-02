@@ -1542,7 +1542,6 @@ export const ProjectSettingsForm = forwardRef<HTMLFormElement, ProjectSettingsFo
     return (
       <form
         ref={ref}
-        role="form"
         aria-label={SR_FORM_LABEL}
         onSubmit={handleSubmit}
         data-testid={dataTestId}

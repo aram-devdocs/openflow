@@ -37,10 +37,10 @@
  * @see CLAUDE.md - Flexible Backend Architecture section
  */
 
-import type { Transport, HttpTransportConfig } from './index.js';
-import { getBackendUrl, getWebSocketUrl } from './index.js';
-import { buildPath, getMapping, getRequestBody, isKnownCommand } from './command-map.generated.js';
 import { createLogger } from '@openflow/utils';
+import { buildPath, getMapping, getRequestBody, isKnownCommand } from './command-map.generated.js';
+import type { HttpTransportConfig, Transport } from './index.js';
+import { getBackendUrl, getWebSocketUrl } from './index.js';
 
 const logger = createLogger('transport:http');
 
@@ -189,7 +189,7 @@ export function createHttpTransport(config?: HttpTransportConfig): Transport {
     }
 
     wsReconnectAttempts++;
-    const delay = Math.min(reconnectIntervalMs * Math.pow(2, wsReconnectAttempts - 1), 30000);
+    const delay = Math.min(reconnectIntervalMs * 2 ** (wsReconnectAttempts - 1), 30000);
 
     logger.info('Scheduling WebSocket reconnection', {
       attempt: wsReconnectAttempts,
@@ -240,29 +240,33 @@ export function createHttpTransport(config?: HttpTransportConfig): Transport {
 
         // Notify channel subscribers
         const handlers = subscriptions.get(channel);
-        handlers?.forEach((h) => {
-          try {
-            h(payload);
-          } catch (error) {
-            logger.error('Event handler error', {
-              channel,
-              error: String(error),
-            });
+        if (handlers) {
+          for (const h of handlers) {
+            try {
+              h(payload);
+            } catch (error) {
+              logger.error('Event handler error', {
+                channel,
+                error: String(error),
+              });
+            }
           }
-        });
+        }
 
         // Also notify wildcard subscribers
         const wildcardHandlers = subscriptions.get('*');
-        wildcardHandlers?.forEach((h) => {
-          try {
-            h({ channel, payload });
-          } catch (error) {
-            logger.error('Wildcard handler error', {
-              channel,
-              error: String(error),
-            });
+        if (wildcardHandlers) {
+          for (const h of wildcardHandlers) {
+            try {
+              h({ channel, payload });
+            } catch (error) {
+              logger.error('Wildcard handler error', {
+                channel,
+                error: String(error),
+              });
+            }
           }
-        });
+        }
         break;
       }
 
@@ -322,8 +326,8 @@ export function createHttpTransport(config?: HttpTransportConfig): Transport {
         throw new Error(error);
       }
 
-      // Get endpoint mapping
-      const mapping = getMapping(cmd)!;
+      // Get endpoint mapping (already validated by isKnownCommand above)
+      const mapping = getMapping(cmd);
       const url = `${baseUrl}${buildPath(cmd, args)}`;
 
       logger.debug('HTTP request', {
@@ -385,7 +389,8 @@ export function createHttpTransport(config?: HttpTransportConfig): Transport {
         const result = JSON.parse(text) as T;
 
         // Log success info
-        const resultType = result === null ? 'null' : Array.isArray(result) ? 'array' : typeof result;
+        const resultType =
+          result === null ? 'null' : Array.isArray(result) ? 'array' : typeof result;
         const resultInfo: Record<string, unknown> = { cmd, resultType };
 
         if (Array.isArray(result)) {
@@ -420,7 +425,7 @@ export function createHttpTransport(config?: HttpTransportConfig): Transport {
       if (!subscriptions.has(channel)) {
         subscriptions.set(channel, new Set());
       }
-      subscriptions.get(channel)!.add(handler);
+      subscriptions.get(channel)?.add(handler);
 
       // Ensure WebSocket connection and send subscribe
       ensureWebSocket();

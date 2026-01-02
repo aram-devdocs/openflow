@@ -28,10 +28,10 @@
  * @see CLAUDE.md - Flexible Backend Architecture section
  */
 
-import { invoke as tauriInvoke } from '@tauri-apps/api/core';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { Transport } from './index.js';
 import { createLogger } from '@openflow/utils';
+import { invoke as tauriInvoke } from '@tauri-apps/api/core';
+import { type UnlistenFn, listen } from '@tauri-apps/api/event';
+import type { Transport } from './index.js';
 
 const logger = createLogger('transport:tauri');
 
@@ -71,7 +71,8 @@ export function createTauriTransport(): Transport {
         const result = await tauriInvoke<T>(cmd, args);
 
         // Log success with result type info (not the actual data for security)
-        const resultType = result === null ? 'null' : Array.isArray(result) ? 'array' : typeof result;
+        const resultType =
+          result === null ? 'null' : Array.isArray(result) ? 'array' : typeof result;
         const resultInfo: Record<string, unknown> = { cmd, resultType };
 
         // Add array length if applicable (useful for list queries)
@@ -118,7 +119,7 @@ export function createTauriTransport(): Transport {
             if (!activeListeners.has(channel)) {
               activeListeners.set(channel, new Set());
             }
-            activeListeners.get(channel)!.add(fn);
+            activeListeners.get(channel)?.add(fn);
           }
         })
         .catch((error) => {

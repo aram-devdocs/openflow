@@ -25,10 +25,10 @@
  * @see CLAUDE.md - Flexible Backend Architecture section
  */
 
-import { useEffect, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { subscribe, type DataChangedEvent } from '@openflow/queries';
+import { type DataChangedEvent, subscribe } from '@openflow/queries';
 import { createLogger } from '@openflow/utils';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 
 const logger = createLogger('useDataSync');
 

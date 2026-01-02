@@ -15,9 +15,19 @@
 // @see CLAUDE.md - Query Layer Patterns section
 // =============================================================================
 
-import type { CreateExecutorProfileRequest, ExecutionProcess, ExecutorProfile, RunExecutorRequest, UpdateExecutorProfileRequest } from '@openflow/generated';
-import { createExecutorProfileRequestSchema, runExecutorRequestSchema, updateExecutorProfileRequestSchema } from '@openflow/validation';
+import type {
+  CreateExecutorProfileRequest,
+  ExecutionProcess,
+  ExecutorProfile,
+  RunExecutorRequest,
+  UpdateExecutorProfileRequest,
+} from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
+import {
+  createExecutorProfileRequestSchema,
+  runExecutorRequestSchema,
+  updateExecutorProfileRequestSchema,
+} from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:executor:generated');
@@ -31,14 +41,18 @@ const logger = createLogger('queries:executor:generated');
  * @returns Promise resolving to ExecutorProfile
  * @throws Error if validation or query fails
  */
-export async function createExecutorProfile(request: CreateExecutorProfileRequest): Promise<ExecutorProfile> {
+export async function createExecutorProfile(
+  request: CreateExecutorProfileRequest
+): Promise<ExecutorProfile> {
   logger.debug('Calling create_executor_profile');
 
   try {
     const validated = createExecutorProfileRequestSchema.parse(request);
     const result = await invoke<ExecutorProfile>('create_executor_profile', { request: validated });
 
-    logger.info('create_executor_profile completed', { id: (result as Record<string, unknown>).id });
+    logger.info('create_executor_profile completed', {
+      id: (result as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -85,7 +99,9 @@ export async function getDefaultExecutorProfile(): Promise<ExecutorProfile> {
   try {
     const result = await invoke<ExecutorProfile>('get_default_executor_profile');
 
-    logger.info('get_default_executor_profile completed', { id: (result as Record<string, unknown>).id });
+    logger.info('get_default_executor_profile completed', {
+      id: (result as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -180,14 +196,22 @@ export async function runExecutor(request: RunExecutorRequest): Promise<Executio
  * @returns Promise resolving to ExecutorProfile
  * @throws Error if validation or query fails
  */
-export async function updateExecutorProfile(id: string, request: UpdateExecutorProfileRequest): Promise<ExecutorProfile> {
+export async function updateExecutorProfile(
+  id: string,
+  request: UpdateExecutorProfileRequest
+): Promise<ExecutorProfile> {
   logger.debug('Calling update_executor_profile', { id });
 
   try {
     const validated = updateExecutorProfileRequestSchema.parse(request);
-    const result = await invoke<ExecutorProfile>('update_executor_profile', { id: id, request: validated });
+    const result = await invoke<ExecutorProfile>('update_executor_profile', {
+      id: id,
+      request: validated,
+    });
 
-    logger.info('update_executor_profile completed', { id: (result as Record<string, unknown>).id });
+    logger.info('update_executor_profile completed', {
+      id: (result as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {

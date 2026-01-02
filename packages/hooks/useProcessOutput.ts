@@ -32,9 +32,9 @@
  * @see CLAUDE.md - Flexible Backend Architecture section
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { subscribe, type ProcessOutputEvent, type ProcessStatusEvent } from '@openflow/queries';
+import { type ProcessOutputEvent, type ProcessStatusEvent, subscribe } from '@openflow/queries';
 import { createLogger } from '@openflow/utils';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Create logger for this hook
 const logger = createLogger('useProcessOutput');
@@ -386,7 +386,10 @@ export function useMultipleProcessOutput(
 
   useEffect(() => {
     if (!enabled || processIds.length === 0) {
-      logger.debug('Skipping multi-process subscription', { enabled, processCount: processIds.length });
+      logger.debug('Skipping multi-process subscription', {
+        enabled,
+        processCount: processIds.length,
+      });
       return;
     }
 
@@ -430,13 +433,14 @@ export function useMultipleProcessOutput(
     // Initialize state for each process
     const initialState = new Map<string, ProcessOutputState>();
     for (const id of processIds) {
+      const clearFn = clearFunctionsRef.current.get(id);
       initialState.set(id, {
         output: [],
         rawOutput: '',
         status: null,
         exitCode: null,
         isRunning: true,
-        clearOutput: clearFunctionsRef.current.get(id)!,
+        clearOutput: clearFn ?? (() => {}),
       });
     }
     setOutputs(initialState);

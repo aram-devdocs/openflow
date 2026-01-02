@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/noAssignInExpressions: Regex exec loop is idiomatic JS
+// biome-ignore-all lint/suspicious/noImplicitAnyLet: Used for regex match results
 /**
  * Contract Validation Script
  *
@@ -12,12 +14,12 @@
  */
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { globSync } from 'glob';
 import { resolve } from 'node:path';
+import { globSync } from 'glob';
 
 import { ROOT_DIR } from './lib/config';
 import { Reporter, parseValidatorArgs } from './lib/reporter';
-import type { Severity, Violation } from './lib/types';
+import type { Violation } from './lib/types';
 
 // =============================================================================
 // Types
@@ -173,9 +175,7 @@ function extractZodSchemas(zodFile: string): Set<string> {
   while ((match = schemaRegex.exec(content)) !== null) {
     // Convert schema name to type name: fooBarSchema -> FooBar
     const schemaName = match[1];
-    const typeName = schemaName
-      .replace(/Schema$/, '')
-      .replace(/^./, (c) => c.toUpperCase());
+    const typeName = schemaName.replace(/Schema$/, '').replace(/^./, (c) => c.toUpperCase());
     schemas.add(typeName);
   }
 

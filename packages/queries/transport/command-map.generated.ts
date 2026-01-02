@@ -55,7 +55,7 @@ export interface EndpointMapping {
  */
 export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
   /** Append content to a message (for streaming) */
-  'append_message_content': {
+  append_message_content: {
     method: 'POST',
     path: '/api/messages/:id/append',
     pathParams: ['id'] as const,
@@ -64,7 +64,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Message',
   },
   /** Archive a chat (soft delete) */
-  'archive_chat': {
+  archive_chat: {
     method: 'POST',
     path: '/api/chats/:id/archive',
     pathParams: ['id'] as const,
@@ -73,7 +73,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat',
   },
   /** Archive a project (soft delete) */
-  'archive_project': {
+  archive_project: {
     method: 'POST',
     path: '/api/projects/:id/archive',
     pathParams: ['id'] as const,
@@ -82,7 +82,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Project',
   },
   /** Archive a task (soft delete) */
-  'archive_task': {
+  archive_task: {
     method: 'POST',
     path: '/api/tasks/:id/archive',
     pathParams: ['id'] as const,
@@ -91,7 +91,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Task',
   },
   /** Create a new chat */
-  'create_chat': {
+  create_chat: {
     method: 'POST',
     path: '/api/chats',
     pathParams: [] as const,
@@ -100,7 +100,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat',
   },
   /** Create a new executor profile */
-  'create_executor_profile': {
+  create_executor_profile: {
     method: 'POST',
     path: '/api/executor-profiles',
     pathParams: [] as const,
@@ -109,7 +109,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutorProfile',
   },
   /** Create a new message */
-  'create_message': {
+  create_message: {
     method: 'POST',
     path: '/api/messages',
     pathParams: [] as const,
@@ -118,7 +118,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Message',
   },
   /** Create a new project */
-  'create_project': {
+  create_project: {
     method: 'POST',
     path: '/api/projects',
     pathParams: [] as const,
@@ -127,7 +127,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Project',
   },
   /** Create a GitHub pull request */
-  'create_pull_request': {
+  create_pull_request: {
     method: 'POST',
     path: '/api/github/pull-requests',
     pathParams: [] as const,
@@ -136,7 +136,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'PullRequestResult',
   },
   /** Create a new task */
-  'create_task': {
+  create_task: {
     method: 'POST',
     path: '/api/tasks',
     pathParams: [] as const,
@@ -145,7 +145,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Task',
   },
   /** Create a new git worktree */
-  'create_worktree': {
+  create_worktree: {
     method: 'POST',
     path: '/api/git/worktrees',
     pathParams: [] as const,
@@ -154,7 +154,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Worktree',
   },
   /** Delete a chat permanently */
-  'delete_chat': {
+  delete_chat: {
     method: 'DELETE',
     path: '/api/chats/:id',
     pathParams: ['id'] as const,
@@ -163,7 +163,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Delete an executor profile */
-  'delete_executor_profile': {
+  delete_executor_profile: {
     method: 'DELETE',
     path: '/api/executor-profiles/:id',
     pathParams: ['id'] as const,
@@ -172,7 +172,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Delete a message */
-  'delete_message': {
+  delete_message: {
     method: 'DELETE',
     path: '/api/messages/:id',
     pathParams: ['id'] as const,
@@ -181,7 +181,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Delete a project permanently */
-  'delete_project': {
+  delete_project: {
     method: 'DELETE',
     path: '/api/projects/:id',
     pathParams: ['id'] as const,
@@ -190,7 +190,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Delete a setting */
-  'delete_setting': {
+  delete_setting: {
     method: 'DELETE',
     path: '/api/settings/:key',
     pathParams: ['key'] as const,
@@ -199,7 +199,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Delete a task permanently */
-  'delete_task': {
+  delete_task: {
     method: 'DELETE',
     path: '/api/tasks/:id',
     pathParams: ['id'] as const,
@@ -208,7 +208,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Delete a git worktree */
-  'delete_worktree': {
+  delete_worktree: {
     method: 'DELETE',
     path: '/api/git/worktrees',
     pathParams: [] as const,
@@ -217,7 +217,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Duplicate a task */
-  'duplicate_task': {
+  duplicate_task: {
     method: 'POST',
     path: '/api/tasks/:id/duplicate',
     pathParams: ['id'] as const,
@@ -226,7 +226,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Task',
   },
   /** Get all settings */
-  'get_all_settings': {
+  get_all_settings: {
     method: 'GET',
     path: '/api/settings',
     pathParams: [] as const,
@@ -235,7 +235,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Setting[]',
   },
   /** Get built-in workflow templates */
-  'get_builtin_workflow_templates': {
+  get_builtin_workflow_templates: {
     method: 'GET',
     path: '/api/workflows/templates/builtin',
     pathParams: [] as const,
@@ -244,7 +244,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'WorkflowTemplate[]',
   },
   /** Get a chat by ID with its messages */
-  'get_chat': {
+  get_chat: {
     method: 'GET',
     path: '/api/chats/:id',
     pathParams: ['id'] as const,
@@ -253,7 +253,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ChatWithMessages',
   },
   /** Get commits for a worktree */
-  'get_commits': {
+  get_commits: {
     method: 'GET',
     path: '/api/git/commits',
     pathParams: [] as const,
@@ -262,7 +262,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Commit[]',
   },
   /** Get current branch name */
-  'get_current_branch': {
+  get_current_branch: {
     method: 'GET',
     path: '/api/git/branch/current',
     pathParams: [] as const,
@@ -271,7 +271,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'string',
   },
   /** Get the default executor profile */
-  'get_default_executor_profile': {
+  get_default_executor_profile: {
     method: 'GET',
     path: '/api/executor-profiles/default',
     pathParams: [] as const,
@@ -280,7 +280,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutorProfile',
   },
   /** Get git diff for a worktree */
-  'get_diff': {
+  get_diff: {
     method: 'GET',
     path: '/api/git/diff',
     pathParams: [] as const,
@@ -289,7 +289,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'FileDiff[]',
   },
   /** Get an executor profile by ID */
-  'get_executor_profile': {
+  get_executor_profile: {
     method: 'GET',
     path: '/api/executor-profiles/:id',
     pathParams: ['id'] as const,
@@ -298,7 +298,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutorProfile',
   },
   /** Get HEAD commit hash */
-  'get_head_commit': {
+  get_head_commit: {
     method: 'GET',
     path: '/api/git/head',
     pathParams: [] as const,
@@ -307,7 +307,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'string',
   },
   /** Get a message by ID */
-  'get_message': {
+  get_message: {
     method: 'GET',
     path: '/api/messages/:id',
     pathParams: ['id'] as const,
@@ -316,7 +316,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Message',
   },
   /** Get a process by ID */
-  'get_process': {
+  get_process: {
     method: 'GET',
     path: '/api/processes/:id',
     pathParams: ['id'] as const,
@@ -325,7 +325,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutionProcess',
   },
   /** Get a project by ID */
-  'get_project': {
+  get_project: {
     method: 'GET',
     path: '/api/projects/:id',
     pathParams: ['id'] as const,
@@ -334,7 +334,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Project',
   },
   /** Get a setting by key */
-  'get_setting': {
+  get_setting: {
     method: 'GET',
     path: '/api/settings/:key',
     pathParams: ['key'] as const,
@@ -343,7 +343,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Setting',
   },
   /** Get a setting value or return default */
-  'get_setting_or_default': {
+  get_setting_or_default: {
     method: 'GET',
     path: '/api/settings/:key/default',
     pathParams: ['key'] as const,
@@ -352,7 +352,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'string',
   },
   /** Get a task by ID with its chats */
-  'get_task': {
+  get_task: {
     method: 'GET',
     path: '/api/tasks/:id',
     pathParams: ['id'] as const,
@@ -361,7 +361,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'TaskWithChats',
   },
   /** Get commits for a task's worktree */
-  'get_task_commits': {
+  get_task_commits: {
     method: 'GET',
     path: '/api/git/tasks/:task_id/commits',
     pathParams: ['task_id'] as const,
@@ -370,7 +370,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Commit[]',
   },
   /** Get git diff for a task's worktree */
-  'get_task_diff': {
+  get_task_diff: {
     method: 'GET',
     path: '/api/git/tasks/:task_id/diff',
     pathParams: ['task_id'] as const,
@@ -379,7 +379,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'FileDiff[]',
   },
   /** Get a workflow template by ID */
-  'get_workflow_template': {
+  get_workflow_template: {
     method: 'GET',
     path: '/api/workflows/templates/:id',
     pathParams: ['id'] as const,
@@ -388,7 +388,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'WorkflowTemplate',
   },
   /** Check if repository has uncommitted changes */
-  'has_uncommitted_changes': {
+  has_uncommitted_changes: {
     method: 'GET',
     path: '/api/git/status/dirty',
     pathParams: [] as const,
@@ -397,7 +397,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'boolean',
   },
   /** Check if a process is running */
-  'is_process_running': {
+  is_process_running: {
     method: 'GET',
     path: '/api/processes/:id/running',
     pathParams: ['id'] as const,
@@ -406,7 +406,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'boolean',
   },
   /** Kill a running process */
-  'kill_process': {
+  kill_process: {
     method: 'POST',
     path: '/api/processes/:id/kill',
     pathParams: ['id'] as const,
@@ -415,7 +415,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** List all archived chats */
-  'list_archived_chats': {
+  list_archived_chats: {
     method: 'GET',
     path: '/api/chats/archived',
     pathParams: [] as const,
@@ -424,7 +424,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat[]',
   },
   /** List all archived projects */
-  'list_archived_projects': {
+  list_archived_projects: {
     method: 'GET',
     path: '/api/projects/archived',
     pathParams: [] as const,
@@ -433,7 +433,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Project[]',
   },
   /** List chats for a task */
-  'list_chats': {
+  list_chats: {
     method: 'GET',
     path: '/api/chats',
     pathParams: [] as const,
@@ -442,7 +442,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat[]',
   },
   /** List all chats in a project */
-  'list_chats_by_project': {
+  list_chats_by_project: {
     method: 'GET',
     path: '/api/projects/:project_id/chats',
     pathParams: ['project_id'] as const,
@@ -451,7 +451,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat[]',
   },
   /** List all executor profiles */
-  'list_executor_profiles': {
+  list_executor_profiles: {
     method: 'GET',
     path: '/api/executor-profiles',
     pathParams: [] as const,
@@ -460,7 +460,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutorProfile[]',
   },
   /** List messages for a chat */
-  'list_messages': {
+  list_messages: {
     method: 'GET',
     path: '/api/messages',
     pathParams: [] as const,
@@ -469,7 +469,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Message[]',
   },
   /** List processes, optionally filtered by chat */
-  'list_processes': {
+  list_processes: {
     method: 'GET',
     path: '/api/processes',
     pathParams: [] as const,
@@ -478,7 +478,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutionProcess[]',
   },
   /** List all active projects */
-  'list_projects': {
+  list_projects: {
     method: 'GET',
     path: '/api/projects',
     pathParams: [] as const,
@@ -487,7 +487,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Project[]',
   },
   /** List all running processes */
-  'list_running_processes': {
+  list_running_processes: {
     method: 'GET',
     path: '/api/processes/running',
     pathParams: [] as const,
@@ -496,7 +496,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutionProcess[]',
   },
   /** List standalone chats (not attached to tasks) */
-  'list_standalone_chats': {
+  list_standalone_chats: {
     method: 'GET',
     path: '/api/chats/standalone',
     pathParams: [] as const,
@@ -505,7 +505,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat[]',
   },
   /** List tasks, optionally filtered by project */
-  'list_tasks': {
+  list_tasks: {
     method: 'GET',
     path: '/api/tasks',
     pathParams: [] as const,
@@ -514,7 +514,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Task[]',
   },
   /** List workflow templates for a project */
-  'list_workflow_templates': {
+  list_workflow_templates: {
     method: 'GET',
     path: '/api/workflows/templates',
     pathParams: [] as const,
@@ -523,7 +523,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'WorkflowTemplate[]',
   },
   /** List git worktrees for a repository */
-  'list_worktrees': {
+  list_worktrees: {
     method: 'GET',
     path: '/api/git/worktrees',
     pathParams: [] as const,
@@ -532,7 +532,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Worktree[]',
   },
   /** Open a file in the system editor */
-  'open_in_editor': {
+  open_in_editor: {
     method: 'POST',
     path: '/api/system/open-editor',
     pathParams: [] as const,
@@ -541,7 +541,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Parse workflow content into a template */
-  'parse_workflow_content': {
+  parse_workflow_content: {
     method: 'POST',
     path: '/api/workflows/parse',
     pathParams: [] as const,
@@ -550,7 +550,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'WorkflowTemplate',
   },
   /** Push a branch to remote */
-  'push_branch': {
+  push_branch: {
     method: 'POST',
     path: '/api/git/push',
     pathParams: [] as const,
@@ -559,7 +559,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Resize process PTY dimensions */
-  'resize_process': {
+  resize_process: {
     method: 'POST',
     path: '/api/processes/:id/resize',
     pathParams: ['id'] as const,
@@ -568,7 +568,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Reveal a file in the system file explorer */
-  'reveal_in_explorer': {
+  reveal_in_explorer: {
     method: 'POST',
     path: '/api/system/reveal',
     pathParams: [] as const,
@@ -577,7 +577,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Run an AI executor in a chat */
-  'run_executor': {
+  run_executor: {
     method: 'POST',
     path: '/api/executor/run',
     pathParams: [] as const,
@@ -586,7 +586,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutionProcess',
   },
   /** Get count of running processes */
-  'running_process_count': {
+  running_process_count: {
     method: 'GET',
     path: '/api/processes/count/running',
     pathParams: [] as const,
@@ -595,7 +595,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'number',
   },
   /** Search across projects, tasks, chats, and messages */
-  'search': {
+  search: {
     method: 'GET',
     path: '/api/search',
     pathParams: [] as const,
@@ -604,7 +604,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'SearchResult',
   },
   /** Send input to a process stdin */
-  'send_process_input': {
+  send_process_input: {
     method: 'POST',
     path: '/api/processes/:id/input',
     pathParams: ['id'] as const,
@@ -613,7 +613,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'void',
   },
   /** Set streaming status of a message */
-  'set_message_streaming': {
+  set_message_streaming: {
     method: 'PATCH',
     path: '/api/messages/:id/streaming',
     pathParams: ['id'] as const,
@@ -622,7 +622,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Message',
   },
   /** Set token counts for a message */
-  'set_message_tokens': {
+  set_message_tokens: {
     method: 'PATCH',
     path: '/api/messages/:id/tokens',
     pathParams: ['id'] as const,
@@ -631,7 +631,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Message',
   },
   /** Set a setting value */
-  'set_setting': {
+  set_setting: {
     method: 'PUT',
     path: '/api/settings/:key',
     pathParams: ['key'] as const,
@@ -640,7 +640,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Setting',
   },
   /** Check if a setting exists */
-  'setting_exists': {
+  setting_exists: {
     method: 'GET',
     path: '/api/settings/:key/exists',
     pathParams: ['key'] as const,
@@ -649,7 +649,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'boolean',
   },
   /** Spawn a new terminal session */
-  'spawn_terminal': {
+  spawn_terminal: {
     method: 'POST',
     path: '/api/terminal/spawn',
     pathParams: [] as const,
@@ -658,7 +658,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutionProcess',
   },
   /** Start a workflow step by creating its worktree */
-  'start_workflow_step': {
+  start_workflow_step: {
     method: 'POST',
     path: '/api/chats/:id/start-step',
     pathParams: ['id'] as const,
@@ -667,7 +667,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat',
   },
   /** Toggle completion status of a workflow step chat */
-  'toggle_step_complete': {
+  toggle_step_complete: {
     method: 'POST',
     path: '/api/chats/:id/toggle-step',
     pathParams: ['id'] as const,
@@ -676,7 +676,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat',
   },
   /** Unarchive a chat */
-  'unarchive_chat': {
+  unarchive_chat: {
     method: 'POST',
     path: '/api/chats/:id/unarchive',
     pathParams: ['id'] as const,
@@ -685,7 +685,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat',
   },
   /** Unarchive a project */
-  'unarchive_project': {
+  unarchive_project: {
     method: 'POST',
     path: '/api/projects/:id/unarchive',
     pathParams: ['id'] as const,
@@ -694,7 +694,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Project',
   },
   /** Unarchive a task */
-  'unarchive_task': {
+  unarchive_task: {
     method: 'POST',
     path: '/api/tasks/:id/unarchive',
     pathParams: ['id'] as const,
@@ -703,7 +703,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Task',
   },
   /** Update an existing chat */
-  'update_chat': {
+  update_chat: {
     method: 'PATCH',
     path: '/api/chats/:id',
     pathParams: ['id'] as const,
@@ -712,7 +712,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Chat',
   },
   /** Update an executor profile */
-  'update_executor_profile': {
+  update_executor_profile: {
     method: 'PATCH',
     path: '/api/executor-profiles/:id',
     pathParams: ['id'] as const,
@@ -721,7 +721,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'ExecutorProfile',
   },
   /** Update an existing project */
-  'update_project': {
+  update_project: {
     method: 'PATCH',
     path: '/api/projects/:id',
     pathParams: ['id'] as const,
@@ -730,7 +730,7 @@ export const COMMAND_MAP: Readonly<Record<string, EndpointMapping>> = {
     responseType: 'Project',
   },
   /** Update an existing task */
-  'update_task': {
+  update_task: {
     method: 'PATCH',
     path: '/api/tasks/:id',
     pathParams: ['id'] as const,
@@ -813,7 +813,7 @@ export function buildPath(command: string, args: Record<string, unknown> = {}): 
   }
 
   if (queryParts.length > 0) {
-    path += '?' + queryParts.join('&');
+    path += `?${queryParts.join('&')}`;
   }
 
   return path;
@@ -855,10 +855,7 @@ export function getRequestBody(
   }
 
   // Otherwise, return args minus path/query params
-  const excludeKeys = new Set<string>([
-    ...mapping.pathParams,
-    ...mapping.queryParams,
-  ]);
+  const excludeKeys = new Set<string>([...mapping.pathParams, ...mapping.queryParams]);
 
   const body: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(args)) {

@@ -391,30 +391,16 @@ export const WithSpacing: Story = {
 export const WithA11yProps: Story = {
   render: () => (
     <List aria-label="Navigation menu" role="menu" styleType="none" gap="1">
-      <li
-        role="menuitem"
-        tabIndex={0}
-        className="px-4 py-2 hover:bg-[rgb(var(--muted))] rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
-      >
+      <li className="px-4 py-2 hover:bg-[rgb(var(--muted))] rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]">
         Dashboard
       </li>
-      <li
-        role="menuitem"
-        tabIndex={0}
-        className="px-4 py-2 hover:bg-[rgb(var(--muted))] rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
-      >
+      <li className="px-4 py-2 hover:bg-[rgb(var(--muted))] rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]">
         Settings
       </li>
-      <li
-        role="menuitem"
-        tabIndex={0}
-        className="px-4 py-2 hover:bg-[rgb(var(--muted))] rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
-      >
+      <li className="px-4 py-2 hover:bg-[rgb(var(--muted))] rounded cursor-pointer focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]">
         Profile
       </li>
       <li
-        role="menuitem"
-        tabIndex={0}
         aria-current="page"
         className="px-4 py-2 bg-[rgb(var(--primary))] text-[rgb(var(--primary-foreground))] rounded focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ring))]"
       >

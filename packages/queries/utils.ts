@@ -32,12 +32,12 @@
 
 import { createLogger } from '@openflow/utils';
 import {
-  getTransport,
-  isTauriContext as checkTauriContext,
-  type Transport,
   type DataChangedEvent,
   type ProcessOutputEvent,
   type ProcessStatusEvent,
+  type Transport,
+  isTauriContext as checkTauriContext,
+  getTransport,
 } from './transport/index.js';
 
 // Re-export event types for convenience

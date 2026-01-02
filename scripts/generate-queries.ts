@@ -1,4 +1,6 @@
 #!/usr/bin/env tsx
+// biome-ignore-all lint/suspicious/noAssignInExpressions: Regex exec loop is idiomatic JS
+// biome-ignore-all lint/suspicious/noImplicitAnyLet: Used for regex match results
 /**
  * TypeScript Query Generator
  *
@@ -20,8 +22,8 @@
  * @see CLAUDE.md - Type Generation Flow section
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
-import { dirname, resolve, join, relative } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // =============================================================================
@@ -171,7 +173,7 @@ function groupEndpointsByDomain(endpoints: Endpoint[]): EndpointGroup[] {
     if (!groups.has(domain)) {
       groups.set(domain, []);
     }
-    groups.get(domain)!.push(endpoint);
+    groups.get(domain)?.push(endpoint);
   }
 
   // Convert to array and sort
@@ -308,14 +310,13 @@ function generateQueryFunction(endpoint: Endpoint): string {
     invokeArgs.push('request: validated');
   }
 
-  const invokeArgsStr =
-    invokeArgs.length > 0 ? `, { ${invokeArgs.join(', ')} }` : '';
+  const invokeArgsStr = invokeArgs.length > 0 ? `, { ${invokeArgs.join(', ')} }` : '';
 
   // Generate JSDoc
   const lines: string[] = [];
-  lines.push(`/**`);
+  lines.push('/**');
   lines.push(` * ${endpoint.description || endpoint.command}`);
-  lines.push(` *`);
+  lines.push(' *');
   lines.push(` * @endpoint ${endpoint.method.toUpperCase()} ${endpoint.path}`);
   lines.push(` * @command ${endpoint.command}`);
 
@@ -332,19 +333,17 @@ function generateQueryFunction(endpoint: Endpoint): string {
   }
 
   if (hasRequestBody) {
-    lines.push(` * @param request - Request body (validated with Zod)`);
+    lines.push(' * @param request - Request body (validated with Zod)');
   }
 
   lines.push(` * @returns Promise resolving to ${tsResponseType}`);
-  lines.push(` * @throws Error if validation or query fails`);
-  lines.push(` */`);
+  lines.push(' * @throws Error if validation or query fails');
+  lines.push(' */');
 
   // Generate function signature
   const asyncKeyword = 'async';
   const returnType = `Promise<${tsResponseType}>`;
-  lines.push(
-    `export ${asyncKeyword} function ${funcName}(${params.join(', ')}): ${returnType} {`
-  );
+  lines.push(`export ${asyncKeyword} function ${funcName}(${params.join(', ')}): ${returnType} {`);
 
   // Generate function body
   const logParams: string[] = [];
@@ -355,12 +354,11 @@ function generateQueryFunction(endpoint: Endpoint): string {
     }
   }
 
-  const logParamsStr =
-    logParams.length > 0 ? `, { ${logParams.join(', ')} }` : '';
+  const logParamsStr = logParams.length > 0 ? `, { ${logParams.join(', ')} }` : '';
 
   lines.push(`  logger.debug('Calling ${endpoint.command}'${logParamsStr});`);
-  lines.push(``);
-  lines.push(`  try {`);
+  lines.push('');
+  lines.push('  try {');
 
   // Add validation for request body
   if (hasRequestBody) {
@@ -371,33 +369,35 @@ function generateQueryFunction(endpoint: Endpoint): string {
   // Add invoke call
   if (tsResponseType === 'void') {
     lines.push(`    await invoke<void>('${endpoint.command}'${invokeArgsStr});`);
-    lines.push(``);
+    lines.push('');
     lines.push(`    logger.info('${endpoint.command} completed successfully');`);
   } else {
     lines.push(
       `    const result = await invoke<${tsResponseType}>('${endpoint.command}'${invokeArgsStr});`
     );
-    lines.push(``);
+    lines.push('');
 
     // Add logging based on result type
     if (endpoint.responseType.endsWith('[]')) {
       lines.push(`    logger.info('${endpoint.command} completed', { count: result.length });`);
     } else if (!isPrimitiveType(tsResponseType)) {
-      lines.push(`    logger.info('${endpoint.command} completed', { id: (result as Record<string, unknown>).id });`);
+      lines.push(
+        `    logger.info('${endpoint.command} completed', { id: (result as Record<string, unknown>).id });`
+      );
     } else {
       lines.push(`    logger.info('${endpoint.command} completed');`);
     }
 
-    lines.push(``);
-    lines.push(`    return result;`);
+    lines.push('');
+    lines.push('    return result;');
   }
 
-  lines.push(`  } catch (error) {`);
-  lines.push(`    const errorMessage = error instanceof Error ? error.message : String(error);`);
+  lines.push('  } catch (error) {');
+  lines.push('    const errorMessage = error instanceof Error ? error.message : String(error);');
   lines.push(`    logger.error('${endpoint.command} failed', { error: errorMessage });`);
-  lines.push(`    throw error;`);
-  lines.push(`  }`);
-  lines.push(`}`);
+  lines.push('    throw error;');
+  lines.push('  }');
+  lines.push('}');
 
   return lines.join('\n');
 }
@@ -438,23 +438,23 @@ function generateDomainFile(group: EndpointGroup): string {
   const lines: string[] = [];
 
   // Header
-  lines.push(`// =============================================================================`);
-  lines.push(`// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY`);
-  lines.push(`// =============================================================================`);
-  lines.push(`//`);
-  lines.push(`// Generated by: scripts/generate-queries.ts`);
-  lines.push(`// Source: crates/openflow-contracts/src/endpoints/mod.rs`);
+  lines.push('// =============================================================================');
+  lines.push('// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY');
+  lines.push('// =============================================================================');
+  lines.push('//');
+  lines.push('// Generated by: scripts/generate-queries.ts');
+  lines.push('// Source: crates/openflow-contracts/src/endpoints/mod.rs');
   lines.push(`// Domain: ${group.domain}`);
   lines.push(`// Generated at: ${new Date().toISOString()}`);
-  lines.push(`//`);
+  lines.push('//');
   lines.push(`// This file contains type-safe query functions for the ${group.domain} domain.`);
-  lines.push(`// Each function wraps a Tauri IPC command with validation and logging.`);
-  lines.push(`//`);
-  lines.push(`// To regenerate: pnpm generate:queries`);
-  lines.push(`//`);
-  lines.push(`// @see CLAUDE.md - Query Layer Patterns section`);
-  lines.push(`// =============================================================================`);
-  lines.push(``);
+  lines.push('// Each function wraps a Tauri IPC command with validation and logging.');
+  lines.push('//');
+  lines.push('// To regenerate: pnpm generate:queries');
+  lines.push('//');
+  lines.push('// @see CLAUDE.md - Query Layer Patterns section');
+  lines.push('// =============================================================================');
+  lines.push('');
 
   // Collect types for imports
   const { requestTypes, responseTypes, schemaNames } = collectTypes(group.endpoints);
@@ -474,18 +474,16 @@ function generateDomainFile(group: EndpointGroup): string {
 
   lines.push(`import { createLogger } from '@openflow/utils';`);
   lines.push(`import { invoke } from '../utils.js';`);
-  lines.push(``);
+  lines.push('');
 
   // Logger
   lines.push(`const logger = createLogger('queries:${group.domain}:generated');`);
-  lines.push(``);
+  lines.push('');
 
   // Generate functions
-  for (const endpoint of group.endpoints.sort((a, b) =>
-    a.command.localeCompare(b.command)
-  )) {
+  for (const endpoint of group.endpoints.sort((a, b) => a.command.localeCompare(b.command))) {
     lines.push(generateQueryFunction(endpoint));
-    lines.push(``);
+    lines.push('');
   }
 
   return lines.join('\n');
@@ -497,24 +495,24 @@ function generateDomainFile(group: EndpointGroup): string {
 function generateIndexFile(groups: EndpointGroup[]): string {
   const lines: string[] = [];
 
-  lines.push(`// =============================================================================`);
-  lines.push(`// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY`);
-  lines.push(`// =============================================================================`);
-  lines.push(`//`);
-  lines.push(`// Generated by: scripts/generate-queries.ts`);
+  lines.push('// =============================================================================');
+  lines.push('// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY');
+  lines.push('// =============================================================================');
+  lines.push('//');
+  lines.push('// Generated by: scripts/generate-queries.ts');
   lines.push(`// Generated at: ${new Date().toISOString()}`);
-  lines.push(`//`);
-  lines.push(`// Re-exports all generated query functions by domain.`);
-  lines.push(`//`);
-  lines.push(`// To regenerate: pnpm generate:queries`);
-  lines.push(`// =============================================================================`);
-  lines.push(``);
+  lines.push('//');
+  lines.push('// Re-exports all generated query functions by domain.');
+  lines.push('//');
+  lines.push('// To regenerate: pnpm generate:queries');
+  lines.push('// =============================================================================');
+  lines.push('');
 
   for (const group of groups.sort((a, b) => a.domain.localeCompare(b.domain))) {
     lines.push(`export * from './${group.domain}.js';`);
   }
 
-  lines.push(``);
+  lines.push('');
 
   return lines.join('\n');
 }
@@ -525,39 +523,37 @@ function generateIndexFile(groups: EndpointGroup[]): string {
 function generateCommandMap(endpoints: Endpoint[]): string {
   const lines: string[] = [];
 
-  lines.push(`// =============================================================================`);
-  lines.push(`// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY`);
-  lines.push(`// =============================================================================`);
-  lines.push(`//`);
-  lines.push(`// Generated by: scripts/generate-queries.ts`);
-  lines.push(`// Source: crates/openflow-contracts/src/endpoints/mod.rs`);
+  lines.push('// =============================================================================');
+  lines.push('// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY');
+  lines.push('// =============================================================================');
+  lines.push('//');
+  lines.push('// Generated by: scripts/generate-queries.ts');
+  lines.push('// Source: crates/openflow-contracts/src/endpoints/mod.rs');
   lines.push(`// Generated at: ${new Date().toISOString()}`);
-  lines.push(`//`);
-  lines.push(`// Maps Tauri command names to HTTP endpoints for the HTTP transport.`);
-  lines.push(`// Used when running in browser mode without Tauri.`);
-  lines.push(`//`);
-  lines.push(`// To regenerate: pnpm generate:queries`);
-  lines.push(`// =============================================================================`);
-  lines.push(``);
+  lines.push('//');
+  lines.push('// Maps Tauri command names to HTTP endpoints for the HTTP transport.');
+  lines.push('// Used when running in browser mode without Tauri.');
+  lines.push('//');
+  lines.push('// To regenerate: pnpm generate:queries');
+  lines.push('// =============================================================================');
+  lines.push('');
 
-  lines.push(`export interface EndpointMapping {`);
+  lines.push('export interface EndpointMapping {');
   lines.push(`  method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';`);
-  lines.push(`  path: string;`);
-  lines.push(`  pathParams: string[];`);
-  lines.push(`  queryParams: string[];`);
-  lines.push(`  hasRequestBody: boolean;`);
-  lines.push(`}`);
-  lines.push(``);
+  lines.push('  path: string;');
+  lines.push('  pathParams: string[];');
+  lines.push('  queryParams: string[];');
+  lines.push('  hasRequestBody: boolean;');
+  lines.push('}');
+  lines.push('');
 
-  lines.push(`/**`);
-  lines.push(` * Mapping from Tauri command names to HTTP endpoint metadata.`);
-  lines.push(` * Used by the HTTP transport to convert IPC calls to REST requests.`);
-  lines.push(` */`);
-  lines.push(`export const COMMAND_MAP: Record<string, EndpointMapping> = {`);
+  lines.push('/**');
+  lines.push(' * Mapping from Tauri command names to HTTP endpoint metadata.');
+  lines.push(' * Used by the HTTP transport to convert IPC calls to REST requests.');
+  lines.push(' */');
+  lines.push('export const COMMAND_MAP: Record<string, EndpointMapping> = {');
 
-  for (const endpoint of endpoints.sort((a, b) =>
-    a.command.localeCompare(b.command)
-  )) {
+  for (const endpoint of endpoints.sort((a, b) => a.command.localeCompare(b.command))) {
     const pathParamsStr =
       endpoint.pathParams.length > 0
         ? `[${endpoint.pathParams.map((p) => `'${p}'`).join(', ')}]`
@@ -574,82 +570,86 @@ function generateCommandMap(endpoints: Endpoint[]): string {
     lines.push(`    pathParams: ${pathParamsStr},`);
     lines.push(`    queryParams: ${queryParamsStr},`);
     lines.push(`    hasRequestBody: ${endpoint.requestType !== null},`);
-    lines.push(`  },`);
+    lines.push('  },');
   }
 
-  lines.push(`};`);
-  lines.push(``);
+  lines.push('};');
+  lines.push('');
 
   // Add helper functions
-  lines.push(`/**`);
-  lines.push(` * Build the URL path with parameter substitution.`);
-  lines.push(` * @param command - Tauri command name`);
-  lines.push(` * @param args - Arguments containing path parameter values`);
-  lines.push(` * @returns The fully resolved URL path`);
-  lines.push(` */`);
-  lines.push(`export function buildPath(command: string, args: Record<string, unknown> = {}): string {`);
-  lines.push(`  const mapping = COMMAND_MAP[command];`);
-  lines.push(`  if (!mapping) {`);
-  lines.push(`    throw new Error(\`Unknown command: \${command}\`);`);
-  lines.push(`  }`);
-  lines.push(``);
-  lines.push(`  let path = mapping.path;`);
-  lines.push(``);
-  lines.push(`  // Substitute path parameters`);
-  lines.push(`  for (const param of mapping.pathParams) {`);
-  lines.push(`    const value = args[param];`);
-  lines.push(`    if (value !== undefined) {`);
-  lines.push(`      path = path.replace(\`:\${param}\`, encodeURIComponent(String(value)));`);
-  lines.push(`    }`);
-  lines.push(`  }`);
-  lines.push(``);
-  lines.push(`  // Add query parameters`);
-  lines.push(`  const queryParts: string[] = [];`);
-  lines.push(`  for (const param of mapping.queryParams) {`);
-  lines.push(`    const value = args[param];`);
-  lines.push(`    if (value !== undefined) {`);
-  lines.push(`      queryParts.push(\`\${param}=\${encodeURIComponent(String(value))}\`);`);
-  lines.push(`    }`);
-  lines.push(`  }`);
-  lines.push(``);
-  lines.push(`  if (queryParts.length > 0) {`);
+  lines.push('/**');
+  lines.push(' * Build the URL path with parameter substitution.');
+  lines.push(' * @param command - Tauri command name');
+  lines.push(' * @param args - Arguments containing path parameter values');
+  lines.push(' * @returns The fully resolved URL path');
+  lines.push(' */');
+  lines.push(
+    'export function buildPath(command: string, args: Record<string, unknown> = {}): string {'
+  );
+  lines.push('  const mapping = COMMAND_MAP[command];');
+  lines.push('  if (!mapping) {');
+  lines.push('    throw new Error(`Unknown command: ${command}`);');
+  lines.push('  }');
+  lines.push('');
+  lines.push('  let path = mapping.path;');
+  lines.push('');
+  lines.push('  // Substitute path parameters');
+  lines.push('  for (const param of mapping.pathParams) {');
+  lines.push('    const value = args[param];');
+  lines.push('    if (value !== undefined) {');
+  lines.push('      path = path.replace(`:${param}`, encodeURIComponent(String(value)));');
+  lines.push('    }');
+  lines.push('  }');
+  lines.push('');
+  lines.push('  // Add query parameters');
+  lines.push('  const queryParts: string[] = [];');
+  lines.push('  for (const param of mapping.queryParams) {');
+  lines.push('    const value = args[param];');
+  lines.push('    if (value !== undefined) {');
+  lines.push('      queryParts.push(`${param}=${encodeURIComponent(String(value))}`);');
+  lines.push('    }');
+  lines.push('  }');
+  lines.push('');
+  lines.push('  if (queryParts.length > 0) {');
   lines.push(`    path += '?' + queryParts.join('&');`);
-  lines.push(`  }`);
-  lines.push(``);
-  lines.push(`  return path;`);
-  lines.push(`}`);
-  lines.push(``);
+  lines.push('  }');
+  lines.push('');
+  lines.push('  return path;');
+  lines.push('}');
+  lines.push('');
 
-  lines.push(`/**`);
-  lines.push(` * Get the request body from arguments, excluding path/query params.`);
-  lines.push(` * @param command - Tauri command name`);
-  lines.push(` * @param args - All arguments`);
-  lines.push(` * @returns The request body object or undefined`);
-  lines.push(` */`);
-  lines.push(`export function getRequestBody(command: string, args: Record<string, unknown> = {}): unknown | undefined {`);
-  lines.push(`  const mapping = COMMAND_MAP[command];`);
-  lines.push(`  if (!mapping || !mapping.hasRequestBody) {`);
-  lines.push(`    return undefined;`);
-  lines.push(`  }`);
-  lines.push(``);
+  lines.push('/**');
+  lines.push(' * Get the request body from arguments, excluding path/query params.');
+  lines.push(' * @param command - Tauri command name');
+  lines.push(' * @param args - All arguments');
+  lines.push(' * @returns The request body object or undefined');
+  lines.push(' */');
+  lines.push(
+    'export function getRequestBody(command: string, args: Record<string, unknown> = {}): unknown | undefined {'
+  );
+  lines.push('  const mapping = COMMAND_MAP[command];');
+  lines.push('  if (!mapping || !mapping.hasRequestBody) {');
+  lines.push('    return undefined;');
+  lines.push('  }');
+  lines.push('');
   lines.push(`  // The request body is typically in a 'request' field`);
   lines.push(`  if ('request' in args) {`);
-  lines.push(`    return args.request;`);
-  lines.push(`  }`);
-  lines.push(``);
-  lines.push(`  // Otherwise, return args minus path/query params`);
-  lines.push(`  const body: Record<string, unknown> = {};`);
-  lines.push(`  const excludeKeys = new Set([...mapping.pathParams, ...mapping.queryParams]);`);
-  lines.push(``);
-  lines.push(`  for (const [key, value] of Object.entries(args)) {`);
-  lines.push(`    if (!excludeKeys.has(key)) {`);
-  lines.push(`      body[key] = value;`);
-  lines.push(`    }`);
-  lines.push(`  }`);
-  lines.push(``);
-  lines.push(`  return Object.keys(body).length > 0 ? body : undefined;`);
-  lines.push(`}`);
-  lines.push(``);
+  lines.push('    return args.request;');
+  lines.push('  }');
+  lines.push('');
+  lines.push('  // Otherwise, return args minus path/query params');
+  lines.push('  const body: Record<string, unknown> = {};');
+  lines.push('  const excludeKeys = new Set([...mapping.pathParams, ...mapping.queryParams]);');
+  lines.push('');
+  lines.push('  for (const [key, value] of Object.entries(args)) {');
+  lines.push('    if (!excludeKeys.has(key)) {');
+  lines.push('      body[key] = value;');
+  lines.push('    }');
+  lines.push('  }');
+  lines.push('');
+  lines.push('  return Object.keys(body).length > 0 ? body : undefined;');
+  lines.push('}');
+  lines.push('');
 
   return lines.join('\n');
 }
@@ -708,7 +708,7 @@ function main(): void {
   writeFileSync(commandMapPath, commandMapContent);
   console.log(`   ✅ Generated ${relative(ROOT_DIR, commandMapPath)}`);
 
-  console.log(`\n✅ Query generation complete!`);
+  console.log('\n✅ Query generation complete!');
   console.log(`   Total endpoints: ${endpoints.length}`);
   console.log(`   Total files: ${groups.length + 2}`);
 }

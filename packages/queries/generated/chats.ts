@@ -15,9 +15,14 @@
 // @see CLAUDE.md - Query Layer Patterns section
 // =============================================================================
 
-import type { Chat, ChatWithMessages, CreateChatRequest, UpdateChatRequest } from '@openflow/generated';
-import { createChatRequestSchema, updateChatRequestSchema } from '@openflow/validation';
+import type {
+  Chat,
+  ChatWithMessages,
+  CreateChatRequest,
+  UpdateChatRequest,
+} from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
+import { createChatRequestSchema, updateChatRequestSchema } from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:chats:generated');

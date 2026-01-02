@@ -107,7 +107,10 @@ export async function getSettingOrDefault(key: string, defaultValue?: string): P
   logger.debug('Calling get_setting_or_default', { key });
 
   try {
-    const result = await invoke<string>('get_setting_or_default', { key: key, default_value: defaultValue });
+    const result = await invoke<string>('get_setting_or_default', {
+      key: key,
+      default_value: defaultValue,
+    });
 
     logger.info('get_setting_or_default completed');
 

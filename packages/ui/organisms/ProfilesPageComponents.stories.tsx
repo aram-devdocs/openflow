@@ -250,7 +250,7 @@ export const ErrorStateSizeSmall: StoryObj<typeof ProfilesErrorState> = {
 export const Card: StoryObj<typeof ProfileCard> = {
   render: () => (
     <div className="w-80">
-      <ul role="list" className="space-y-4">
+      <ul className="space-y-4">
         <ProfileCard
           profile={mockProfile}
           onEdit={() => console.log('Edit')}
@@ -266,7 +266,7 @@ export const Card: StoryObj<typeof ProfileCard> = {
 export const CardNotDefault: StoryObj<typeof ProfileCard> = {
   render: () => (
     <div className="w-80">
-      <ul role="list" className="space-y-4">
+      <ul className="space-y-4">
         <ProfileCard
           profile={mockProfileSecondary}
           onEdit={() => console.log('Edit')}
@@ -282,7 +282,7 @@ export const CardNotDefault: StoryObj<typeof ProfileCard> = {
 export const CardNoDescription: StoryObj<typeof ProfileCard> = {
   render: () => (
     <div className="w-80">
-      <ul role="list" className="space-y-4">
+      <ul className="space-y-4">
         <ProfileCard
           profile={{ ...mockProfileSecondary, description: undefined }}
           onEdit={() => console.log('Edit')}
@@ -297,7 +297,7 @@ export const CardNoDescription: StoryObj<typeof ProfileCard> = {
 export const CardSizeSmall: StoryObj<typeof ProfileCard> = {
   render: () => (
     <div className="w-72">
-      <ul role="list" className="space-y-4">
+      <ul className="space-y-4">
         <ProfileCard
           profile={mockProfile}
           onEdit={() => console.log('Edit')}
@@ -313,7 +313,7 @@ export const CardSizeSmall: StoryObj<typeof ProfileCard> = {
 export const CardSizeLarge: StoryObj<typeof ProfileCard> = {
   render: () => (
     <div className="w-96">
-      <ul role="list" className="space-y-4">
+      <ul className="space-y-4">
         <ProfileCard
           profile={mockProfile}
           onEdit={() => console.log('Edit')}
@@ -636,7 +636,7 @@ export const AccessibilityFocusRing: StoryObj = {
         Tab through the action buttons to see focus rings with ring-offset
       </p>
       <div className="w-80">
-        <ul role="list">
+        <ul>
           <ProfileCard
             profile={mockProfileSecondary}
             onEdit={() => console.log('Edit')}
