@@ -712,6 +712,7 @@ export const RefForwarding: Story = {
     return (
       <div className="space-y-4">
         <button
+          type="button"
           onClick={handleClick}
           className="rounded bg-primary px-4 py-2 text-primary-foreground"
         >

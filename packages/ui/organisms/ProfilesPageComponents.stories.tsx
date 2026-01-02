@@ -810,6 +810,7 @@ export const RealWorldLoadingTransition: StoryObj = {
       <div className="space-y-4">
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => {
               setIsLoading(true);
               setHasError(false);
@@ -820,6 +821,7 @@ export const RealWorldLoadingTransition: StoryObj = {
             Simulate Load
           </button>
           <button
+            type="button"
             onClick={() => {
               setIsLoading(false);
               setHasError(true);

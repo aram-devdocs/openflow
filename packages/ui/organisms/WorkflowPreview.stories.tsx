@@ -725,7 +725,9 @@ export const WorkflowSelectorPreview: Story = {
           ))}
         </div>
         <div className="p-4 border border-[hsl(var(--border))] rounded-lg">
-          <WorkflowPreview workflow={workflows[selected]!} size="sm" maxSteps={4} />
+          {workflows[selected] && (
+            <WorkflowPreview workflow={workflows[selected]} size="sm" maxSteps={4} />
+          )}
         </div>
       </div>
     );

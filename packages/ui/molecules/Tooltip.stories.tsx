@@ -470,7 +470,7 @@ export const ToolbarExample: Story = {
             <Icon icon={Settings} size="sm" aria-hidden={true} />
           </button>
         </Tooltip>
-        <div className="mx-1 h-4 w-px bg-[rgb(var(--border))]" role="separator" />
+        <div className="mx-1 h-4 w-px bg-[rgb(var(--border))]" aria-hidden="true" />
         <Tooltip content="Delete item (Cmd+D)" position="bottom">
           <button
             type="button"

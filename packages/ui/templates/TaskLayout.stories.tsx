@@ -1053,7 +1053,6 @@ export const RefForwarding: Story = {
               type="button"
               onClick={() => {
                 if (layoutRef.current) {
-                  // biome-ignore lint/suspicious/noConsole: demo purposes
                   console.log('Layout dimensions:', layoutRef.current.getBoundingClientRect());
                 }
               }}

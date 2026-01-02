@@ -689,6 +689,7 @@ export const RefForwardingDemo: Story = {
     return (
       <div className="space-y-4">
         <button
+          type="button"
           onClick={() => {
             if (ref.current) {
               const dataState = ref.current.getAttribute('data-state');

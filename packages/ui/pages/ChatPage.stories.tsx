@@ -829,13 +829,22 @@ export const FocusRingVisibility: Story = {
         <div className="p-4 border rounded bg-background">
           <p className="text-sm mb-4">Tab through this section to see focus rings:</p>
           <div className="flex gap-4">
-            <button className="px-4 py-2 bg-primary text-primary-foreground rounded min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <button
+              type="button"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               Button 1
             </button>
-            <button className="px-4 py-2 bg-secondary text-secondary-foreground rounded min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <button
+              type="button"
+              className="px-4 py-2 bg-secondary text-secondary-foreground rounded min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               Button 2
             </button>
-            <button className="px-4 py-2 bg-destructive text-destructive-foreground rounded min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+            <button
+              type="button"
+              className="px-4 py-2 bg-destructive text-destructive-foreground rounded min-h-[44px] min-w-[44px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               Button 3
             </button>
           </div>
@@ -907,6 +916,7 @@ export const RefForwarding: Story = {
     return (
       <div className="space-y-4">
         <button
+          type="button"
           onClick={handleFocus}
           className="px-4 py-2 bg-primary text-primary-foreground rounded"
         >

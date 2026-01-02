@@ -488,6 +488,7 @@ export const InputAreaWithRef: StoryObj<typeof ChatInputArea> = {
     return (
       <div>
         <button
+          type="button"
           onClick={() => textareaRef.current?.focus()}
           className="mb-4 px-4 py-2 bg-blue-500 text-white rounded"
         >
@@ -996,7 +997,7 @@ export const RefForwarding: StoryObj = {
 
     return (
       <div className="h-screen flex flex-col">
-        <button onClick={showRefs} className="p-2 bg-blue-500 text-white">
+        <button type="button" onClick={showRefs} className="p-2 bg-blue-500 text-white">
           Log Refs to Console
         </button>
         <ChatPageLayout

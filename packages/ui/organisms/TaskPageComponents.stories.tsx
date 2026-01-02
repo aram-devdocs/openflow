@@ -520,6 +520,7 @@ export const AddStepInteractive: StoryObj<typeof AddStepDialog> = {
     return (
       <>
         <button
+          type="button"
           onClick={() => setIsOpen(true)}
           className="m-4 px-4 py-2 bg-primary text-primary-foreground rounded"
         >
@@ -909,6 +910,7 @@ export const RefForwardingDemo: StoryObj = {
           All components support forwardRef for programmatic access.
         </p>
         <button
+          type="button"
           onClick={handleClick}
           className="px-4 py-2 bg-primary text-primary-foreground rounded"
         >

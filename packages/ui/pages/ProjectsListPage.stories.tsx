@@ -233,13 +233,17 @@ export const Loading: Story = {
  * Shows empty state UI with call-to-action to create first project.
  */
 export const Empty: Story = {
-  args: createDefaultProps({
-    content: {
-      ...createDefaultProps().content!,
-      projects: [],
-    },
-    projectCount: 0,
-  }),
+  args: (() => {
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
+      content: {
+        ...defaults.content,
+        projects: [],
+      },
+      projectCount: 0,
+    };
+  })(),
 };
 
 /**
@@ -260,13 +264,17 @@ export const ErrorState: Story = {
  * Single project.
  */
 export const SingleProject: Story = {
-  args: createDefaultProps({
-    content: {
-      ...createDefaultProps().content!,
-      projects: mockProjects[0] ? [mockProjects[0]] : [],
-    },
-    projectCount: 1,
-  }),
+  args: (() => {
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
+      content: {
+        ...defaults.content,
+        projects: mockProjects[0] ? [mockProjects[0]] : [],
+      },
+      projectCount: 1,
+    };
+  })(),
 };
 
 /**
@@ -289,13 +297,15 @@ export const ManyProjects: Story = {
         updatedAt: '2024-01-01T00:00:00Z',
       })),
     ];
-    return createDefaultProps({
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
       content: {
-        ...createDefaultProps().content!,
+        ...defaults.content,
         projects: manyProjects,
       },
       projectCount: manyProjects.length,
-    });
+    };
   })(),
 };
 
@@ -307,56 +317,72 @@ export const ManyProjects: Story = {
  * Create dialog open.
  */
 export const CreateDialogOpen: Story = {
-  args: createDefaultProps({
-    createDialog: {
-      ...createDefaultProps().createDialog!,
-      isOpen: true,
-    },
-  }),
+  args: (() => {
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
+      createDialog: {
+        ...defaults.createDialog,
+        isOpen: true,
+      },
+    };
+  })(),
 };
 
 /**
  * Create dialog with values.
  */
 export const CreateDialogFilled: Story = {
-  args: createDefaultProps({
-    createDialog: {
-      ...createDefaultProps().createDialog!,
-      isOpen: true,
-      projectName: 'New Feature App',
-      projectPath: '/Users/dev/new-feature-app',
-    },
-  }),
+  args: (() => {
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
+      createDialog: {
+        ...defaults.createDialog,
+        isOpen: true,
+        projectName: 'New Feature App',
+        projectPath: '/Users/dev/new-feature-app',
+      },
+    };
+  })(),
 };
 
 /**
  * Create dialog pending.
  */
 export const CreateDialogPending: Story = {
-  args: createDefaultProps({
-    createDialog: {
-      ...createDefaultProps().createDialog!,
-      isOpen: true,
-      projectName: 'New Feature App',
-      projectPath: '/Users/dev/new-feature-app',
-      isPending: true,
-    },
-  }),
+  args: (() => {
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
+      createDialog: {
+        ...defaults.createDialog,
+        isOpen: true,
+        projectName: 'New Feature App',
+        projectPath: '/Users/dev/new-feature-app',
+        isPending: true,
+      },
+    };
+  })(),
 };
 
 /**
  * Create dialog with error.
  */
 export const CreateDialogError: Story = {
-  args: createDefaultProps({
-    createDialog: {
-      ...createDefaultProps().createDialog!,
-      isOpen: true,
-      projectName: 'New Feature App',
-      projectPath: '/invalid/path',
-      error: 'The specified path is not a valid git repository',
-    },
-  }),
+  args: (() => {
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
+      createDialog: {
+        ...defaults.createDialog,
+        isOpen: true,
+        projectName: 'New Feature App',
+        projectPath: '/invalid/path',
+        error: 'The specified path is not a valid git repository',
+      },
+    };
+  })(),
 };
 
 /**
@@ -571,10 +597,14 @@ export const ScreenReaderDemo: Story = {
         <p className="text-sm text-muted-foreground mb-2">Screen reader announces: "{SR_EMPTY}"</p>
         <div className="h-[300px] border rounded overflow-hidden">
           <ProjectsListPage
-            {...createDefaultProps({
-              content: { ...createDefaultProps().content!, projects: [] },
-              projectCount: 0,
-            })}
+            {...(() => {
+              const defaults = createDefaultProps();
+              return {
+                ...defaults,
+                content: { ...defaults.content, projects: [] },
+                projectCount: 0,
+              };
+            })()}
           />
         </div>
       </div>
@@ -710,10 +740,14 @@ export const DataAttributesDemo: Story = {
         </code>
         <div className="h-[200px] border rounded overflow-hidden">
           <ProjectsListPage
-            {...createDefaultProps({
-              content: { ...createDefaultProps().content!, projects: [] },
-              projectCount: 0,
-            })}
+            {...(() => {
+              const defaults = createDefaultProps();
+              return {
+                ...defaults,
+                content: { ...defaults.content, projects: [] },
+                projectCount: 0,
+              };
+            })()}
             data-testid="empty-demo"
           />
         </div>
@@ -743,13 +777,17 @@ export const DataAttributesDemo: Story = {
  * First-time user experience (empty).
  */
 export const FirstTimeUser: Story = {
-  args: createDefaultProps({
-    content: {
-      ...createDefaultProps().content!,
-      projects: [],
-    },
-    projectCount: 0,
-  }),
+  args: (() => {
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
+      content: {
+        ...defaults.content,
+        projects: [],
+      },
+      projectCount: 0,
+    };
+  })(),
   parameters: {
     docs: {
       description: {
@@ -776,13 +814,15 @@ export const PowerUser: Story = {
       createdAt: new Date(2024, 0, i + 1).toISOString(),
       updatedAt: new Date(2024, 0, i + 1).toISOString(),
     }));
-    return createDefaultProps({
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
       content: {
-        ...createDefaultProps().content!,
+        ...defaults.content,
         projects: manyProjects,
       },
       projectCount: manyProjects.length,
-    });
+    };
   })(),
   parameters: {
     docs: {
@@ -817,14 +857,18 @@ export const NetworkError: Story = {
  * Loading after initial render (content loading).
  */
 export const ContentLoading: Story = {
-  args: createDefaultProps({
-    content: {
-      ...createDefaultProps().content!,
-      isLoading: true,
-      projects: [],
-    },
-    projectCount: 0,
-  }),
+  args: (() => {
+    const defaults = createDefaultProps();
+    return {
+      ...defaults,
+      content: {
+        ...defaults.content,
+        isLoading: true,
+        projects: [],
+      },
+      projectCount: 0,
+    };
+  })(),
   parameters: {
     docs: {
       description: {
