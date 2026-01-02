@@ -74,10 +74,11 @@ RUN cargo build --release -p openflow-server
 # =============================================================================
 FROM debian:bookworm-slim
 
-# Install runtime dependencies
+# Install runtime dependencies (including curl for health check)
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && useradd -r -s /bin/false openflow
 
@@ -104,9 +105,9 @@ EXPOSE 3001
 # Mount point for persistent data
 VOLUME /app/data
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD ["/app/openflow-server", "--help"] || exit 1
+# Health check - verify server is running and accepting connections
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:3001/api/health || exit 1
 
 # Run the server
 ENTRYPOINT ["/app/openflow-server"]

@@ -13,6 +13,29 @@
 //! - Async spawning with tokio
 //! - Integration with ProcessExecutor trait
 //!
+//! # Security Considerations: Environment Variables
+//!
+//! **Current Implementation:** No environment variable whitelist/blacklist is enforced.
+//! The spawner accepts any environment variables passed from the caller.
+//!
+//! This design decision is intentional for the following reasons:
+//!
+//! 1. **Local Desktop Application:** OpenFlow runs as a local application on the
+//!    user's machine. The user already has full control over their environment.
+//!
+//! 2. **Development Tool Context:** As a dev tool, OpenFlow spawns CLI tools
+//!    (Claude Code, npm, cargo, etc.) that legitimately need access to various
+//!    env vars like `PATH`, `HOME`, `API_KEYS`, etc.
+//!
+//! 3. **Executor Profiles:** Users explicitly configure which env vars to pass
+//!    via ExecutorProfiles. This is a user-controlled configuration, not
+//!    arbitrary input from untrusted sources.
+//!
+//! **If deploying as a multi-tenant server (not currently a use case):**
+//! - Add env var whitelist/blacklist in the route handlers, not the spawner
+//! - Sanitize `PATH` and other critical system variables
+//! - Consider sandboxing with containers or VMs
+//!
 //! # Architecture
 //!
 //! The spawn module provides two main approaches for process execution:

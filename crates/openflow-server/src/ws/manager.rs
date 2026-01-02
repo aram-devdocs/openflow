@@ -3,6 +3,19 @@
 //! Tracks connected WebSocket clients and their channel subscriptions.
 //! Enables broadcasting events to specific channels or all connected clients.
 //!
+//! # Rate Limiting Considerations
+//!
+//! **Current Implementation:** No rate limiting is enforced on subscriptions.
+//! This is acceptable for the current use case (local desktop application with
+//! a small number of trusted clients). The embedded server typically serves
+//! only the Tauri webview and a few browser tabs.
+//!
+//! **Production Hardening (if deploying as a public server):**
+//! - Add per-client subscription limits (e.g., max 100 subscriptions)
+//! - Add rate limiting on subscribe/unsubscribe operations (e.g., 10/second)
+//! - Add connection limits per IP address
+//! - Consider authentication/authorization for subscription channels
+//!
 //! # Architecture
 //!
 //! ```text

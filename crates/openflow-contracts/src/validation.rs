@@ -366,6 +366,10 @@ pub fn validate_string_format(
     let is_valid = match format {
         StringFormat::Email => {
             // Basic email validation: contains @ with text on both sides
+            // Note: This is intentionally simple and does NOT enforce RFC 5322.
+            // For stricter validation, consider using the `email_address` crate.
+            // This is acceptable for initial frontend validation; email verification
+            // should always happen via confirmation email for real accounts.
             let parts: Vec<&str> = value.split('@').collect();
             parts.len() == 2 && !parts[0].is_empty() && parts[1].contains('.')
         }
@@ -404,28 +408,34 @@ pub fn validate_string_format(
     }
 }
 
-/// Validate string matches a regex pattern
+/// Validate string matches a pattern
 ///
 /// # Arguments
 ///
 /// * `field` - Field name for error messages
 /// * `value` - The string value to validate
-/// * `pattern` - The regex pattern as a string
+/// * `pattern` - The pattern string to match against
 ///
 /// # Returns
 ///
 /// `Ok(())` if pattern matches, `Err(ValidationError::Pattern)` otherwise
 ///
-/// Note: This is a simple implementation that checks if the pattern is contained.
-/// For full regex support, add the `regex` crate as a dependency.
+/// # Known Limitation
+///
+/// **This is NOT regex matching.** Currently implements simple substring/contains
+/// matching for basic validation needs. For full regex support, add the `regex`
+/// crate as a dependency and update this function.
+///
+/// Current behavior: `value.contains(pattern)` - checks if pattern is a substring.
+/// This is intentionally simple for the initial implementation and sufficient for
+/// basic validation cases like checking for required characters or prefixes.
 pub fn validate_string_pattern(
     field: &str,
     value: &str,
     pattern: &str,
 ) -> ValidationResult<()> {
-    // Simple pattern matching - for full regex, add regex crate
-    // This implementation just checks if value contains the pattern
-    // In production, you would use the regex crate
+    // IMPLEMENTATION NOTE: Simple substring matching, NOT regex
+    // For full regex support, add `regex` crate and update this function
     if !value.contains(pattern) {
         return Err(ValidationError::Pattern {
             field: field.to_string(),
