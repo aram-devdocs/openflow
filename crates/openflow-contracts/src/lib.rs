@@ -38,6 +38,8 @@ pub mod validation;
 // Re-export commonly used types for convenience
 // Entity types
 pub use entities::{Project, ProjectSummary, ProjectWithStats};
+pub use entities::{Task, TaskStatus, TaskSummary, TaskWithChatCount};
 // Request types
 pub use requests::{CreateProjectRequest, UpdateProjectRequest};
+pub use requests::{CreateTaskRequest, UpdateTaskRequest};
 // Validation module is accessible via openflow_contracts::validation::

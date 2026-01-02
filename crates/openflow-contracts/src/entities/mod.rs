@@ -5,12 +5,13 @@
 //! and transferred between frontend and backend.
 
 pub mod project;
+pub mod task;
 
 // Re-export entity types for convenience
 pub use project::{Project, ProjectSummary, ProjectWithStats};
+pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount};
 
 // Entity modules will be added in subsequent steps:
-// - task.rs (Step 0.4)
 // - chat.rs (Step 0.5)
 // - message.rs (Step 0.6)
 // - process.rs (Step 0.7)

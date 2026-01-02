@@ -4,12 +4,13 @@
 //! data sent from frontend to backend for mutations.
 
 pub mod project;
+pub mod task;
 
 // Re-export request types for convenience
 pub use project::{CreateProjectRequest, UpdateProjectRequest};
+pub use task::{CreateTaskRequest, UpdateTaskRequest};
 
 // Request modules will be added in subsequent steps:
-// - task.rs (Step 0.4)
 // - chat.rs (Step 0.5)
 // - message.rs (Step 0.6)
 // - process.rs (Step 0.7)
