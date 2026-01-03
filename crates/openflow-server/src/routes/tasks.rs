@@ -7,7 +7,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use openflow_contracts::{CreateTaskRequest, Task, TaskStatus, UpdateTaskRequest};
+use openflow_contracts::{CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest};
 use openflow_core::events::{EntityType, Event};
 use openflow_core::services::task;
 use serde::Deserialize;
@@ -55,13 +55,13 @@ async fn list(
 
 /// GET /api/tasks/{id}
 ///
-/// Get a task by ID (with chats).
+/// Get a task by ID with its associated chats.
 async fn get_one(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> ServerResult<Json<Task>> {
+) -> ServerResult<Json<TaskWithChats>> {
     let task_with_chats = task::get(&state.pool, &id).await?;
-    Ok(Json(task_with_chats.task))
+    Ok(Json(task_with_chats))
 }
 
 /// POST /api/tasks
@@ -403,10 +403,11 @@ mod tests {
         let body = axum::body::to_bytes(response.into_body(), usize::MAX)
             .await
             .unwrap();
-        let task: Task = serde_json::from_slice(&body).unwrap();
+        let task_with_chats: TaskWithChats = serde_json::from_slice(&body).unwrap();
 
-        assert_eq!(task.id, created.id);
-        assert_eq!(task.title, "Get Test Task");
+        assert_eq!(task_with_chats.task.id, created.id);
+        assert_eq!(task_with_chats.task.title, "Get Test Task");
+        assert!(task_with_chats.chats.is_empty()); // No chats created yet
     }
 
     #[tokio::test]
