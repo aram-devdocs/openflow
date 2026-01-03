@@ -7,7 +7,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use openflow_contracts::{Chat, CreateChatRequest, UpdateChatRequest};
+use openflow_contracts::{Chat, ChatWithMessages, CreateChatRequest, UpdateChatRequest};
 use openflow_core::events::{EntityType, Event};
 use openflow_core::services::chat;
 use serde::Deserialize;
@@ -90,9 +90,9 @@ async fn list_archived(State(state): State<AppState>) -> ServerResult<Json<Vec<C
 async fn get_one(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> ServerResult<Json<Chat>> {
+) -> ServerResult<Json<ChatWithMessages>> {
     let chat_with_messages = chat::get(&state.pool, &id).await?;
-    Ok(Json(chat_with_messages.chat))
+    Ok(Json(chat_with_messages))
 }
 
 /// POST /api/chats
@@ -497,10 +497,11 @@ mod tests {
         let body = axum::body::to_bytes(response.into_body(), usize::MAX)
             .await
             .unwrap();
-        let chat: Chat = serde_json::from_slice(&body).unwrap();
+        let chat_with_messages: ChatWithMessages = serde_json::from_slice(&body).unwrap();
 
-        assert_eq!(chat.id, created.id);
-        assert_eq!(chat.title, Some("Get Test Chat".to_string()));
+        assert_eq!(chat_with_messages.chat.id, created.id);
+        assert_eq!(chat_with_messages.chat.title, Some("Get Test Chat".to_string()));
+        assert!(chat_with_messages.messages.is_empty());
     }
 
     #[tokio::test]
