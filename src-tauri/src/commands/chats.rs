@@ -20,9 +20,7 @@ use openflow_core::services::chat;
 #[tauri::command]
 pub async fn list_chats(state: State<'_, AppState>, task_id: String) -> Result<Vec<Chat>, String> {
     let pool = state.db.lock().await;
-    chat::list(&pool, &task_id)
-        .await
-        .map_err(|e| e.to_string())
+    chat::list(&pool, &task_id).await.map_err(|e| e.to_string())
 }
 
 /// Get a single chat by ID with its associated messages.
@@ -31,9 +29,7 @@ pub async fn list_chats(state: State<'_, AppState>, task_id: String) -> Result<V
 #[tauri::command]
 pub async fn get_chat(state: State<'_, AppState>, id: String) -> Result<ChatWithMessages, String> {
     let pool = state.db.lock().await;
-    chat::get(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    chat::get(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Create a new chat.
@@ -71,9 +67,7 @@ pub async fn update_chat(
 #[tauri::command]
 pub async fn delete_chat(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    chat::delete(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    chat::delete(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Archive a chat by ID.
@@ -82,9 +76,7 @@ pub async fn delete_chat(state: State<'_, AppState>, id: String) -> Result<(), S
 #[tauri::command]
 pub async fn archive_chat(state: State<'_, AppState>, id: String) -> Result<Chat, String> {
     let pool = state.db.lock().await;
-    chat::archive(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    chat::archive(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Unarchive a chat by ID.
@@ -93,9 +85,7 @@ pub async fn archive_chat(state: State<'_, AppState>, id: String) -> Result<Chat
 #[tauri::command]
 pub async fn unarchive_chat(state: State<'_, AppState>, id: String) -> Result<Chat, String> {
     let pool = state.db.lock().await;
-    chat::unarchive(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    chat::unarchive(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// List standalone chats for a project.
@@ -140,9 +130,7 @@ pub async fn list_chats_by_project(
 #[tauri::command]
 pub async fn list_archived_chats(state: State<'_, AppState>) -> Result<Vec<Chat>, String> {
     let pool = state.db.lock().await;
-    chat::list_archived(&pool)
-        .await
-        .map_err(|e| e.to_string())
+    chat::list_archived(&pool).await.map_err(|e| e.to_string())
 }
 
 /// Toggle the completion status of a workflow step (chat).

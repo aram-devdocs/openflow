@@ -168,7 +168,8 @@ pub async fn start_server_with_shutdown(
     // Use WsBroadcaster so events are sent to WebSocket clients
     let client_manager = ClientManager::new();
     let broadcaster: Arc<dyn EventBroadcaster> = WsBroadcaster::arc(client_manager.clone());
-    let process_service = Arc::new(ProcessService::new());
+    // IMPORTANT: ProcessService must use the same broadcaster to stream PTY output events
+    let process_service = Arc::new(ProcessService::with_broadcaster(broadcaster.clone()));
 
     // Create app state
     let state = AppState::new(

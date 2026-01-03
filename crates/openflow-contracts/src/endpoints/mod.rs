@@ -348,6 +348,31 @@ pub static ENDPOINTS: &[Endpoint] = &[
         tags: &["tasks", "duplicate"],
     },
     // ==========================================================================
+    // ARTIFACTS (Task artifacts)
+    // ==========================================================================
+    Endpoint {
+        command: "artifacts_list",
+        method: HttpMethod::Get,
+        path: "/api/tasks/:taskId/artifacts",
+        request_type: None,
+        response_type: "ArtifactFile[]",
+        path_params: &["taskId"],
+        query_params: &[],
+        description: "List all artifacts for a task",
+        tags: &["artifacts", "list"],
+    },
+    Endpoint {
+        command: "artifact_read",
+        method: HttpMethod::Get,
+        path: "/api/tasks/:taskId/artifacts/:fileName",
+        request_type: None,
+        response_type: "string",
+        path_params: &["taskId", "fileName"],
+        query_params: &[],
+        description: "Read the content of an artifact file",
+        tags: &["artifacts", "read"],
+    },
+    // ==========================================================================
     // CHATS
     // ==========================================================================
     Endpoint {
@@ -375,11 +400,11 @@ pub static ENDPOINTS: &[Endpoint] = &[
     Endpoint {
         command: "list_chats_by_project",
         method: HttpMethod::Get,
-        path: "/api/projects/:project_id/chats",
+        path: "/api/chats/by-project",
         request_type: None,
         response_type: "Chat[]",
-        path_params: &["project_id"],
-        query_params: &[],
+        path_params: &[],
+        query_params: &["projectId"],
         description: "List all chats in a project",
         tags: &["chats", "list"],
     },
@@ -659,7 +684,7 @@ pub static ENDPOINTS: &[Endpoint] = &[
     Endpoint {
         command: "list_executor_profiles",
         method: HttpMethod::Get,
-        path: "/api/executor-profiles",
+        path: "/api/executor/profiles",
         request_type: None,
         response_type: "ExecutorProfile[]",
         path_params: &[],
@@ -670,7 +695,7 @@ pub static ENDPOINTS: &[Endpoint] = &[
     Endpoint {
         command: "get_executor_profile",
         method: HttpMethod::Get,
-        path: "/api/executor-profiles/:id",
+        path: "/api/executor/profiles/:id",
         request_type: None,
         response_type: "ExecutorProfile",
         path_params: &["id"],
@@ -681,7 +706,7 @@ pub static ENDPOINTS: &[Endpoint] = &[
     Endpoint {
         command: "get_default_executor_profile",
         method: HttpMethod::Get,
-        path: "/api/executor-profiles/default",
+        path: "/api/executor/profiles/default",
         request_type: None,
         response_type: "ExecutorProfile",
         path_params: &[],
@@ -692,7 +717,7 @@ pub static ENDPOINTS: &[Endpoint] = &[
     Endpoint {
         command: "create_executor_profile",
         method: HttpMethod::Post,
-        path: "/api/executor-profiles",
+        path: "/api/executor/profiles",
         request_type: Some("CreateExecutorProfileRequest"),
         response_type: "ExecutorProfile",
         path_params: &[],
@@ -703,7 +728,7 @@ pub static ENDPOINTS: &[Endpoint] = &[
     Endpoint {
         command: "update_executor_profile",
         method: HttpMethod::Patch,
-        path: "/api/executor-profiles/:id",
+        path: "/api/executor/profiles/:id",
         request_type: Some("UpdateExecutorProfileRequest"),
         response_type: "ExecutorProfile",
         path_params: &["id"],
@@ -714,7 +739,7 @@ pub static ENDPOINTS: &[Endpoint] = &[
     Endpoint {
         command: "delete_executor_profile",
         method: HttpMethod::Delete,
-        path: "/api/executor-profiles/:id",
+        path: "/api/executor/profiles/:id",
         request_type: None,
         response_type: "void",
         path_params: &["id"],
@@ -944,9 +969,31 @@ pub static ENDPOINTS: &[Endpoint] = &[
     // GITHUB
     // ==========================================================================
     Endpoint {
+        command: "check_gh_cli_installed",
+        method: HttpMethod::Get,
+        path: "/api/github/cli/installed",
+        request_type: None,
+        response_type: "CliInstalledResponse",
+        path_params: &[],
+        query_params: &[],
+        description: "Check if GitHub CLI is installed",
+        tags: &["github", "cli", "check"],
+    },
+    Endpoint {
+        command: "check_gh_auth_status",
+        method: HttpMethod::Get,
+        path: "/api/github/cli/auth",
+        request_type: None,
+        response_type: "AuthStatusResponse",
+        path_params: &[],
+        query_params: &[],
+        description: "Check GitHub CLI authentication status",
+        tags: &["github", "cli", "auth"],
+    },
+    Endpoint {
         command: "create_pull_request",
         method: HttpMethod::Post,
-        path: "/api/github/pull-requests",
+        path: "/api/github/pr",
         request_type: Some("CreatePullRequestRequest"),
         response_type: "PullRequestResult",
         path_params: &[],

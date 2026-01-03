@@ -103,7 +103,7 @@ export const terminalQueries = {
 
     try {
       const process = await invoke<ExecutionProcess>('spawn_terminal', {
-        input,
+        request: input,
       });
 
       logger.info('Terminal session spawned successfully', {
@@ -152,10 +152,13 @@ export const terminalQueries = {
     });
 
     try {
+      // The command expects `id` as path param and `request` as body
       await invoke<void>('resize_process', {
-        processId: input.processId,
-        cols: input.cols,
-        rows: input.rows,
+        id: input.processId,
+        request: {
+          cols: input.cols,
+          rows: input.rows,
+        },
       });
 
       logger.info('Terminal session resized successfully', {

@@ -1,4 +1,5 @@
 import type { ProcessStatus, ProcessStatusEvent } from '@openflow/generated';
+import { type ProcessOutputEvent, checkTauriContext, getTransport } from '@openflow/queries';
 import { createLogger } from '@openflow/utils';
 import { type UnlistenFn, listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -95,6 +96,106 @@ export interface ClaudeEventsState {
   clearPermissionRequest: () => void;
 }
 
+// =============================================================================
+// ANSI Code Stripping
+// =============================================================================
+
+/**
+ * Regex pattern for ANSI escape sequences.
+ * Matches: CSI sequences, OSC sequences, and other escape sequences.
+ */
+const ANSI_REGEX = new RegExp(
+  [
+    '\\x1b\\[[0-9;]*[A-Za-z]', // CSI sequences (colors, cursor, etc.)
+    '\\x1b\\][^\\x07]*\\x07', // OSC sequences (terminated by BEL)
+    '\\x1b[PX^_][^\\x1b]*\\x1b\\\\', // DCS/SOS/PM/APC sequences
+    '\\x1b[\\[\\]()#;?]*[0-9;]*[A-Za-z]', // Other escape sequences
+    '\\x1b.', // Simple escape sequences
+    '[\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f]', // Control characters (except newline, tab, CR)
+  ].join('|'),
+  'g'
+);
+
+/**
+ * Strip ANSI escape codes and control characters from a string.
+ */
+function stripAnsiCodes(s: string): string {
+  return s.replace(ANSI_REGEX, '');
+}
+
+// =============================================================================
+// Claude Event Parsing
+// =============================================================================
+
+/**
+ * Try to parse a line as a Claude event.
+ * Returns the parsed event or null if parsing fails.
+ */
+function parseClaudeEvent(line: string): ClaudeEvent | null {
+  const trimmed = line.trim();
+  if (!trimmed || !trimmed.startsWith('{')) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    // Validate it has a type field
+    if (typeof parsed.type === 'string') {
+      return parsed as ClaudeEvent;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract tool name from permission prompt.
+ */
+function extractToolName(prompt: string): string {
+  // Common patterns: "Allow Claude to write", "Allow Claude to read", "Allow Claude to execute"
+  if (prompt.includes('write') || prompt.includes('Write')) {
+    return 'Write';
+  }
+  if (prompt.includes('read') || prompt.includes('Read')) {
+    return 'Read';
+  }
+  if (
+    prompt.includes('execute') ||
+    prompt.includes('Execute') ||
+    prompt.includes('bash') ||
+    prompt.includes('Bash')
+  ) {
+    return 'Bash';
+  }
+  return 'Tool';
+}
+
+/**
+ * Extract file path from permission prompt.
+ */
+function extractFilePath(prompt: string): string | undefined {
+  // Look for path-like strings (starting with / or containing common path patterns)
+  for (const word of prompt.split(/\s+/)) {
+    const cleaned = word.replace(/[?"'`]/g, '');
+    if (cleaned.startsWith('/') || cleaned.includes(':\\')) {
+      return cleaned;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Check if a line is a permission prompt.
+ */
+function isPermissionPrompt(line: string): boolean {
+  return line.includes('Allow') && (line.includes('(y/n)') || line.includes('? [y/n]'));
+}
+
+// =============================================================================
+// Event Type Description
+// =============================================================================
+
 /**
  * Get a human-readable description of the event type for logging
  */
@@ -117,13 +218,282 @@ function getEventTypeDescription(event: ClaudeEvent): string {
   }
 }
 
+// =============================================================================
+// Tauri Mode Subscriptions
+// =============================================================================
+
+interface TauriModeCallbacks {
+  onEvent: (event: ClaudeEvent) => void;
+  onRawOutput: (line: string) => void;
+  onStatus: (status: ProcessStatus, exitCode?: number | null) => void;
+  onPermissionRequest: (request: PermissionRequest) => void;
+  onSessionId: (sessionId: string) => void;
+  isMounted: () => boolean;
+}
+
 /**
- * Hook to subscribe to Claude Code stream-json events via Tauri events.
+ * Set up event listeners for Tauri mode.
+ * Returns a cleanup function.
+ */
+async function setupTauriModeListeners(
+  processId: string,
+  callbacks: TauriModeCallbacks
+): Promise<() => void> {
+  const unlistenFns: UnlistenFn[] = [];
+
+  // Subscribe to Claude events
+  try {
+    const unlisten = await listen<ClaudeEvent>(`claude-event-${processId}`, (event) => {
+      if (!callbacks.isMounted()) return;
+      callbacks.onEvent(event.payload);
+    });
+    unlistenFns.push(unlisten);
+    logger.debug('Tauri: Claude event listener established', { processId });
+  } catch (error) {
+    logger.error('Tauri: Failed to subscribe to Claude events', {
+      processId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Subscribe to raw output
+  try {
+    const unlisten = await listen<string>(`raw-output-${processId}`, (event) => {
+      if (!callbacks.isMounted()) return;
+      callbacks.onRawOutput(event.payload);
+    });
+    unlistenFns.push(unlisten);
+    logger.debug('Tauri: Raw output listener established', { processId });
+  } catch (error) {
+    logger.error('Tauri: Failed to subscribe to raw output', {
+      processId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Subscribe to process status
+  try {
+    const unlisten = await listen<ProcessStatusEvent>(`process-status-${processId}`, (event) => {
+      if (!callbacks.isMounted()) return;
+      const { status, exitCode } = event.payload;
+      callbacks.onStatus(status, exitCode);
+    });
+    unlistenFns.push(unlisten);
+    logger.debug('Tauri: Process status listener established', { processId });
+  } catch (error) {
+    logger.error('Tauri: Failed to subscribe to process status', {
+      processId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Subscribe to permission requests
+  try {
+    interface RustPermissionRequest {
+      process_id: string;
+      tool_name: string;
+      file_path?: string;
+      description: string;
+    }
+    const unlisten = await listen<RustPermissionRequest>(
+      `permission-request-${processId}`,
+      (event) => {
+        if (!callbacks.isMounted()) return;
+        const { process_id, tool_name, file_path, description } = event.payload;
+        callbacks.onPermissionRequest({
+          processId: process_id,
+          toolName: tool_name,
+          filePath: file_path,
+          description,
+        });
+      }
+    );
+    unlistenFns.push(unlisten);
+    logger.debug('Tauri: Permission request listener established', { processId });
+  } catch (error) {
+    logger.error('Tauri: Failed to subscribe to permission requests', {
+      processId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Subscribe to session ID
+  try {
+    const unlisten = await listen<string>(`session-id-${processId}`, (event) => {
+      if (!callbacks.isMounted()) return;
+      callbacks.onSessionId(event.payload);
+    });
+    unlistenFns.push(unlisten);
+    logger.debug('Tauri: Session ID listener established', { processId });
+  } catch (error) {
+    logger.error('Tauri: Failed to subscribe to session ID', {
+      processId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  return () => {
+    for (const unlisten of unlistenFns) {
+      unlisten();
+    }
+  };
+}
+
+// =============================================================================
+// HTTP Mode Subscriptions
+// =============================================================================
+
+interface HttpModeCallbacks {
+  onEvent: (event: ClaudeEvent) => void;
+  onRawOutput: (line: string) => void;
+  onStatus: (status: ProcessStatus, exitCode?: number | null) => void;
+  onPermissionRequest: (request: PermissionRequest) => void;
+  onSessionId: (sessionId: string) => void;
+  isMounted: () => boolean;
+}
+
+/**
+ * Set up event listeners for HTTP mode.
+ * In HTTP mode, we subscribe to process-output and process-status events via WebSocket,
+ * then parse the raw output on the client side to extract Claude events.
+ * Returns a cleanup function.
+ */
+async function setupHttpModeListeners(
+  processId: string,
+  callbacks: HttpModeCallbacks
+): Promise<() => void> {
+  const unsubscribeFns: Array<() => void> = [];
+
+  try {
+    const transport = await getTransport();
+
+    // Subscribe to process output
+    const outputChannel = `process-output-${processId}`;
+    logger.debug('HTTP: Subscribing to process output', { channel: outputChannel });
+
+    const unsubOutput = transport.subscribe(outputChannel, (event: unknown) => {
+      if (!callbacks.isMounted()) return;
+
+      const outputEvent = event as ProcessOutputEvent;
+      const content = outputEvent.content || '';
+
+      logger.debug('HTTP: Process output received', {
+        processId,
+        contentLength: content.length,
+        outputType: outputEvent.outputType,
+      });
+
+      // Process each line in the output
+      const lines = content.split('\n');
+      for (const line of lines) {
+        if (!line.trim()) continue;
+
+        // Strip ANSI codes
+        const cleanLine = stripAnsiCodes(line);
+        const trimmed = cleanLine.trim();
+
+        if (!trimmed) continue;
+
+        // Check for permission prompts
+        if (isPermissionPrompt(trimmed)) {
+          logger.info('HTTP: Permission prompt detected', {
+            processId,
+            description: trimmed.substring(0, 100),
+          });
+          callbacks.onPermissionRequest({
+            processId,
+            toolName: extractToolName(trimmed),
+            filePath: extractFilePath(trimmed),
+            description: trimmed,
+          });
+          continue;
+        }
+
+        // Try to parse as Claude event
+        const claudeEvent = parseClaudeEvent(trimmed);
+        if (claudeEvent) {
+          logger.debug('HTTP: Claude event parsed', {
+            processId,
+            eventType: getEventTypeDescription(claudeEvent),
+          });
+
+          // Extract session ID from system "init" events
+          if (
+            claudeEvent.type === 'system' &&
+            claudeEvent.subtype === 'init' &&
+            claudeEvent.session_id
+          ) {
+            logger.info('HTTP: Session ID extracted', {
+              processId,
+              sessionId: claudeEvent.session_id,
+            });
+            callbacks.onSessionId(claudeEvent.session_id);
+          }
+
+          callbacks.onEvent(claudeEvent);
+        } else {
+          // Raw output that couldn't be parsed
+          callbacks.onRawOutput(trimmed);
+        }
+      }
+    });
+    unsubscribeFns.push(unsubOutput);
+    logger.info('HTTP: Subscribed to process output', { channel: outputChannel });
+
+    // Subscribe to process status
+    const statusChannel = `process-status-${processId}`;
+    logger.debug('HTTP: Subscribing to process status', { channel: statusChannel });
+
+    const unsubStatus = transport.subscribe(statusChannel, (event: unknown) => {
+      if (!callbacks.isMounted()) return;
+
+      const statusEvent = event as ProcessStatusEvent;
+      logger.info('HTTP: Process status received', {
+        processId,
+        status: statusEvent.status,
+        exitCode: statusEvent.exitCode,
+      });
+
+      callbacks.onStatus(statusEvent.status, statusEvent.exitCode);
+    });
+    unsubscribeFns.push(unsubStatus);
+    logger.info('HTTP: Subscribed to process status', { channel: statusChannel });
+  } catch (error) {
+    logger.error('HTTP: Failed to set up listeners', {
+      processId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  return () => {
+    logger.debug('HTTP: Cleaning up subscriptions', { processId });
+    for (const unsub of unsubscribeFns) {
+      unsub();
+    }
+  };
+}
+
+// =============================================================================
+// Main Hook
+// =============================================================================
+
+/**
+ * Hook to subscribe to Claude Code stream-json events.
  *
- * This hook listens to three event channels:
+ * This hook automatically detects the context (Tauri vs HTTP) and subscribes
+ * to the appropriate event channels:
+ *
+ * **Tauri Mode (Desktop App):**
  * - `claude-event-{processId}`: Receives typed ClaudeEvent objects
  * - `raw-output-{processId}`: Receives unparsed output lines
  * - `process-status-{processId}`: Receives process status changes
+ * - `permission-request-{processId}`: Receives permission prompts
+ * - `session-id-{processId}`: Receives session ID
+ *
+ * **HTTP Mode (Browser):**
+ * - `process-output-{processId}`: Receives raw output via WebSocket
+ * - `process-status-{processId}`: Receives process status via WebSocket
+ * - Claude events are parsed on the client side from the raw output
  *
  * @param processId - The ID of the process to subscribe to (null to skip)
  * @returns ClaudeEventsState with events, status, and utilities
@@ -159,8 +529,11 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
   // Track event count for logging
   const eventCountRef = useRef(0);
 
+  // Track if we're in Tauri context (stable reference)
+  const isTauriRef = useRef(checkTauriContext());
+
   // Log hook initialization
-  logger.debug('Hook initialized', { processId });
+  logger.debug('Hook initialized', { processId, isTauri: isTauriRef.current });
 
   // Clear events handler
   const clearEvents = useCallback(() => {
@@ -181,7 +554,7 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
   useEffect(() => {
     mountedRef.current = true;
     eventCountRef.current = 0;
-    const unlistenFns: UnlistenFn[] = [];
+    let cleanup: (() => void) | null = null;
 
     // Skip if no process ID
     if (!processId) {
@@ -189,7 +562,8 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
       return;
     }
 
-    logger.info('Subscribing to Claude events', { processId });
+    const isTauri = isTauriRef.current;
+    logger.info('Subscribing to Claude events', { processId, mode: isTauri ? 'tauri' : 'http' });
 
     // Reset state when processId changes
     setEvents([]);
@@ -199,204 +573,99 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
     setExitCode(null);
     setSessionId(null);
 
-    // Subscribe to Claude events
-    const setupClaudeEventListener = async () => {
-      try {
-        logger.debug('Setting up Claude event listener', {
-          channel: `claude-event-${processId}`,
-        });
-        const unlisten = await listen<ClaudeEvent>(`claude-event-${processId}`, (event) => {
-          if (!mountedRef.current) return;
+    // Common callbacks for both modes
+    const callbacks = {
+      onEvent: (event: ClaudeEvent) => {
+        eventCountRef.current += 1;
+        const eventType = getEventTypeDescription(event);
 
-          eventCountRef.current += 1;
-          const eventType = getEventTypeDescription(event.payload);
-
-          // Log at debug level for most events, info for important ones
-          if (event.payload.type === 'system' && event.payload.subtype === 'init') {
-            logger.info('Claude session initialized', {
-              processId,
-              sessionId: event.payload.session_id,
-            });
-          } else if (event.payload.type === 'result') {
-            logger.info('Claude result received', {
-              processId,
-              subtype: event.payload.subtype,
-              totalEvents: eventCountRef.current,
-            });
-          } else {
-            logger.debug('Claude event received', {
-              processId,
-              eventType,
-              eventIndex: eventCountRef.current,
-            });
-          }
-
-          setEvents((prev) => [...prev, event.payload]);
-        });
-        unlistenFns.push(unlisten);
-        logger.debug('Claude event listener established', { processId });
-      } catch (error) {
-        logger.error('Failed to subscribe to Claude events', {
-          processId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    };
-
-    // Subscribe to raw output (unparsed lines)
-    const setupRawOutputListener = async () => {
-      try {
-        logger.debug('Setting up raw output listener', {
-          channel: `raw-output-${processId}`,
-        });
-        const unlisten = await listen<string>(`raw-output-${processId}`, (event) => {
-          if (!mountedRef.current) return;
-
-          logger.debug('Raw output received', {
+        // Log at debug level for most events, info for important ones
+        if (event.type === 'system' && event.subtype === 'init') {
+          logger.info('Claude session initialized', {
             processId,
-            length: event.payload.length,
+            sessionId: event.session_id,
           });
+          // Also set session ID from the event
+          if (event.session_id) {
+            setSessionId(event.session_id);
+          }
+        } else if (event.type === 'result') {
+          logger.info('Claude result received', {
+            processId,
+            subtype: event.subtype,
+            totalEvents: eventCountRef.current,
+          });
+        } else {
+          logger.debug('Claude event received', {
+            processId,
+            eventType,
+            eventIndex: eventCountRef.current,
+          });
+        }
 
-          setRawOutput((prev) => [...prev, event.payload]);
-        });
-        unlistenFns.push(unlisten);
-        logger.debug('Raw output listener established', { processId });
-      } catch (error) {
-        logger.error('Failed to subscribe to raw output', {
+        setEvents((prev) => [...prev, event]);
+      },
+      onRawOutput: (line: string) => {
+        logger.debug('Raw output received', {
           processId,
-          error: error instanceof Error ? error.message : String(error),
+          length: line.length,
         });
-      }
-    };
-
-    // Subscribe to process status events
-    const setupStatusListener = async () => {
-      try {
-        logger.debug('Setting up process status listener', {
-          channel: `process-status-${processId}`,
+        setRawOutput((prev) => [...prev, line]);
+      },
+      onStatus: (newStatus: ProcessStatus, newExitCode?: number | null) => {
+        logger.info('Process status changed', {
+          processId,
+          newStatus,
+          exitCode: newExitCode,
+          totalEvents: eventCountRef.current,
         });
-        const unlisten = await listen<ProcessStatusEvent>(
-          `process-status-${processId}`,
-          (event) => {
-            if (!mountedRef.current) return;
 
-            const { status: newStatus, exitCode: newExitCode } = event.payload;
+        setStatus(newStatus);
+        if (newExitCode !== undefined && newExitCode !== null) {
+          setExitCode(newExitCode);
 
-            // Log status changes at info level
-            logger.info('Process status changed', {
+          // Log completion with exit code
+          if (newStatus === 'completed' || newStatus === 'failed' || newStatus === 'killed') {
+            const logFn =
+              newStatus === 'completed' && newExitCode === 0 ? logger.info : logger.warn;
+            logFn('Process finished', {
               processId,
-              previousStatus: status,
-              newStatus,
+              status: newStatus,
               exitCode: newExitCode,
               totalEvents: eventCountRef.current,
             });
-
-            setStatus(newStatus);
-            if (newExitCode !== undefined && newExitCode !== null) {
-              setExitCode(newExitCode);
-
-              // Log completion with exit code
-              if (newStatus === 'completed' || newStatus === 'failed' || newStatus === 'killed') {
-                const logFn =
-                  newStatus === 'completed' && newExitCode === 0 ? logger.info : logger.warn;
-                logFn('Process finished', {
-                  processId,
-                  status: newStatus,
-                  exitCode: newExitCode,
-                  totalEvents: eventCountRef.current,
-                });
-              }
-            }
           }
-        );
-        unlistenFns.push(unlisten);
-        logger.debug('Process status listener established', { processId });
-      } catch (error) {
-        logger.error('Failed to subscribe to process status', {
-          processId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    };
-
-    // Subscribe to permission request events
-    const setupPermissionListener = async () => {
-      try {
-        logger.debug('Setting up permission request listener', {
-          channel: `permission-request-${processId}`,
-        });
-        // The Rust backend sends snake_case, so we map to camelCase
-        interface RustPermissionRequest {
-          process_id: string;
-          tool_name: string;
-          file_path?: string;
-          description: string;
         }
-        const unlisten = await listen<RustPermissionRequest>(
-          `permission-request-${processId}`,
-          (event) => {
-            if (!mountedRef.current) return;
-
-            const { process_id, tool_name, file_path, description } = event.payload;
-
-            // Permission requests are important, log at info level
-            logger.info('Permission request received', {
-              processId: process_id,
-              toolName: tool_name,
-              filePath: file_path,
-              descriptionLength: description.length,
-            });
-
-            setPermissionRequest({
-              processId: process_id,
-              toolName: tool_name,
-              filePath: file_path,
-              description,
-            });
-          }
-        );
-        unlistenFns.push(unlisten);
-        logger.debug('Permission request listener established', { processId });
-      } catch (error) {
-        logger.error('Failed to subscribe to permission requests', {
-          processId,
-          error: error instanceof Error ? error.message : String(error),
+      },
+      onPermissionRequest: (request: PermissionRequest) => {
+        logger.info('Permission request received', {
+          processId: request.processId,
+          toolName: request.toolName,
+          filePath: request.filePath,
+          descriptionLength: request.description.length,
         });
+        setPermissionRequest(request);
+      },
+      onSessionId: (sid: string) => {
+        logger.info('Session ID received', {
+          processId,
+          sessionId: sid,
+        });
+        setSessionId(sid);
+      },
+      isMounted: () => mountedRef.current,
+    };
+
+    // Set up listeners based on context
+    const setupListeners = async () => {
+      if (isTauri) {
+        cleanup = await setupTauriModeListeners(processId, callbacks);
+      } else {
+        cleanup = await setupHttpModeListeners(processId, callbacks);
       }
     };
 
-    // Subscribe to session ID events (emitted on "init" system events)
-    const setupSessionIdListener = async () => {
-      try {
-        logger.debug('Setting up session ID listener', {
-          channel: `session-id-${processId}`,
-        });
-        const unlisten = await listen<string>(`session-id-${processId}`, (event) => {
-          if (!mountedRef.current) return;
-
-          logger.info('Session ID received', {
-            processId,
-            sessionId: event.payload,
-          });
-
-          setSessionId(event.payload);
-        });
-        unlistenFns.push(unlisten);
-        logger.debug('Session ID listener established', { processId });
-      } catch (error) {
-        logger.error('Failed to subscribe to session ID', {
-          processId,
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    };
-
-    // Set up all listeners
-    setupClaudeEventListener();
-    setupRawOutputListener();
-    setupStatusListener();
-    setupPermissionListener();
-    setupSessionIdListener();
+    setupListeners();
 
     // Cleanup on unmount or processId change
     return () => {
@@ -405,11 +674,11 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
         totalEventsReceived: eventCountRef.current,
       });
       mountedRef.current = false;
-      for (const unlisten of unlistenFns) {
-        unlisten();
+      if (cleanup) {
+        cleanup();
       }
     };
-  }, [processId, status]);
+  }, [processId]);
 
   // Determine if process is running
   const isRunning = status === 'running' || (status === null && processId !== null);

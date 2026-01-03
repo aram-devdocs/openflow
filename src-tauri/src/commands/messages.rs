@@ -32,9 +32,7 @@ pub async fn list_messages(
 #[tauri::command]
 pub async fn get_message(state: State<'_, AppState>, id: String) -> Result<Message, String> {
     let pool = state.db.lock().await;
-    message::get(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    message::get(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Create a new message.
@@ -76,9 +74,7 @@ pub async fn update_message(
 #[tauri::command]
 pub async fn delete_message(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    message::delete(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    message::delete(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Set the streaming status of a message.

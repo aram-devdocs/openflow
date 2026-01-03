@@ -26,9 +26,7 @@ pub async fn get_process(
     id: String,
 ) -> Result<ExecutionProcess, String> {
     let pool = state.db.lock().await;
-    process::get(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    process::get(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// List all processes.
@@ -39,9 +37,7 @@ pub async fn list_all_processes(
     state: State<'_, AppState>,
 ) -> Result<Vec<ExecutionProcess>, String> {
     let pool = state.db.lock().await;
-    process::list(&pool)
-        .await
-        .map_err(|e| e.to_string())
+    process::list(&pool).await.map_err(|e| e.to_string())
 }
 
 /// List all processes for a chat.
@@ -166,12 +162,7 @@ pub async fn running_process_count(state: State<'_, AppState>) -> Result<usize, 
 /// Removes the process from the database. This only affects the database record,
 /// not any running process. The process must exist.
 #[tauri::command]
-pub async fn delete_process(
-    state: State<'_, AppState>,
-    id: String,
-) -> Result<(), String> {
+pub async fn delete_process(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    process::delete(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    process::delete(&pool, &id).await.map_err(|e| e.to_string())
 }

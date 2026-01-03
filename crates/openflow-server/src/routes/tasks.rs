@@ -1,15 +1,15 @@
 //! Task Routes
 //!
-//! REST API endpoints for task CRUD operations.
+//! REST API endpoints for task CRUD operations and artifact management.
 
 use axum::{
     extract::{Path, Query, State},
     routing::{get, post},
     Json, Router,
 };
-use openflow_contracts::{CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest};
+use openflow_contracts::{ArtifactFile, CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest};
 use openflow_core::events::{EntityType, Event};
-use openflow_core::services::task;
+use openflow_core::services::{artifact, task};
 use serde::Deserialize;
 
 use crate::{error::ServerResult, state::AppState};
@@ -34,6 +34,9 @@ pub fn routes() -> Router<AppState> {
         .route("/:id/archive", post(archive))
         .route("/:id/unarchive", post(unarchive))
         .route("/:id/duplicate", post(duplicate))
+        // Artifact routes (using camelCase path params to match frontend)
+        .route("/:taskId/artifacts", get(list_artifacts))
+        .route("/:taskId/artifacts/:fileName", get(read_artifact))
 }
 
 /// GET /api/tasks?projectId=xxx&status=xxx&includeArchived=true
@@ -170,6 +173,33 @@ async fn duplicate(
     ));
 
     Ok(Json(task))
+}
+
+// =============================================================================
+// Artifact Routes
+// =============================================================================
+
+/// GET /api/tasks/{taskId}/artifacts
+///
+/// List all artifacts for a task.
+/// Returns files in the task's `.zenflow/tasks/{taskId}/` folder.
+async fn list_artifacts(
+    State(state): State<AppState>,
+    Path(task_id): Path<String>,
+) -> ServerResult<Json<Vec<ArtifactFile>>> {
+    let artifacts = artifact::list(&state.pool, &task_id).await?;
+    Ok(Json(artifacts))
+}
+
+/// GET /api/tasks/{taskId}/artifacts/{fileName}
+///
+/// Read the content of a specific artifact file.
+async fn read_artifact(
+    State(state): State<AppState>,
+    Path((task_id, file_name)): Path<(String, String)>,
+) -> ServerResult<String> {
+    let content = artifact::read(&state.pool, &task_id, &file_name).await?;
+    Ok(content)
 }
 
 #[cfg(test)]

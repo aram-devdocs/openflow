@@ -146,6 +146,8 @@ struct PtyInstance {
     child: Box<dyn Child + Send + Sync>,
     /// Current terminal size.
     size: PtySize,
+    /// The writer for sending input to the PTY (taken once from master).
+    writer: Option<Box<dyn Write + Send>>,
 }
 
 /// Manager for PTY instances.
@@ -218,6 +220,12 @@ impl PtyManager {
             .spawn_command(cmd)
             .map_err(|e| PtyError::SpawnFailed(e.to_string()))?;
 
+        // Take the writer once during creation
+        let writer = pair
+            .master
+            .take_writer()
+            .map_err(|e| PtyError::WriteFailed(e.to_string()))?;
+
         // Store the PTY instance
         let instance = PtyInstance {
             master: pair.master,
@@ -226,6 +234,7 @@ impl PtyManager {
                 cols: config.cols,
                 rows: config.rows,
             },
+            writer: Some(writer),
         };
 
         instances.insert(id.to_string(), instance);
@@ -269,10 +278,11 @@ impl PtyManager {
             .get_mut(id)
             .ok_or_else(|| PtyError::NotFound(id.to_string()))?;
 
-        let mut writer = instance
-            .master
-            .take_writer()
-            .map_err(|e| PtyError::WriteFailed(e.to_string()))?;
+        // Get mutable reference to the stored writer
+        let writer = instance
+            .writer
+            .as_mut()
+            .ok_or_else(|| PtyError::WriteFailed("Writer not available".to_string()))?;
 
         let bytes_written = writer
             .write(data)

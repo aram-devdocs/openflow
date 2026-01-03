@@ -10,7 +10,7 @@
  * - Proper error handling with try/catch patterns
  */
 
-import type { PullRequestResult } from '@openflow/generated';
+import type { AuthStatusResponse, PullRequestResult } from '@openflow/generated';
 import { type CreatePullRequestInput, githubQueries } from '@openflow/queries';
 import { createLogger } from '@openflow/utils';
 import {
@@ -116,7 +116,7 @@ export function useGhCliInstalled(): UseQueryResult<boolean> {
  * }
  * ```
  */
-export function useGhAuthStatus(): UseQueryResult<void> {
+export function useGhAuthStatus(): UseQueryResult<AuthStatusResponse> {
   logger.debug('useGhAuthStatus hook called');
 
   return useQuery({
@@ -124,8 +124,11 @@ export function useGhAuthStatus(): UseQueryResult<void> {
     queryFn: async () => {
       logger.debug('Checking GitHub CLI authentication status');
       try {
-        await githubQueries.checkGhAuthStatus();
-        logger.info('GitHub CLI authentication check passed');
+        const result = await githubQueries.checkGhAuthStatus();
+        logger.info('GitHub CLI authentication check passed', {
+          authenticated: result.authenticated,
+        });
+        return result;
       } catch (error) {
         logger.warn('GitHub CLI authentication check failed', {
           error: error instanceof Error ? error.message : String(error),

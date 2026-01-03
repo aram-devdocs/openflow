@@ -26,9 +26,7 @@ async fn resolve_workflows_path(
         None => return Ok(None),
     };
     let pool = state.db.lock().await;
-    let proj = project::get(&pool, pid)
-        .await
-        .map_err(|e| e.to_string())?;
+    let proj = project::get(&pool, pid).await.map_err(|e| e.to_string())?;
     Ok(Some(
         Path::new(&proj.git_repo_path).join(&proj.workflows_folder),
     ))
@@ -250,8 +248,6 @@ Done.
     async fn test_get_builtin_workflow_template_not_found() {
         let result = get_builtin_workflow_template("builtin:nonexistent".to_string()).await;
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .contains("Built-in template not found"));
+        assert!(result.unwrap_err().contains("Built-in template not found"));
     }
 }

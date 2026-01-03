@@ -37,6 +37,7 @@ pub mod validation;
 
 // Re-export commonly used types for convenience
 // Entity types
+pub use entities::ArtifactFile;
 pub use entities::{Chat, ChatRole, ChatSummary, ChatWithMessageCount, ChatWithMessages};
 pub use entities::{CliToolType, ExecutorProfile, ExecutorProfileSummary};
 pub use entities::{
@@ -102,6 +103,8 @@ pub use events::{
 pub use events::{
     CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT, CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
 };
+// Response types
+pub use responses::{AuthStatusResponse, CliInstalledResponse};
 // Endpoint metadata
 pub use endpoints::{Endpoint, HttpMethod, ENDPOINTS, endpoint_count, endpoints_by_domain};
 pub use endpoints::{validate_unique_commands, validate_unique_path_methods};

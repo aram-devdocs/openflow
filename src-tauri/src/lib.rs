@@ -65,7 +65,7 @@ pub mod commands;
 
 use broadcaster::TauriBroadcaster;
 use commands::AppState;
-use openflow_db::{DbConfig, init_db_with_seeder};
+use openflow_db::{init_db_with_seeder, DbConfig};
 use openflow_server::{ClientManager, ServerConfig};
 
 /// Initialize and run the Tauri application.
@@ -149,8 +149,8 @@ pub fn run() {
             let server_config = ServerConfig::default()
                 .with_port(HTTP_SERVER_PORT)
                 .with_cors_origins(vec![
-                    "http://localhost:5173".to_string(),  // Vite dev server
-                    "http://localhost:1420".to_string(),  // Tauri dev server
+                    "http://localhost:5173".to_string(), // Vite dev server
+                    "http://localhost:1420".to_string(), // Tauri dev server
                     "http://127.0.0.1:5173".to_string(),
                     "http://127.0.0.1:1420".to_string(),
                     "tauri://localhost".to_string(),
@@ -158,7 +158,10 @@ pub fn run() {
 
             // Spawn HTTP server in background task
             tauri::async_runtime::spawn(async move {
-                println!("Starting embedded HTTP server on http://127.0.0.1:{}", HTTP_SERVER_PORT);
+                println!(
+                    "Starting embedded HTTP server on http://127.0.0.1:{}",
+                    HTTP_SERVER_PORT
+                );
 
                 if let Err(e) = openflow_server::start_embedded_server(
                     http_pool,
@@ -166,7 +169,9 @@ pub fn run() {
                     http_broadcaster,
                     client_manager,
                     server_config,
-                ).await {
+                )
+                .await
+                {
                     eprintln!("HTTP server error: {}", e);
                 }
             });
@@ -300,6 +305,10 @@ pub fn run() {
             // System commands
             commands::open_in_editor,
             commands::reveal_in_explorer,
+            // Artifact commands
+            commands::artifacts_list,
+            commands::artifact_read,
+            commands::shell_open,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

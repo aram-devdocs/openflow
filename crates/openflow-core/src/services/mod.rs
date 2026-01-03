@@ -13,6 +13,7 @@
 //!
 //! # Available Services
 //!
+//! - **artifact**: Task artifact file management
 //! - **project**: Project CRUD operations
 //! - **task**: Task CRUD operations
 //! - **chat**: Chat session management
@@ -30,6 +31,7 @@
 mod error;
 
 // Service modules
+pub mod artifact;
 pub mod chat;
 pub mod executor;
 pub mod executor_profile;

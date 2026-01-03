@@ -80,6 +80,13 @@ export const DEFAULT_DURATION = 5000;
 export const DEFAULT_ERROR_DURATION = 8000;
 
 /**
+ * Deduplication window in milliseconds - toasts with same content within this window are ignored.
+ * Increased from 300ms to 1500ms to catch slower duplicate triggers (e.g., from multiple
+ * hooks responding to the same mutation success, or React Query re-renders).
+ */
+export const DEDUP_WINDOW_MS = 1500;
+
+/**
  * Maximum number of toasts to display at once
  */
 export const DEFAULT_MAX_TOASTS = 5;
@@ -252,7 +259,53 @@ export const ToastProvider = forwardRef<HTMLDivElement, ToastProviderProps>(func
 ) {
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  // Track recent toast keys to prevent duplicates
+  const recentToastsRef = useRef<Map<string, number>>(new Map());
   const [activeToastCount, setActiveToastCount] = useState(0);
+
+  /**
+   * Generate a deduplication key from toast content.
+   * Two toasts with the same variant and title are considered duplicates (description ignored).
+   * Case-insensitive to catch "Project Created" vs "Project created".
+   *
+   * We ignore description because:
+   * - Different code paths may show the same conceptual toast with slightly different descriptions
+   * - The title is the main user-facing identifier of a toast
+   * - This is more aggressive but catches more duplicates without false negatives
+   */
+  const getToastKey = useCallback(
+    (variant: ToastVariant, title: string, _description?: string): string => {
+      // Normalize to lowercase for case-insensitive matching
+      // Description is intentionally ignored for more aggressive deduplication
+      return `${variant}:${title.toLowerCase()}`;
+    },
+    []
+  );
+
+  /**
+   * Check if a toast is a duplicate (same content within dedup window).
+   * Returns true if duplicate, false if new.
+   */
+  const isDuplicate = useCallback((key: string): boolean => {
+    const now = Date.now();
+    const lastSeen = recentToastsRef.current.get(key);
+
+    if (lastSeen && now - lastSeen < DEDUP_WINDOW_MS) {
+      return true;
+    }
+
+    // Update the last seen time
+    recentToastsRef.current.set(key, now);
+
+    // Cleanup old entries (older than 2x dedup window) to prevent memory leak
+    for (const [k, timestamp] of recentToastsRef.current.entries()) {
+      if (now - timestamp > DEDUP_WINDOW_MS * 2) {
+        recentToastsRef.current.delete(k);
+      }
+    }
+
+    return false;
+  }, []);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -282,6 +335,13 @@ export const ToastProvider = forwardRef<HTMLDivElement, ToastProviderProps>(func
 
   const addToast = useCallback(
     (toast: Omit<ToastData, 'id'>): string => {
+      // Check for duplicate toast
+      const key = getToastKey(toast.variant, toast.title, toast.description);
+      if (isDuplicate(key)) {
+        // Return empty string to indicate no toast was created
+        return '';
+      }
+
       const id = generateToastId();
       const newToast: ToastData = { ...toast, id };
 
@@ -304,7 +364,7 @@ export const ToastProvider = forwardRef<HTMLDivElement, ToastProviderProps>(func
 
       return id;
     },
-    [maxToasts, removeToast]
+    [maxToasts, removeToast, getToastKey, isDuplicate]
   );
 
   const success = useCallback(

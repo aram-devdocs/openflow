@@ -19,6 +19,7 @@
 //! }
 //! ```
 
+pub mod artifacts;
 pub mod chats;
 pub mod executor;
 pub mod git;
@@ -97,6 +98,7 @@ impl AppState {
 }
 
 // Re-export all command functions for registration in lib.rs
+pub use artifacts::*;
 pub use chats::*;
 pub use executor::*;
 pub use git::*;
