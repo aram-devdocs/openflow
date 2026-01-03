@@ -170,10 +170,13 @@ mod tests {
             let broadcaster: Arc<dyn openflow_core::events::EventBroadcaster> =
                 Arc::new(NullBroadcaster);
             let client_manager = crate::ws::ClientManager::new();
-            let state = AppState::new(self.pool.clone(), process_service, broadcaster, client_manager);
-            Router::new()
-                .nest("/projects", routes())
-                .with_state(state)
+            let state = AppState::new(
+                self.pool.clone(),
+                process_service,
+                broadcaster,
+                client_manager,
+            );
+            Router::new().nest("/projects", routes()).with_state(state)
         }
     }
 

@@ -95,11 +95,7 @@ async fn create(
     let msg = message::create(&state.pool, request).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::created(
-        EntityType::Message,
-        msg.id.clone(),
-        &msg,
-    ));
+    state.broadcast(Event::created(EntityType::Message, msg.id.clone(), &msg));
 
     Ok(Json(msg))
 }
@@ -115,11 +111,7 @@ async fn update(
     let msg = message::update(&state.pool, &id, request).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Message,
-        msg.id.clone(),
-        &msg,
-    ));
+    state.broadcast(Event::updated(EntityType::Message, msg.id.clone(), &msg));
 
     Ok(Json(msg))
 }
@@ -147,11 +139,7 @@ async fn set_streaming(
     let msg = message::set_streaming(&state.pool, &id, request.is_streaming).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Message,
-        msg.id.clone(),
-        &msg,
-    ));
+    state.broadcast(Event::updated(EntityType::Message, msg.id.clone(), &msg));
 
     Ok(Json(msg))
 }
@@ -167,11 +155,7 @@ async fn append_content(
     let msg = message::append_content(&state.pool, &id, &request.content).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Message,
-        msg.id.clone(),
-        &msg,
-    ));
+    state.broadcast(Event::updated(EntityType::Message, msg.id.clone(), &msg));
 
     Ok(Json(msg))
 }
@@ -187,11 +171,7 @@ async fn set_tokens(
     let msg = message::set_tokens_used(&state.pool, &id, request.tokens_used).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Message,
-        msg.id.clone(),
-        &msg,
-    ));
+    state.broadcast(Event::updated(EntityType::Message, msg.id.clone(), &msg));
 
     Ok(Json(msg))
 }
@@ -228,7 +208,10 @@ async fn delete_by_chat(
     let deleted = message::delete_by_chat(&state.pool, &query.chat_id).await?;
 
     // Broadcast bulk delete event (using chat_id as identifier)
-    state.broadcast(Event::deleted(EntityType::Message, format!("chat:{}", query.chat_id)));
+    state.broadcast(Event::deleted(
+        EntityType::Message,
+        format!("chat:{}", query.chat_id),
+    ));
 
     Ok(Json(deleted))
 }
@@ -241,7 +224,9 @@ mod tests {
         http::{Request, StatusCode},
         Router,
     };
-    use openflow_contracts::{ChatRole, CreateChatRequest, CreateProjectRequest, CreateTaskRequest};
+    use openflow_contracts::{
+        ChatRole, CreateChatRequest, CreateProjectRequest, CreateTaskRequest,
+    };
     use openflow_core::events::NullBroadcaster;
     use openflow_core::services::{chat, process::ProcessService, project, task};
     use sqlx::SqlitePool;
@@ -265,10 +250,13 @@ mod tests {
             let broadcaster: Arc<dyn openflow_core::events::EventBroadcaster> =
                 Arc::new(NullBroadcaster);
             let client_manager = crate::ws::ClientManager::new();
-            let state = AppState::new(self.pool.clone(), process_service, broadcaster, client_manager);
-            Router::new()
-                .nest("/messages", routes())
-                .with_state(state)
+            let state = AppState::new(
+                self.pool.clone(),
+                process_service,
+                broadcaster,
+                client_manager,
+            );
+            Router::new().nest("/messages", routes()).with_state(state)
         }
 
         /// Create a test project, task, and chat, returning the chat ID

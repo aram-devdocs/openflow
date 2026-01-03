@@ -1,15 +1,17 @@
 //! Task Routes
 //!
-//! REST API endpoints for task CRUD operations.
+//! REST API endpoints for task CRUD operations and artifact management.
 
 use axum::{
     extract::{Path, Query, State},
     routing::{get, post},
     Json, Router,
 };
-use openflow_contracts::{CreateTaskRequest, Task, TaskStatus, UpdateTaskRequest};
+use openflow_contracts::{
+    ArtifactFile, CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest,
+};
 use openflow_core::events::{EntityType, Event};
-use openflow_core::services::task;
+use openflow_core::services::{artifact, task};
 use serde::Deserialize;
 
 use crate::{error::ServerResult, state::AppState};
@@ -34,6 +36,9 @@ pub fn routes() -> Router<AppState> {
         .route("/:id/archive", post(archive))
         .route("/:id/unarchive", post(unarchive))
         .route("/:id/duplicate", post(duplicate))
+        // Artifact routes (using camelCase path params to match frontend)
+        .route("/:taskId/artifacts", get(list_artifacts))
+        .route("/:taskId/artifacts/:fileName", get(read_artifact))
 }
 
 /// GET /api/tasks?projectId=xxx&status=xxx&includeArchived=true
@@ -55,13 +60,13 @@ async fn list(
 
 /// GET /api/tasks/{id}
 ///
-/// Get a task by ID (with chats).
+/// Get a task by ID with its associated chats.
 async fn get_one(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> ServerResult<Json<Task>> {
+) -> ServerResult<Json<TaskWithChats>> {
     let task_with_chats = task::get(&state.pool, &id).await?;
-    Ok(Json(task_with_chats.task))
+    Ok(Json(task_with_chats))
 }
 
 /// POST /api/tasks
@@ -74,11 +79,7 @@ async fn create(
     let task = task::create(&state.pool, request).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::created(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::created(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -94,11 +95,7 @@ async fn update(
     let task = task::update(&state.pool, &id, request).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::updated(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -125,11 +122,7 @@ async fn archive(
     let task = task::archive(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::updated(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -144,11 +137,7 @@ async fn unarchive(
     let task = task::unarchive(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::updated(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -163,13 +152,36 @@ async fn duplicate(
     let task = task::duplicate(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::created(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::created(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
+}
+
+// =============================================================================
+// Artifact Routes
+// =============================================================================
+
+/// GET /api/tasks/{taskId}/artifacts
+///
+/// List all artifacts for a task.
+/// Returns files in the task's `.zenflow/tasks/{taskId}/` folder.
+async fn list_artifacts(
+    State(state): State<AppState>,
+    Path(task_id): Path<String>,
+) -> ServerResult<Json<Vec<ArtifactFile>>> {
+    let artifacts = artifact::list(&state.pool, &task_id).await?;
+    Ok(Json(artifacts))
+}
+
+/// GET /api/tasks/{taskId}/artifacts/{fileName}
+///
+/// Read the content of a specific artifact file.
+async fn read_artifact(
+    State(state): State<AppState>,
+    Path((task_id, file_name)): Path<(String, String)>,
+) -> ServerResult<String> {
+    let content = artifact::read(&state.pool, &task_id, &file_name).await?;
+    Ok(content)
 }
 
 #[cfg(test)]
@@ -204,10 +216,13 @@ mod tests {
             let broadcaster: Arc<dyn openflow_core::events::EventBroadcaster> =
                 Arc::new(NullBroadcaster);
             let client_manager = crate::ws::ClientManager::new();
-            let state = AppState::new(self.pool.clone(), process_service, broadcaster, client_manager);
-            Router::new()
-                .nest("/tasks", routes())
-                .with_state(state)
+            let state = AppState::new(
+                self.pool.clone(),
+                process_service,
+                broadcaster,
+                client_manager,
+            );
+            Router::new().nest("/tasks", routes()).with_state(state)
         }
 
         /// Create a test project and return its ID
@@ -351,7 +366,10 @@ mod tests {
         let task: Task = serde_json::from_slice(&body).unwrap();
 
         assert_eq!(task.title, "Full Task");
-        assert_eq!(task.description, Some("A complete task description".to_string()));
+        assert_eq!(
+            task.description,
+            Some("A complete task description".to_string())
+        );
         assert_eq!(task.workflow_template, Some("feature".to_string()));
         assert_eq!(task.base_branch, Some("develop".to_string()));
     }
@@ -403,10 +421,11 @@ mod tests {
         let body = axum::body::to_bytes(response.into_body(), usize::MAX)
             .await
             .unwrap();
-        let task: Task = serde_json::from_slice(&body).unwrap();
+        let task_with_chats: TaskWithChats = serde_json::from_slice(&body).unwrap();
 
-        assert_eq!(task.id, created.id);
-        assert_eq!(task.title, "Get Test Task");
+        assert_eq!(task_with_chats.task.id, created.id);
+        assert_eq!(task_with_chats.task.title, "Get Test Task");
+        assert!(task_with_chats.chats.is_empty()); // No chats created yet
     }
 
     #[tokio::test]
@@ -957,7 +976,10 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("GET")
-                    .uri(format!("/tasks?projectId={}&includeArchived=true", project_id))
+                    .uri(format!(
+                        "/tasks?projectId={}&includeArchived=true",
+                        project_id
+                    ))
                     .body(Body::empty())
                     .unwrap(),
             )

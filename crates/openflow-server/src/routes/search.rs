@@ -17,7 +17,7 @@ use crate::{error::ServerResult, state::AppState};
 #[serde(rename_all = "camelCase")]
 pub struct SearchQuery {
     /// Search query string
-    pub q: String,
+    pub query: String,
     /// Filter by project ID
     pub project_id: Option<String>,
     /// Filter by result types (comma-separated)
@@ -42,7 +42,7 @@ impl From<SearchQuery> for SearchRequest {
         });
 
         SearchRequest {
-            query: query.q,
+            query: query.query,
             project_id: query.project_id,
             result_types,
             limit: query.limit,
@@ -58,7 +58,7 @@ pub fn routes() -> Router<AppState> {
         .route("/projects", get(search_projects))
 }
 
-/// GET /api/search?q=xxx&projectId=xxx&types=task,project&limit=10
+/// GET /api/search?query=xxx&projectId=xxx&types=task,project&limit=10
 ///
 /// Search across all entities.
 async fn search_all(
@@ -70,7 +70,7 @@ async fn search_all(
     Ok(Json(results))
 }
 
-/// GET /api/search/tasks?q=xxx&projectId=xxx&limit=10
+/// GET /api/search/tasks?query=xxx&projectId=xxx&limit=10
 ///
 /// Search for tasks only.
 async fn search_tasks(
@@ -78,21 +78,21 @@ async fn search_tasks(
     Query(query): Query<SearchQuery>,
 ) -> ServerResult<Json<Vec<SearchResult>>> {
     let results = if let Some(project_id) = query.project_id {
-        search::search_in_project(&state.pool, &query.q, &project_id).await?
+        search::search_in_project(&state.pool, &query.query, &project_id).await?
     } else {
-        search::search_tasks(&state.pool, &query.q).await?
+        search::search_tasks(&state.pool, &query.query).await?
     };
     Ok(Json(results))
 }
 
-/// GET /api/search/projects?q=xxx&limit=10
+/// GET /api/search/projects?query=xxx&limit=10
 ///
 /// Search for projects only.
 async fn search_projects(
     State(state): State<AppState>,
     Query(query): Query<SearchQuery>,
 ) -> ServerResult<Json<Vec<SearchResult>>> {
-    let results = search::search_projects(&state.pool, &query.q).await?;
+    let results = search::search_projects(&state.pool, &query.query).await?;
     Ok(Json(results))
 }
 
@@ -108,7 +108,7 @@ mod tests {
     #[test]
     fn test_search_query_conversion() {
         let query = SearchQuery {
-            q: "test".to_string(),
+            query: "test".to_string(),
             project_id: Some("project-1".to_string()),
             types: Some("task,project".to_string()),
             limit: Some(10),
@@ -126,7 +126,7 @@ mod tests {
     #[test]
     fn test_search_query_no_types() {
         let query = SearchQuery {
-            q: "test".to_string(),
+            query: "test".to_string(),
             project_id: None,
             types: None,
             limit: None,

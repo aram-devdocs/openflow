@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEDUP_WINDOW_MS,
   DEFAULT_DURATION,
   DEFAULT_ERROR_DURATION,
   DEFAULT_MAX_TOASTS,
@@ -28,6 +29,20 @@ describe('ToastProvider Constants', () => {
 
     it('should be longer than DEFAULT_DURATION', () => {
       expect(DEFAULT_ERROR_DURATION).toBeGreaterThan(DEFAULT_DURATION);
+    });
+  });
+
+  describe('DEDUP_WINDOW_MS', () => {
+    it('should be 1500ms (1.5 seconds) to catch slower duplicate triggers', () => {
+      expect(DEDUP_WINDOW_MS).toBe(1500);
+    });
+
+    it('should be a positive number', () => {
+      expect(DEDUP_WINDOW_MS).toBeGreaterThan(0);
+    });
+
+    it('should be shorter than DEFAULT_DURATION to allow distinct toasts after window expires', () => {
+      expect(DEDUP_WINDOW_MS).toBeLessThan(DEFAULT_DURATION);
     });
   });
 
@@ -371,6 +386,21 @@ describe('ToastProvider behavior documentation', () => {
     it('should document that exceeding max removes oldest toast', () => {
       // This is documented behavior verified through component testing
       expect(DEFAULT_MAX_TOASTS).toBeGreaterThan(0);
+    });
+  });
+
+  describe('toast deduplication', () => {
+    it('should document deduplication window is 1500ms', () => {
+      expect(DEDUP_WINDOW_MS).toBe(1500);
+    });
+
+    it('should document that duplicate toasts within window are suppressed', () => {
+      // Toasts with same variant and title within DEDUP_WINDOW_MS
+      // are considered duplicates and only the first one is shown.
+      // Description is intentionally ignored for more aggressive deduplication.
+      // This prevents double-toasts from multiple sources (e.g., mutation hook + session callback)
+      expect(DEDUP_WINDOW_MS).toBeGreaterThan(0);
+      expect(DEDUP_WINDOW_MS).toBeLessThan(DEFAULT_DURATION); // Window should be shorter than toast duration
     });
   });
 

@@ -10,6 +10,10 @@ export {
   type KeyboardShortcutsDialogProviderProps,
 } from './KeyboardShortcutsDialogProvider';
 export { NavigationProvider, type NavigationProviderProps } from './NavigationProvider';
+export {
+  ProjectSelectionProvider,
+  type ProjectSelectionProviderProps,
+} from './ProjectSelectionProvider';
 export { ToastProvider, type ToastProviderProps } from './ToastProvider';
 export {
   GlobalShortcutsProvider,

@@ -258,7 +258,10 @@ export function useCreateChat(): UseMutationResult<Chat, Error, CreateChatReques
       }
     },
     onSuccess: (data) => {
-      toast.success('Chat Created', `"${data.title || 'New chat'}" has been created.`);
+      // Skip toast for workflow step chats to avoid toast spam when creating tasks with workflows
+      if (data.workflowStepIndex === undefined || data.workflowStepIndex === null) {
+        toast.success('Chat Created', `"${data.title || 'New chat'}" has been created.`);
+      }
       // Invalidate task-specific list if this is a task-linked chat
       if (data.taskId) {
         queryClient.invalidateQueries({ queryKey: chatKeys.list(data.taskId) });

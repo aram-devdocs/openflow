@@ -77,9 +77,7 @@ pub async fn update_task(
 #[tauri::command]
 pub async fn archive_task(state: State<'_, AppState>, id: String) -> Result<Task, String> {
     let pool = state.db.lock().await;
-    task::archive(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    task::archive(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Unarchive a task by ID.
@@ -88,9 +86,7 @@ pub async fn archive_task(state: State<'_, AppState>, id: String) -> Result<Task
 #[tauri::command]
 pub async fn unarchive_task(state: State<'_, AppState>, id: String) -> Result<Task, String> {
     let pool = state.db.lock().await;
-    task::unarchive(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    task::unarchive(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Delete a task by ID.
@@ -99,9 +95,7 @@ pub async fn unarchive_task(state: State<'_, AppState>, id: String) -> Result<Ta
 #[tauri::command]
 pub async fn delete_task(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    task::delete(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    task::delete(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Duplicate a task by ID.
@@ -116,7 +110,5 @@ pub async fn delete_task(state: State<'_, AppState>, id: String) -> Result<(), S
 #[tauri::command]
 pub async fn duplicate_task(state: State<'_, AppState>, id: String) -> Result<Task, String> {
     let pool = state.db.lock().await;
-    task::duplicate(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    task::duplicate(&pool, &id).await.map_err(|e| e.to_string())
 }

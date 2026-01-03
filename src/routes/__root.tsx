@@ -24,6 +24,7 @@ import {
   GlobalShortcutsProvider,
   KeyboardShortcutsDialogProvider,
   NavigationProvider,
+  ProjectSelectionProvider,
   WebviewBoundsProvider,
 } from '../providers';
 import type { RouterContext } from '../routerContext';
@@ -66,17 +67,19 @@ function RootComponent() {
         <WebviewBoundsProvider>
           <KeyboardShortcutsDialogProvider>
             <NavigationProvider>
-              <GlobalShortcutsProvider>
-                <div className="min-h-screen bg-background text-foreground">
-                  <ErrorBoundary
-                    fallback={(error) => (
-                      <RouteError error={error} onRetry={handleRetry} onGoHome={handleGoHome} />
-                    )}
-                  >
-                    <Outlet />
-                  </ErrorBoundary>
-                </div>
-              </GlobalShortcutsProvider>
+              <ProjectSelectionProvider>
+                <GlobalShortcutsProvider>
+                  <div className="min-h-screen bg-background text-foreground">
+                    <ErrorBoundary
+                      fallback={(error) => (
+                        <RouteError error={error} onRetry={handleRetry} onGoHome={handleGoHome} />
+                      )}
+                    >
+                      <Outlet />
+                    </ErrorBoundary>
+                  </div>
+                </GlobalShortcutsProvider>
+              </ProjectSelectionProvider>
             </NavigationProvider>
           </KeyboardShortcutsDialogProvider>
         </WebviewBoundsProvider>

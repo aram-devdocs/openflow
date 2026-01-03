@@ -163,10 +163,7 @@ mod tests {
 
         assert_eq!(config.host, "0.0.0.0");
         assert_eq!(config.port, 8080);
-        assert_eq!(
-            config.database_path,
-            Some(PathBuf::from("/tmp/test.db"))
-        );
+        assert_eq!(config.database_path, Some(PathBuf::from("/tmp/test.db")));
         assert!(config.verbose);
     }
 

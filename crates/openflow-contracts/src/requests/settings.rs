@@ -52,7 +52,10 @@ impl SetSettingRequest {
     }
 
     /// Create a request to set a JSON value
-    pub fn json<T: Serialize>(key: impl Into<String>, value: &T) -> Result<Self, serde_json::Error> {
+    pub fn json<T: Serialize>(
+        key: impl Into<String>,
+        value: &T,
+    ) -> Result<Self, serde_json::Error> {
         Ok(Self {
             key: key.into(),
             value: serde_json::to_string(value)?,

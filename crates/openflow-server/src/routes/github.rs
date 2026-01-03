@@ -7,25 +7,13 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use openflow_contracts::{CreatePullRequestRequest, PullRequestResult};
+use openflow_contracts::{
+    AuthStatusResponse, CliInstalledResponse, CreatePullRequestRequest, PullRequestResult,
+};
 use openflow_core::services::github;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{error::ServerResult, state::AppState};
-
-/// Response for CLI installation check
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CliInstalledResponse {
-    pub installed: bool,
-}
-
-/// Response for authentication status
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthStatusResponse {
-    pub authenticated: bool,
-}
 
 /// Query parameters for remote URL
 #[derive(Debug, Deserialize)]
@@ -111,8 +99,7 @@ async fn create_pull_request(
 async fn get_existing_pr(
     Query(query): Query<ExistingPrQuery>,
 ) -> ServerResult<Json<Option<String>>> {
-    let pr_url =
-        github::get_existing_pr(&query.worktree_path, query.branch.as_deref()).await?;
+    let pr_url = github::get_existing_pr(&query.worktree_path, query.branch.as_deref()).await?;
     Ok(Json(pr_url))
 }
 

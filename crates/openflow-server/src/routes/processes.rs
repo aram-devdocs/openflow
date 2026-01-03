@@ -188,10 +188,13 @@ mod tests {
             let broadcaster: Arc<dyn openflow_core::events::EventBroadcaster> =
                 Arc::new(NullBroadcaster);
             let client_manager = crate::ws::ClientManager::new();
-            let state = AppState::new(self.pool.clone(), process_service, broadcaster, client_manager);
-            Router::new()
-                .nest("/processes", routes())
-                .with_state(state)
+            let state = AppState::new(
+                self.pool.clone(),
+                process_service,
+                broadcaster,
+                client_manager,
+            );
+            Router::new().nest("/processes", routes()).with_state(state)
         }
 
         /// Create a test project and return its ID
@@ -241,7 +244,11 @@ mod tests {
         }
 
         /// Create a test process and return it
-        async fn create_process(&self, chat_id: &str, action: &str) -> openflow_contracts::ExecutionProcess {
+        async fn create_process(
+            &self,
+            chat_id: &str,
+            action: &str,
+        ) -> openflow_contracts::ExecutionProcess {
             let request = CreateProcessRequest::terminal(chat_id, action);
             process::create(&self.pool, request)
                 .await
@@ -666,7 +673,10 @@ mod tests {
 
         // Since we don't have an actual PTY, this should return an error
         // The process exists but there's no PTY to send input to
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR || response.status() == StatusCode::OK);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::OK
+        );
     }
 
     #[tokio::test]
@@ -692,7 +702,10 @@ mod tests {
 
         // Since we don't have an actual PTY, this should return an error
         // The process exists but there's no PTY to resize
-        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR || response.status() == StatusCode::OK);
+        assert!(
+            response.status() == StatusCode::INTERNAL_SERVER_ERROR
+                || response.status() == StatusCode::OK
+        );
     }
 
     #[tokio::test]

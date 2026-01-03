@@ -161,7 +161,8 @@ async fn handle_message(manager: &ClientManager, client_id: &str, message: Messa
                         "Failed to parse client message"
                     );
                     // Send error response but don't close connection
-                    let error_msg = WsServerMessage::error(format!("Invalid message format: {}", e));
+                    let error_msg =
+                        WsServerMessage::error(format!("Invalid message format: {}", e));
                     manager.send_to_client(client_id, error_msg).await;
                     true
                 }

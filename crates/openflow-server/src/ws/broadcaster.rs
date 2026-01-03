@@ -57,8 +57,8 @@ use openflow_contracts::events::{
     ProcessStatusEvent, WsServerMessage, CHANNEL_DATA_CHANGED,
 };
 use openflow_core::events::{
-    Event as CoreEvent, EventBroadcaster, DataAction as CoreDataAction,
-    EntityType as CoreEntityType, OutputType as CoreOutputType, ProcessStatus as CoreProcessStatus,
+    DataAction as CoreDataAction, EntityType as CoreEntityType, Event as CoreEvent,
+    EventBroadcaster, OutputType as CoreOutputType, ProcessStatus as CoreProcessStatus,
 };
 
 use crate::ws::manager::ClientManager;
@@ -70,9 +70,16 @@ use crate::ws::manager::ClientManager;
 ///
 /// The broadcaster converts `openflow_core::events::Event` to contract
 /// types and sends them to subscribed WebSocket clients via the `ClientManager`.
+///
+/// # Thread Safety
+///
+/// This broadcaster stores a Tokio runtime handle, allowing it to be called
+/// from any thread (including non-Tokio threads like PTY output streamers).
 pub struct WsBroadcaster {
     /// Client manager for sending messages to WebSocket clients
     manager: Arc<ClientManager>,
+    /// Tokio runtime handle for spawning async tasks from any thread
+    runtime_handle: tokio::runtime::Handle,
 }
 
 impl WsBroadcaster {
@@ -81,11 +88,24 @@ impl WsBroadcaster {
     /// # Arguments
     ///
     /// * `manager` - The client manager that tracks connected WebSocket clients
+    ///
+    /// # Panics
+    ///
+    /// Panics if called outside of a Tokio runtime context. This must be
+    /// called during server initialization when a Tokio runtime is active.
     pub fn new(manager: Arc<ClientManager>) -> Self {
-        Self { manager }
+        let runtime_handle = tokio::runtime::Handle::current();
+        Self {
+            manager,
+            runtime_handle,
+        }
     }
 
     /// Create a new broadcaster wrapped in Arc
+    ///
+    /// # Panics
+    ///
+    /// Panics if called outside of a Tokio runtime context.
     pub fn arc(manager: Arc<ClientManager>) -> Arc<Self> {
         Arc::new(Self::new(manager))
     }
@@ -181,8 +201,9 @@ impl EventBroadcaster for WsBroadcaster {
         let manager = self.manager.clone();
         let event_data = self.event_to_message(event);
 
-        // Spawn a tokio task to handle the async broadcast
-        tokio::spawn(async move {
+        // Use the stored runtime handle to spawn the async task
+        // This works from any thread, including PTY output streamers
+        self.runtime_handle.spawn(async move {
             let (channel, ws_message) = event_data;
             let count = manager.broadcast(&channel, ws_message).await;
 
@@ -226,9 +247,7 @@ fn convert_process_status(
         CoreProcessStatus::Starting => {
             openflow_contracts::entities::process::ProcessStatus::Running
         }
-        CoreProcessStatus::Running => {
-            openflow_contracts::entities::process::ProcessStatus::Running
-        }
+        CoreProcessStatus::Running => openflow_contracts::entities::process::ProcessStatus::Running,
         CoreProcessStatus::Completed => {
             openflow_contracts::entities::process::ProcessStatus::Completed
         }
@@ -269,8 +288,8 @@ mod tests {
     use super::*;
     use tokio::sync::mpsc;
 
-    #[test]
-    fn test_ws_broadcaster_new() {
+    #[tokio::test]
+    async fn test_ws_broadcaster_new() {
         let manager = ClientManager::new();
         let broadcaster = WsBroadcaster::new(manager.clone());
 
@@ -278,8 +297,8 @@ mod tests {
         assert!(Arc::ptr_eq(broadcaster.manager(), &manager));
     }
 
-    #[test]
-    fn test_ws_broadcaster_arc() {
+    #[tokio::test]
+    async fn test_ws_broadcaster_arc() {
         let manager = ClientManager::new();
         let broadcaster = WsBroadcaster::arc(manager);
 
@@ -287,8 +306,8 @@ mod tests {
         assert_eq!(Arc::strong_count(&broadcaster), 1);
     }
 
-    #[test]
-    fn test_ws_broadcaster_debug() {
+    #[tokio::test]
+    async fn test_ws_broadcaster_debug() {
         let manager = ClientManager::new();
         let broadcaster = WsBroadcaster::new(manager);
 
@@ -372,8 +391,8 @@ mod tests {
         ));
     }
 
-    #[test]
-    fn test_event_to_message_process_output() {
+    #[tokio::test]
+    async fn test_event_to_message_process_output() {
         let manager = ClientManager::new();
         let broadcaster = WsBroadcaster::new(manager);
 
@@ -398,8 +417,8 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_event_to_message_process_status() {
+    #[tokio::test]
+    async fn test_event_to_message_process_status() {
         let manager = ClientManager::new();
         let broadcaster = WsBroadcaster::new(manager);
 
@@ -415,8 +434,8 @@ mod tests {
         assert!(matches!(message, WsServerMessage::Event { .. }));
     }
 
-    #[test]
-    fn test_event_to_message_data_changed() {
+    #[tokio::test]
+    async fn test_event_to_message_data_changed() {
         let manager = ClientManager::new();
         let broadcaster = WsBroadcaster::new(manager);
 
@@ -536,7 +555,9 @@ mod tests {
         // Create a client and subscribe to process status
         let (tx, mut rx) = mpsc::unbounded_channel();
         let client_id = manager.add_client(tx).await;
-        manager.subscribe(&client_id, "process-status-proc-xyz").await;
+        manager
+            .subscribe(&client_id, "process-status-proc-xyz")
+            .await;
 
         let event = CoreEvent::ProcessStatus {
             process_id: "proc-xyz".to_string(),

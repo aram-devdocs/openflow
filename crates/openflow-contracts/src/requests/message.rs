@@ -543,21 +543,17 @@ mod tests {
 
     #[test]
     fn test_create_message_request_content_too_long() {
-        let request = CreateMessageRequest::user(
-            "660e8400-e29b-41d4-a716-446655440001",
-            "a".repeat(1000001),
-        );
+        let request =
+            CreateMessageRequest::user("660e8400-e29b-41d4-a716-446655440001", "a".repeat(1000001));
 
         assert!(request.validate().is_err());
     }
 
     #[test]
     fn test_create_message_request_model_too_long() {
-        let request = CreateMessageRequest::assistant(
-            "660e8400-e29b-41d4-a716-446655440001",
-            "Hello",
-        )
-        .with_model("a".repeat(101));
+        let request =
+            CreateMessageRequest::assistant("660e8400-e29b-41d4-a716-446655440001", "Hello")
+                .with_model("a".repeat(101));
 
         assert!(request.validate().is_err());
     }

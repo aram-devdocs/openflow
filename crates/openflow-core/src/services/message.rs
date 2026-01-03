@@ -55,9 +55,18 @@ pub async fn list(pool: &SqlitePool, chat_id: &str) -> ServiceResult<Vec<Message
         "Found {} messages for chat_id={} (user: {}, assistant: {}, system: {})",
         messages.len(),
         chat_id,
-        messages.iter().filter(|m| m.role == MessageRole::User).count(),
-        messages.iter().filter(|m| m.role == MessageRole::Assistant).count(),
-        messages.iter().filter(|m| m.role == MessageRole::System).count()
+        messages
+            .iter()
+            .filter(|m| m.role == MessageRole::User)
+            .count(),
+        messages
+            .iter()
+            .filter(|m| m.role == MessageRole::Assistant)
+            .count(),
+        messages
+            .iter()
+            .filter(|m| m.role == MessageRole::System)
+            .count()
     );
     Ok(messages)
 }
@@ -455,10 +464,7 @@ pub async fn get_latest(pool: &SqlitePool, chat_id: &str) -> ServiceResult<Optio
     })?;
 
     if let Some(ref msg) = message {
-        debug!(
-            "Found latest message id={} for chat_id={}",
-            msg.id, chat_id
-        );
+        debug!("Found latest message id={} for chat_id={}", msg.id, chat_id);
     } else {
         debug!("No messages found for chat_id={}", chat_id);
     }
@@ -487,10 +493,7 @@ pub async fn delete_by_chat(pool: &SqlitePool, chat_id: &str) -> ServiceResult<u
 
     let deleted = result.rows_affected();
 
-    info!(
-        "Deleted {} messages from chat_id={}",
-        deleted, chat_id
-    );
+    info!("Deleted {} messages from chat_id={}", deleted, chat_id);
 
     Ok(deleted)
 }
@@ -813,10 +816,7 @@ mod tests {
             main_chat_id: None,
             workflow_step_index: None,
         };
-        let chat2_id = chat::create(&test_db.pool, chat2_req)
-            .await
-            .unwrap()
-            .id;
+        let chat2_id = chat::create(&test_db.pool, chat2_req).await.unwrap().id;
 
         // Create messages in both chats
         let request1 = CreateMessageRequest {

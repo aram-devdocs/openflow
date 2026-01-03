@@ -30,6 +30,8 @@ export interface HeaderProps extends Omit<HTMLAttributes<HTMLElement>, 'role'> {
   onNewTerminal?: () => void;
   /** Callback when the hamburger menu button is clicked (mobile navigation) */
   onMenuToggle?: () => void;
+  /** Callback when the title/logo is clicked (navigation to home) */
+  onTitleClick?: () => void;
   /** Whether the mobile menu is open */
   isMenuOpen?: boolean;
   /** Optional title to display in the header */
@@ -357,6 +359,7 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
     onNewChat,
     onNewTerminal,
     onMenuToggle,
+    onTitleClick,
     isMenuOpen = false,
     title,
     subtitle,
@@ -428,35 +431,79 @@ export const Header = forwardRef<HTMLElement, HeaderProps>(function Header(
       )}
 
       {/* Left section: Title and subtitle */}
-      <Box className={HEADER_TITLE_CONTAINER_CLASSES}>
-        {title ? (
-          <Heading
-            level={1}
-            id={titleId}
-            className={cn(HEADER_TITLE_CLASSES, titleSizeClasses)}
-            data-testid={testId ? `${testId}-title` : undefined}
-          >
-            {title}
-          </Heading>
-        ) : null}
-        {subtitle ? (
-          <Paragraph
-            className={cn(HEADER_SUBTITLE_CLASSES, subtitleSizeClasses)}
-            data-testid={testId ? `${testId}-subtitle` : undefined}
-          >
-            {subtitle}
-          </Paragraph>
-        ) : null}
-        {!title && !subtitle && (
-          <Text
-            as="span"
-            className={cn('font-medium text-[rgb(var(--foreground))]', titleSizeClasses)}
-            data-testid={testId ? `${testId}-app-name` : undefined}
-          >
-            {DEFAULT_APP_NAME}
-          </Text>
-        )}
-      </Box>
+      {onTitleClick ? (
+        <Box
+          as="button"
+          type="button"
+          onClick={onTitleClick}
+          className={cn(
+            HEADER_TITLE_CONTAINER_CLASSES,
+            'cursor-pointer rounded-md px-2 py-1 -ml-2',
+            'hover:bg-[rgb(var(--accent))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--ring))] focus-visible:ring-offset-2',
+            'transition-colors duration-150'
+          )}
+          aria-label="Go to dashboard"
+          data-testid={testId ? `${testId}-title-button` : undefined}
+        >
+          {title ? (
+            <Heading
+              level={1}
+              id={titleId}
+              className={cn(HEADER_TITLE_CLASSES, titleSizeClasses)}
+              data-testid={testId ? `${testId}-title` : undefined}
+            >
+              {title}
+            </Heading>
+          ) : null}
+          {subtitle ? (
+            <Paragraph
+              className={cn(HEADER_SUBTITLE_CLASSES, subtitleSizeClasses)}
+              data-testid={testId ? `${testId}-subtitle` : undefined}
+            >
+              {subtitle}
+            </Paragraph>
+          ) : null}
+          {!title && !subtitle && (
+            <Text
+              as="span"
+              className={cn('font-medium text-[rgb(var(--foreground))]', titleSizeClasses)}
+              data-testid={testId ? `${testId}-app-name` : undefined}
+            >
+              {DEFAULT_APP_NAME}
+            </Text>
+          )}
+        </Box>
+      ) : (
+        <Box className={HEADER_TITLE_CONTAINER_CLASSES}>
+          {title ? (
+            <Heading
+              level={1}
+              id={titleId}
+              className={cn(HEADER_TITLE_CLASSES, titleSizeClasses)}
+              data-testid={testId ? `${testId}-title` : undefined}
+            >
+              {title}
+            </Heading>
+          ) : null}
+          {subtitle ? (
+            <Paragraph
+              className={cn(HEADER_SUBTITLE_CLASSES, subtitleSizeClasses)}
+              data-testid={testId ? `${testId}-subtitle` : undefined}
+            >
+              {subtitle}
+            </Paragraph>
+          ) : null}
+          {!title && !subtitle && (
+            <Text
+              as="span"
+              className={cn('font-medium text-[rgb(var(--foreground))]', titleSizeClasses)}
+              data-testid={testId ? `${testId}-app-name` : undefined}
+            >
+              {DEFAULT_APP_NAME}
+            </Text>
+          )}
+        </Box>
+      )}
 
       {/* Right section: Action buttons */}
       <Box className={cn(HEADER_ACTIONS_CONTAINER_CLASSES, buttonGapClasses)}>

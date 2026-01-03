@@ -156,6 +156,10 @@ function ChatsIndexPage() {
     navigate({ to: '/chats/$chatId', params: { chatId: menuState.chatId } });
   }, [menuState.chatId, handleCloseMenu, navigate]);
 
+  const handleTitleClick = useCallback(() => {
+    navigate({ to: '/' });
+  }, [navigate]);
+
   return (
     <AppLayout
       sidebarCollapsed={navigation.sidebarCollapsed}
@@ -166,6 +170,7 @@ function ChatsIndexPage() {
         <Header
           title="All Chats"
           subtitle={`${chats.length} chat${chats.length === 1 ? '' : 's'}`}
+          onTitleClick={handleTitleClick}
         />
       }
     >

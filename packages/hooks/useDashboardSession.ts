@@ -28,6 +28,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useArchiveChat, useDeleteChat } from './useChats';
 import { useGlobalShortcuts } from './useGlobalShortcuts';
+import { useProjectSelection } from './useProjectSelection';
 
 // Create logger for this hook
 const logger = createLogger('useDashboardSession');
@@ -286,10 +287,12 @@ export function useDashboardSession({
 
   const keyboardShortcutsDialog = useKeyboardShortcutsDialog();
 
+  // Project selection from context (persisted to localStorage)
+  const { selectedProjectId, setSelectedProjectId } = useProjectSelection();
+
   // UI state
   // Note: sidebarCollapsed and isMobileDrawerOpen are now provided by NavigationContext
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -389,10 +392,13 @@ export function useDashboardSession({
   // Sidebar Actions
   // ============================================================================
 
-  const handleSelectProject = useCallback((projectId: string) => {
-    logger.debug('Project selected', { projectId });
-    setSelectedProjectId(projectId);
-  }, []);
+  const handleSelectProject = useCallback(
+    (projectId: string) => {
+      logger.debug('Project selected', { projectId });
+      setSelectedProjectId(projectId);
+    },
+    [setSelectedProjectId]
+  );
 
   const handleSelectTask = useCallback(
     (taskId: string) => {
@@ -528,7 +534,7 @@ export function useDashboardSession({
     archiveChat.mutate(chatId, {
       onSuccess: () => {
         logger.info('Chat archived successfully', { chatId, title: chat.title });
-        onSuccess?.('Chat archived', 'The chat has been moved to the archive.');
+        // Note: Toast is shown by useArchiveChat mutation hook
         setChatContextMenu(null);
       },
       onError: (error) => {
@@ -536,7 +542,7 @@ export function useDashboardSession({
         onError?.('Failed to archive chat', error.message);
       },
     });
-  }, [chatContextMenu, archiveChat, onSuccess, onError]);
+  }, [chatContextMenu, archiveChat, onError]);
 
   const handleDeleteChat = useCallback(() => {
     if (!chatContextMenu) return;
@@ -549,7 +555,7 @@ export function useDashboardSession({
       {
         onSuccess: () => {
           logger.info('Chat deleted successfully', { chatId: chat.id, title: chat.title });
-          onSuccess?.('Chat deleted', 'The chat has been permanently deleted.');
+          // Note: Toast is shown by useDeleteChat mutation hook
           setChatContextMenu(null);
         },
         onError: (error) => {
@@ -558,7 +564,7 @@ export function useDashboardSession({
         },
       }
     );
-  }, [chatContextMenu, deleteChat, onSuccess, onError]);
+  }, [chatContextMenu, deleteChat, onError]);
 
   const handleViewChat = useCallback(() => {
     if (!chatContextMenu) return;
@@ -763,7 +769,7 @@ export function useDashboardSession({
         setNewProjectName('');
         setNewProjectPath('');
         setSelectedProjectId(project.id);
-        onSuccess?.('Project created', `"${project.name}" has been created successfully.`);
+        // Note: Toast is shown by useCreateProject mutation hook
       },
       onError: (error) => {
         logger.error('Failed to create project', { name: request.name, error: error.message });
@@ -771,7 +777,7 @@ export function useDashboardSession({
         onError?.('Failed to create project', error.message);
       },
     });
-  }, [newProjectName, newProjectPath, createProject, onSuccess, onError]);
+  }, [newProjectName, newProjectPath, createProject, setSelectedProjectId, onError]);
 
   // ============================================================================
   // Create Task Dialog Actions
@@ -969,7 +975,7 @@ export function useDashboardSession({
               title: chat.title,
             });
             setIsNewChatDialogOpen(false);
-            onSuccess?.('Chat created', 'New chat session started.');
+            // Note: Toast is shown by useCreateChat mutation hook
             navigate({ to: '/chats/$chatId', params: { chatId: chat.id } });
           },
           onError: (error) => {
@@ -982,7 +988,7 @@ export function useDashboardSession({
         }
       );
     },
-    [createChat, navigate, onSuccess, onError]
+    [createChat, navigate, onError]
   );
 
   // ============================================================================
@@ -1016,7 +1022,7 @@ export function useDashboardSession({
           break;
       }
     },
-    [handleCloseCommandPalette, navigate]
+    [handleCloseCommandPalette, navigate, setSelectedProjectId]
   );
 
   const handleSelectRecent = useCallback(
@@ -1035,7 +1041,7 @@ export function useDashboardSession({
           break;
       }
     },
-    [handleCloseCommandPalette, navigate]
+    [handleCloseCommandPalette, navigate, setSelectedProjectId]
   );
 
   // Build command actions for the palette

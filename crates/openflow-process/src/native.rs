@@ -377,9 +377,7 @@ impl ProcessExecutor for NativePtyExecutor {
         }
 
         // Kill the PTY process
-        self.pty_manager
-            .kill(id)
-            .map_err(ProcessError::from)?;
+        self.pty_manager.kill(id).map_err(ProcessError::from)?;
 
         Ok(())
     }
@@ -454,9 +452,7 @@ impl ProcessExecutor for NativePtyExecutor {
         }
 
         // Close the PTY
-        self.pty_manager
-            .close(id)
-            .map_err(ProcessError::from)?;
+        self.pty_manager.close(id).map_err(ProcessError::from)?;
 
         info!(process_id = %id, "Process closed");
 
@@ -515,7 +511,9 @@ mod tests {
         let config = SpawnConfig::new("sleep", &["10"]);
 
         // First spawn should succeed
-        let result = executor.spawn("dup-test", config.clone(), sink.clone()).await;
+        let result = executor
+            .spawn("dup-test", config.clone(), sink.clone())
+            .await;
         assert!(result.is_ok());
 
         // Second spawn with same ID should fail
@@ -679,7 +677,10 @@ mod tests {
         let sink = Arc::new(CollectorSink::new());
 
         let config = SpawnConfig::new("pwd", &[] as &[&str]).with_cwd("/tmp");
-        let _ = executor.spawn("cwd-test", config, sink.clone()).await.unwrap();
+        let _ = executor
+            .spawn("cwd-test", config, sink.clone())
+            .await
+            .unwrap();
 
         // Wait for output
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -696,9 +697,12 @@ mod tests {
         let executor = NativePtyExecutor::new();
         let sink = Arc::new(CollectorSink::new());
 
-        let config = SpawnConfig::new("sh", &["-c", "echo $MY_VAR"])
-            .with_env("MY_VAR", "test_value");
-        let _ = executor.spawn("env-test", config, sink.clone()).await.unwrap();
+        let config =
+            SpawnConfig::new("sh", &["-c", "echo $MY_VAR"]).with_env("MY_VAR", "test_value");
+        let _ = executor
+            .spawn("env-test", config, sink.clone())
+            .await
+            .unwrap();
 
         // Wait for output
         tokio::time::sleep(Duration::from_millis(200)).await;

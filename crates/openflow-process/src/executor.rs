@@ -292,9 +292,15 @@ mod tests {
     async fn test_collector_sink() {
         let sink = CollectorSink::new();
 
-        sink.send(OutputChunk::stdout("test", "line 1\n")).await.unwrap();
-        sink.send(OutputChunk::stdout("test", "line 2\n")).await.unwrap();
-        sink.send(OutputChunk::stderr("test", "error\n")).await.unwrap();
+        sink.send(OutputChunk::stdout("test", "line 1\n"))
+            .await
+            .unwrap();
+        sink.send(OutputChunk::stdout("test", "line 2\n"))
+            .await
+            .unwrap();
+        sink.send(OutputChunk::stderr("test", "error\n"))
+            .await
+            .unwrap();
 
         assert_eq!(sink.stdout().await, "line 1\nline 2\n");
         assert_eq!(sink.stderr().await, "error\n");
@@ -308,7 +314,9 @@ mod tests {
     async fn test_channel_sink() {
         let (sink, mut receiver) = ChannelSink::create();
 
-        sink.send(OutputChunk::stdout("test", "hello")).await.unwrap();
+        sink.send(OutputChunk::stdout("test", "hello"))
+            .await
+            .unwrap();
 
         let chunk = receiver.recv().await.unwrap();
         assert_eq!(chunk.content, "hello");

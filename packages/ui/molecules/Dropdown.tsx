@@ -224,6 +224,14 @@ export function getOptionId(listboxId: string, value: string): string {
   return `${listboxId}-option-${value}`;
 }
 
+/**
+ * Escape special characters in CSS selector IDs
+ * React's useId() generates IDs with colons (e.g., ":r45:") which are invalid in CSS selectors
+ */
+export function escapeCssSelectorId(id: string): string {
+  return id.replace(/([^\w-])/g, '\\$1');
+}
+
 // ============================================================================
 // Dropdown Component
 // ============================================================================
@@ -366,9 +374,9 @@ export const Dropdown = forwardRef<HTMLDivElement, DropdownProps>(function Dropd
   // Scroll highlighted option into view
   useEffect(() => {
     if (isOpen && highlightedIndex >= 0 && listRef.current && highlightedOption) {
-      const highlightedElement = listRef.current.querySelector(
-        `#${getOptionId(listboxId, highlightedOption.value)}`
-      );
+      const optionId = getOptionId(listboxId, highlightedOption.value);
+      const escapedId = escapeCssSelectorId(optionId);
+      const highlightedElement = listRef.current.querySelector(`#${escapedId}`);
       highlightedElement?.scrollIntoView({ block: 'nearest' });
     }
   }, [isOpen, highlightedIndex, highlightedOption, listboxId]);

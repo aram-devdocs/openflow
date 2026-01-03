@@ -62,9 +62,7 @@ pub async fn update_project(
 #[tauri::command]
 pub async fn delete_project(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
-    project::delete(&pool, &id)
-        .await
-        .map_err(|e| e.to_string())
+    project::delete(&pool, &id).await.map_err(|e| e.to_string())
 }
 
 /// Archive a project by ID.

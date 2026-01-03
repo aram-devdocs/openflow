@@ -230,15 +230,13 @@ pub async fn prepare(
 
     // 1. Get the project
     debug!("Step 1: Fetching project {}", request.project_id);
-    let proj = project::get(pool, &request.project_id)
-        .await
-        .map_err(|e| {
-            error!(
-                "Failed to fetch project for terminal: project_id={}, error={}",
-                request.project_id, e
-            );
-            e
-        })?;
+    let proj = project::get(pool, &request.project_id).await.map_err(|e| {
+        error!(
+            "Failed to fetch project for terminal: project_id={}, error={}",
+            request.project_id, e
+        );
+        e
+    })?;
     debug!(
         "Project fetched: name={}, path={}",
         proj.name, proj.git_repo_path
@@ -659,8 +657,7 @@ mod tests {
                 .expect("Failed to create chat");
 
             // Prepare with existing chat_id
-            let request =
-                SpawnTerminalRequest::new(&project.id).with_chat_id(&existing_chat.id);
+            let request = SpawnTerminalRequest::new(&project.id).with_chat_id(&existing_chat.id);
             let context = prepare(&pool, request)
                 .await
                 .expect("Failed to prepare terminal");
@@ -722,10 +719,7 @@ mod tests {
                 .await
                 .expect("Failed to prepare terminal");
 
-            assert_eq!(
-                context.cwd,
-                std::fs::canonicalize(&subdir).unwrap()
-            );
+            assert_eq!(context.cwd, std::fs::canonicalize(&subdir).unwrap());
 
             // Cleanup
             std::fs::remove_dir_all(&project.git_repo_path).ok();
@@ -795,8 +789,7 @@ mod tests {
             let pool = create_test_db().await.expect("Failed to create test db");
             let project = create_test_project(&pool).await;
 
-            let request =
-                SpawnTerminalRequest::new(&project.id).with_dimensions(200, 50);
+            let request = SpawnTerminalRequest::new(&project.id).with_dimensions(200, 50);
             let context = prepare(&pool, request)
                 .await
                 .expect("Failed to prepare terminal");

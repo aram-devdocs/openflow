@@ -42,7 +42,6 @@ pub enum TaskStatus {
     Cancelled,
 }
 
-
 impl std::fmt::Display for TaskStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -459,10 +458,7 @@ mod tests {
             TaskStatus::Inreview
         );
         assert_eq!("done".parse::<TaskStatus>().unwrap(), TaskStatus::Done);
-        assert_eq!(
-            "completed".parse::<TaskStatus>().unwrap(),
-            TaskStatus::Done
-        );
+        assert_eq!("completed".parse::<TaskStatus>().unwrap(), TaskStatus::Done);
         assert_eq!(
             "cancelled".parse::<TaskStatus>().unwrap(),
             TaskStatus::Cancelled

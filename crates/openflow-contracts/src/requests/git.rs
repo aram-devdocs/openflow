@@ -77,9 +77,13 @@ impl Validate for CreateWorktreeRequest {
         ValidationCollector::new()
             .validate(|| validate_required_string("repo_path", &self.repo_path))
             .validate(|| validate_required_string("branch_name", &self.branch_name))
-            .validate(|| validate_string_length("branch_name", &self.branch_name, Some(1), Some(255)))
+            .validate(|| {
+                validate_string_length("branch_name", &self.branch_name, Some(1), Some(255))
+            })
             .validate(|| validate_required_string("base_branch", &self.base_branch))
-            .validate(|| validate_string_length("base_branch", &self.base_branch, Some(1), Some(255)))
+            .validate(|| {
+                validate_string_length("base_branch", &self.base_branch, Some(1), Some(255))
+            })
             .validate(|| validate_required_string("worktree_path", &self.worktree_path))
             .finish()
     }
@@ -1002,8 +1006,7 @@ mod tests {
         assert!(empty_task.validate().is_err());
 
         // Title too long
-        let long_title = CreatePullRequestRequest::new("task")
-            .with_title("x".repeat(256));
+        let long_title = CreatePullRequestRequest::new("task").with_title("x".repeat(256));
         assert!(long_title.validate().is_err());
     }
 

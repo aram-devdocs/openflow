@@ -125,7 +125,8 @@ export const processQueries = {
     });
 
     try {
-      await invoke<void>('send_process_input', { processId, input });
+      // The command expects `id` as path param and `request` as body
+      await invoke<void>('send_process_input', { id: processId, request: { input } });
 
       logger.info('Sent input to process successfully', {
         processId,

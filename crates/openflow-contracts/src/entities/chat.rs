@@ -42,7 +42,6 @@ pub enum ChatRole {
     Terminal,
 }
 
-
 impl std::fmt::Display for ChatRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -378,7 +377,10 @@ impl ChatWithMessageCount {
 
     /// Create with a specific message count
     pub fn with_count(chat: Chat, message_count: i32) -> Self {
-        Self { chat, message_count }
+        Self {
+            chat,
+            message_count,
+        }
     }
 }
 
@@ -450,7 +452,9 @@ impl Validate for Chat {
             .validate(|| validate_required_string("id", &self.id))
             .validate(|| validate_required_string("project_id", &self.project_id))
             .validate(|| validate_required_string("base_branch", &self.base_branch))
-            .validate(|| validate_string_length("base_branch", &self.base_branch, Some(1), Some(255)))
+            .validate(|| {
+                validate_string_length("base_branch", &self.base_branch, Some(1), Some(255))
+            })
             .validate(|| {
                 if let Some(ref title) = self.title {
                     validate_string_length("title", title, None, Some(500))

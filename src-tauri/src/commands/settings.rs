@@ -49,9 +49,7 @@ pub async fn set_setting(
 #[tauri::command]
 pub async fn get_all_settings(state: State<'_, AppState>) -> Result<SettingsMap, String> {
     let pool = state.db.lock().await;
-    settings::get_all(&pool)
-        .await
-        .map_err(|e| e.to_string())
+    settings::get_all(&pool).await.map_err(|e| e.to_string())
 }
 
 /// Delete a setting by key.
@@ -102,9 +100,7 @@ pub async fn get_full_setting(
     key: String,
 ) -> Result<Option<Setting>, String> {
     let pool = state.db.lock().await;
-    settings::get(&pool, &key)
-        .await
-        .map_err(|e| e.to_string())
+    settings::get(&pool, &key).await.map_err(|e| e.to_string())
 }
 
 /// Get settings by key prefix.
@@ -130,9 +126,7 @@ pub async fn get_settings_by_prefix(
 #[tauri::command]
 pub async fn delete_all_settings(state: State<'_, AppState>) -> Result<u64, String> {
     let pool = state.db.lock().await;
-    settings::delete_all(&pool)
-        .await
-        .map_err(|e| e.to_string())
+    settings::delete_all(&pool).await.map_err(|e| e.to_string())
 }
 
 /// Set multiple settings at once.

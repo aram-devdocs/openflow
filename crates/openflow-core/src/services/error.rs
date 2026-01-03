@@ -132,9 +132,15 @@ impl From<openflow_db::DbError> for ServiceError {
                 // Try to parse the message for entity and id
                 Self::Internal(format!("Database not found: {}", msg))
             }
-            openflow_db::DbError::Query(msg) => Self::Internal(format!("Database query failed: {}", msg)),
-            openflow_db::DbError::Connection(msg) => Self::Internal(format!("Database connection: {}", msg)),
-            openflow_db::DbError::Migration(msg) => Self::Internal(format!("Database migration: {}", msg)),
+            openflow_db::DbError::Query(msg) => {
+                Self::Internal(format!("Database query failed: {}", msg))
+            }
+            openflow_db::DbError::Connection(msg) => {
+                Self::Internal(format!("Database connection: {}", msg))
+            }
+            openflow_db::DbError::Migration(msg) => {
+                Self::Internal(format!("Database migration: {}", msg))
+            }
             openflow_db::DbError::Config(msg) => Self::Config(msg),
             openflow_db::DbError::DirectoryCreation(e) => Self::Io(e),
             openflow_db::DbError::Seed(msg) => Self::Internal(format!("Database seeding: {}", msg)),

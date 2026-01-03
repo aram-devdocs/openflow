@@ -11,10 +11,11 @@
  */
 
 import { useKeyboardShortcuts, useNavigation } from '@openflow/hooks';
-import { AppLayout, Header, SettingsLayout } from '@openflow/ui';
+import { Flex } from '@openflow/primitives';
+import { AppLayout, Button, Header, Icon, SettingsLayout } from '@openflow/ui';
 import type { SettingsNavItem } from '@openflow/ui';
-import { Outlet, createFileRoute, useMatches, useNavigate } from '@tanstack/react-router';
-import { Bell, FolderGit2, Keyboard, Palette, Settings, User } from 'lucide-react';
+import { Link, Outlet, createFileRoute, useMatches, useNavigate } from '@tanstack/react-router';
+import { ArrowLeft, Bell, FolderGit2, Keyboard, Palette, Settings, User } from 'lucide-react';
 import { useCallback } from 'react';
 
 export const Route = createFileRoute('/_app/settings')({
@@ -71,6 +72,9 @@ function SettingsPage() {
         case 'projects':
           navigate({ to: '/settings/projects' });
           break;
+        case 'shortcuts':
+          navigate({ to: '/settings/shortcuts' });
+          break;
         case 'general':
           navigate({ to: '/settings' });
           break;
@@ -88,6 +92,10 @@ function SettingsPage() {
     console.log('Search clicked');
   }, []);
 
+  const handleTitleClick = useCallback(() => {
+    navigate({ to: '/' });
+  }, [navigate]);
+
   return (
     <AppLayout
       sidebarCollapsed={navigation.sidebarCollapsed}
@@ -95,11 +103,24 @@ function SettingsPage() {
       onMobileDrawerToggle={navigation.setMobileDrawerOpen}
       sidebar={null}
       header={
-        <Header
-          title="Settings"
-          subtitle="Manage your OpenFlow configuration"
-          onSearch={handleSearch}
-        />
+        <Flex className="h-full w-full items-center gap-2 px-4">
+          <Link to="/">
+            <Button variant="ghost" size="sm" aria-label="Back to Dashboard">
+              <Icon icon={ArrowLeft} size="sm" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Button>
+          </Link>
+          <div className="h-6 w-px bg-[rgb(var(--border))]" />
+          <Header
+            title="Settings"
+            subtitle="Manage your OpenFlow configuration"
+            onSearch={handleSearch}
+            onTitleClick={handleTitleClick}
+            searchEnabled={false}
+            newChatEnabled={false}
+            newTerminalEnabled={false}
+          />
+        </Flex>
       }
     >
       <SettingsLayout

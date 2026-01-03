@@ -1,4 +1,4 @@
-import type { PullRequestResult } from '@openflow/generated';
+import type { AuthStatusResponse, PullRequestResult } from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
 import { invoke } from './utils.js';
 
@@ -127,15 +127,19 @@ export const githubQueries = {
   /**
    * Check if the user is authenticated with GitHub CLI.
    *
-   * @throws Error if not authenticated or if the query fails (re-thrown for React Query)
+   * @returns Promise resolving to authentication status
+   * @throws Error if the query fails (re-thrown for React Query)
    */
-  checkGhAuthStatus: async (): Promise<void> => {
+  checkGhAuthStatus: async (): Promise<AuthStatusResponse> => {
     logger.debug('Checking GitHub CLI authentication status');
 
     try {
-      await invoke<void>('check_gh_auth_status', {});
+      const result = await invoke<AuthStatusResponse>('check_gh_auth_status', {});
 
-      logger.info('GitHub CLI authentication check passed');
+      logger.info('GitHub CLI authentication check passed', {
+        authenticated: result.authenticated,
+      });
+      return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('GitHub CLI authentication check failed', {

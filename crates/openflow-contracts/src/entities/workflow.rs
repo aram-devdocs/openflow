@@ -221,9 +221,10 @@ impl WorkflowTemplate {
 
     /// Get the current step (first in-progress or pending step)
     pub fn current_step(&self) -> Option<&WorkflowStep> {
-        self.steps.iter().find(|s| s.is_active()).or_else(|| {
-            self.steps.iter().find(|s| s.can_start())
-        })
+        self.steps
+            .iter()
+            .find(|s| s.is_active())
+            .or_else(|| self.steps.iter().find(|s| s.can_start()))
     }
 
     /// Get the next pending step

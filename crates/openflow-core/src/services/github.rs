@@ -257,7 +257,10 @@ pub async fn create_pull_request(
     check_gh_auth_status()?;
 
     // 2. Get the task with its chats to find the worktree
-    debug!("Step 2: Fetching task and chats: task_id='{}'", request.task_id);
+    debug!(
+        "Step 2: Fetching task and chats: task_id='{}'",
+        request.task_id
+    );
     let task_with_chats = task::get(pool, &request.task_id).await?;
     let task_entity = &task_with_chats.task;
     debug!(
@@ -570,7 +573,10 @@ pub async fn get_pr_details(worktree_path: &str) -> ServiceResult<Option<serde_j
         ServiceError::Internal(format!("Failed to parse PR details: {}", e))
     })?;
 
-    info!("Retrieved PR details for worktree: path='{}'", worktree_path);
+    info!(
+        "Retrieved PR details for worktree: path='{}'",
+        worktree_path
+    );
     Ok(Some(details))
 }
 

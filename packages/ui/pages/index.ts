@@ -448,3 +448,15 @@ export {
   // Re-exported from organisms
   type ProjectSettingsFormData as ProjectsSettingsPageFormData,
 } from './ProjectsSettingsPage';
+
+export {
+  // Main component
+  KeyboardShortcutsSettingsPage,
+  // Props types
+  type KeyboardShortcutsSettingsPageProps,
+  type Shortcut as KeyboardShortcut,
+  type ShortcutGroup as KeyboardShortcutGroup,
+  // Utility functions
+  formatKeysForScreenReader,
+  // Note: defaultShortcutGroups is exported from organisms/KeyboardShortcutsDialog
+} from './KeyboardShortcutsSettingsPage';

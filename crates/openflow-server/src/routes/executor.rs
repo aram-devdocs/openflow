@@ -39,7 +39,9 @@ pub fn routes() -> Router<AppState> {
         .route("/profiles/default", get(get_default_profile))
         .route(
             "/profiles/:id",
-            get(get_profile).patch(update_profile).delete(delete_profile),
+            get(get_profile)
+                .patch(update_profile)
+                .delete(delete_profile),
         )
 }
 
@@ -78,9 +80,7 @@ async fn run(
 /// GET /api/executor/profiles
 ///
 /// List all executor profiles.
-async fn list_profiles(
-    State(state): State<AppState>,
-) -> ServerResult<Json<Vec<ExecutorProfile>>> {
+async fn list_profiles(State(state): State<AppState>) -> ServerResult<Json<Vec<ExecutorProfile>>> {
     let profiles = executor_profile::list(&state.pool).await?;
     Ok(Json(profiles))
 }
@@ -148,10 +148,7 @@ async fn update_profile(
 /// DELETE /api/executor/profiles/{id}
 ///
 /// Delete an executor profile.
-async fn delete_profile(
-    State(state): State<AppState>,
-    Path(id): Path<String>,
-) -> ServerResult<()> {
+async fn delete_profile(State(state): State<AppState>, Path(id): Path<String>) -> ServerResult<()> {
     executor_profile::delete(&state.pool, &id).await?;
 
     // Broadcast data changed event
@@ -191,10 +188,13 @@ mod tests {
             let broadcaster: Arc<dyn openflow_core::events::EventBroadcaster> =
                 Arc::new(NullBroadcaster);
             let client_manager = crate::ws::ClientManager::new();
-            let state = AppState::new(self.pool.clone(), process_service, broadcaster, client_manager);
-            Router::new()
-                .nest("/executor", routes())
-                .with_state(state)
+            let state = AppState::new(
+                self.pool.clone(),
+                process_service,
+                broadcaster,
+                client_manager,
+            );
+            Router::new().nest("/executor", routes()).with_state(state)
         }
     }
 

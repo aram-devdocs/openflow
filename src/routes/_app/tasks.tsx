@@ -78,6 +78,10 @@ function TasksPage() {
     console.log('Search clicked');
   }, []);
 
+  const handleTitleClick = useCallback(() => {
+    navigate({ to: '/' });
+  }, [navigate]);
+
   // Filter tasks based on status filter
   const filteredTasks =
     statusFilter === 'all' ? tasks : tasks.filter((task) => task.status === statusFilter);
@@ -91,6 +95,7 @@ function TasksPage() {
           title="All Tasks"
           subtitle={`${tasks.length} task${tasks.length === 1 ? '' : 's'}`}
           onSearch={handleSearch}
+          onTitleClick={handleTitleClick}
         />
       }
     >
