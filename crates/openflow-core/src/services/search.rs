@@ -207,7 +207,10 @@ pub async fn search(pool: &SqlitePool, request: SearchRequest) -> ServiceResult<
                 })?
         }
         (None, Some(types)) if !types.is_empty() => {
-            debug!(type_count = types.len(), "Executing search with result types only");
+            debug!(
+                type_count = types.len(),
+                "Executing search with result types only"
+            );
             // Only result_types filter
             match types.len() {
                 1 => sqlx::query_as::<_, RawSearchResult>(&sql)
@@ -263,13 +266,11 @@ pub async fn search(pool: &SqlitePool, request: SearchRequest) -> ServiceResult<
 
     // Log search results summary
     let results_by_type: HashMap<&str, usize> =
-        results
-            .iter()
-            .fold(HashMap::new(), |mut acc, r| {
-                let type_str = r.result_type.as_str();
-                *acc.entry(type_str).or_insert(0) += 1;
-                acc
-            });
+        results.iter().fold(HashMap::new(), |mut acc, r| {
+            let type_str = r.result_type.as_str();
+            *acc.entry(type_str).or_insert(0) += 1;
+            acc
+        });
 
     let top_results: Vec<(&str, f64)> = results
         .iter()
@@ -433,7 +434,10 @@ async fn search_with_many_types(
             })?
     };
 
-    debug!(result_count = results.len(), "search_with_many_types completed");
+    debug!(
+        result_count = results.len(),
+        "search_with_many_types completed"
+    );
 
     Ok(results)
 }
@@ -875,7 +879,9 @@ mod tests {
         };
         project::create(&pool, proj_request).await.unwrap();
 
-        let results = search_simple(&pool, "Simple").await.expect("Search should succeed");
+        let results = search_simple(&pool, "Simple")
+            .await
+            .expect("Search should succeed");
         assert!(!results.is_empty());
     }
 
@@ -898,7 +904,9 @@ mod tests {
         };
         task::create(&pool, task_request).await.unwrap();
 
-        let results = search_tasks(&pool, "Convenience").await.expect("Search should succeed");
+        let results = search_tasks(&pool, "Convenience")
+            .await
+            .expect("Search should succeed");
         assert!(!results.is_empty());
         for result in results {
             assert_eq!(result.result_type, SearchResultType::Task);

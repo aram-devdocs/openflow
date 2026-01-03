@@ -246,7 +246,10 @@ impl ClientManager {
             }
         }
 
-        tracing::debug!(recipients = sent_count, "Broadcasted message to all clients");
+        tracing::debug!(
+            recipients = sent_count,
+            "Broadcasted message to all clients"
+        );
         sent_count
     }
 
@@ -485,7 +488,11 @@ mod tests {
         assert!(received.is_ok());
 
         // Non-existent client
-        assert!(!manager.send_to_client("nonexistent", WsServerMessage::pong()).await);
+        assert!(
+            !manager
+                .send_to_client("nonexistent", WsServerMessage::pong())
+                .await
+        );
     }
 
     #[tokio::test]
@@ -549,10 +556,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_client_is_subscribed() {
-        let mut client = Client::new(
-            "test-id".to_string(),
-            mpsc::unbounded_channel().0,
-        );
+        let mut client = Client::new("test-id".to_string(), mpsc::unbounded_channel().0);
 
         assert!(!client.is_subscribed("channel-a"));
 

@@ -29,7 +29,10 @@ pub trait EventBroadcaster: Send + Sync {
     /// Broadcast an event asynchronously.
     ///
     /// Default implementation calls the sync broadcast method.
-    fn broadcast_async(&self, event: Event) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + '_>> {
+    fn broadcast_async(
+        &self,
+        event: Event,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + '_>> {
         self.broadcast(event);
         Box::pin(async {})
     }
@@ -176,7 +179,11 @@ mod tests {
 
         let received = receiver.try_recv().unwrap();
         match received {
-            Event::ProcessOutput { process_id, content, .. } => {
+            Event::ProcessOutput {
+                process_id,
+                content,
+                ..
+            } => {
                 assert_eq!(process_id, "proc-1");
                 assert_eq!(content, "hello");
             }
@@ -192,7 +199,11 @@ mod tests {
 
         assert_eq!(broadcaster.subscriber_count(), 2);
 
-        broadcaster.broadcast(Event::process_status("proc-1", ProcessStatus::Running, None));
+        broadcaster.broadcast(Event::process_status(
+            "proc-1",
+            ProcessStatus::Running,
+            None,
+        ));
 
         // Both receivers should get the event
         assert!(receiver1.try_recv().is_ok());
@@ -204,7 +215,11 @@ mod tests {
         let broadcaster = CollectingBroadcaster::new();
         assert!(broadcaster.is_empty());
 
-        broadcaster.broadcast(Event::created(EntityType::Project, "p1", &serde_json::json!({"name": "Test"})));
+        broadcaster.broadcast(Event::created(
+            EntityType::Project,
+            "p1",
+            &serde_json::json!({"name": "Test"}),
+        ));
         broadcaster.broadcast(Event::deleted(EntityType::Task, "t1"));
 
         assert_eq!(broadcaster.len(), 2);
@@ -231,7 +246,9 @@ mod tests {
         // Use async receive
         let received = receiver.recv().await.unwrap();
         match received {
-            Event::DataChanged { entity, action, id, .. } => {
+            Event::DataChanged {
+                entity, action, id, ..
+            } => {
                 assert_eq!(entity, EntityType::Chat);
                 assert_eq!(action, DataAction::Updated);
                 assert_eq!(id, "chat-1");

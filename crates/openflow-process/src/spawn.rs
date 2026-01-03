@@ -257,14 +257,12 @@ impl ProcessSpawner {
     /// Spawn a command asynchronously and capture its output.
     ///
     /// This is an async version of `run_capture` that runs in a blocking task.
-    pub async fn run_capture_async(
-        config: PipeSpawnConfig,
-    ) -> SpawnResult<(String, String, i32)> {
+    pub async fn run_capture_async(config: PipeSpawnConfig) -> SpawnResult<(String, String, i32)> {
         tokio::task::spawn_blocking(move || Self::run_capture(config))
             .await
-            .map_err(|e| SpawnError::SpawnFailed(std::io::Error::other(
-                format!("Task join error: {}", e),
-            )))?
+            .map_err(|e| {
+                SpawnError::SpawnFailed(std::io::Error::other(format!("Task join error: {}", e)))
+            })?
     }
 
     /// Spawn a command asynchronously and wait for it to complete.
@@ -273,9 +271,9 @@ impl ProcessSpawner {
     pub async fn run_async(config: PipeSpawnConfig) -> SpawnResult<i32> {
         tokio::task::spawn_blocking(move || Self::run(config))
             .await
-            .map_err(|e| SpawnError::SpawnFailed(std::io::Error::other(
-                format!("Task join error: {}", e),
-            )))?
+            .map_err(|e| {
+                SpawnError::SpawnFailed(std::io::Error::other(format!("Task join error: {}", e)))
+            })?
     }
 }
 
@@ -400,7 +398,14 @@ impl PipeProcessExecutor {
 
         tokio::spawn(async move {
             debug!(process_id = %id_stdout, "Starting stdout reader");
-            Self::read_stream(id_stdout, stdout, OutputType::Stdout, sink_stdout, stop_stdout).await;
+            Self::read_stream(
+                id_stdout,
+                stdout,
+                OutputType::Stdout,
+                sink_stdout,
+                stop_stdout,
+            )
+            .await;
         });
 
         // Spawn stderr reader
@@ -410,7 +415,14 @@ impl PipeProcessExecutor {
 
         tokio::spawn(async move {
             debug!(process_id = %id_stderr, "Starting stderr reader");
-            Self::read_stream(id_stderr, stderr, OutputType::Stderr, sink_stderr, stop_stderr).await;
+            Self::read_stream(
+                id_stderr,
+                stderr,
+                OutputType::Stderr,
+                sink_stderr,
+                stop_stderr,
+            )
+            .await;
         });
 
         // Spawn task to close sink when stop flag is set
@@ -511,9 +523,13 @@ impl ProcessExecutor for PipeProcessExecutor {
 
         // Take stdin, stdout, stderr
         let stdin = child.stdin.take();
-        let stdout = child.stdout.take()
+        let stdout = child
+            .stdout
+            .take()
             .ok_or_else(|| ProcessError::SpawnFailed("Failed to capture stdout".to_string()))?;
-        let stderr = child.stderr.take()
+        let stderr = child
+            .stderr
+            .take()
             .ok_or_else(|| ProcessError::SpawnFailed("Failed to capture stderr".to_string()))?;
 
         // Create process handle
@@ -532,7 +548,10 @@ impl ProcessExecutor for PipeProcessExecutor {
             stdin,
         };
 
-        self.processes.write().await.insert(id.to_string(), process_info);
+        self.processes
+            .write()
+            .await
+            .insert(id.to_string(), process_info);
 
         // Start output readers
         self.start_output_reader(id.to_string(), stdout, stderr, sink, stop_flag.clone());
@@ -575,16 +594,21 @@ impl ProcessExecutor for PipeProcessExecutor {
         debug!(process_id = %id, bytes = data.len(), "Writing to process");
 
         let mut processes = self.processes.write().await;
-        let info = processes.get_mut(id)
+        let info = processes
+            .get_mut(id)
             .ok_or_else(|| ProcessError::NotFound(id.to_string()))?;
 
-        let stdin = info.stdin.as_mut()
+        let stdin = info
+            .stdin
+            .as_mut()
             .ok_or_else(|| ProcessError::WriteFailed("No stdin available".to_string()))?;
 
-        stdin.write_all(data)
+        stdin
+            .write_all(data)
             .map_err(|e| ProcessError::WriteFailed(e.to_string()))?;
 
-        stdin.flush()
+        stdin
+            .flush()
             .map_err(|e| ProcessError::WriteFailed(e.to_string()))?;
 
         Ok(())
@@ -746,11 +770,14 @@ mod tests {
 
     #[test]
     fn test_invalid_working_directory() {
-        let config = PipeSpawnConfig::command("ls")
-            .with_cwd("/nonexistent/path/that/should/not/exist");
+        let config =
+            PipeSpawnConfig::command("ls").with_cwd("/nonexistent/path/that/should/not/exist");
 
         let result = ProcessSpawner::spawn(config);
-        assert!(matches!(result, Err(SpawnError::InvalidWorkingDirectory(_))));
+        assert!(matches!(
+            result,
+            Err(SpawnError::InvalidWorkingDirectory(_))
+        ));
     }
 
     #[test]
@@ -793,7 +820,10 @@ mod tests {
         assert_eq!(spawn_config.command, "cargo");
         assert_eq!(spawn_config.args, vec!["build"]);
         assert_eq!(spawn_config.cwd, Some(PathBuf::from("/home/project")));
-        assert_eq!(spawn_config.env.get("RUST_BACKTRACE"), Some(&"1".to_string()));
+        assert_eq!(
+            spawn_config.env.get("RUST_BACKTRACE"),
+            Some(&"1".to_string())
+        );
         // PTY settings use defaults
         assert_eq!(spawn_config.cols, 80);
         assert_eq!(spawn_config.rows, 24);
@@ -874,7 +904,9 @@ mod tests {
         let config = SpawnConfig::new("sleep", &["10"]);
 
         // First spawn should succeed
-        let result = executor.spawn("pipe-dup", config.clone(), sink.clone()).await;
+        let result = executor
+            .spawn("pipe-dup", config.clone(), sink.clone())
+            .await;
         assert!(result.is_ok());
 
         // Second spawn with same ID should fail
@@ -1014,7 +1046,10 @@ mod tests {
         let sink = Arc::new(CollectorSink::new());
 
         let config = SpawnConfig::new("pwd", &[] as &[&str]).with_cwd("/tmp");
-        let _ = executor.spawn("pipe-cwd", config, sink.clone()).await.unwrap();
+        let _ = executor
+            .spawn("pipe-cwd", config, sink.clone())
+            .await
+            .unwrap();
 
         // Wait for output
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -1033,7 +1068,10 @@ mod tests {
 
         let config = SpawnConfig::new("sh", &["-c", "echo $PIPE_TEST_VAR"])
             .with_env("PIPE_TEST_VAR", "pipe_value");
-        let _ = executor.spawn("pipe-env", config, sink.clone()).await.unwrap();
+        let _ = executor
+            .spawn("pipe-env", config, sink.clone())
+            .await
+            .unwrap();
 
         // Wait for output
         tokio::time::sleep(Duration::from_millis(200)).await;
@@ -1052,7 +1090,10 @@ mod tests {
 
         // Command that writes to stderr
         let config = SpawnConfig::new("sh", &["-c", "echo stderr_test >&2"]);
-        let _ = executor.spawn("pipe-stderr", config, sink.clone()).await.unwrap();
+        let _ = executor
+            .spawn("pipe-stderr", config, sink.clone())
+            .await
+            .unwrap();
 
         // Wait for output
         tokio::time::sleep(Duration::from_millis(200)).await;

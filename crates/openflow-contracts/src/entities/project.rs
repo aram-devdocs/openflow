@@ -265,8 +265,12 @@ impl Validate for Project {
             .validate(|| validate_string_length("name", &self.name, Some(1), Some(255)))
             .validate(|| validate_required_string("git_repo_path", &self.git_repo_path))
             .validate(|| validate_required_string("base_branch", &self.base_branch))
-            .validate(|| validate_string_length("base_branch", &self.base_branch, Some(1), Some(255)))
-            .validate(|| validate_string_length("setup_script", &self.setup_script, None, Some(10000)))
+            .validate(|| {
+                validate_string_length("base_branch", &self.base_branch, Some(1), Some(255))
+            })
+            .validate(|| {
+                validate_string_length("setup_script", &self.setup_script, None, Some(10000))
+            })
             .validate(|| validate_string_length("dev_script", &self.dev_script, None, Some(10000)))
             .validate(|| {
                 if let Some(ref script) = self.cleanup_script {
@@ -276,7 +280,9 @@ impl Validate for Project {
                 }
             })
             .validate(|| validate_string_length("icon", &self.icon, None, Some(100)))
-            .validate(|| validate_string_length("workflows_folder", &self.workflows_folder, None, Some(1000)))
+            .validate(|| {
+                validate_string_length("workflows_folder", &self.workflows_folder, None, Some(1000))
+            })
             .finish()
     }
 }

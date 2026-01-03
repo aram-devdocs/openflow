@@ -39,7 +39,6 @@ pub enum MessageRole {
     System,
 }
 
-
 impl std::fmt::Display for MessageRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -89,7 +88,11 @@ impl MessageRole {
 
     /// Get all possible message role values
     pub fn all() -> &'static [MessageRole] {
-        &[MessageRole::User, MessageRole::Assistant, MessageRole::System]
+        &[
+            MessageRole::User,
+            MessageRole::Assistant,
+            MessageRole::System,
+        ]
     }
 }
 
@@ -179,9 +182,7 @@ impl Message {
 
     /// Check if the message has tool results
     pub fn has_tool_results(&self) -> bool {
-        self.tool_results
-            .as_ref()
-            .is_some_and(|tr| !tr.is_empty())
+        self.tool_results.as_ref().is_some_and(|tr| !tr.is_empty())
     }
 
     /// Check if the message is from a user

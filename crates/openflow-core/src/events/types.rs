@@ -264,11 +264,16 @@ mod tests {
 
     #[test]
     fn test_event_deserialization() {
-        let json = r#"{"type":"process_status","process_id":"abc","status":"running","exit_code":null}"#;
+        let json =
+            r#"{"type":"process_status","process_id":"abc","status":"running","exit_code":null}"#;
         let event: Event = serde_json::from_str(json).unwrap();
 
         match event {
-            Event::ProcessStatus { process_id, status, exit_code } => {
+            Event::ProcessStatus {
+                process_id,
+                status,
+                exit_code,
+            } => {
                 assert_eq!(process_id, "abc");
                 assert_eq!(status, ProcessStatus::Running);
                 assert!(exit_code.is_none());

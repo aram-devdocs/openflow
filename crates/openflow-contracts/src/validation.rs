@@ -429,11 +429,7 @@ pub fn validate_string_format(
 /// Current behavior: `value.contains(pattern)` - checks if pattern is a substring.
 /// This is intentionally simple for the initial implementation and sufficient for
 /// basic validation cases like checking for required characters or prefixes.
-pub fn validate_string_pattern(
-    field: &str,
-    value: &str,
-    pattern: &str,
-) -> ValidationResult<()> {
+pub fn validate_string_pattern(field: &str, value: &str, pattern: &str) -> ValidationResult<()> {
     // IMPLEMENTATION NOTE: Simple substring matching, NOT regex
     // For full regex support, add `regex` crate and update this function
     if !value.contains(pattern) {
@@ -759,13 +755,27 @@ mod tests {
     #[test]
     fn test_validate_string_length_too_short() {
         let result = validate_string_length("name", "", Some(1), Some(10));
-        assert!(matches!(result, Err(ValidationError::MinLength { min: 1, actual: 0, .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::MinLength {
+                min: 1,
+                actual: 0,
+                ..
+            })
+        ));
     }
 
     #[test]
     fn test_validate_string_length_too_long() {
         let result = validate_string_length("name", "hello world", Some(1), Some(5));
-        assert!(matches!(result, Err(ValidationError::MaxLength { max: 5, actual: 11, .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::MaxLength {
+                max: 5,
+                actual: 11,
+                ..
+            })
+        ));
     }
 
     #[test]
@@ -795,7 +805,9 @@ mod tests {
     #[test]
     fn test_validate_email_format() {
         assert!(validate_string_format("email", "user@example.com", StringFormat::Email).is_ok());
-        assert!(validate_string_format("email", "user@sub.example.com", StringFormat::Email).is_ok());
+        assert!(
+            validate_string_format("email", "user@sub.example.com", StringFormat::Email).is_ok()
+        );
         assert!(validate_string_format("email", "invalid", StringFormat::Email).is_err());
         assert!(validate_string_format("email", "@example.com", StringFormat::Email).is_err());
         assert!(validate_string_format("email", "user@", StringFormat::Email).is_err());
@@ -811,9 +823,19 @@ mod tests {
 
     #[test]
     fn test_validate_uuid_format() {
-        assert!(validate_string_format("id", "550e8400-e29b-41d4-a716-446655440000", StringFormat::Uuid).is_ok());
+        assert!(validate_string_format(
+            "id",
+            "550e8400-e29b-41d4-a716-446655440000",
+            StringFormat::Uuid
+        )
+        .is_ok());
         assert!(validate_string_format("id", "not-a-uuid", StringFormat::Uuid).is_err());
-        assert!(validate_string_format("id", "550e8400e29b41d4a716446655440000", StringFormat::Uuid).is_err());
+        assert!(validate_string_format(
+            "id",
+            "550e8400e29b41d4a716446655440000",
+            StringFormat::Uuid
+        )
+        .is_err());
     }
 
     #[test]
@@ -825,7 +847,9 @@ mod tests {
 
     #[test]
     fn test_validate_datetime_format() {
-        assert!(validate_string_format("date", "2024-01-15T10:30:00Z", StringFormat::DateTime).is_ok());
+        assert!(
+            validate_string_format("date", "2024-01-15T10:30:00Z", StringFormat::DateTime).is_ok()
+        );
         assert!(validate_string_format("date", "2024-01-15", StringFormat::DateTime).is_err());
     }
 
@@ -875,13 +899,27 @@ mod tests {
     #[test]
     fn test_validate_array_length_too_few() {
         let result = validate_array_length("items", 0, Some(1), Some(10));
-        assert!(matches!(result, Err(ValidationError::MinItems { min: 1, actual: 0, .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::MinItems {
+                min: 1,
+                actual: 0,
+                ..
+            })
+        ));
     }
 
     #[test]
     fn test_validate_array_length_too_many() {
         let result = validate_array_length("items", 15, Some(1), Some(10));
-        assert!(matches!(result, Err(ValidationError::MaxItems { max: 10, actual: 15, .. })));
+        assert!(matches!(
+            result,
+            Err(ValidationError::MaxItems {
+                max: 10,
+                actual: 15,
+                ..
+            })
+        ));
     }
 
     #[test]

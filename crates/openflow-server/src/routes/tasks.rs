@@ -7,7 +7,9 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use openflow_contracts::{ArtifactFile, CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest};
+use openflow_contracts::{
+    ArtifactFile, CreateTaskRequest, Task, TaskStatus, TaskWithChats, UpdateTaskRequest,
+};
 use openflow_core::events::{EntityType, Event};
 use openflow_core::services::{artifact, task};
 use serde::Deserialize;
@@ -77,11 +79,7 @@ async fn create(
     let task = task::create(&state.pool, request).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::created(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::created(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -97,11 +95,7 @@ async fn update(
     let task = task::update(&state.pool, &id, request).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::updated(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -128,11 +122,7 @@ async fn archive(
     let task = task::archive(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::updated(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -147,11 +137,7 @@ async fn unarchive(
     let task = task::unarchive(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::updated(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -166,11 +152,7 @@ async fn duplicate(
     let task = task::duplicate(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::created(
-        EntityType::Task,
-        task.id.clone(),
-        &task,
-    ));
+    state.broadcast(Event::created(EntityType::Task, task.id.clone(), &task));
 
     Ok(Json(task))
 }
@@ -234,10 +216,13 @@ mod tests {
             let broadcaster: Arc<dyn openflow_core::events::EventBroadcaster> =
                 Arc::new(NullBroadcaster);
             let client_manager = crate::ws::ClientManager::new();
-            let state = AppState::new(self.pool.clone(), process_service, broadcaster, client_manager);
-            Router::new()
-                .nest("/tasks", routes())
-                .with_state(state)
+            let state = AppState::new(
+                self.pool.clone(),
+                process_service,
+                broadcaster,
+                client_manager,
+            );
+            Router::new().nest("/tasks", routes()).with_state(state)
         }
 
         /// Create a test project and return its ID
@@ -381,7 +366,10 @@ mod tests {
         let task: Task = serde_json::from_slice(&body).unwrap();
 
         assert_eq!(task.title, "Full Task");
-        assert_eq!(task.description, Some("A complete task description".to_string()));
+        assert_eq!(
+            task.description,
+            Some("A complete task description".to_string())
+        );
         assert_eq!(task.workflow_template, Some("feature".to_string()));
         assert_eq!(task.base_branch, Some("develop".to_string()));
     }
@@ -988,7 +976,10 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .method("GET")
-                    .uri(format!("/tasks?projectId={}&includeArchived=true", project_id))
+                    .uri(format!(
+                        "/tasks?projectId={}&includeArchived=true",
+                        project_id
+                    ))
                     .body(Body::empty())
                     .unwrap(),
             )

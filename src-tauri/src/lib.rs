@@ -65,8 +65,11 @@ pub mod commands;
 
 use broadcaster::TauriBroadcaster;
 use commands::AppState;
+use openflow_core::services::process::ProcessService;
 use openflow_db::{init_db_with_seeder, DbConfig};
+use openflow_server::ws::WsBroadcaster;
 use openflow_server::{ClientManager, ServerConfig};
+use std::sync::Arc;
 
 /// Initialize and run the Tauri application.
 ///
@@ -136,8 +139,6 @@ pub fn run() {
 
             // Extract shared resources for the HTTP server
             let http_pool = state.get_pool().clone();
-            let http_process_service = state.get_process_service();
-            let http_broadcaster = state.get_broadcaster();
 
             // Manage the application state for Tauri commands
             app.manage(state);
@@ -145,7 +146,7 @@ pub fn run() {
             // Create WebSocket client manager for the HTTP server
             let client_manager = ClientManager::new();
 
-            // Configure and spawn the embedded HTTP server
+            // Configure the embedded HTTP server
             let server_config = ServerConfig::default()
                 .with_port(HTTP_SERVER_PORT)
                 .with_cors_origins(vec![
@@ -157,16 +158,25 @@ pub fn run() {
                 ]);
 
             // Spawn HTTP server in background task
+            // Note: WsBroadcaster and ProcessService are created inside the async block
+            // because WsBroadcaster::new() requires a Tokio runtime context
             tauri::async_runtime::spawn(async move {
                 println!(
                     "Starting embedded HTTP server on http://127.0.0.1:{}",
                     HTTP_SERVER_PORT
                 );
 
+                // Create WsBroadcaster inside the async block where Tokio runtime is available
+                let ws_broadcaster = WsBroadcaster::arc(client_manager.clone());
+
+                // Create ProcessService with WsBroadcaster for HTTP/WebSocket clients
+                let http_process_service =
+                    Arc::new(ProcessService::with_broadcaster(ws_broadcaster.clone()));
+
                 if let Err(e) = openflow_server::start_embedded_server(
                     http_pool,
                     http_process_service,
-                    http_broadcaster,
+                    ws_broadcaster,
                     client_manager,
                     server_config,
                 )

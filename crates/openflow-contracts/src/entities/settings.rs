@@ -162,7 +162,12 @@ mod tests {
         let false_settings = ["false", "0", "no", "off", "FALSE", "No", "OFF"];
         for val in false_settings {
             let setting = Setting::new("test", val);
-            assert_eq!(setting.as_bool(), Some(false), "Expected false for '{}'", val);
+            assert_eq!(
+                setting.as_bool(),
+                Some(false),
+                "Expected false for '{}'",
+                val
+            );
         }
 
         let invalid = Setting::new("test", "maybe");

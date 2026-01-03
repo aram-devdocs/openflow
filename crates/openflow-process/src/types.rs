@@ -42,7 +42,6 @@ impl ProcessStatus {
     }
 }
 
-
 /// Configuration for spawning a process.
 #[derive(Debug, Clone)]
 pub struct SpawnConfig {

@@ -859,10 +859,7 @@ mod tests {
 
     #[test]
     fn test_commit_new() {
-        let commit = Commit::new(
-            "abc123def456abc123def456abc123def456abc123",
-            "abc123d",
-        );
+        let commit = Commit::new("abc123def456abc123def456abc123def456abc123", "abc123d");
         assert_eq!(commit.hash, "abc123def456abc123def456abc123def456abc123");
         assert_eq!(commit.short_hash, "abc123d");
     }
@@ -1018,7 +1015,10 @@ mod tests {
     #[test]
     fn test_git_status_has_conflicts() {
         let mut status = GitStatus::new("main");
-        status.files.push(GitStatusFile::new("src/conflict.rs", GitFileStatus::Conflicted));
+        status.files.push(GitStatusFile::new(
+            "src/conflict.rs",
+            GitFileStatus::Conflicted,
+        ));
         assert!(status.has_conflicts());
     }
 
@@ -1042,8 +1042,8 @@ mod tests {
 
     #[test]
     fn test_worktree_serialization() {
-        let wt = Worktree::new("/path/to/worktree", "openflow/task123/main")
-            .with_head_commit("abc123");
+        let wt =
+            Worktree::new("/path/to/worktree", "openflow/task123/main").with_head_commit("abc123");
 
         let json = serde_json::to_string(&wt).unwrap();
         assert!(json.contains("\"headCommit\":\"abc123\""));

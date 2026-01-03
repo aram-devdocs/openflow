@@ -105,11 +105,7 @@ async fn create(
     let chat = chat::create(&state.pool, request).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::created(
-        EntityType::Chat,
-        chat.id.clone(),
-        &chat,
-    ));
+    state.broadcast(Event::created(EntityType::Chat, chat.id.clone(), &chat));
 
     Ok(Json(chat))
 }
@@ -125,11 +121,7 @@ async fn update(
     let chat = chat::update(&state.pool, &id, request).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Chat,
-        chat.id.clone(),
-        &chat,
-    ));
+    state.broadcast(Event::updated(EntityType::Chat, chat.id.clone(), &chat));
 
     Ok(Json(chat))
 }
@@ -156,11 +148,7 @@ async fn archive(
     let chat = chat::archive(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Chat,
-        chat.id.clone(),
-        &chat,
-    ));
+    state.broadcast(Event::updated(EntityType::Chat, chat.id.clone(), &chat));
 
     Ok(Json(chat))
 }
@@ -175,11 +163,7 @@ async fn unarchive(
     let chat = chat::unarchive(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Chat,
-        chat.id.clone(),
-        &chat,
-    ));
+    state.broadcast(Event::updated(EntityType::Chat, chat.id.clone(), &chat));
 
     Ok(Json(chat))
 }
@@ -194,11 +178,7 @@ async fn toggle_step_complete(
     let chat = chat::toggle_step_complete(&state.pool, &id).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Chat,
-        chat.id.clone(),
-        &chat,
-    ));
+    state.broadcast(Event::updated(EntityType::Chat, chat.id.clone(), &chat));
 
     Ok(Json(chat))
 }
@@ -235,10 +215,13 @@ mod tests {
             let broadcaster: Arc<dyn openflow_core::events::EventBroadcaster> =
                 Arc::new(NullBroadcaster);
             let client_manager = crate::ws::ClientManager::new();
-            let state = AppState::new(self.pool.clone(), process_service, broadcaster, client_manager);
-            Router::new()
-                .nest("/chats", routes())
-                .with_state(state)
+            let state = AppState::new(
+                self.pool.clone(),
+                process_service,
+                broadcaster,
+                client_manager,
+            );
+            Router::new().nest("/chats", routes()).with_state(state)
         }
 
         /// Create a test project and return its ID
@@ -442,7 +425,10 @@ mod tests {
         assert_eq!(chat.title, Some("Full Chat".to_string()));
         assert_eq!(chat.chat_role, ChatRole::Review);
         assert_eq!(chat.base_branch, "develop");
-        assert_eq!(chat.initial_prompt, Some("Please review the code".to_string()));
+        assert_eq!(
+            chat.initial_prompt,
+            Some("Please review the code".to_string())
+        );
         assert_eq!(chat.hidden_prompt, Some("System context".to_string()));
         assert!(chat.is_plan_container);
         assert_eq!(chat.workflow_step_index, Some(1));
@@ -500,7 +486,10 @@ mod tests {
         let chat_with_messages: ChatWithMessages = serde_json::from_slice(&body).unwrap();
 
         assert_eq!(chat_with_messages.chat.id, created.id);
-        assert_eq!(chat_with_messages.chat.title, Some("Get Test Chat".to_string()));
+        assert_eq!(
+            chat_with_messages.chat.title,
+            Some("Get Test Chat".to_string())
+        );
         assert!(chat_with_messages.messages.is_empty());
     }
 

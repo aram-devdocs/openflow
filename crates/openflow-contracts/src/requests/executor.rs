@@ -344,8 +344,7 @@ mod tests {
 
     #[test]
     fn test_create_request_serialization() {
-        let request = CreateExecutorProfileRequest::new("Test", "test")
-            .with_is_default(true);
+        let request = CreateExecutorProfileRequest::new("Test", "test").with_is_default(true);
 
         let json = serde_json::to_string(&request).unwrap();
         assert!(json.contains("isDefault"));
@@ -387,8 +386,8 @@ mod tests {
 
     #[test]
     fn test_run_executor_request() {
-        let request = RunExecutorRequest::new("chat-123", "Help me write code")
-            .with_profile("profile-456");
+        let request =
+            RunExecutorRequest::new("chat-123", "Help me write code").with_profile("profile-456");
 
         assert_eq!(request.chat_id, "chat-123");
         assert_eq!(request.prompt, "Help me write code");

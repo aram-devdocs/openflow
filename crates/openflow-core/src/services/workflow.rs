@@ -341,9 +341,7 @@ pub fn get_builtin_templates() -> ServiceResult<Vec<WorkflowTemplate>> {
 pub fn get_builtin_template(id: &str) -> ServiceResult<Option<WorkflowTemplate>> {
     debug!(id = %id, "Looking up built-in template");
 
-    let template = get_builtin_templates()?
-        .into_iter()
-        .find(|t| t.id == id);
+    let template = get_builtin_templates()?.into_iter().find(|t| t.id == id);
 
     match &template {
         Some(t) => info!(
@@ -479,8 +477,7 @@ pub fn substitute_variables(
 
     debug!(
         total_vars = vars.len(),
-        substitutions,
-        "Completed variable substitution"
+        substitutions, "Completed variable substitution"
     );
 
     Ok(result)
@@ -510,10 +507,7 @@ pub fn substitute_variables(
 /// let result = workflow::substitute_with_context(content, &context).unwrap();
 /// assert_eq!(result, "Save to /tasks/123/spec.md in /home/project");
 /// ```
-pub fn substitute_with_context(
-    content: &str,
-    context: &WorkflowContext,
-) -> ServiceResult<String> {
+pub fn substitute_with_context(content: &str, context: &WorkflowContext) -> ServiceResult<String> {
     debug!(
         content_len = content.len(),
         has_artifacts_path = context.artifacts_path.is_some(),

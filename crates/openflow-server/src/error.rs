@@ -62,25 +62,25 @@ impl IntoResponse for ServerError {
             ServerError::Unauthorized(msg) => {
                 (StatusCode::UNAUTHORIZED, "unauthorized", Some(msg.clone()))
             }
-            ServerError::Forbidden(msg) => {
-                (StatusCode::FORBIDDEN, "forbidden", Some(msg.clone()))
-            }
+            ServerError::Forbidden(msg) => (StatusCode::FORBIDDEN, "forbidden", Some(msg.clone())),
             ServerError::Conflict(msg) => (StatusCode::CONFLICT, "conflict", Some(msg.clone())),
-            ServerError::Internal(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "internal_error", None)
-            }
-            ServerError::Database(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "database_error", None)
-            }
-            ServerError::Service(msg) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "service_error", Some(msg.clone()))
-            }
-            ServerError::Config(msg) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "config_error", Some(msg.clone()))
-            }
-            ServerError::WebSocket(msg) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "websocket_error", Some(msg.clone()))
-            }
+            ServerError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "internal_error", None),
+            ServerError::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error", None),
+            ServerError::Service(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "service_error",
+                Some(msg.clone()),
+            ),
+            ServerError::Config(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "config_error",
+                Some(msg.clone()),
+            ),
+            ServerError::WebSocket(msg) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "websocket_error",
+                Some(msg.clone()),
+            ),
         };
 
         let body = ErrorResponse {

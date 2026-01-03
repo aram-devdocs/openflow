@@ -31,9 +31,9 @@ pub use process::{
     ProcessSummary, RunReason,
 };
 pub use project::{Project, ProjectSummary, ProjectWithStats};
-pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
 pub use search::{SearchResult, SearchResultType};
 pub use settings::{Setting, SettingsMap};
+pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
 pub use workflow::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,

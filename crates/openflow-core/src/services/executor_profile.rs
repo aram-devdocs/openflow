@@ -20,7 +20,9 @@ use log::{debug, error, info};
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
-use openflow_contracts::{CreateExecutorProfileRequest, ExecutorProfile, UpdateExecutorProfileRequest};
+use openflow_contracts::{
+    CreateExecutorProfileRequest, ExecutorProfile, UpdateExecutorProfileRequest,
+};
 
 use super::{ServiceError, ServiceResult};
 
@@ -417,7 +419,9 @@ mod tests {
         let pool = create_test_db().await.expect("Failed to create test db");
 
         let request = test_create_request("Claude Code", "claude");
-        let profile = create(&pool, request).await.expect("Failed to create executor profile");
+        let profile = create(&pool, request)
+            .await
+            .expect("Failed to create executor profile");
 
         assert_eq!(profile.name, "Claude Code");
         assert_eq!(profile.command, "claude");
@@ -442,7 +446,9 @@ mod tests {
             is_default: Some(true),
         };
 
-        let profile = create(&pool, request).await.expect("Failed to create executor profile");
+        let profile = create(&pool, request)
+            .await
+            .expect("Failed to create executor profile");
 
         assert_eq!(profile.name, "Claude Code Pro");
         assert_eq!(profile.command, "claude");
@@ -464,10 +470,14 @@ mod tests {
 
         // Create a profile first
         let request = test_create_request("Get Test", "gemini");
-        let created = create(&pool, request).await.expect("Failed to create executor profile");
+        let created = create(&pool, request)
+            .await
+            .expect("Failed to create executor profile");
 
         // Get the profile
-        let fetched = get(&pool, &created.id).await.expect("Failed to get executor profile");
+        let fetched = get(&pool, &created.id)
+            .await
+            .expect("Failed to get executor profile");
 
         assert_eq!(fetched.id, created.id);
         assert_eq!(fetched.name, "Get Test");
@@ -516,7 +526,9 @@ mod tests {
 
         // Create a profile
         let request = test_create_request("Original Name", "original");
-        let created = create(&pool, request).await.expect("Failed to create executor profile");
+        let created = create(&pool, request)
+            .await
+            .expect("Failed to create executor profile");
 
         // Wait a small amount to ensure updated_at will be different
         tokio::time::sleep(std::time::Duration::from_millis(10)).await;
@@ -570,14 +582,18 @@ mod tests {
 
         // Create a profile
         let request = test_create_request("To Delete", "delete");
-        let created = create(&pool, request).await.expect("Failed to create executor profile");
+        let created = create(&pool, request)
+            .await
+            .expect("Failed to create executor profile");
 
         // Verify it exists
         let fetched = get(&pool, &created.id).await;
         assert!(fetched.is_ok());
 
         // Delete it
-        delete(&pool, &created.id).await.expect("Failed to delete executor profile");
+        delete(&pool, &created.id)
+            .await
+            .expect("Failed to delete executor profile");
 
         // Verify it's gone
         let result = get(&pool, &created.id).await;
@@ -600,7 +616,9 @@ mod tests {
         let pool = create_test_db().await.expect("Failed to create test db");
 
         // No profiles exist yet
-        let default = get_default(&pool).await.expect("Failed to get default executor profile");
+        let default = get_default(&pool)
+            .await
+            .expect("Failed to get default executor profile");
         assert!(default.is_none());
     }
 
@@ -618,9 +636,13 @@ mod tests {
             model: None,
             is_default: Some(true),
         };
-        create(&pool, request).await.expect("Failed to create executor profile");
+        create(&pool, request)
+            .await
+            .expect("Failed to create executor profile");
 
-        let default = get_default(&pool).await.expect("Failed to get default executor profile");
+        let default = get_default(&pool)
+            .await
+            .expect("Failed to get default executor profile");
         assert!(default.is_some());
         assert_eq!(default.unwrap().name, "Default Profile");
     }
@@ -639,7 +661,9 @@ mod tests {
             model: None,
             is_default: Some(true),
         };
-        let first = create(&pool, request1).await.expect("Failed to create first profile");
+        let first = create(&pool, request1)
+            .await
+            .expect("Failed to create first profile");
         assert!(first.is_default);
 
         // Create second default profile - should clear first's default
@@ -652,11 +676,15 @@ mod tests {
             model: None,
             is_default: Some(true),
         };
-        let second = create(&pool, request2).await.expect("Failed to create second profile");
+        let second = create(&pool, request2)
+            .await
+            .expect("Failed to create second profile");
         assert!(second.is_default);
 
         // First profile should no longer be default
-        let first_updated = get(&pool, &first.id).await.expect("Failed to get first profile");
+        let first_updated = get(&pool, &first.id)
+            .await
+            .expect("Failed to get first profile");
         assert!(!first_updated.is_default);
 
         // Only one default
@@ -678,11 +706,15 @@ mod tests {
             model: None,
             is_default: Some(true),
         };
-        let first = create(&pool, request1).await.expect("Failed to create first profile");
+        let first = create(&pool, request1)
+            .await
+            .expect("Failed to create first profile");
 
         // Create a non-default profile
         let request2 = test_create_request("Non Default", "gemini");
-        let second = create(&pool, request2).await.expect("Failed to create second profile");
+        let second = create(&pool, request2)
+            .await
+            .expect("Failed to create second profile");
         assert!(!second.is_default);
 
         // Update second to be default
@@ -701,7 +733,9 @@ mod tests {
         assert!(second_updated.is_default);
 
         // First should no longer be default
-        let first_updated = get(&pool, &first.id).await.expect("Failed to get first profile");
+        let first_updated = get(&pool, &first.id)
+            .await
+            .expect("Failed to get first profile");
         assert!(!first_updated.is_default);
 
         // Only one default

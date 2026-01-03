@@ -104,10 +104,7 @@ impl Endpoint {
 
     /// Find endpoints by tag
     pub fn by_tag(tag: &str) -> Vec<&'static Endpoint> {
-        ENDPOINTS
-            .iter()
-            .filter(|e| e.tags.contains(&tag))
-            .collect()
+        ENDPOINTS.iter().filter(|e| e.tags.contains(&tag)).collect()
     }
 
     /// Get all endpoints
@@ -1303,11 +1300,7 @@ mod tests {
     #[test]
     fn test_all_endpoints_have_tags() {
         for ep in ENDPOINTS {
-            assert!(
-                !ep.tags.is_empty(),
-                "Endpoint {} has no tags",
-                ep.command
-            );
+            assert!(!ep.tags.is_empty(), "Endpoint {} has no tags", ep.command);
         }
     }
 
@@ -1358,8 +1351,10 @@ mod tests {
         ];
 
         for ep in ENDPOINTS {
-            if matches!(ep.method, HttpMethod::Post | HttpMethod::Patch | HttpMethod::Put)
-                && !exceptions.contains(&ep.command)
+            if matches!(
+                ep.method,
+                HttpMethod::Post | HttpMethod::Patch | HttpMethod::Put
+            ) && !exceptions.contains(&ep.command)
                 && (ep.tags.contains(&"create") || ep.tags.contains(&"update"))
                 && ep.request_type.is_none()
                 && !ep.has_query_params()

@@ -197,12 +197,11 @@ pub async fn start_server_with_shutdown(
             tracing::info!("Shutdown signal received, starting graceful shutdown...");
 
             // Disconnect all WebSocket clients
-            let client_count = client_manager.disconnect_all("Server is shutting down").await;
+            let client_count = client_manager
+                .disconnect_all("Server is shutting down")
+                .await;
             if client_count > 0 {
-                tracing::info!(
-                    "Disconnected {} WebSocket client(s)",
-                    client_count
-                );
+                tracing::info!("Disconnected {} WebSocket client(s)", client_count);
             }
 
             // Kill all running processes
@@ -358,12 +357,11 @@ pub async fn start_embedded_server_with_shutdown(
             tracing::info!("Embedded server shutdown signal received...");
 
             // Disconnect all WebSocket clients
-            let client_count = client_manager.disconnect_all("Server is shutting down").await;
+            let client_count = client_manager
+                .disconnect_all("Server is shutting down")
+                .await;
             if client_count > 0 {
-                tracing::info!(
-                    "Disconnected {} WebSocket client(s)",
-                    client_count
-                );
+                tracing::info!("Disconnected {} WebSocket client(s)", client_count);
             }
 
             // Note: We don't kill processes or close the pool here because
@@ -407,7 +405,14 @@ mod tests {
         // Spawn server in background
         let pool_clone = pool.clone();
         let server_handle = tokio::spawn(async move {
-            start_embedded_server(pool_clone, process_service, broadcaster, client_manager, config).await
+            start_embedded_server(
+                pool_clone,
+                process_service,
+                broadcaster,
+                client_manager,
+                config,
+            )
+            .await
         });
 
         // Wait for server to start
@@ -464,7 +469,14 @@ mod tests {
         // Spawn server with existing pool
         let pool_clone = pool.clone();
         let server_handle = tokio::spawn(async move {
-            start_embedded_server(pool_clone, process_service, broadcaster, client_manager, config).await
+            start_embedded_server(
+                pool_clone,
+                process_service,
+                broadcaster,
+                client_manager,
+                config,
+            )
+            .await
         });
 
         // Wait for server to start
@@ -504,7 +516,8 @@ mod tests {
         let client_manager = ClientManager::new();
         let config = ServerConfig::default().with_port(port);
 
-        let result = start_embedded_server(pool, process_service, broadcaster, client_manager, config).await;
+        let result =
+            start_embedded_server(pool, process_service, broadcaster, client_manager, config).await;
 
         assert!(result.is_err(), "Should fail when port is already in use");
         let err = result.unwrap_err();

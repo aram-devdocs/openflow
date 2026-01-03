@@ -99,8 +99,7 @@ async fn create_pull_request(
 async fn get_existing_pr(
     Query(query): Query<ExistingPrQuery>,
 ) -> ServerResult<Json<Option<String>>> {
-    let pr_url =
-        github::get_existing_pr(&query.worktree_path, query.branch.as_deref()).await?;
+    let pr_url = github::get_existing_pr(&query.worktree_path, query.branch.as_deref()).await?;
     Ok(Json(pr_url))
 }
 

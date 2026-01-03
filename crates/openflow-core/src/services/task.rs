@@ -45,9 +45,8 @@ pub async fn list(
     );
 
     let tasks = match (status, include_archived) {
-        (Some(status), true) => {
-            sqlx::query_as::<_, Task>(
-                r#"
+        (Some(status), true) => sqlx::query_as::<_, Task>(
+            r#"
                 SELECT
                     id, project_id, title, description, status,
                     workflow_template, actions_required_count, parent_task_id,
@@ -57,19 +56,17 @@ pub async fn list(
                 WHERE project_id = ? AND status = ?
                 ORDER BY created_at DESC
                 "#,
-            )
-            .bind(project_id)
-            .bind(status.to_string())
-            .fetch_all(pool)
-            .await
-            .map_err(|e| {
-                error!("Failed to list tasks for project {}: {}", project_id, e);
-                ServiceError::Database(e)
-            })?
-        }
-        (Some(status), false) => {
-            sqlx::query_as::<_, Task>(
-                r#"
+        )
+        .bind(project_id)
+        .bind(status.to_string())
+        .fetch_all(pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to list tasks for project {}: {}", project_id, e);
+            ServiceError::Database(e)
+        })?,
+        (Some(status), false) => sqlx::query_as::<_, Task>(
+            r#"
                 SELECT
                     id, project_id, title, description, status,
                     workflow_template, actions_required_count, parent_task_id,
@@ -79,19 +76,17 @@ pub async fn list(
                 WHERE project_id = ? AND status = ? AND archived_at IS NULL
                 ORDER BY created_at DESC
                 "#,
-            )
-            .bind(project_id)
-            .bind(status.to_string())
-            .fetch_all(pool)
-            .await
-            .map_err(|e| {
-                error!("Failed to list tasks for project {}: {}", project_id, e);
-                ServiceError::Database(e)
-            })?
-        }
-        (None, true) => {
-            sqlx::query_as::<_, Task>(
-                r#"
+        )
+        .bind(project_id)
+        .bind(status.to_string())
+        .fetch_all(pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to list tasks for project {}: {}", project_id, e);
+            ServiceError::Database(e)
+        })?,
+        (None, true) => sqlx::query_as::<_, Task>(
+            r#"
                 SELECT
                     id, project_id, title, description, status,
                     workflow_template, actions_required_count, parent_task_id,
@@ -101,18 +96,16 @@ pub async fn list(
                 WHERE project_id = ?
                 ORDER BY created_at DESC
                 "#,
-            )
-            .bind(project_id)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| {
-                error!("Failed to list tasks for project {}: {}", project_id, e);
-                ServiceError::Database(e)
-            })?
-        }
-        (None, false) => {
-            sqlx::query_as::<_, Task>(
-                r#"
+        )
+        .bind(project_id)
+        .fetch_all(pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to list tasks for project {}: {}", project_id, e);
+            ServiceError::Database(e)
+        })?,
+        (None, false) => sqlx::query_as::<_, Task>(
+            r#"
                 SELECT
                     id, project_id, title, description, status,
                     workflow_template, actions_required_count, parent_task_id,
@@ -122,15 +115,14 @@ pub async fn list(
                 WHERE project_id = ? AND archived_at IS NULL
                 ORDER BY created_at DESC
                 "#,
-            )
-            .bind(project_id)
-            .fetch_all(pool)
-            .await
-            .map_err(|e| {
-                error!("Failed to list tasks for project {}: {}", project_id, e);
-                ServiceError::Database(e)
-            })?
-        }
+        )
+        .bind(project_id)
+        .fetch_all(pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to list tasks for project {}: {}", project_id, e);
+            ServiceError::Database(e)
+        })?,
     };
 
     // Count tasks by status for logging

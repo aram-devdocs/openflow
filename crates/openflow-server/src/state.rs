@@ -251,7 +251,12 @@ mod tests {
         let broadcaster: Arc<dyn EventBroadcaster> = Arc::new(NullBroadcaster);
         let client_manager = ClientManager::new();
 
-        let state = AppState::new(pool, process_service.clone(), broadcaster, client_manager.clone());
+        let state = AppState::new(
+            pool,
+            process_service.clone(),
+            broadcaster,
+            client_manager.clone(),
+        );
         let cloned = state.clone();
 
         // Verify Arc references are shared

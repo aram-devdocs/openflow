@@ -470,7 +470,7 @@ pub async fn unarchive(pool: &SqlitePool, id: &str) -> ServiceResult<Project> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use openflow_db::{DbConfig, init_db};
+    use openflow_db::{init_db, DbConfig};
     use tempfile::TempDir;
 
     /// Test fixture that keeps the temp directory alive.
@@ -598,9 +598,7 @@ mod tests {
         let test_db = setup_test_db().await;
 
         // Start with empty list
-        let projects = list(&test_db.pool)
-            .await
-            .expect("Failed to list projects");
+        let projects = list(&test_db.pool).await.expect("Failed to list projects");
         assert!(projects.is_empty());
 
         // Create multiple projects
@@ -613,9 +611,7 @@ mod tests {
         create(&test_db.pool, request3).await.unwrap();
 
         // List should return all projects ordered by name
-        let projects = list(&test_db.pool)
-            .await
-            .expect("Failed to list projects");
+        let projects = list(&test_db.pool).await.expect("Failed to list projects");
 
         assert_eq!(projects.len(), 3);
         assert_eq!(projects[0].name, "Project A");

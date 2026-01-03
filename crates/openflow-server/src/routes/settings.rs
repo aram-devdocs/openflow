@@ -119,11 +119,7 @@ async fn set_one(
     let setting = settings::set(&state.pool, &key, &request.value).await?;
 
     // Broadcast data changed event
-    state.broadcast(Event::updated(
-        EntityType::Setting,
-        key,
-        &setting,
-    ));
+    state.broadcast(Event::updated(EntityType::Setting, key, &setting));
 
     Ok(Json(setting))
 }
@@ -131,10 +127,7 @@ async fn set_one(
 /// DELETE /api/settings/{key}
 ///
 /// Delete a setting.
-async fn delete_one(
-    State(state): State<AppState>,
-    Path(key): Path<String>,
-) -> ServerResult<()> {
+async fn delete_one(State(state): State<AppState>, Path(key): Path<String>) -> ServerResult<()> {
     settings::delete(&state.pool, &key).await?;
 
     // Broadcast data changed event
@@ -278,9 +271,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_all_empty() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -304,9 +295,7 @@ mod tests {
     #[tokio::test]
     async fn test_set_and_get_setting() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set a setting
         let set_response = app
@@ -348,9 +337,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_full_setting() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set a setting first
         app.clone()
@@ -392,9 +379,7 @@ mod tests {
     #[tokio::test]
     async fn test_setting_exists() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Check non-existent key
         let response = app
@@ -451,9 +436,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_or_default() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Get non-existent with default
         let response = app
@@ -510,9 +493,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_setting() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set a setting
         app.clone()
@@ -580,9 +561,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_nonexistent_setting() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -602,9 +581,7 @@ mod tests {
     #[tokio::test]
     async fn test_set_many() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set multiple settings
         let response = app
@@ -649,9 +626,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_by_prefix() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set settings with different prefixes
         app.clone()
@@ -695,9 +670,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_all_without_confirmation() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Try to delete all without confirmation
         let response = app
@@ -719,9 +692,7 @@ mod tests {
     #[tokio::test]
     async fn test_delete_all_with_confirmation() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set some settings
         app.clone()
@@ -782,9 +753,7 @@ mod tests {
     #[tokio::test]
     async fn test_update_existing_setting() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set initial value
         app.clone()
@@ -834,9 +803,7 @@ mod tests {
     #[tokio::test]
     async fn test_special_characters_in_value() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set a JSON value
         let json_value = r#"{"key": "value", "array": [1, 2, 3]}"#;
@@ -846,7 +813,10 @@ mod tests {
                     .method("PUT")
                     .uri("/settings/json_config")
                     .header("content-type", "application/json")
-                    .body(Body::from(format!(r#"{{"value": {}}}"#, serde_json::to_string(json_value).unwrap())))
+                    .body(Body::from(format!(
+                        r#"{{"value": {}}}"#,
+                        serde_json::to_string(json_value).unwrap()
+                    )))
                     .unwrap(),
             )
             .await
@@ -874,9 +844,7 @@ mod tests {
     #[tokio::test]
     async fn test_empty_value() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/settings", routes())
-            .with_state(state);
+        let app = Router::new().nest("/settings", routes()).with_state(state);
 
         // Set an empty value
         app.clone()

@@ -597,9 +597,7 @@ mod tests {
         let pool = create_test_db().await.unwrap();
 
         // Set a key with special characters (dots, underscores, hyphens)
-        set(&pool, "app.theme.color-mode_v2", "dark")
-            .await
-            .unwrap();
+        set(&pool, "app.theme.color-mode_v2", "dark").await.unwrap();
 
         // Get the setting
         let result = get_value(&pool, "app.theme.color-mode_v2").await.unwrap();

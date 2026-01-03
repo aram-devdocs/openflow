@@ -133,7 +133,11 @@ pub async fn list(pool: &SqlitePool, task_id: &str) -> ServiceResult<Vec<Artifac
                     .unwrap_or_else(|| Utc::now().to_rfc3339());
 
                 let is_directory = metadata.is_dir();
-                let size = if is_directory { 0 } else { metadata.len() as i32 };
+                let size = if is_directory {
+                    0
+                } else {
+                    metadata.len() as i32
+                };
 
                 artifacts.push(ArtifactFile::new(
                     file_name,

@@ -56,7 +56,9 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 // Re-export process events from entities
-pub use crate::entities::process::{OutputType, ProcessOutputEvent, ProcessStatus, ProcessStatusEvent};
+pub use crate::entities::process::{
+    OutputType, ProcessOutputEvent, ProcessStatus, ProcessStatusEvent,
+};
 
 // =============================================================================
 // Event Channel Constants
@@ -322,7 +324,11 @@ impl DataAction {
 
     /// Get all possible data action values
     pub fn all() -> &'static [DataAction] {
-        &[DataAction::Created, DataAction::Updated, DataAction::Deleted]
+        &[
+            DataAction::Created,
+            DataAction::Updated,
+            DataAction::Deleted,
+        ]
     }
 }
 
@@ -391,11 +397,7 @@ pub struct DataChangedEvent {
 
 impl DataChangedEvent {
     /// Create a new created event
-    pub fn created(
-        entity: EntityType,
-        id: impl Into<String>,
-        data: serde_json::Value,
-    ) -> Self {
+    pub fn created(entity: EntityType, id: impl Into<String>, data: serde_json::Value) -> Self {
         Self {
             entity,
             action: DataAction::Created,
@@ -407,11 +409,7 @@ impl DataChangedEvent {
     }
 
     /// Create a new updated event
-    pub fn updated(
-        entity: EntityType,
-        id: impl Into<String>,
-        data: serde_json::Value,
-    ) -> Self {
+    pub fn updated(entity: EntityType, id: impl Into<String>, data: serde_json::Value) -> Self {
         Self {
             entity,
             action: DataAction::Updated,
@@ -756,18 +754,12 @@ mod tests {
 
     #[test]
     fn test_process_output_channel() {
-        assert_eq!(
-            process_output_channel("abc-123"),
-            "process-output-abc-123"
-        );
+        assert_eq!(process_output_channel("abc-123"), "process-output-abc-123");
     }
 
     #[test]
     fn test_process_status_channel() {
-        assert_eq!(
-            process_status_channel("abc-123"),
-            "process-status-abc-123"
-        );
+        assert_eq!(process_status_channel("abc-123"), "process-status-abc-123");
     }
 
     #[test]
@@ -776,10 +768,7 @@ mod tests {
             parse_process_output_channel("process-output-abc-123"),
             Some("abc-123".to_string())
         );
-        assert_eq!(
-            parse_process_output_channel("process-status-abc-123"),
-            None
-        );
+        assert_eq!(parse_process_output_channel("process-status-abc-123"), None);
         assert_eq!(parse_process_output_channel("invalid"), None);
     }
 
@@ -789,10 +778,7 @@ mod tests {
             parse_process_status_channel("process-status-abc-123"),
             Some("abc-123".to_string())
         );
-        assert_eq!(
-            parse_process_status_channel("process-output-abc-123"),
-            None
-        );
+        assert_eq!(parse_process_status_channel("process-output-abc-123"), None);
         assert_eq!(parse_process_status_channel("invalid"), None);
     }
 
@@ -809,16 +795,28 @@ mod tests {
         assert_eq!(EntityType::ExecutorProfile.to_string(), "executor_profile");
         assert_eq!(EntityType::Process.to_string(), "process");
         assert_eq!(EntityType::Setting.to_string(), "setting");
-        assert_eq!(EntityType::WorkflowTemplate.to_string(), "workflow_template");
+        assert_eq!(
+            EntityType::WorkflowTemplate.to_string(),
+            "workflow_template"
+        );
         assert_eq!(EntityType::Worktree.to_string(), "worktree");
     }
 
     #[test]
     fn test_entity_type_from_str() {
-        assert_eq!("project".parse::<EntityType>().unwrap(), EntityType::Project);
+        assert_eq!(
+            "project".parse::<EntityType>().unwrap(),
+            EntityType::Project
+        );
         assert_eq!("task".parse::<EntityType>().unwrap(), EntityType::Task);
-        assert_eq!("executor_profile".parse::<EntityType>().unwrap(), EntityType::ExecutorProfile);
-        assert_eq!("executorprofile".parse::<EntityType>().unwrap(), EntityType::ExecutorProfile);
+        assert_eq!(
+            "executor_profile".parse::<EntityType>().unwrap(),
+            EntityType::ExecutorProfile
+        );
+        assert_eq!(
+            "executorprofile".parse::<EntityType>().unwrap(),
+            EntityType::ExecutorProfile
+        );
         assert_eq!("TASK".parse::<EntityType>().unwrap(), EntityType::Task);
         assert!("invalid".parse::<EntityType>().is_err());
     }
@@ -861,10 +859,19 @@ mod tests {
 
     #[test]
     fn test_data_action_from_str() {
-        assert_eq!("created".parse::<DataAction>().unwrap(), DataAction::Created);
+        assert_eq!(
+            "created".parse::<DataAction>().unwrap(),
+            DataAction::Created
+        );
         assert_eq!("create".parse::<DataAction>().unwrap(), DataAction::Created);
-        assert_eq!("updated".parse::<DataAction>().unwrap(), DataAction::Updated);
-        assert_eq!("DELETED".parse::<DataAction>().unwrap(), DataAction::Deleted);
+        assert_eq!(
+            "updated".parse::<DataAction>().unwrap(),
+            DataAction::Updated
+        );
+        assert_eq!(
+            "DELETED".parse::<DataAction>().unwrap(),
+            DataAction::Deleted
+        );
         assert!("invalid".parse::<DataAction>().is_err());
     }
 
@@ -940,8 +947,8 @@ mod tests {
 
     #[test]
     fn test_data_changed_event_with_parent() {
-        let event = DataChangedEvent::deleted(EntityType::Task, "task-123")
-            .with_parent_id("project-456");
+        let event =
+            DataChangedEvent::deleted(EntityType::Task, "task-123").with_parent_id("project-456");
 
         assert!(event.has_parent());
         assert_eq!(event.parent_id, Some("project-456".to_string()));
@@ -1067,7 +1074,11 @@ mod tests {
         let payload = serde_json::json!({"test": "data"});
         let msg = WsServerMessage::event("data-changed", payload.clone());
 
-        if let WsServerMessage::Event { channel, payload: p } = msg {
+        if let WsServerMessage::Event {
+            channel,
+            payload: p,
+        } = msg
+        {
             assert_eq!(channel, "data-changed");
             assert_eq!(p, payload);
         } else {
@@ -1165,11 +1176,8 @@ mod tests {
 
     #[test]
     fn test_event_from_data_changed() {
-        let data_event = DataChangedEvent::created(
-            EntityType::Project,
-            "123",
-            serde_json::json!({}),
-        );
+        let data_event =
+            DataChangedEvent::created(EntityType::Project, "123", serde_json::json!({}));
         let event: Event = data_event.into();
 
         assert!(matches!(event, Event::DataChanged(_)));
@@ -1196,11 +1204,7 @@ mod tests {
 
     #[test]
     fn test_event_to_ws_message() {
-        let data_event = DataChangedEvent::created(
-            EntityType::Task,
-            "456",
-            serde_json::json!({}),
-        );
+        let data_event = DataChangedEvent::created(EntityType::Task, "456", serde_json::json!({}));
         let event: Event = data_event.into();
         let ws_msg = event.to_ws_message();
 

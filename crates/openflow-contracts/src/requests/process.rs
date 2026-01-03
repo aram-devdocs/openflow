@@ -460,10 +460,7 @@ impl ResizeProcessRequest {
 
     /// Create a standard 80x24 terminal size
     pub fn standard() -> Self {
-        Self {
-            cols: 80,
-            rows: 24,
-        }
+        Self { cols: 80, rows: 24 }
     }
 
     /// Create a wide 120x40 terminal size
@@ -860,12 +857,9 @@ mod tests {
 
     #[test]
     fn test_create_process_request_serialization() {
-        let request = CreateProcessRequest::coding_agent(
-            "chat-123",
-            "profile-456",
-            "Run claude-code",
-        )
-        .with_before_commit("abc123");
+        let request =
+            CreateProcessRequest::coding_agent("chat-123", "profile-456", "Run claude-code")
+                .with_before_commit("abc123");
 
         let json = serde_json::to_string(&request).unwrap();
 
@@ -1271,8 +1265,7 @@ mod tests {
 
     #[test]
     fn test_start_process_request_with_args() {
-        let request =
-            StartProcessRequest::new("claude").with_args(["--verbose", "-p", "hello"]);
+        let request = StartProcessRequest::new("claude").with_args(["--verbose", "-p", "hello"]);
 
         assert!(request.validate().is_ok());
         assert_eq!(request.args.len(), 3);

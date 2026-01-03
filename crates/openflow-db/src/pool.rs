@@ -21,9 +21,8 @@ use crate::error::{DbError, DbResult};
 ///
 /// The seeder is called after migrations complete and can be used
 /// to seed default data into the database.
-pub type Seeder = Box<
-    dyn Fn(SqlitePool) -> Pin<Box<dyn Future<Output = DbResult<()>> + Send>> + Send + Sync,
->;
+pub type Seeder =
+    Box<dyn Fn(SqlitePool) -> Pin<Box<dyn Future<Output = DbResult<()>> + Send>> + Send + Sync>;
 
 /// Initialize the SQLite database with default configuration.
 ///
@@ -228,9 +227,7 @@ mod tests {
         let pool = pool.unwrap();
 
         // Verify we can query the database
-        let result = sqlx::query("SELECT 1 as value")
-            .fetch_one(&pool)
-            .await;
+        let result = sqlx::query("SELECT 1 as value").fetch_one(&pool).await;
         assert!(result.is_ok(), "Should be able to query test database");
     }
 }

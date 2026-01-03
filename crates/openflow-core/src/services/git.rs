@@ -644,8 +644,7 @@ fn parse_commits(log_output: &str) -> Vec<Commit> {
                         .with_date(parts[5]),
                 );
             }
-        } else if line.contains("file") || line.contains("insertion") || line.contains("deletion")
-        {
+        } else if line.contains("file") || line.contains("insertion") || line.contains("deletion") {
             // Parse stat line: " 3 files changed, 10 insertions(+), 5 deletions(-)"
             if let Some(ref mut commit) = current_commit {
                 let mut files_changed = 0;
@@ -1288,8 +1287,7 @@ detached
         let branch_name = format!("openflow/test-{}/main", unique_id);
 
         // Create worktree
-        let result =
-            create_worktree(repo_path, &branch_name, &base_branch, &worktree_path).await;
+        let result = create_worktree(repo_path, &branch_name, &base_branch, &worktree_path).await;
         assert!(result.is_ok(), "Failed to create worktree: {:?}", result);
         assert_eq!(result.unwrap(), worktree_path);
 

@@ -124,19 +124,13 @@ mod tests {
     #[test]
     fn test_search_request_tasks_only() {
         let request = SearchRequest::new("test").tasks_only();
-        assert_eq!(
-            request.result_types,
-            Some(vec![SearchResultType::Task])
-        );
+        assert_eq!(request.result_types, Some(vec![SearchResultType::Task]));
     }
 
     #[test]
     fn test_search_request_projects_only() {
         let request = SearchRequest::new("test").projects_only();
-        assert_eq!(
-            request.result_types,
-            Some(vec![SearchResultType::Project])
-        );
+        assert_eq!(request.result_types, Some(vec![SearchResultType::Project]));
     }
 
     #[test]

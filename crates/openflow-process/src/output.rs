@@ -429,9 +429,7 @@ impl OutputStreamer {
 
     /// Create a streamer with custom buffer size.
     pub fn with_buffer_size(process_id: &str, buffer_size: usize) -> Self {
-        Self::new(
-            OutputConfig::for_process(process_id).with_buffer_size(buffer_size),
-        )
+        Self::new(OutputConfig::for_process(process_id).with_buffer_size(buffer_size))
     }
 
     /// Get the configuration.
@@ -1394,7 +1392,9 @@ mod tests {
     #[test]
     fn test_output_collector_emit() {
         let collector = OutputCollector::new();
-        assert!(collector.emit("proc-1", "hello", OutputType::Stdout).is_ok());
+        assert!(collector
+            .emit("proc-1", "hello", OutputType::Stdout)
+            .is_ok());
         assert!(collector.emit_stdout("proc-1", "stdout").is_ok());
         assert!(collector.emit_stderr("proc-1", "stderr").is_ok());
     }

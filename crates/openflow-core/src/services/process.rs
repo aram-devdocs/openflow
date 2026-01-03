@@ -37,7 +37,7 @@ use chrono::Utc;
 use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 use std::collections::HashMap;
-use std::io::BufRead;
+use std::io::Read;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use uuid::Uuid;
@@ -47,8 +47,10 @@ use openflow_contracts::{
 };
 use openflow_process::{PtyConfig, PtyManager, PtySize};
 
-use crate::events::{Event, EventBroadcaster, NullBroadcaster, OutputType, ProcessStatus as EventProcessStatus};
 use super::{ServiceError, ServiceResult};
+use crate::events::{
+    Event, EventBroadcaster, NullBroadcaster, OutputType, ProcessStatus as EventProcessStatus,
+};
 
 // =============================================================================
 // Internal Types
@@ -154,7 +156,10 @@ pub async fn list(pool: &SqlitePool) -> ServiceResult<Vec<ExecutionProcess>> {
 }
 
 /// List processes for a chat.
-pub async fn list_by_chat(pool: &SqlitePool, chat_id: &str) -> ServiceResult<Vec<ExecutionProcess>> {
+pub async fn list_by_chat(
+    pool: &SqlitePool,
+    chat_id: &str,
+) -> ServiceResult<Vec<ExecutionProcess>> {
     debug!("list_by_chat: fetching processes for chat_id={}", chat_id);
 
     let processes = sqlx::query_as::<_, ExecutionProcess>(
@@ -605,9 +610,17 @@ impl ProcessService {
     }
 
     /// Broadcast a ProcessStatus event.
-    fn broadcast_status(&self, process_id: &str, status: EventProcessStatus, exit_code: Option<i32>) {
+    fn broadcast_status(
+        &self,
+        process_id: &str,
+        status: EventProcessStatus,
+        exit_code: Option<i32>,
+    ) {
         let event = Event::process_status(process_id, status, exit_code);
-        debug!("broadcast_status: broadcasting status event for process_id={} status={:?}", process_id, status);
+        debug!(
+            "broadcast_status: broadcasting status event for process_id={} status={:?}",
+            process_id, status
+        );
         self.broadcaster.broadcast(event);
     }
 
@@ -784,11 +797,10 @@ impl ProcessService {
                 inherit_env: true,
             };
 
-            let child =
-                openflow_process::ProcessSpawner::spawn(config).map_err(|e| {
-                    error!("start: failed to spawn process id={}: {}", process.id, e);
-                    ServiceError::Process(e.to_string())
-                })?;
+            let child = openflow_process::ProcessSpawner::spawn(config).map_err(|e| {
+                error!("start: failed to spawn process id={}: {}", process.id, e);
+                ServiceError::Process(e.to_string())
+            })?;
 
             let os_pid = child.id();
             debug!(
@@ -833,8 +845,13 @@ impl ProcessService {
     /// Spawn a background task to stream PTY output and broadcast events.
     ///
     /// This task reads from the PTY and broadcasts `ProcessOutput` events
-    /// for each line of output. When the process exits, it broadcasts a
+    /// for each chunk of output. When the process exits, it broadcasts a
     /// `ProcessStatus` event with the exit status.
+    ///
+    /// Note: We read raw bytes in chunks rather than lines because:
+    /// - Shell prompts don't end with newlines
+    /// - ANSI escape sequences need to be preserved
+    /// - xterm.js expects raw terminal output
     fn spawn_pty_output_streamer(&self, process_id: &str) {
         let pty_manager = Arc::clone(&self.pty_manager);
         let broadcaster = Arc::clone(&self.broadcaster);
@@ -842,8 +859,8 @@ impl ProcessService {
 
         std::thread::spawn(move || {
             // Get reader from PTY
-            let reader = match pty_manager.try_clone_reader(&process_id) {
-                Ok(r) => std::io::BufReader::new(r),
+            let mut reader = match pty_manager.try_clone_reader(&process_id) {
+                Ok(r) => r,
                 Err(e) => {
                     error!(
                         "spawn_pty_output_streamer: failed to get PTY reader for {}: {}",
@@ -858,13 +875,26 @@ impl ProcessService {
                 process_id
             );
 
-            // Read lines from PTY and broadcast
-            for line in reader.lines() {
-                match line {
-                    Ok(content) => {
+            // Read chunks from PTY and broadcast
+            // Use a buffer size that balances latency vs overhead
+            let mut buffer = [0u8; 4096];
+            loop {
+                match reader.read(&mut buffer) {
+                    Ok(0) => {
+                        // EOF - process exited or PTY closed
+                        debug!(
+                            "spawn_pty_output_streamer: EOF for process_id={}",
+                            process_id
+                        );
+                        break;
+                    }
+                    Ok(n) => {
+                        // Convert bytes to string, handling invalid UTF-8 gracefully
+                        let content = String::from_utf8_lossy(&buffer[..n]).into_owned();
                         if !content.is_empty() {
                             // Broadcast the output (treating PTY output as stdout)
-                            let event = Event::process_output(&process_id, OutputType::Stdout, &content);
+                            let event =
+                                Event::process_output(&process_id, OutputType::Stdout, content);
                             broadcaster.broadcast(event);
                         }
                     }
@@ -879,35 +909,58 @@ impl ProcessService {
                 }
             }
 
-            // Check exit status
-            let exit_status = match pty_manager.try_wait(&process_id) {
-                Ok(Some(status)) => {
-                    let code = if status.success() { Some(0) } else { Some(status.exit_code() as i32) };
-                    let event_status = if status.success() {
-                        EventProcessStatus::Completed
-                    } else {
-                        EventProcessStatus::Failed
-                    };
-                    debug!(
-                        "spawn_pty_output_streamer: process {} exited with status {:?}",
-                        process_id, event_status
-                    );
-                    (event_status, code)
-                }
-                Ok(None) => {
-                    // Process still running but stream closed - likely killed
-                    debug!(
-                        "spawn_pty_output_streamer: stream closed but process {} may still be running",
-                        process_id
-                    );
-                    return;
-                }
-                Err(e) => {
-                    debug!(
-                        "spawn_pty_output_streamer: failed to get exit status for {}: {}",
-                        process_id, e
-                    );
-                    (EventProcessStatus::Failed, None)
+            // Check exit status with retry loop
+            // The PTY EOF may arrive before the process fully exits,
+            // so we need to wait briefly and retry
+            let exit_status = {
+                let mut attempts = 0;
+                const MAX_ATTEMPTS: u32 = 20; // 2 seconds max wait
+                const RETRY_DELAY_MS: u64 = 100;
+
+                loop {
+                    match pty_manager.try_wait(&process_id) {
+                        Ok(Some(status)) => {
+                            let code = if status.success() {
+                                Some(0)
+                            } else {
+                                Some(status.exit_code() as i32)
+                            };
+                            let event_status = if status.success() {
+                                EventProcessStatus::Completed
+                            } else {
+                                EventProcessStatus::Failed
+                            };
+                            debug!(
+                                "spawn_pty_output_streamer: process {} exited with status {:?} (after {} attempts)",
+                                process_id, event_status, attempts
+                            );
+                            break (event_status, code);
+                        }
+                        Ok(None) => {
+                            attempts += 1;
+                            if attempts >= MAX_ATTEMPTS {
+                                // Process still running after max wait - treat as killed
+                                debug!(
+                                    "spawn_pty_output_streamer: stream closed but process {} still running after {} attempts, treating as killed",
+                                    process_id, attempts
+                                );
+                                break (EventProcessStatus::Killed, None);
+                            }
+                            // Wait briefly and retry
+                            debug!(
+                                "spawn_pty_output_streamer: process {} not yet exited, waiting (attempt {})",
+                                process_id, attempts
+                            );
+                            std::thread::sleep(std::time::Duration::from_millis(RETRY_DELAY_MS));
+                        }
+                        Err(e) => {
+                            debug!(
+                                "spawn_pty_output_streamer: failed to get exit status for {}: {}",
+                                process_id, e
+                            );
+                            break (EventProcessStatus::Failed, None);
+                        }
+                    }
                 }
             };
 
@@ -1105,9 +1158,13 @@ mod tests {
         let chat_id = create_test_chat(&pool).await;
 
         let request = test_create_request(&chat_id);
-        let created = create(&pool, request).await.expect("Failed to create process");
+        let created = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
-        let fetched = get(&pool, &created.id).await.expect("Failed to get process");
+        let fetched = get(&pool, &created.id)
+            .await
+            .expect("Failed to get process");
 
         assert_eq!(fetched.id, created.id);
         assert_eq!(fetched.chat_id, chat_id);
@@ -1173,10 +1230,14 @@ mod tests {
 
         // Create processes
         let request1 = test_create_request(&chat_id);
-        let process1 = create(&pool, request1).await.expect("Failed to create process 1");
+        let process1 = create(&pool, request1)
+            .await
+            .expect("Failed to create process 1");
 
         let request2 = test_create_request(&chat_id);
-        let _process2 = create(&pool, request2).await.expect("Failed to create process 2");
+        let _process2 = create(&pool, request2)
+            .await
+            .expect("Failed to create process 2");
 
         // Complete one process
         complete(&pool, &process1.id, 0)
@@ -1198,10 +1259,14 @@ mod tests {
 
         // Create processes
         let request1 = test_create_request(&chat_id);
-        let process1 = create(&pool, request1).await.expect("Failed to create process 1");
+        let process1 = create(&pool, request1)
+            .await
+            .expect("Failed to create process 1");
 
         let request2 = test_create_request(&chat_id);
-        let process2 = create(&pool, request2).await.expect("Failed to create process 2");
+        let process2 = create(&pool, request2)
+            .await
+            .expect("Failed to create process 2");
 
         // Complete one process
         complete(&pool, &process1.id, 0)
@@ -1223,7 +1288,9 @@ mod tests {
         let chat_id = create_test_chat(&pool).await;
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         assert_eq!(process.status, ProcessStatus::Running);
 
@@ -1242,7 +1309,9 @@ mod tests {
         let chat_id = create_test_chat(&pool).await;
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         assert!(process.pid.is_none());
 
@@ -1260,7 +1329,9 @@ mod tests {
 
         let request = CreateProcessRequest::terminal(&chat_id, "test").with_before_commit("abc123");
 
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         assert!(process.after_head_commit.is_none());
         assert_eq!(process.before_head_commit, Some("abc123".to_string()));
@@ -1278,7 +1349,9 @@ mod tests {
         let chat_id = create_test_chat(&pool).await;
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         let completed = complete(&pool, &process.id, 0)
             .await
@@ -1294,7 +1367,9 @@ mod tests {
         let chat_id = create_test_chat(&pool).await;
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         let completed = complete(&pool, &process.id, 1)
             .await
@@ -1310,7 +1385,9 @@ mod tests {
         let chat_id = create_test_chat(&pool).await;
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         let killed = mark_killed(&pool, &process.id)
             .await
@@ -1326,7 +1403,9 @@ mod tests {
         let chat_id = create_test_chat(&pool).await;
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         delete(&pool, &process.id)
             .await
@@ -1342,7 +1421,9 @@ mod tests {
         let chat_id = create_test_chat(&pool).await;
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         let event = create_status_event(&process);
 
@@ -1359,7 +1440,9 @@ mod tests {
         let service = ProcessService::new();
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         // Verify process is running
         assert_eq!(process.status, ProcessStatus::Running);
@@ -1383,7 +1466,9 @@ mod tests {
         let service = ProcessService::new();
 
         let request = test_create_request(&chat_id);
-        let process = create(&pool, request).await.expect("Failed to create process");
+        let process = create(&pool, request)
+            .await
+            .expect("Failed to create process");
 
         // Complete the process first
         complete(&pool, &process.id, 0)
@@ -1426,12 +1511,30 @@ mod tests {
             .expect("Failed to create executor profile");
 
         let reasons = vec![
-            (CreateProcessRequest::setup_script(&chat_id, "setup"), RunReason::Setupscript),
-            (CreateProcessRequest::cleanup_script(&chat_id, "cleanup"), RunReason::Cleanupscript),
-            (CreateProcessRequest::coding_agent(&chat_id, &profile.id, "coding"), RunReason::Codingagent),
-            (CreateProcessRequest::dev_server(&chat_id, "devserver"), RunReason::Devserver),
-            (CreateProcessRequest::terminal(&chat_id, "terminal"), RunReason::Terminal),
-            (CreateProcessRequest::verification(&chat_id, "verify"), RunReason::Verification),
+            (
+                CreateProcessRequest::setup_script(&chat_id, "setup"),
+                RunReason::Setupscript,
+            ),
+            (
+                CreateProcessRequest::cleanup_script(&chat_id, "cleanup"),
+                RunReason::Cleanupscript,
+            ),
+            (
+                CreateProcessRequest::coding_agent(&chat_id, &profile.id, "coding"),
+                RunReason::Codingagent,
+            ),
+            (
+                CreateProcessRequest::dev_server(&chat_id, "devserver"),
+                RunReason::Devserver,
+            ),
+            (
+                CreateProcessRequest::terminal(&chat_id, "terminal"),
+                RunReason::Terminal,
+            ),
+            (
+                CreateProcessRequest::verification(&chat_id, "verify"),
+                RunReason::Verification,
+            ),
         ];
 
         for (request, expected_reason) in reasons {

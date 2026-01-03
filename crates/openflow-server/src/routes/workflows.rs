@@ -245,9 +245,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_builtin_templates() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -275,9 +273,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_builtin_template_feature() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -307,9 +303,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_builtin_template_bugfix() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -338,9 +332,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_builtin_template_refactor() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -369,9 +361,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_builtin_template_not_found() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -396,9 +386,7 @@ mod tests {
     #[tokio::test]
     async fn test_list_templates_default() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         // Without folder param, should return built-in templates
         let response = app
@@ -424,9 +412,7 @@ mod tests {
     #[tokio::test]
     async fn test_list_templates_from_folder() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         // Create a temp folder with a workflow file
         let temp_dir = TempDir::new().unwrap();
@@ -450,12 +436,7 @@ Do the second thing.
             temp_dir.path().to_str().unwrap()
         );
         let response = app
-            .oneshot(
-                Request::builder()
-                    .uri(&uri)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri(&uri).body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -475,9 +456,7 @@ Do the second thing.
     #[tokio::test]
     async fn test_list_templates_empty_folder() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let temp_dir = TempDir::new().unwrap();
         let uri = format!(
@@ -486,12 +465,7 @@ Do the second thing.
         );
 
         let response = app
-            .oneshot(
-                Request::builder()
-                    .uri(&uri)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri(&uri).body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -508,9 +482,7 @@ Do the second thing.
     #[tokio::test]
     async fn test_get_template_builtin() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -536,9 +508,7 @@ Do the second thing.
     #[tokio::test]
     async fn test_get_template_file_based() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         // Create a temp folder with a workflow file
         let temp_dir = TempDir::new().unwrap();
@@ -557,12 +527,7 @@ Test step.
             temp_dir.path().to_str().unwrap()
         );
         let response = app
-            .oneshot(
-                Request::builder()
-                    .uri(&uri)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri(&uri).body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -582,9 +547,7 @@ Test step.
     #[tokio::test]
     async fn test_get_template_file_based_not_found() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let temp_dir = TempDir::new().unwrap();
         let uri = format!(
@@ -593,12 +556,7 @@ Test step.
         );
 
         let response = app
-            .oneshot(
-                Request::builder()
-                    .uri(&uri)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri(&uri).body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -615,9 +573,7 @@ Test step.
     #[tokio::test]
     async fn test_parse_content() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let content = r#"
 # Workflow
@@ -668,9 +624,7 @@ Third step description.
     #[tokio::test]
     async fn test_parse_content_empty() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -697,9 +651,7 @@ Third step description.
     #[tokio::test]
     async fn test_parse_steps() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -732,9 +684,7 @@ Third step description.
     #[tokio::test]
     async fn test_substitute_variables() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let mut variables = HashMap::new();
         variables.insert("name".to_string(), "Alice".to_string());
@@ -770,9 +720,7 @@ Third step description.
     #[tokio::test]
     async fn test_substitute_variables_missing() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let request = SubstituteVariablesRequest {
             content: "Hello {@name}!".to_string(),
@@ -805,9 +753,7 @@ Third step description.
     #[tokio::test]
     async fn test_substitute_with_context() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let request = SubstituteWithContextRequest {
             content: "Save to {@artifacts_path}/spec.md in {@project_root}".to_string(),
@@ -843,9 +789,7 @@ Third step description.
     #[tokio::test]
     async fn test_substitute_with_context_all_variables() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let request = SubstituteWithContextRequest {
             content: "{@artifacts_path} {@project_root} {@worktree_path} {@task_id} {@task_title} {@project_name}".to_string(),
@@ -884,9 +828,7 @@ Third step description.
     #[tokio::test]
     async fn test_substitute_with_context_partial() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let request = SubstituteWithContextRequest {
             content: "{@artifacts_path} and {@task_id}".to_string(),
@@ -922,9 +864,7 @@ Third step description.
     #[tokio::test]
     async fn test_builtin_template_step_details() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -960,9 +900,7 @@ Third step description.
     #[tokio::test]
     async fn test_template_has_artifacts_path_variable() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(
@@ -989,9 +927,7 @@ Third step description.
     #[tokio::test]
     async fn test_list_templates_nonexistent_folder() {
         let state = test_state().await;
-        let app = Router::new()
-            .nest("/workflows", routes())
-            .with_state(state);
+        let app = Router::new().nest("/workflows", routes()).with_state(state);
 
         let response = app
             .oneshot(

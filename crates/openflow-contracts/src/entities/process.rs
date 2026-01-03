@@ -38,7 +38,6 @@ pub enum ProcessStatus {
     Killed,
 }
 
-
 impl std::fmt::Display for ProcessStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -143,7 +142,6 @@ pub enum RunReason {
     /// Verification/test script
     Verification,
 }
-
 
 impl std::fmt::Display for RunReason {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -252,7 +250,6 @@ pub enum OutputType {
     /// Standard error stream
     Stderr,
 }
-
 
 impl std::fmt::Display for OutputType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

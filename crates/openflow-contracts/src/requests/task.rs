@@ -268,13 +268,10 @@ mod tests {
 
     #[test]
     fn test_create_task_request_builder() {
-        let request = CreateTaskRequest::new(
-            "660e8400-e29b-41d4-a716-446655440001",
-            "Test Task",
-        )
-        .with_description("A description")
-        .with_workflow(".openflow/workflows/feature.md")
-        .with_base_branch("develop");
+        let request = CreateTaskRequest::new("660e8400-e29b-41d4-a716-446655440001", "Test Task")
+            .with_description("A description")
+            .with_workflow(".openflow/workflows/feature.md")
+            .with_base_branch("develop");
 
         assert!(request.validate().is_ok());
         assert_eq!(request.description, Some("A description".to_string()));
