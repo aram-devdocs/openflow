@@ -126,9 +126,9 @@ pub async fn list(pool: &SqlitePool, task_id: &str) -> ServiceResult<Vec<Artifac
                 let modified_at = metadata
                     .modified()
                     .ok()
-                    .and_then(|t| {
+                    .map(|t| {
                         let datetime: DateTime<Utc> = t.into();
-                        Some(datetime.to_rfc3339())
+                        datetime.to_rfc3339()
                     })
                     .unwrap_or_else(|| Utc::now().to_rfc3339());
 
