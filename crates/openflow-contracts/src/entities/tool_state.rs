@@ -214,6 +214,7 @@ impl ToolState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::events::ToolStateEvent;
 
     #[test]
     fn test_tool_status_display() {
@@ -334,7 +335,7 @@ mod tests {
         let event = ToolStateEvent::new("process-456", state.clone());
 
         assert_eq!(event.process_id, "process-456");
-        assert_eq!(event.tool.id, "tool-123");
+        assert_eq!(event.tool_state.id, "tool-123");
 
         let json = serde_json::to_string(&event).unwrap();
         assert!(json.contains("\"processId\":\"process-456\""));

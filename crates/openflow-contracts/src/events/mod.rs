@@ -43,6 +43,7 @@
 //! - **ProcessOutputEvent**: Streaming output from running processes
 //! - **ProcessStatusEvent**: Process lifecycle changes (started, completed, failed)
 //! - **DataChangedEvent**: CRUD operations on entities (project, task, chat, etc.)
+//! - **UnifiedAgentEvent**: Provider-agnostic events from agent sessions
 //!
 //! # Channels
 //!
@@ -50,10 +51,19 @@
 //! - `process-output-{process_id}`: Output for a specific process
 //! - `process-status-{process_id}`: Status changes for a specific process
 //! - `data-changed`: All data changes (entity type in payload)
+//! - `agent-event-{session_id}`: Agent events for a specific session
 //! - `*`: Wildcard subscription (all events)
+
+pub mod agent_event;
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
+
+// Re-export agent event types
+pub use agent_event::{
+    AgentMessageRole, AgentStats, CompletionStatus, ContentBlock, PermissionRequest,
+    ToolResultStatus, UnifiedAgentEvent,
+};
 
 // Re-export process events from entities
 pub use crate::entities::process::{
@@ -82,6 +92,10 @@ pub const CHANNEL_CLAUDE_EVENT_FMT: &str = "claude-event-{}";
 /// Format string for tool state channel
 /// Use: format!(CHANNEL_TOOL_STATE_FMT, process_id)
 pub const CHANNEL_TOOL_STATE_FMT: &str = "tool-state-{}";
+
+/// Format string for agent event channel
+/// Use: format!(CHANNEL_AGENT_EVENT_FMT, session_id)
+pub const CHANNEL_AGENT_EVENT_FMT: &str = "agent-event-{}";
 
 /// Wildcard channel (subscribe to all events)
 pub const CHANNEL_WILDCARD: &str = "*";
@@ -191,6 +205,32 @@ pub fn parse_claude_event_channel(channel: &str) -> Option<String> {
 pub fn parse_tool_state_channel(channel: &str) -> Option<String> {
     channel
         .strip_prefix("tool-state-")
+        .map(|s| s.to_string())
+}
+
+/// Generate the channel name for agent events
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::agent_event_channel;
+/// let channel = agent_event_channel("session-abc-123");
+/// assert_eq!(channel, "agent-event-session-abc-123");
+/// ```
+pub fn agent_event_channel(session_id: &str) -> String {
+    format!("agent-event-{}", session_id)
+}
+
+/// Parse a session ID from an agent event channel name
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::parse_agent_event_channel;
+/// let id = parse_agent_event_channel("agent-event-session-abc-123");
+/// assert_eq!(id, Some("session-abc-123".to_string()));
+/// ```
+pub fn parse_agent_event_channel(channel: &str) -> Option<String> {
+    channel
+        .strip_prefix("agent-event-")
         .map(|s| s.to_string())
 }
 
@@ -936,6 +976,24 @@ mod tests {
         );
         assert_eq!(parse_process_status_channel("process-output-abc-123"), None);
         assert_eq!(parse_process_status_channel("invalid"), None);
+    }
+
+    #[test]
+    fn test_agent_event_channel() {
+        assert_eq!(
+            agent_event_channel("session-abc-123"),
+            "agent-event-session-abc-123"
+        );
+    }
+
+    #[test]
+    fn test_parse_agent_event_channel() {
+        assert_eq!(
+            parse_agent_event_channel("agent-event-session-abc-123"),
+            Some("session-abc-123".to_string())
+        );
+        assert_eq!(parse_agent_event_channel("process-output-abc-123"), None);
+        assert_eq!(parse_agent_event_channel("invalid"), None);
     }
 
     // =========================================================================

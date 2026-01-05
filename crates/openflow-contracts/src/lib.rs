@@ -94,14 +94,17 @@ pub use requests::{
 };
 // Event types
 pub use events::{
-    parse_process_output_channel, parse_process_status_channel, process_output_channel,
-    process_status_channel,
+    agent_event_channel, parse_agent_event_channel, parse_process_output_channel,
+    parse_process_status_channel, process_output_channel, process_status_channel,
 };
 pub use events::{
-    DataAction, DataChangedEvent, EntityType, Event, WsClientMessage, WsServerMessage,
+    AgentMessageRole, AgentStats, CompletionStatus, ContentBlock, DataAction, DataChangedEvent,
+    EntityType, Event, PermissionRequest, ToolResultStatus, UnifiedAgentEvent, WsClientMessage,
+    WsServerMessage,
 };
 pub use events::{
-    CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT, CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
+    CHANNEL_AGENT_EVENT_FMT, CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT,
+    CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
 };
 // Response types
 pub use responses::{AuthStatusResponse, CliInstalledResponse};
