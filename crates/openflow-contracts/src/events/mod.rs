@@ -25,13 +25,16 @@
 //! │         │─────────────────────▶│                      │                 │
 //! │         │                      │                      │                 │
 //! │         │                      │ Broadcast:           │                 │
-//! │         │                      │ DataChangedEvent     │                 │
-//! │         │                      │ {project, created}   │                 │
+//! │         │                      │ EventEnvelope {      │                 │
+//! │         │                      │   session_id, seq,   │                 │
+//! │         │                      │   payload: {...}     │                 │
+//! │         │                      │ }                    │                 │
 //! │         │◀─────────────────────│─────────────────────▶│                 │
 //! │         │    WebSocket         │     Tauri Event      │                 │
 //! │         │                      │                      │                 │
-//! │         │  Invalidate cache    │                      │  Invalidate     │
-//! │         │  Update UI           │                      │  cache, UI      │
+//! │         │  Check sequence      │                      │  Check sequence │
+//! │         │  Deduplicate         │                      │  Deduplicate    │
+//! │         │  Update cache        │                      │  Update cache   │
 //! │         │                      │                      │                 │
 //! │  └──────┴──────┘      └────────┴────────┘      └──────┴──────┘          │
 //! │                                                                          │
@@ -44,6 +47,7 @@
 //! - **ProcessStatusEvent**: Process lifecycle changes (started, completed, failed)
 //! - **DataChangedEvent**: CRUD operations on entities (project, task, chat, etc.)
 //! - **UnifiedAgentEvent**: Provider-agnostic events from agent sessions
+//! - **EventEnvelope**: Wrapper for all events with sequence and timestamp metadata
 //!
 //! # Channels
 //!
@@ -52,9 +56,13 @@
 //! - `process-status-{process_id}`: Status changes for a specific process
 //! - `data-changed`: All data changes (entity type in payload)
 //! - `agent-event-{session_id}`: Agent events for a specific session
+//! - `task-progress-{task_id}`: Task progress events
+//! - `step-progress-{step_id}`: Step progress events
+//! - `permission-request-{session_id}`: Permission request events
 //! - `*`: Wildcard subscription (all events)
 
 pub mod agent_event;
+pub mod envelope;
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -63,6 +71,14 @@ use typeshare::typeshare;
 pub use agent_event::{
     AgentMessageRole, AgentStats, CompletionStatus, ContentBlock, PermissionRequest,
     ToolResultStatus, UnifiedAgentEvent,
+};
+
+// Re-export envelope types
+pub use envelope::{
+    parse_permission_request_channel, parse_step_progress_channel, parse_task_progress_channel,
+    permission_request_channel, step_progress_channel, task_progress_channel, AgentEventRecord,
+    EventEnvelope, EventType, CHANNEL_PERMISSION_REQUEST_FMT, CHANNEL_STEP_PROGRESS_FMT,
+    CHANNEL_TASK_PROGRESS_FMT,
 };
 
 // Re-export process events from entities

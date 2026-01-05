@@ -106,6 +106,13 @@ pub use events::{
     CHANNEL_AGENT_EVENT_FMT, CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT,
     CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
 };
+// Event envelope types (for real-time delivery with ordering/deduplication)
+pub use events::{
+    parse_permission_request_channel, parse_step_progress_channel, parse_task_progress_channel,
+    permission_request_channel, step_progress_channel, task_progress_channel, AgentEventRecord,
+    EventEnvelope, EventType, CHANNEL_PERMISSION_REQUEST_FMT, CHANNEL_STEP_PROGRESS_FMT,
+    CHANNEL_TASK_PROGRESS_FMT,
+};
 // Response types
 pub use responses::{AuthStatusResponse, CliInstalledResponse};
 // Endpoint metadata
