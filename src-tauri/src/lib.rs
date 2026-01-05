@@ -215,6 +215,26 @@ pub fn run() {
             commands::unarchive_task,
             commands::delete_task,
             commands::duplicate_task,
+            // Task execution commands
+            commands::get_task_with_steps,
+            commands::start_task,
+            commands::pause_task,
+            commands::resume_task,
+            commands::cancel_task,
+            commands::is_task_running,
+            commands::running_task_count,
+            commands::list_running_tasks,
+            // Task step commands
+            commands::create_task_step,
+            commands::get_task_step,
+            commands::list_task_steps,
+            commands::delete_task_step,
+            commands::delete_all_task_steps,
+            // Task event commands
+            commands::get_task_step_events,
+            // Task permission commands
+            commands::respond_to_task_permission,
+            commands::get_task_pending_permission,
             // Chat commands
             commands::list_chats,
             commands::list_standalone_chats,

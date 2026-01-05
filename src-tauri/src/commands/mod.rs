@@ -40,6 +40,7 @@ use tokio::sync::Mutex;
 
 use openflow_core::events::EventBroadcaster;
 use openflow_core::services::process::ProcessService;
+use openflow_core::services::{AgentOrchestrator, TaskExecutor};
 
 /// Application state shared across all Tauri commands.
 ///
@@ -61,6 +62,10 @@ pub struct AppState {
     pub process_service: Arc<ProcessService>,
     /// Event broadcaster for real-time updates to frontend.
     pub broadcaster: Arc<dyn EventBroadcaster>,
+    /// Agent orchestrator for managing agent processes.
+    pub agent_orchestrator: Arc<AgentOrchestrator>,
+    /// Task executor for autonomous task execution.
+    pub task_executor: Arc<TaskExecutor>,
 }
 
 impl AppState {
@@ -72,12 +77,27 @@ impl AppState {
     /// The broadcaster is passed to the ProcessService so it can emit
     /// real-time events for process output and status changes.
     pub fn new(pool: SqlitePool, broadcaster: Arc<dyn EventBroadcaster>) -> Self {
+        // Create agent orchestrator (needs pool and broadcaster)
+        let agent_orchestrator = Arc::new(AgentOrchestrator::new(
+            pool.clone(),
+            Arc::clone(&broadcaster),
+        ));
+
+        // Create task executor (needs pool, agent orchestrator, and broadcaster)
+        let task_executor = Arc::new(TaskExecutor::new(
+            pool.clone(),
+            Arc::clone(&agent_orchestrator),
+            Arc::clone(&broadcaster),
+        ));
+
         Self {
             db: Arc::new(Mutex::new(pool.clone())),
             pool,
             // Pass broadcaster to ProcessService so it can emit output/status events
             process_service: Arc::new(ProcessService::with_broadcaster(Arc::clone(&broadcaster))),
             broadcaster,
+            agent_orchestrator,
+            task_executor,
         }
     }
 
@@ -94,6 +114,16 @@ impl AppState {
     /// Get a clone of the broadcaster for sharing with the HTTP server.
     pub fn get_broadcaster(&self) -> Arc<dyn EventBroadcaster> {
         Arc::clone(&self.broadcaster)
+    }
+
+    /// Get a clone of the agent orchestrator.
+    pub fn get_agent_orchestrator(&self) -> Arc<AgentOrchestrator> {
+        Arc::clone(&self.agent_orchestrator)
+    }
+
+    /// Get a clone of the task executor.
+    pub fn get_task_executor(&self) -> Arc<TaskExecutor> {
+        Arc::clone(&self.task_executor)
     }
 }
 
