@@ -43,7 +43,7 @@ pub use task::{
     StepStatus, Task, TaskStatus, TaskStep, TaskStepSummary, TaskSummary, TaskWithChatCount,
     TaskWithChats, TaskWithSteps,
 };
-pub use tool_state::{ToolState, ToolStatus};
+pub use tool_state::{ToolState, ToolStateSummary, ToolStatus};
 pub use workflow::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,

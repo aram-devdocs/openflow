@@ -61,6 +61,7 @@ pub use entities::{
     StepStatus, Task, TaskStatus, TaskStep, TaskStepSummary, TaskSummary, TaskWithChatCount,
     TaskWithChats, TaskWithSteps,
 };
+pub use entities::{ToolState, ToolStateSummary, ToolStatus};
 pub use entities::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,

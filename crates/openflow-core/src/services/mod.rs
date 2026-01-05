@@ -25,6 +25,7 @@
 //! - **git**: Git operations (worktree, diff, commits)
 //! - **github**: GitHub integration (PR creation)
 //! - **terminal**: Terminal session management
+//! - **tool_state**: Tool execution lifecycle tracking
 //! - **search**: Full-text search operations
 //! - **settings**: Application settings
 //! - **workflow**: Workflow template parsing and management
@@ -48,6 +49,7 @@ pub mod search;
 pub mod settings;
 pub mod task;
 pub mod terminal;
+pub mod tool_state;
 pub mod workflow;
 
 pub use error::{ServiceError, ServiceResult};
