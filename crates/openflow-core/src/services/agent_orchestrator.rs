@@ -904,6 +904,156 @@ impl AgentOrchestrator {
             })
         }
     }
+
+    /// Finalize a session manually.
+    ///
+    /// This method is useful for:
+    /// - Crash recovery: Finalizing sessions that were running when the app crashed
+    /// - Manual cleanup: Forcing finalization when the monitor task failed
+    /// - Testing: Simulating session completion
+    ///
+    /// This performs all the same cleanup as the session monitor:
+    /// 1. Updates session status in the database
+    /// 2. Cancels pending permissions
+    /// 3. Fails pending tools
+    /// 4. Logs to audit trail
+    /// 5. Broadcasts completion event
+    /// 6. Cleans up active session tracking
+    ///
+    /// # Arguments
+    /// * `session_id` - Session ID to finalize
+    /// * `exit_code` - Exit code to use (None means failed/unknown)
+    ///
+    /// # Returns
+    /// The finalized session.
+    ///
+    /// # Errors
+    /// - Session not found in database
+    /// - Database update failures
+    pub async fn finalize_session(
+        &self,
+        session_id: &str,
+        exit_code: Option<i32>,
+    ) -> ServiceResult<AgentSession> {
+        info!(
+            "Finalizing session manually: id={}, exit_code={:?}",
+            session_id, exit_code
+        );
+
+        // Determine status based on exit code
+        let status = match exit_code {
+            Some(0) => SessionStatus::Completed,
+            Some(_) => SessionStatus::Failed,
+            None => SessionStatus::Failed,
+        };
+
+        // Update session in database
+        let session = agent_session::update_status(&self.pool, session_id, status.clone(), exit_code).await?;
+
+        // Cancel pending permissions
+        if let Err(e) = agent_session::cancel_pending_permissions(&self.pool, session_id).await {
+            warn!("Failed to cancel pending permissions during finalization: {}", e);
+        }
+
+        // Fail pending tools
+        if let Err(e) = tool_state::fail_pending(&self.pool, session_id).await {
+            warn!("Failed to fail pending tools during finalization: {}", e);
+        }
+
+        // Audit log
+        let _ = audit::log_session(
+            &self.pool,
+            session_id,
+            if status == SessionStatus::Completed {
+                AuditAction::Completed
+            } else {
+                AuditAction::Failed
+            },
+            exit_code.map(|c| serde_json::json!({"exit_code": c, "manual_finalization": true})),
+        )
+        .await;
+
+        // Broadcast completion
+        self.broadcaster.broadcast(Event::process_status(
+            session_id,
+            if status == SessionStatus::Completed {
+                crate::events::ProcessStatus::Completed
+            } else {
+                crate::events::ProcessStatus::Failed
+            },
+            exit_code,
+        ));
+
+        // Cleanup from active sessions (if it was tracked)
+        {
+            let mut sessions = self.active_sessions.write().await;
+            sessions.remove(session_id);
+        }
+        {
+            let mut sinks = self.output_sinks.write().await;
+            sinks.remove(session_id);
+        }
+
+        // Try to close the process in executor (may already be closed)
+        if let Err(e) = self.executor.close(session_id).await {
+            debug!("Process already closed or not found: {}", e);
+        }
+
+        info!(
+            "Session finalized manually: id={}, status={:?}, exit_code={:?}",
+            session_id, status, exit_code
+        );
+
+        Ok(session)
+    }
+
+    /// Recover stale sessions on startup.
+    ///
+    /// This method should be called during application startup to clean up
+    /// any sessions that were left in a running state from a previous crash.
+    ///
+    /// # Returns
+    /// The number of sessions recovered.
+    ///
+    /// # Errors
+    /// - Database query failures
+    pub async fn recover_stale_sessions(&self) -> ServiceResult<usize> {
+        info!("Checking for stale sessions to recover...");
+
+        // Find all sessions that are still marked as running
+        let running_sessions = agent_session::list_running(&self.pool).await?;
+
+        let mut recovered_count = 0;
+        for session in running_sessions {
+            // Check if this session is actually active in memory
+            let is_active = {
+                let sessions = self.active_sessions.read().await;
+                sessions.contains_key(&session.id)
+            };
+
+            if !is_active {
+                // Session is marked running but not active - it's stale
+                warn!(
+                    "Recovering stale session: id={}, provider={}",
+                    session.id, session.provider_id
+                );
+
+                if let Err(e) = self.finalize_session(&session.id, None).await {
+                    error!("Failed to recover session {}: {}", session.id, e);
+                } else {
+                    recovered_count += 1;
+                }
+            }
+        }
+
+        if recovered_count > 0 {
+            info!("Recovered {} stale sessions", recovered_count);
+        } else {
+            debug!("No stale sessions found");
+        }
+
+        Ok(recovered_count)
+    }
 }
 
 // AgentOrchestrator is Send + Sync by design
@@ -1344,6 +1494,360 @@ mod tests {
                     assert_eq!(killed_session.status, SessionStatus::Killed);
                 }
             }
+        }
+    }
+
+    // =========================================================================
+    // Session Finalization Tests
+    // =========================================================================
+
+    mod finalization_tests {
+        use super::*;
+        use crate::services::tool_state;
+        use openflow_contracts::PermissionStatus;
+
+        /// Test that finalize_session updates the session status correctly.
+        #[tokio::test]
+        async fn test_finalize_session_with_success_exit_code() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            // Create a session directly in the database
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "claude-code"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Session should be running initially
+            assert_eq!(session.status, SessionStatus::Running);
+
+            // Finalize with exit code 0 (success)
+            let finalized = fixture
+                .orchestrator
+                .finalize_session(&session.id, Some(0))
+                .await
+                .expect("Failed to finalize session");
+
+            // Session should now be completed
+            assert_eq!(finalized.status, SessionStatus::Completed);
+            assert_eq!(finalized.exit_code, Some(0));
+            assert!(finalized.ended_at.is_some());
+        }
+
+        /// Test that finalize_session marks session as failed with non-zero exit code.
+        #[tokio::test]
+        async fn test_finalize_session_with_failure_exit_code() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "gemini-cli"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Finalize with exit code 1 (failure)
+            let finalized = fixture
+                .orchestrator
+                .finalize_session(&session.id, Some(1))
+                .await
+                .expect("Failed to finalize session");
+
+            assert_eq!(finalized.status, SessionStatus::Failed);
+            assert_eq!(finalized.exit_code, Some(1));
+        }
+
+        /// Test that finalize_session marks session as failed with no exit code.
+        #[tokio::test]
+        async fn test_finalize_session_with_no_exit_code() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "codex-cli"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Finalize with None (unknown/crashed)
+            let finalized = fixture
+                .orchestrator
+                .finalize_session(&session.id, None)
+                .await
+                .expect("Failed to finalize session");
+
+            assert_eq!(finalized.status, SessionStatus::Failed);
+            assert!(finalized.exit_code.is_none());
+        }
+
+        /// Test that finalize_session cancels pending permissions.
+        #[tokio::test]
+        async fn test_finalize_session_cancels_pending_permissions() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "claude-code"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Create a pending permission
+            let permission = agent_session::create_permission(
+                &fixture.pool,
+                &session.id,
+                "Write",
+                "Create a new file",
+                Some("/src/test.rs"),
+            )
+            .await
+            .expect("Failed to create permission");
+
+            assert_eq!(permission.status, PermissionStatus::Pending);
+
+            // Finalize the session
+            fixture
+                .orchestrator
+                .finalize_session(&session.id, Some(0))
+                .await
+                .expect("Failed to finalize session");
+
+            // Check that the permission was cancelled
+            let pending = agent_session::get_pending_permission(&fixture.pool, &session.id)
+                .await
+                .expect("Failed to get pending permission");
+
+            assert!(
+                pending.is_none(),
+                "Pending permission should have been cancelled"
+            );
+        }
+
+        /// Test that finalize_session fails pending tools.
+        #[tokio::test]
+        async fn test_finalize_session_fails_pending_tools() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "claude-code"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Create a running tool state
+            tool_state::create(
+                &fixture.pool,
+                &session.id,
+                "tool-1",
+                "Bash",
+                Some(&serde_json::json!({"command": "echo hello"})),
+            )
+            .await
+            .expect("Failed to create tool state");
+
+            // Verify it's running
+            let pending = tool_state::get_pending(&fixture.pool, &session.id)
+                .await
+                .expect("Failed to get pending tools");
+            assert_eq!(pending.len(), 1);
+
+            // Finalize the session
+            fixture
+                .orchestrator
+                .finalize_session(&session.id, Some(0))
+                .await
+                .expect("Failed to finalize session");
+
+            // Check that the tool was marked as failed
+            let pending = tool_state::get_pending(&fixture.pool, &session.id)
+                .await
+                .expect("Failed to get pending tools");
+
+            assert!(pending.is_empty(), "Pending tools should have been failed");
+        }
+
+        /// Test that finalize_session creates audit log.
+        #[tokio::test]
+        async fn test_finalize_session_creates_audit_log() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "claude-code"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Finalize the session
+            fixture
+                .orchestrator
+                .finalize_session(&session.id, Some(0))
+                .await
+                .expect("Failed to finalize session");
+
+            // Check audit log was created
+            use crate::services::audit;
+            use openflow_contracts::AuditEntityType;
+
+            let logs = audit::get_for_entity(&fixture.pool, AuditEntityType::Session, &session.id)
+                .await
+                .expect("Failed to get audit logs");
+
+            assert!(
+                logs.iter().any(|l| l.action.to_string().to_lowercase().contains("completed")),
+                "Audit log should contain completed action"
+            );
+        }
+
+        /// Test that finalize_session removes from active sessions.
+        #[tokio::test]
+        async fn test_finalize_session_removes_from_active() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "mock"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Manually add to active sessions to simulate an active session
+            {
+                let mut sessions = fixture.orchestrator.active_sessions.write().await;
+                sessions.insert(
+                    session.id.clone(),
+                    ActiveSession::new(session.clone(), "mock".to_string()),
+                );
+            }
+
+            assert!(fixture.orchestrator.is_active(&session.id).await);
+
+            // Finalize
+            fixture
+                .orchestrator
+                .finalize_session(&session.id, Some(0))
+                .await
+                .expect("Failed to finalize session");
+
+            // Should no longer be active
+            assert!(!fixture.orchestrator.is_active(&session.id).await);
+        }
+
+        /// Test that finalize_session handles nonexistent session gracefully.
+        #[tokio::test]
+        async fn test_finalize_session_not_found() {
+            let fixture = setup().await;
+
+            let result = fixture
+                .orchestrator
+                .finalize_session("nonexistent-session", Some(0))
+                .await;
+
+            assert!(result.is_err());
+            match result.unwrap_err() {
+                ServiceError::NotFound { entity, .. } => {
+                    assert_eq!(entity, "AgentSession");
+                }
+                other => panic!("Expected NotFound error, got: {:?}", other),
+            }
+        }
+
+        /// Test recover_stale_sessions with no stale sessions.
+        #[tokio::test]
+        async fn test_recover_no_stale_sessions() {
+            let fixture = setup().await;
+
+            let count = fixture
+                .orchestrator
+                .recover_stale_sessions()
+                .await
+                .expect("Failed to recover stale sessions");
+
+            assert_eq!(count, 0);
+        }
+
+        /// Test recover_stale_sessions finds and recovers stale sessions.
+        #[tokio::test]
+        async fn test_recover_stale_sessions() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            // Create a session that is marked as running in DB but not in active_sessions
+            // (simulates a crash scenario)
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "claude-code"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Verify it's running
+            assert_eq!(session.status, SessionStatus::Running);
+
+            // Recover stale sessions
+            let count = fixture
+                .orchestrator
+                .recover_stale_sessions()
+                .await
+                .expect("Failed to recover stale sessions");
+
+            assert_eq!(count, 1);
+
+            // Verify the session is now finalized
+            let recovered = agent_session::get(&fixture.pool, &session.id)
+                .await
+                .expect("Failed to get session");
+
+            assert_eq!(recovered.status, SessionStatus::Failed);
+        }
+
+        /// Test that active sessions are not recovered.
+        #[tokio::test]
+        async fn test_recover_skips_active_sessions() {
+            let fixture = setup().await;
+            let process_id = create_test_process(&fixture.pool).await;
+
+            // Create a session
+            let session = agent_session::create(
+                &fixture.pool,
+                agent_session::CreateSessionRequest::new(&process_id, "mock"),
+            )
+            .await
+            .expect("Failed to create session");
+
+            // Add to active sessions (simulates a legitimately running session)
+            {
+                let mut sessions = fixture.orchestrator.active_sessions.write().await;
+                sessions.insert(
+                    session.id.clone(),
+                    ActiveSession::new(session.clone(), "mock".to_string()),
+                );
+            }
+
+            // Recover should skip this session
+            let count = fixture
+                .orchestrator
+                .recover_stale_sessions()
+                .await
+                .expect("Failed to recover stale sessions");
+
+            assert_eq!(count, 0);
+
+            // Session should still be running
+            let still_running = agent_session::get(&fixture.pool, &session.id)
+                .await
+                .expect("Failed to get session");
+
+            assert_eq!(still_running.status, SessionStatus::Running);
         }
     }
 }
