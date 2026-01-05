@@ -347,7 +347,7 @@ mod tests {
         let request = UpdateTaskRequest {
             title: Some("Updated Title".to_string()),
             description: Some("Updated description".to_string()),
-            status: Some(TaskStatus::Inprogress),
+            status: Some(TaskStatus::Running),
             auto_start_next_step: Some(false),
             default_executor_profile_id: Some("exec-123".to_string()),
         };
@@ -376,11 +376,11 @@ mod tests {
 
     #[test]
     fn test_update_task_request_with_status() {
-        let request = UpdateTaskRequest::with_status(TaskStatus::Done);
+        let request = UpdateTaskRequest::with_status(TaskStatus::Completed);
 
         assert!(request.validate().is_ok());
         assert!(request.has_updates());
-        assert_eq!(request.status, Some(TaskStatus::Done));
+        assert_eq!(request.status, Some(TaskStatus::Completed));
         assert!(request.title.is_none());
     }
 
@@ -429,7 +429,7 @@ mod tests {
         .has_updates());
 
         assert!(UpdateTaskRequest {
-            status: Some(TaskStatus::Done),
+            status: Some(TaskStatus::Completed),
             ..Default::default()
         }
         .has_updates());
@@ -451,7 +451,7 @@ mod tests {
     fn test_update_task_request_serialization() {
         let request = UpdateTaskRequest {
             title: Some("Updated Title".to_string()),
-            status: Some(TaskStatus::Inprogress),
+            status: Some(TaskStatus::Running),
             ..Default::default()
         };
 
@@ -459,7 +459,7 @@ mod tests {
 
         // Verify camelCase and status serialization
         assert!(json.contains("\"title\":\"Updated Title\""));
-        assert!(json.contains("\"status\":\"inprogress\""));
+        assert!(json.contains("\"status\":\"running\""));
 
         // Round-trip
         let deserialized: UpdateTaskRequest = serde_json::from_str(&json).unwrap();
@@ -481,17 +481,25 @@ mod tests {
 
     #[test]
     fn test_update_task_request_status_deserialization() {
-        // Test status variants in JSON
-        let json = r#"{"status": "inprogress"}"#;
+        // Test status variants in JSON (new status names)
+        let json = r#"{"status": "running"}"#;
         let request: UpdateTaskRequest = serde_json::from_str(json).unwrap();
-        assert_eq!(request.status, Some(TaskStatus::Inprogress));
+        assert_eq!(request.status, Some(TaskStatus::Running));
 
-        let json = r#"{"status": "done"}"#;
+        let json = r#"{"status": "completed"}"#;
         let request: UpdateTaskRequest = serde_json::from_str(json).unwrap();
-        assert_eq!(request.status, Some(TaskStatus::Done));
+        assert_eq!(request.status, Some(TaskStatus::Completed));
 
         let json = r#"{"status": "cancelled"}"#;
         let request: UpdateTaskRequest = serde_json::from_str(json).unwrap();
         assert_eq!(request.status, Some(TaskStatus::Cancelled));
+
+        let json = r#"{"status": "paused"}"#;
+        let request: UpdateTaskRequest = serde_json::from_str(json).unwrap();
+        assert_eq!(request.status, Some(TaskStatus::Paused));
+
+        let json = r#"{"status": "failed"}"#;
+        let request: UpdateTaskRequest = serde_json::from_str(json).unwrap();
+        assert_eq!(request.status, Some(TaskStatus::Failed));
     }
 }

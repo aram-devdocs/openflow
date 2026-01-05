@@ -53,7 +53,10 @@ pub use entities::{Message, MessageRole, MessageSummary};
 pub use entities::{Project, ProjectSummary, ProjectWithStats};
 pub use entities::{SearchResult, SearchResultType};
 pub use entities::{Setting, SettingsMap};
-pub use entities::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
+pub use entities::{
+    StepStatus, Task, TaskStatus, TaskStep, TaskStepSummary, TaskSummary, TaskWithChatCount,
+    TaskWithChats, TaskWithSteps,
+};
 pub use entities::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,

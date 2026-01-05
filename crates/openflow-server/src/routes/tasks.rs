@@ -263,10 +263,10 @@ mod tests {
 
     #[test]
     fn test_list_query_with_status() {
-        let json = r#"{"projectId": "123", "status": "todo"}"#;
+        let json = r#"{"projectId": "123", "status": "pending"}"#;
         let query: ListTasksQuery = serde_json::from_str(json).unwrap();
         assert_eq!(query.project_id, "123");
-        assert_eq!(query.status, Some(TaskStatus::Todo));
+        assert_eq!(query.status, Some(TaskStatus::Pending));
     }
 
     #[tokio::test]
@@ -328,7 +328,7 @@ mod tests {
 
         assert_eq!(task.title, "Test Task");
         assert_eq!(task.project_id, project_id);
-        assert_eq!(task.status, TaskStatus::Todo);
+        assert_eq!(task.status, TaskStatus::Pending);
         assert!(!task.id.is_empty());
     }
 
@@ -503,7 +503,7 @@ mod tests {
         let task: Task = serde_json::from_slice(&body).unwrap();
 
         assert_eq!(task.title, "Updated Title");
-        assert_eq!(task.status, TaskStatus::Inprogress);
+        assert_eq!(task.status, TaskStatus::Running);
     }
 
     #[tokio::test]
@@ -739,7 +739,7 @@ mod tests {
         assert_eq!(duplicate.project_id, original.project_id);
         assert_eq!(duplicate.title, "Original Task (copy)");
         assert_eq!(duplicate.description, original.description);
-        assert_eq!(duplicate.status, TaskStatus::Todo);
+        assert_eq!(duplicate.status, TaskStatus::Pending);
         assert!(duplicate.archived_at.is_none());
     }
 
@@ -829,7 +829,7 @@ mod tests {
 
         assert_eq!(tasks.len(), 1);
         assert_eq!(tasks[0].title, "Todo Task");
-        assert_eq!(tasks[0].status, TaskStatus::Todo);
+        assert_eq!(tasks[0].status, TaskStatus::Pending);
     }
 
     #[tokio::test]

@@ -34,7 +34,10 @@ pub use process::{
 pub use project::{Project, ProjectSummary, ProjectWithStats};
 pub use search::{SearchResult, SearchResultType};
 pub use settings::{Setting, SettingsMap};
-pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
+pub use task::{
+    StepStatus, Task, TaskStatus, TaskStep, TaskStepSummary, TaskSummary, TaskWithChatCount,
+    TaskWithChats, TaskWithSteps,
+};
 pub use tool_state::{ToolState, ToolStatus};
 pub use workflow::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
