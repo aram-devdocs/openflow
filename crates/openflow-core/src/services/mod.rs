@@ -34,6 +34,7 @@
 mod error;
 
 // Service modules
+pub mod agent_orchestrator;
 pub mod agent_session;
 pub mod artifact;
 pub mod audit;
@@ -54,4 +55,5 @@ pub mod terminal;
 pub mod tool_state;
 pub mod workflow;
 
+pub use agent_orchestrator::{AgentOrchestrator, AgentOutputSink, SpawnAgentRequest};
 pub use error::{ServiceError, ServiceResult};
