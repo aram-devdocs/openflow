@@ -6,6 +6,7 @@
 
 pub mod agent_session;
 pub mod artifact;
+pub mod audit;
 pub mod chat;
 pub mod executor;
 pub mod git;
@@ -24,6 +25,7 @@ pub use agent_session::{
     SessionStatus,
 };
 pub use artifact::ArtifactFile;
+pub use audit::{AuditAction, AuditActor, AuditEntityType, AuditEntry, AuditLog, AuditLogSummary};
 pub use chat::{Chat, ChatRole, ChatSummary, ChatWithMessageCount, ChatWithMessages};
 pub use executor::{CliToolType, ExecutorProfile, ExecutorProfileSummary};
 pub use git::{

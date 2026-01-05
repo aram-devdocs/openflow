@@ -15,6 +15,7 @@
 //!
 //! - **agent_session**: Agent session lifecycle and event persistence
 //! - **artifact**: Task artifact file management
+//! - **audit**: Action audit logging for compliance and debugging
 //! - **project**: Project CRUD operations
 //! - **task**: Task CRUD operations
 //! - **chat**: Chat session management
@@ -35,6 +36,7 @@ mod error;
 // Service modules
 pub mod agent_session;
 pub mod artifact;
+pub mod audit;
 pub mod chat;
 pub mod executor;
 pub mod executor_profile;

@@ -42,6 +42,7 @@ pub use entities::{
     SessionStatus,
 };
 pub use entities::ArtifactFile;
+pub use entities::{AuditAction, AuditActor, AuditEntityType, AuditEntry, AuditLog, AuditLogSummary};
 pub use entities::{
     Branch, Commit, CommitSummary, DiffHunk, FileChangeType, FileDiff, FileDiffSummary,
     GitFileStatus, GitStatus, GitStatusFile, PullRequestResult, Worktree, WorktreeStatus,
