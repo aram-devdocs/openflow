@@ -49,11 +49,13 @@
 pub mod claude_code;
 pub mod codex_cli;
 pub mod gemini_cli;
+pub mod mock;
 
 // Re-export provider implementations
 pub use claude_code::ClaudeCodeProvider;
 pub use codex_cli::CodexCLIProvider;
 pub use gemini_cli::GeminiCLIProvider;
+pub use mock::{MockProvider, MockProviderBuilder, MockProviderConfig};
 
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -373,8 +375,7 @@ pub fn get_provider(id: &str) -> Option<Arc<dyn AgentProvider>> {
         claude_code::PROVIDER_ID => Some(Arc::new(ClaudeCodeProvider::new())),
         codex_cli::PROVIDER_ID => Some(Arc::new(CodexCLIProvider::new())),
         gemini_cli::PROVIDER_ID => Some(Arc::new(GeminiCLIProvider::new())),
-        // TODO: Add mock provider implementation in Phase 3.5
-        // "mock" => Some(Arc::new(MockProvider::default())),
+        mock::PROVIDER_ID => Some(Arc::new(MockProvider::default())),
         _ => None,
     }
 }
@@ -389,7 +390,7 @@ pub fn list_provider_ids() -> Vec<&'static str> {
         claude_code::PROVIDER_ID,
         codex_cli::PROVIDER_ID,
         gemini_cli::PROVIDER_ID,
-        // TODO: Add mock provider ID when implemented
+        mock::PROVIDER_ID,
     ]
 }
 
@@ -559,6 +560,16 @@ mod tests {
     }
 
     #[test]
+    fn test_get_provider_mock() {
+        let provider = get_provider("mock");
+        assert!(provider.is_some());
+        let provider = provider.unwrap();
+        assert_eq!(provider.provider_id(), "mock");
+        assert_eq!(provider.display_name(), "Mock Provider");
+        assert_eq!(provider.command(), "mock-agent");
+    }
+
+    #[test]
     fn test_get_provider_unknown() {
         assert!(get_provider("unknown-provider").is_none());
     }
@@ -568,6 +579,7 @@ mod tests {
         assert!(provider_exists("claude-code"));
         assert!(provider_exists("codex-cli"));
         assert!(provider_exists("gemini-cli"));
+        assert!(provider_exists("mock"));
         assert!(!provider_exists("unknown-provider"));
     }
 
@@ -577,6 +589,7 @@ mod tests {
         assert!(ids.contains(&"claude-code"));
         assert!(ids.contains(&"codex-cli"));
         assert!(ids.contains(&"gemini-cli"));
-        assert_eq!(ids.len(), 3);
+        assert!(ids.contains(&"mock"));
+        assert_eq!(ids.len(), 4);
     }
 }
