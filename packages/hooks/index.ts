@@ -48,6 +48,7 @@ export * from './useTerminal';
 export * from './useGitHub';
 export * from './useGlobalShortcuts';
 export * from './useSystem';
+export * from './useWorktree';
 
 // Zustand stores for UI-only state
 export * from './stores';

@@ -4,9 +4,32 @@ AI Task Orchestration Desktop Application - wraps AI coding CLI tools to build r
 
 ## Architecture Overview
 
-**Backend (Rust):** Modular crates with shared business logic. The core crate contains all services, shared by both Tauri desktop commands and HTTP server routes.
+**Backend-Owned State Machine:** All execution and state lives in Rust/SQLite. Frontend is a pure view layer that queries backend state.
 
-**Frontend (React/TypeScript):** Layered packages with strict one-way dependencies. Transport abstraction auto-detects Tauri IPC vs HTTP context.
+**Multi-Provider Support:** AgentProvider trait normalizes CLI outputs from Claude Code, Gemini CLI, Codex CLI, and others into a unified event format.
+
+**Autonomous Execution:** TaskExecutor runs tasks from start to finish without frontend interaction. Backend continues even if all frontends disconnect.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  FRONTEND (React) - Pure View Layer                             │
+│  - Queries backend for current state (TanStack Query)          │
+│  - Subscribes to events that invalidate queries                │
+│  - Sends commands to backend (start task, approve permission)  │
+│  - NO business state (UI-only: selectedTaskId, theme, etc.)    │
+└─────────────────────────────────────────────────────────────────┘
+                                    │
+                    Tauri IPC  /    │    \  WebSocket
+                                    ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  BACKEND (Rust) - Source of Truth                               │
+│                                                                 │
+│  TaskExecutor         - Autonomous task execution engine       │
+│  AgentOrchestrator    - Manages agent processes                │
+│  AgentProvider trait  - Normalizes CLI outputs                 │
+│  SQLite               - Persistent state, audit trail          │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 **Deployment Modes:** Desktop app (Tauri with embedded server), standalone server, or web frontend connecting to remote server.
 
@@ -19,10 +42,13 @@ Types are defined in Rust with typeshare annotations, then generated to TypeScri
 Both backend and frontend follow strict layering. Higher layers depend on lower layers, never the reverse. Validators enforce these boundaries.
 
 ### Stateless UI
-UI components are pure functions of props. They receive data and callbacks, render UI, never fetch data or contain business logic.
+UI components are pure functions of props. They receive data and callbacks, render UI, never fetch data or contain business logic. Frontend state is UI-only (selected items, panel visibility).
 
 ### Service Layer Pattern
 Business logic lives in service functions that take dependencies as arguments and return Results. Command/route handlers are thin wrappers.
+
+### Backend-Owned State
+All business state lives in the backend (SQLite). Frontend queries backend via TanStack Query and subscribes to events that invalidate queries. No business state accumulation in frontend.
 
 ## Essential Commands
 
@@ -60,6 +86,16 @@ pnpm test             # Vitest tests
 5. Create hooks that wrap queries
 6. Build stateless UI components
 7. Compose in route pages
+
+## Adding New Agent Providers
+
+1. Create provider in `crates/openflow-core/src/providers/`
+2. Implement `AgentProvider` trait (build_command, parse_line, etc.)
+3. Register in `ProviderRegistry`
+4. Add provider ID constant
+5. Test with mock output samples
+
+See `providers/claude_code.rs` as reference implementation.
 
 ## Where to Find More
 

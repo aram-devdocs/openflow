@@ -57,6 +57,7 @@ pub mod task_executor;
 pub mod terminal;
 pub mod tool_state;
 pub mod workflow;
+pub mod worktree;
 
 pub use agent_orchestrator::{AgentOrchestrator, AgentOutputSink, SpawnAgentRequest};
 pub use error::{ServiceError, ServiceResult};

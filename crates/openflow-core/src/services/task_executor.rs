@@ -1,8 +1,9 @@
 //! Task Executor Service
 //!
 //! Autonomous task execution engine that runs tasks from start to finish
-//! without requiring frontend interaction. Executes steps sequentially,
-//! spawning agents via the AgentOrchestrator and persisting all state.
+//! without requiring frontend interaction. Executes steps sequentially
+//! or in parallel (using git worktrees), spawning agents via the AgentOrchestrator
+//! and persisting all state.
 //!
 //! # Architecture
 //!
@@ -17,7 +18,10 @@
 //! │   ┌───────────────────────────────────────────────────────────────┐    │
 //! │   │                    run_task() (Background)                     │    │
 //! │   │    ┌─────────────────────────────────────────────────────┐    │    │
-//! │   │    │  Loop: get_current_step() → run_step() → advance()  │    │    │
+//! │   │    │  Loop:                                               │    │    │
+//! │   │    │    if parallel_group → run_parallel_group()          │    │    │
+//! │   │    │    else → run_step()                                 │    │    │
+//! │   │    │    advance_step() or advance_past_group()            │    │    │
 //! │   │    └─────────────────────────────────────────────────────┘    │    │
 //! │   └───────────────────────────────────────────────────────────────┘    │
 //! │                                    │                                    │
@@ -30,14 +34,30 @@
 //! └─────────────────────────────────────────────────────────────────────────┘
 //! ```
 //!
+//! # Parallel Execution
+//!
+//! Steps with the same `parallel_group` value are executed concurrently using
+//! git worktrees. Each parallel step gets its own worktree, allowing multiple
+//! agents to work on the codebase simultaneously without conflicts.
+//!
+//! When all steps in a parallel group complete:
+//! 1. Their worktrees are merged back to the base branch
+//! 2. Execution advances to the next sequential step or parallel group
+//!
+//! If any step in a parallel group fails:
+//! 1. Remaining running steps are killed
+//! 2. Remaining pending steps are skipped
+//! 3. The task is marked as failed
+//!
 //! # Key Invariants
 //!
 //! 1. Tasks run autonomously in background tokio tasks
 //! 2. All state is persisted to SQLite (frontend can disconnect/reconnect)
-//! 3. Steps execute sequentially (parallel execution planned for Phase 9)
+//! 3. Steps execute sequentially OR in parallel (based on parallel_group)
 //! 4. Each step spawns an agent session via AgentOrchestrator
 //! 5. Permission requests pause the step until user responds
 //! 6. All actions are logged to audit trail
+//! 7. Parallel steps use worktrees for isolation
 //!
 //! # Thread Safety
 //!
@@ -60,13 +80,13 @@ use log::{debug, error, info, warn};
 use sqlx::SqlitePool;
 use tokio::sync::RwLock;
 
-use openflow_contracts::{AuditAction, CreateChatRequest, SessionStatus, StepStatus, TaskStatus, TaskStep};
+use openflow_contracts::{AuditAction, CreateChatRequest, DbWorktree, DbWorktreeStatus, SessionStatus, StepStatus, TaskStatus, TaskStep};
 
 use crate::events::{DataAction, EntityType, Event, EventBroadcaster};
 use crate::providers::AgentConfig;
 
 use super::agent_orchestrator::{AgentOrchestrator, SpawnAgentRequest};
-use super::{agent_session, audit, chat, project, task};
+use super::{agent_session, audit, chat, project, task, worktree};
 use super::{ServiceError, ServiceResult};
 
 // =============================================================================
@@ -697,12 +717,13 @@ impl TaskExecutor {
     ///
     /// This method:
     /// 1. Gets the current step
-    /// 2. Runs the step (spawns agent, waits for completion)
-    /// 3. Advances to next step
-    /// 4. Repeats until all steps complete or an error occurs
+    /// 2. If step is part of a parallel group, runs all pending steps in that group concurrently
+    /// 3. Otherwise, runs the step sequentially
+    /// 4. Advances to next step or past the parallel group
+    /// 5. Repeats until all steps complete or an error occurs
     async fn run_task_loop(
         pool: &SqlitePool,
-        orchestrator: &AgentOrchestrator,
+        orchestrator: &Arc<AgentOrchestrator>,
         broadcaster: &Arc<dyn EventBroadcaster>,
         task_id: &str,
         mut cancel_rx: tokio::sync::oneshot::Receiver<()>,
@@ -740,65 +761,130 @@ impl TaskExecutor {
                 continue;
             }
 
-            // Run the current step
-            info!(
-                "Running step: task_id={}, step_id={}, step_index={}, title={}",
-                task_id, current_step.id, current_step.step_index, current_step.title
-            );
+            // Check if this step is part of a parallel group
+            if let Some(ref parallel_group) = current_step.parallel_group {
+                // Run all pending steps in this parallel group concurrently
+                info!(
+                    "Running parallel group: task_id={}, group={}",
+                    task_id, parallel_group
+                );
 
-            let step_result = Self::run_step(
-                pool,
-                orchestrator,
-                broadcaster,
-                &current_step,
-                &mut cancel_rx,
-            )
-            .await;
+                let group_result = Self::run_parallel_group(
+                    pool,
+                    orchestrator,
+                    broadcaster,
+                    task_id,
+                    parallel_group,
+                    &mut cancel_rx,
+                )
+                .await;
 
-            match step_result {
-                Ok(()) => {
-                    info!(
-                        "Step completed successfully: step_id={}, title={}",
-                        current_step.id, current_step.title
-                    );
+                match group_result {
+                    Ok(()) => {
+                        info!(
+                            "Parallel group completed successfully: task_id={}, group={}",
+                            task_id, parallel_group
+                        );
 
-                    // Advance to next step
-                    if task::advance_step(pool, task_id).await?.is_none() {
-                        // No more steps - loop will exit on next iteration
-                        debug!("Reached last step: id={}", task_id);
+                        // Advance past the parallel group to the next step
+                        if task::advance_past_group(pool, task_id, parallel_group)
+                            .await?
+                            .is_none()
+                        {
+                            // No more steps - loop will exit on next iteration
+                            debug!("Reached last step after parallel group: id={}", task_id);
+                        }
                     }
-                }
-                Err(e) => {
-                    error!(
-                        "Step failed: step_id={}, title={}, error={}",
-                        current_step.id, current_step.title, e
-                    );
+                    Err(e) => {
+                        error!(
+                            "Parallel group failed: task_id={}, group={}, error={}",
+                            task_id, parallel_group, e
+                        );
 
-                    // Mark step as failed
-                    let _ = task::update_step_status(pool, &current_step.id, StepStatus::Failed)
+                        // Mark task as failed
+                        let updated = task::set_ended(pool, task_id, TaskStatus::Failed).await?;
+
+                        // Broadcast failure
+                        broadcaster.broadcast(Event::updated(EntityType::Task, task_id, &updated));
+
+                        // Audit log
+                        let _ = audit::log_task(
+                            pool,
+                            task_id,
+                            AuditAction::Failed,
+                            openflow_contracts::AuditActor::System,
+                            Some(serde_json::json!({
+                                "failed_parallel_group": parallel_group,
+                                "error": e.to_string(),
+                            })),
+                        )
                         .await;
 
-                    // Mark task as failed
-                    let updated = task::set_ended(pool, task_id, TaskStatus::Failed).await?;
+                        return Err(e);
+                    }
+                }
+            } else {
+                // Run the current step sequentially
+                info!(
+                    "Running step: task_id={}, step_id={}, step_index={}, title={}",
+                    task_id, current_step.id, current_step.step_index, current_step.title
+                );
 
-                    // Broadcast failure
-                    broadcaster.broadcast(Event::updated(EntityType::Task, task_id, &updated));
+                let step_result = Self::run_step(
+                    pool,
+                    orchestrator,
+                    broadcaster,
+                    &current_step,
+                    None, // No worktree for sequential steps
+                    &mut cancel_rx,
+                )
+                .await;
 
-                    // Audit log
-                    let _ = audit::log_task(
-                        pool,
-                        task_id,
-                        AuditAction::Failed,
-                        openflow_contracts::AuditActor::System,
-                        Some(serde_json::json!({
-                            "failed_step_id": current_step.id,
-                            "failed_step_index": current_step.step_index,
-                            "error": e.to_string(),
-                        })),
-                    )
-                    .await;
+                match step_result {
+                    Ok(()) => {
+                        info!(
+                            "Step completed successfully: step_id={}, title={}",
+                            current_step.id, current_step.title
+                        );
 
-                    return Err(e);
+                        // Advance to next step
+                        if task::advance_step(pool, task_id).await?.is_none() {
+                            // No more steps - loop will exit on next iteration
+                            debug!("Reached last step: id={}", task_id);
+                        }
+                    }
+                    Err(e) => {
+                        error!(
+                            "Step failed: step_id={}, title={}, error={}",
+                            current_step.id, current_step.title, e
+                        );
+
+                        // Mark step as failed
+                        let _ = task::update_step_status(pool, &current_step.id, StepStatus::Failed)
+                            .await;
+
+                        // Mark task as failed
+                        let updated = task::set_ended(pool, task_id, TaskStatus::Failed).await?;
+
+                        // Broadcast failure
+                        broadcaster.broadcast(Event::updated(EntityType::Task, task_id, &updated));
+
+                        // Audit log
+                        let _ = audit::log_task(
+                            pool,
+                            task_id,
+                            AuditAction::Failed,
+                            openflow_contracts::AuditActor::System,
+                            Some(serde_json::json!({
+                                "failed_step_id": current_step.id,
+                                "failed_step_index": current_step.step_index,
+                                "error": e.to_string(),
+                            })),
+                        )
+                        .await;
+
+                        return Err(e);
+                    }
                 }
             }
         }
@@ -834,11 +920,20 @@ impl TaskExecutor {
     /// 5. Links session to step
     /// 6. Waits for session to complete
     /// 7. Updates step status based on result
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `orchestrator` - Agent orchestrator for spawning agents
+    /// * `broadcaster` - Event broadcaster for real-time updates
+    /// * `step` - The step to execute
+    /// * `worktree` - Optional worktree to run the step in (for parallel execution)
+    /// * `cancel_rx` - Cancellation receiver
     async fn run_step(
         pool: &SqlitePool,
-        orchestrator: &AgentOrchestrator,
+        orchestrator: &Arc<AgentOrchestrator>,
         broadcaster: &Arc<dyn EventBroadcaster>,
         step: &TaskStep,
+        worktree: Option<&DbWorktree>,
         cancel_rx: &mut tokio::sync::oneshot::Receiver<()>,
     ) -> ServiceResult<()> {
         // Update step status to running
@@ -853,12 +948,20 @@ impl TaskExecutor {
                 "event": "step_started",
                 "step_id": step.id,
                 "step_index": step.step_index,
+                "worktree_id": worktree.map(|w| &w.id),
+                "parallel_group": step.parallel_group,
             })),
         ));
 
         // Get task for project reference
         let task_with_steps = task::get_with_steps(pool, &step.task_id).await?;
         let proj = project::get(pool, &task_with_steps.task.project_id).await?;
+
+        // Determine working directory: worktree path if parallel, otherwise main repo
+        let working_dir = match worktree {
+            Some(wt) => wt.path.clone(),
+            None => proj.git_repo_path.clone(),
+        };
 
         // Create a chat for this step execution
         // This maintains compatibility with the existing schema where execution_processes
@@ -870,8 +973,8 @@ impl TaskExecutor {
         let step_chat = chat::create(pool, chat_request).await?;
 
         debug!(
-            "Created chat for step execution: chat_id={}, step_id={}",
-            step_chat.id, step.id
+            "Created chat for step execution: chat_id={}, step_id={}, working_dir={}",
+            step_chat.id, step.id, working_dir
         );
 
         // Create an execution_process record linked to the chat
@@ -893,8 +996,8 @@ impl TaskExecutor {
             ServiceError::Database(e)
         })?;
 
-        // Build agent config
-        let config = AgentConfig::new(&step.prompt, &proj.git_repo_path);
+        // Build agent config with the appropriate working directory
+        let config = AgentConfig::new(&step.prompt, &working_dir);
 
         // Spawn the agent
         let spawn_request = SpawnAgentRequest::new(&process_id, &step.provider_id, config);
@@ -904,8 +1007,8 @@ impl TaskExecutor {
         let _ = task::link_step_session(pool, &step.id, &session.id).await;
 
         info!(
-            "Agent spawned for step: step_id={}, session_id={}, chat_id={}, provider={}",
-            step.id, session.id, step_chat.id, step.provider_id
+            "Agent spawned for step: step_id={}, session_id={}, chat_id={}, provider={}, working_dir={}",
+            step.id, session.id, step_chat.id, step.provider_id, working_dir
         );
 
         // Wait for session to complete
@@ -948,6 +1051,451 @@ impl TaskExecutor {
                 "step_id": step.id,
                 "step_index": step.step_index,
                 "status": step_status.to_string(),
+                "worktree_id": worktree.map(|w| &w.id),
+            })),
+        ));
+
+        // Return error if session failed
+        if final_status != SessionStatus::Completed {
+            return Err(ServiceError::Process(format!(
+                "Agent session failed with status: {:?}",
+                final_status
+            )));
+        }
+
+        Ok(())
+    }
+
+    /// Execute all pending steps in a parallel group concurrently.
+    ///
+    /// This method:
+    /// 1. Gets all pending steps in the parallel group
+    /// 2. Creates a worktree for each step
+    /// 3. Spawns all steps concurrently using tokio::spawn
+    /// 4. Waits for all steps to complete
+    /// 5. Merges all successful worktrees back to the base branch
+    /// 6. Cleans up worktrees
+    ///
+    /// # Arguments
+    /// * `pool` - Database connection pool
+    /// * `orchestrator` - Agent orchestrator for spawning agents
+    /// * `broadcaster` - Event broadcaster for real-time updates
+    /// * `task_id` - ID of the task
+    /// * `parallel_group` - Name of the parallel group
+    /// * `cancel_rx` - Cancellation receiver
+    ///
+    /// # Returns
+    /// `Ok(())` if all steps completed successfully and worktrees were merged.
+    /// `Err(...)` if any step failed.
+    async fn run_parallel_group(
+        pool: &SqlitePool,
+        orchestrator: &Arc<AgentOrchestrator>,
+        broadcaster: &Arc<dyn EventBroadcaster>,
+        task_id: &str,
+        parallel_group: &str,
+        cancel_rx: &mut tokio::sync::oneshot::Receiver<()>,
+    ) -> ServiceResult<()> {
+        // Get all pending steps in this parallel group
+        let pending_steps = task::get_pending_steps_in_group(pool, task_id, parallel_group).await?;
+
+        if pending_steps.is_empty() {
+            debug!(
+                "No pending steps in parallel group: task_id={}, group={}",
+                task_id, parallel_group
+            );
+            return Ok(());
+        }
+
+        info!(
+            "Starting parallel execution: task_id={}, group={}, step_count={}",
+            task_id,
+            parallel_group,
+            pending_steps.len()
+        );
+
+        // Get task and project for worktree creation
+        let task_with_steps = task::get_with_steps(pool, task_id).await?;
+        let proj = project::get(pool, &task_with_steps.task.project_id).await?;
+        let base_branch = proj.base_branch.clone();
+        let repo_path = proj.git_repo_path.clone();
+
+        // Broadcast parallel group started
+        broadcaster.broadcast(Event::data_changed(
+            EntityType::Task,
+            DataAction::Updated,
+            task_id,
+            Some(serde_json::json!({
+                "event": "parallel_group_started",
+                "parallel_group": parallel_group,
+                "step_count": pending_steps.len(),
+                "step_ids": pending_steps.iter().map(|s| &s.id).collect::<Vec<_>>(),
+            })),
+        ));
+
+        // Create worktrees and store step-worktree pairs
+        let mut step_worktrees: Vec<(TaskStep, DbWorktree)> = Vec::with_capacity(pending_steps.len());
+
+        for step in &pending_steps {
+            // Generate branch name for this step
+            let branch_name = worktree::generate_branch_name(task_id, step.step_index)?;
+            let worktree_path = worktree::generate_step_worktree_path(
+                &proj.id,
+                task_id,
+                step.step_index,
+            );
+
+            debug!(
+                "Creating worktree for parallel step: step_id={}, branch={}, path={}",
+                step.id, branch_name, worktree_path
+            );
+
+            // Create the worktree
+            let wt = worktree::create(
+                pool,
+                &proj.id,
+                &branch_name,
+                &base_branch,
+                Some(&worktree_path),
+                &repo_path,
+            )
+            .await?;
+
+            // Link step to worktree
+            let _ = task::link_step_worktree(pool, &step.id, &wt.id).await;
+
+            step_worktrees.push((step.clone(), wt));
+        }
+
+        // Create channels for step completion
+        // We use a multi-producer single-consumer channel where each step sends its result
+        let (result_tx, mut result_rx) =
+            tokio::sync::mpsc::channel::<(String, Result<(), ServiceError>)>(pending_steps.len());
+
+        // Create a shared cancel flag
+        let cancel_flag = Arc::new(std::sync::atomic::AtomicBool::new(false));
+
+        // Spawn each step execution concurrently
+        for (step, wt) in &step_worktrees {
+            let pool = pool.clone();
+            let orchestrator = Arc::clone(orchestrator);
+            let broadcaster = Arc::clone(broadcaster);
+            let step = step.clone();
+            let wt = wt.clone();
+            let result_tx = result_tx.clone();
+            let cancel_flag = Arc::clone(&cancel_flag);
+
+            tokio::spawn(async move {
+                // Create a new cancel receiver for this step
+                // We check the shared cancel flag periodically instead
+                let (_, mut step_cancel_rx) = tokio::sync::oneshot::channel::<()>();
+
+                // Check cancel flag before starting
+                if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+                    let _ = result_tx
+                        .send((step.id.clone(), Err(ServiceError::Process("Cancelled".to_string()))))
+                        .await;
+                    return;
+                }
+
+                let result = Self::run_step_with_worktree(
+                    &pool,
+                    &orchestrator,
+                    &broadcaster,
+                    &step,
+                    &wt,
+                    &cancel_flag,
+                    &mut step_cancel_rx,
+                )
+                .await;
+
+                let _ = result_tx.send((step.id.clone(), result)).await;
+            });
+        }
+
+        // Drop the original sender so we can wait for all to complete
+        drop(result_tx);
+
+        // Collect results
+        let mut results: HashMap<String, Result<(), ServiceError>> = HashMap::new();
+        let mut has_failure = false;
+
+        // Wait for all steps to complete or cancellation
+        while results.len() < step_worktrees.len() {
+            // Check for task-level cancellation
+            if cancel_rx.try_recv().is_ok() {
+                info!("Parallel group cancelled: task_id={}, group={}", task_id, parallel_group);
+                cancel_flag.store(true, std::sync::atomic::Ordering::SeqCst);
+                // Continue waiting for steps to acknowledge cancellation
+            }
+
+            // Try to receive results (non-blocking)
+            match result_rx.try_recv() {
+                Ok((step_id, step_result)) => {
+                    if step_result.is_err() {
+                        has_failure = true;
+                        // Signal other steps to cancel
+                        cancel_flag.store(true, std::sync::atomic::Ordering::SeqCst);
+                    }
+                    results.insert(step_id, step_result);
+                }
+                Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {
+                    // No results yet, wait a bit and try again
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+                Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
+                    // Channel closed, all senders dropped
+                    break;
+                }
+            }
+        }
+
+        // Handle failures
+        if has_failure {
+            // Skip remaining pending steps in the group
+            let _ = task::skip_remaining_in_group(pool, task_id, parallel_group).await;
+
+            // Clean up worktrees (delete, don't merge)
+            for (_, wt) in &step_worktrees {
+                if let Err(e) = worktree::delete(pool, &wt.id, &repo_path).await {
+                    warn!("Failed to delete worktree after failure: {}", e);
+                }
+            }
+
+            // Find the first error to return
+            let first_error = results
+                .into_iter()
+                .find_map(|(_, r)| r.err())
+                .unwrap_or_else(|| ServiceError::Process("Unknown parallel execution error".to_string()));
+
+            // Broadcast parallel group failure
+            broadcaster.broadcast(Event::data_changed(
+                EntityType::Task,
+                DataAction::Updated,
+                task_id,
+                Some(serde_json::json!({
+                    "event": "parallel_group_failed",
+                    "parallel_group": parallel_group,
+                    "error": first_error.to_string(),
+                })),
+            ));
+
+            return Err(first_error);
+        }
+
+        // All steps completed successfully - merge worktrees back to base branch
+        info!(
+            "All parallel steps completed, merging worktrees: task_id={}, group={}",
+            task_id, parallel_group
+        );
+
+        // Merge each worktree in order (by step_index)
+        for (step, wt) in &step_worktrees {
+            debug!(
+                "Merging worktree: step_id={}, branch={}, worktree_id={}",
+                step.id, wt.branch_name, wt.id
+            );
+
+            match worktree::merge(pool, &wt.id, &repo_path, &base_branch).await {
+                Ok(()) => {
+                    info!(
+                        "Merged worktree: step_id={}, branch={}",
+                        step.id, wt.branch_name
+                    );
+                }
+                Err(e) => {
+                    // Merge conflict or error
+                    error!(
+                        "Failed to merge worktree: step_id={}, branch={}, error={}",
+                        step.id, wt.branch_name, e
+                    );
+
+                    // Update worktree status if it's a conflict
+                    if let ServiceError::Conflict(_) = &e {
+                        // Status already updated by worktree::merge
+                        warn!(
+                            "Merge conflict detected: step_id={}, worktree_id={}",
+                            step.id, wt.id
+                        );
+                    }
+
+                    // Broadcast merge failure
+                    broadcaster.broadcast(Event::data_changed(
+                        EntityType::Task,
+                        DataAction::Updated,
+                        task_id,
+                        Some(serde_json::json!({
+                            "event": "parallel_group_merge_failed",
+                            "parallel_group": parallel_group,
+                            "step_id": step.id,
+                            "worktree_id": wt.id,
+                            "error": e.to_string(),
+                        })),
+                    ));
+
+                    return Err(e);
+                }
+            }
+        }
+
+        // Clean up merged worktrees (delete from disk)
+        for (_, wt) in &step_worktrees {
+            if wt.status != DbWorktreeStatus::Merged {
+                // Skip if not merged (e.g., conflict)
+                continue;
+            }
+            if let Err(e) = worktree::delete(pool, &wt.id, &repo_path).await {
+                warn!("Failed to delete merged worktree: {}", e);
+                // Non-fatal - continue
+            }
+        }
+
+        // Broadcast parallel group completed
+        broadcaster.broadcast(Event::data_changed(
+            EntityType::Task,
+            DataAction::Updated,
+            task_id,
+            Some(serde_json::json!({
+                "event": "parallel_group_completed",
+                "parallel_group": parallel_group,
+                "step_count": step_worktrees.len(),
+            })),
+        ));
+
+        info!(
+            "Parallel group completed: task_id={}, group={}, step_count={}",
+            task_id,
+            parallel_group,
+            step_worktrees.len()
+        );
+
+        Ok(())
+    }
+
+    /// Execute a step in a worktree with cancel flag support.
+    ///
+    /// This is a wrapper around `run_step` that checks the cancel flag periodically.
+    async fn run_step_with_worktree(
+        pool: &SqlitePool,
+        orchestrator: &Arc<AgentOrchestrator>,
+        broadcaster: &Arc<dyn EventBroadcaster>,
+        step: &TaskStep,
+        wt: &DbWorktree,
+        cancel_flag: &std::sync::atomic::AtomicBool,
+        cancel_rx: &mut tokio::sync::oneshot::Receiver<()>,
+    ) -> ServiceResult<()> {
+        // Check cancel flag before starting
+        if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+            return Err(ServiceError::Process("Cancelled".to_string()));
+        }
+
+        // Update step status to running
+        let step = task::update_step_status(pool, &step.id, StepStatus::Running).await?;
+
+        // Broadcast step started
+        broadcaster.broadcast(Event::data_changed(
+            EntityType::Task,
+            DataAction::Updated,
+            &step.task_id,
+            Some(serde_json::json!({
+                "event": "step_started",
+                "step_id": step.id,
+                "step_index": step.step_index,
+                "worktree_id": wt.id,
+                "parallel_group": step.parallel_group,
+            })),
+        ));
+
+        // Get task for project reference
+        let task_with_steps = task::get_with_steps(pool, &step.task_id).await?;
+
+        // Create a chat for this step execution
+        let chat_request = CreateChatRequest::for_task(&step.task_id, &task_with_steps.task.project_id)
+            .with_title(&step.title)
+            .with_initial_prompt(&step.prompt)
+            .with_step_index(step.step_index);
+        let step_chat = chat::create(pool, chat_request).await?;
+
+        debug!(
+            "Created chat for parallel step: chat_id={}, step_id={}, working_dir={}",
+            step_chat.id, step.id, wt.path
+        );
+
+        // Create an execution_process record linked to the chat
+        let process_id = uuid::Uuid::new_v4().to_string();
+        sqlx::query(
+            r#"
+            INSERT INTO execution_processes (
+                id, chat_id, status, executor_action, run_reason, started_at
+            )
+            VALUES (?, ?, 'running', 'step_execution', 'codingagent', datetime('now', 'subsec'))
+            "#,
+        )
+        .bind(&process_id)
+        .bind(&step_chat.id)
+        .execute(pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to create execution process: {}", e);
+            ServiceError::Database(e)
+        })?;
+
+        // Build agent config with worktree path
+        let config = AgentConfig::new(&step.prompt, &wt.path);
+
+        // Spawn the agent
+        let spawn_request = SpawnAgentRequest::new(&process_id, &step.provider_id, config);
+        let session = orchestrator.spawn_agent(spawn_request).await?;
+
+        // Link session to step
+        let _ = task::link_step_session(pool, &step.id, &session.id).await;
+
+        info!(
+            "Agent spawned for parallel step: step_id={}, session_id={}, worktree_id={}, provider={}",
+            step.id, session.id, wt.id, step.provider_id
+        );
+
+        // Wait for session to complete with cancel flag check
+        let final_status =
+            Self::wait_for_session_with_cancel(pool, orchestrator, &session.id, cancel_flag, cancel_rx).await?;
+
+        // Update step status based on session result
+        let step_status = if final_status == SessionStatus::Completed {
+            StepStatus::Completed
+        } else {
+            StepStatus::Failed
+        };
+
+        task::update_step_status(pool, &step.id, step_status.clone()).await?;
+
+        // Update execution_process status
+        let process_status = if final_status == SessionStatus::Completed {
+            "completed"
+        } else {
+            "failed"
+        };
+        let _ = sqlx::query(
+            r#"
+            UPDATE execution_processes
+            SET status = ?, completed_at = datetime('now', 'subsec'), updated_at = datetime('now', 'subsec')
+            WHERE id = ?
+            "#,
+        )
+        .bind(process_status)
+        .bind(&process_id)
+        .execute(pool)
+        .await;
+
+        // Broadcast step completion
+        broadcaster.broadcast(Event::data_changed(
+            EntityType::Task,
+            DataAction::Updated,
+            &step.task_id,
+            Some(serde_json::json!({
+                "event": "step_completed",
+                "step_id": step.id,
+                "step_index": step.step_index,
+                "status": step_status.to_string(),
+                "worktree_id": wt.id,
             })),
         ));
 
@@ -987,6 +1535,72 @@ impl TaskExecutor {
             // Check timeout
             if start.elapsed() > MAX_WAIT {
                 error!("Session wait timed out: session_id={}", session_id);
+                return Err(ServiceError::Process("Session timed out".to_string()));
+            }
+
+            // Check if session is still active in orchestrator
+            if !orchestrator.is_active(session_id).await {
+                // Session completed - get final status from DB
+                let session = agent_session::get(pool, session_id).await?;
+                debug!(
+                    "Session completed: id={}, status={:?}",
+                    session_id, session.status
+                );
+                return Ok(session.status);
+            }
+
+            // Still running, wait and poll again
+            tokio::time::sleep(POLL_INTERVAL).await;
+        }
+    }
+
+    /// Wait for an agent session to complete, with support for cancel flag.
+    ///
+    /// This version is used for parallel execution where we need to check
+    /// a shared cancel flag across multiple concurrent steps.
+    async fn wait_for_session_with_cancel(
+        pool: &SqlitePool,
+        orchestrator: &Arc<AgentOrchestrator>,
+        session_id: &str,
+        cancel_flag: &std::sync::atomic::AtomicBool,
+        cancel_rx: &mut tokio::sync::oneshot::Receiver<()>,
+    ) -> ServiceResult<SessionStatus> {
+        const POLL_INTERVAL: Duration = Duration::from_millis(500);
+        const MAX_WAIT: Duration = Duration::from_secs(3600); // 1 hour max
+
+        let start = std::time::Instant::now();
+
+        loop {
+            // Check for cancel flag (from other steps failing)
+            if cancel_flag.load(std::sync::atomic::Ordering::SeqCst) {
+                info!(
+                    "Session wait cancelled via flag: session_id={}",
+                    session_id
+                );
+                // Kill the session
+                if let Err(e) = orchestrator.kill_agent(session_id).await {
+                    warn!("Failed to kill agent on cancellation: {}", e);
+                }
+                return Err(ServiceError::Process("Cancelled by cancel flag".to_string()));
+            }
+
+            // Check for oneshot cancellation (from task-level pause/cancel)
+            if cancel_rx.try_recv().is_ok() {
+                info!("Session wait cancelled via receiver: session_id={}", session_id);
+                // Kill the session
+                if let Err(e) = orchestrator.kill_agent(session_id).await {
+                    warn!("Failed to kill agent on cancellation: {}", e);
+                }
+                return Err(ServiceError::Process("Task cancelled".to_string()));
+            }
+
+            // Check timeout
+            if start.elapsed() > MAX_WAIT {
+                error!("Session wait timed out: session_id={}", session_id);
+                // Kill the session
+                if let Err(e) = orchestrator.kill_agent(session_id).await {
+                    warn!("Failed to kill agent on timeout: {}", e);
+                }
                 return Err(ServiceError::Process("Session timed out".to_string()));
             }
 
@@ -1787,5 +2401,344 @@ mod tests {
             }
             other => panic!("Expected NotFound error, got: {:?}", other),
         }
+    }
+
+    // =========================================================================
+    // Parallel Step Tests
+    // =========================================================================
+
+    #[tokio::test]
+    async fn test_create_parallel_step() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create a parallel step
+        let step = task::create_parallel_step(
+            &fixture.pool,
+            &task_id,
+            0,
+            "Parallel Step 1",
+            "prompt 1",
+            "mock",
+            "group-1",
+        )
+        .await
+        .expect("Failed to create parallel step");
+
+        assert_eq!(step.task_id, task_id);
+        assert_eq!(step.step_index, 0);
+        assert_eq!(step.title, "Parallel Step 1");
+        assert_eq!(step.parallel_group, Some("group-1".to_string()));
+        assert!(step.worktree_id.is_none());
+        assert_eq!(step.status, StepStatus::Pending);
+    }
+
+    #[tokio::test]
+    async fn test_get_steps_in_parallel_group() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create steps in different groups
+        task::create_parallel_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 1, "Step 2", "prompt 2", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 2, "Step 3", "prompt 3", "mock", "group-2")
+            .await
+            .unwrap();
+        task::create_step(&fixture.pool, &task_id, 3, "Sequential Step", "prompt 4", "mock")
+            .await
+            .unwrap();
+
+        // Get steps in group-1
+        let group1_steps = task::get_steps_in_group(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+
+        assert_eq!(group1_steps.len(), 2);
+        assert!(group1_steps.iter().all(|s| s.parallel_group == Some("group-1".to_string())));
+
+        // Get steps in group-2
+        let group2_steps = task::get_steps_in_group(&fixture.pool, &task_id, "group-2")
+            .await
+            .unwrap();
+
+        assert_eq!(group2_steps.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_get_pending_steps_in_group() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create parallel steps
+        let step1 = task::create_parallel_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 1, "Step 2", "prompt 2", "mock", "group-1")
+            .await
+            .unwrap();
+
+        // Mark first step as completed
+        task::update_step_status(&fixture.pool, &step1.id, StepStatus::Completed)
+            .await
+            .unwrap();
+
+        // Get pending steps in group
+        let pending = task::get_pending_steps_in_group(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].step_index, 1);
+    }
+
+    #[tokio::test]
+    async fn test_link_step_worktree() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create a parallel step
+        let step = task::create_parallel_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock", "group-1")
+            .await
+            .unwrap();
+
+        // Link to a worktree (using a fake ID for testing)
+        let worktree_id = "fake-worktree-id";
+        let linked = task::link_step_worktree(&fixture.pool, &step.id, worktree_id)
+            .await
+            .unwrap();
+
+        assert_eq!(linked.worktree_id, Some(worktree_id.to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_is_group_complete() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create parallel steps
+        let step1 = task::create_parallel_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock", "group-1")
+            .await
+            .unwrap();
+        let step2 = task::create_parallel_step(&fixture.pool, &task_id, 1, "Step 2", "prompt 2", "mock", "group-1")
+            .await
+            .unwrap();
+
+        // Initially not complete
+        let is_complete = task::is_group_complete(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+        assert!(!is_complete);
+
+        // Complete first step
+        task::update_step_status(&fixture.pool, &step1.id, StepStatus::Completed)
+            .await
+            .unwrap();
+
+        // Still not complete (one pending)
+        let is_complete = task::is_group_complete(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+        assert!(!is_complete);
+
+        // Complete second step
+        task::update_step_status(&fixture.pool, &step2.id, StepStatus::Completed)
+            .await
+            .unwrap();
+
+        // Now complete
+        let is_complete = task::is_group_complete(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+        assert!(is_complete);
+    }
+
+    #[tokio::test]
+    async fn test_has_group_failed() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create parallel steps
+        let step1 = task::create_parallel_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 1, "Step 2", "prompt 2", "mock", "group-1")
+            .await
+            .unwrap();
+
+        // Initially not failed
+        let has_failed = task::has_group_failed(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+        assert!(!has_failed);
+
+        // Fail first step
+        task::update_step_status(&fixture.pool, &step1.id, StepStatus::Failed)
+            .await
+            .unwrap();
+
+        // Now has failed
+        let has_failed = task::has_group_failed(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+        assert!(has_failed);
+    }
+
+    #[tokio::test]
+    async fn test_skip_remaining_in_group() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create parallel steps
+        let step1 = task::create_parallel_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 1, "Step 2", "prompt 2", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 2, "Step 3", "prompt 3", "mock", "group-1")
+            .await
+            .unwrap();
+
+        // Mark first step as failed
+        task::update_step_status(&fixture.pool, &step1.id, StepStatus::Failed)
+            .await
+            .unwrap();
+
+        // Skip remaining pending steps
+        let skipped = task::skip_remaining_in_group(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+
+        assert_eq!(skipped, 2); // Two pending steps were skipped
+
+        // Verify all remaining steps are skipped
+        let steps = task::get_steps_in_group(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+
+        for step in &steps {
+            assert!(
+                step.status == StepStatus::Failed || step.status == StepStatus::Skipped,
+                "Step {} should be failed or skipped, got {:?}",
+                step.step_index,
+                step.status
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_advance_past_group() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create steps: parallel group then sequential
+        task::create_parallel_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 1, "Step 2", "prompt 2", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_step(&fixture.pool, &task_id, 2, "Sequential Step", "prompt 3", "mock")
+            .await
+            .unwrap();
+
+        // Initial current_step_index should be 0
+        let initial_task = task::get_task(&fixture.pool, &task_id).await.unwrap();
+        assert_eq!(initial_task.current_step_index, 0);
+
+        // Advance past the group
+        let next_index = task::advance_past_group(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+
+        assert_eq!(next_index, Some(2)); // Should advance to step index 2
+
+        // Verify task current_step_index was updated
+        let updated_task = task::get_task(&fixture.pool, &task_id).await.unwrap();
+        assert_eq!(updated_task.current_step_index, 2);
+    }
+
+    #[tokio::test]
+    async fn test_advance_past_group_at_end() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create only parallel steps (no sequential steps after)
+        task::create_parallel_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 1, "Step 2", "prompt 2", "mock", "group-1")
+            .await
+            .unwrap();
+
+        // Advance past the group (there are no more steps)
+        let next_index = task::advance_past_group(&fixture.pool, &task_id, "group-1")
+            .await
+            .unwrap();
+
+        assert_eq!(next_index, None); // No more steps
+    }
+
+    #[tokio::test]
+    async fn test_task_with_mixed_parallel_and_sequential_steps() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create mixed steps: sequential, parallel group, sequential
+        task::create_step(&fixture.pool, &task_id, 0, "Sequential 1", "prompt 1", "mock")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 1, "Parallel 1", "prompt 2", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_parallel_step(&fixture.pool, &task_id, 2, "Parallel 2", "prompt 3", "mock", "group-1")
+            .await
+            .unwrap();
+        task::create_step(&fixture.pool, &task_id, 3, "Sequential 2", "prompt 4", "mock")
+            .await
+            .unwrap();
+
+        // Verify all steps created
+        let steps = task::list_steps(&fixture.pool, &task_id).await.unwrap();
+        assert_eq!(steps.len(), 4);
+
+        // Check parallel groups
+        assert!(steps[0].parallel_group.is_none()); // Sequential
+        assert_eq!(steps[1].parallel_group, Some("group-1".to_string())); // Parallel
+        assert_eq!(steps[2].parallel_group, Some("group-1".to_string())); // Parallel
+        assert!(steps[3].parallel_group.is_none()); // Sequential
+    }
+
+    #[tokio::test]
+    async fn test_task_step_entity_helpers() {
+        use openflow_contracts::TaskStep;
+
+        let step = TaskStep::new_parallel(
+            "step-1",
+            "task-1",
+            0,
+            "Test Step",
+            "prompt",
+            "mock",
+            "group-1",
+        );
+
+        assert!(step.is_parallel());
+        assert!(!step.has_worktree());
+        assert_eq!(step.parallel_group, Some("group-1".to_string()));
     }
 }

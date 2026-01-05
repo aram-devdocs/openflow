@@ -331,6 +331,18 @@ pub fn run() {
             commands::list_worktrees,
             commands::generate_branch_name,
             commands::generate_worktree_path,
+            // Database-tracked worktree commands
+            commands::get_db_worktree,
+            commands::get_db_worktree_by_branch,
+            commands::list_db_worktrees,
+            commands::list_active_db_worktrees,
+            commands::list_db_worktree_summaries,
+            commands::count_active_db_worktrees,
+            commands::create_db_worktree,
+            commands::delete_db_worktree,
+            commands::merge_db_worktree,
+            commands::resolve_db_worktree_conflict,
+            commands::cleanup_stale_db_worktrees,
             // Terminal commands
             commands::spawn_terminal,
             commands::get_default_shell,

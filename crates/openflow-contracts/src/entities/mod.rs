@@ -18,6 +18,7 @@ pub mod settings;
 pub mod task;
 pub mod tool_state;
 pub mod workflow;
+pub mod worktree;
 
 // Re-export entity types for convenience
 pub use agent_session::{
@@ -50,3 +51,4 @@ pub use workflow::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,
 };
+pub use worktree::{DbWorktree, DbWorktreeStatus, DbWorktreeSummary};

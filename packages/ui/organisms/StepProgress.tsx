@@ -287,7 +287,7 @@ const EventItem = forwardRef<
             className="h-3 w-3 text-muted-foreground flex-shrink-0"
           />
         )}
-        {!hasDetails && <span className="w-3" />}
+        {!hasDetails && <Box as="span" className="w-3" />}
         <Icon icon={EventIcon} className={cn('h-4 w-4 flex-shrink-0', color)} />
         <Text className="font-medium flex-shrink-0">{label}</Text>
         {preview && <Text className="truncate text-muted-foreground">{preview}</Text>}

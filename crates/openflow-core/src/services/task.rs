@@ -54,7 +54,7 @@ const TASK_COLUMNS: &str = r#"
 /// TaskStep columns for SELECT queries
 const STEP_COLUMNS: &str = r#"
     id, task_id, step_index, title, prompt, provider_id, status,
-    session_id, started_at, ended_at, created_at, updated_at
+    parallel_group, worktree_id, session_id, started_at, ended_at, created_at, updated_at
 "#;
 
 // =============================================================================
@@ -1206,6 +1206,426 @@ pub async fn delete_all_steps(pool: &SqlitePool, task_id: &str) -> ServiceResult
     );
 
     Ok(deleted_count)
+}
+
+// =============================================================================
+// Parallel Step Operations
+// =============================================================================
+
+/// Create a new step that is part of a parallel group.
+///
+/// Steps in the same parallel_group will be executed concurrently
+/// using separate git worktrees.
+pub async fn create_parallel_step(
+    pool: &SqlitePool,
+    task_id: &str,
+    step_index: i32,
+    title: &str,
+    prompt: &str,
+    provider_id: &str,
+    parallel_group: &str,
+) -> ServiceResult<TaskStep> {
+    let id = Uuid::new_v4().to_string();
+
+    debug!(
+        "Creating parallel step: id={}, task_id={}, step_index={}, title={}, provider_id={}, parallel_group={}",
+        id, task_id, step_index, title, provider_id, parallel_group
+    );
+
+    // Verify the task exists
+    let _ = get_task(pool, task_id).await?;
+
+    sqlx::query(
+        r#"
+        INSERT INTO task_steps (
+            id, task_id, step_index, title, prompt, provider_id, status, parallel_group
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+        "#,
+    )
+    .bind(&id)
+    .bind(task_id)
+    .bind(step_index)
+    .bind(title)
+    .bind(prompt)
+    .bind(provider_id)
+    .bind(parallel_group)
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        error!("Failed to create parallel step for task {}: {}", task_id, e);
+        ServiceError::Database(e)
+    })?;
+
+    // Fetch and return the created step
+    let step = sqlx::query_as::<_, TaskStep>(&format!(
+        "SELECT {} FROM task_steps WHERE id = ?",
+        STEP_COLUMNS
+    ))
+    .bind(&id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| {
+        error!("Failed to fetch created step {}: {}", id, e);
+        ServiceError::Database(e)
+    })?;
+
+    info!(
+        "Created parallel step: id={}, task_id={}, step_index={}, title={}, parallel_group={}",
+        step.id, task_id, step_index, title, parallel_group
+    );
+
+    Ok(step)
+}
+
+/// Get all steps in a specific parallel group.
+pub async fn get_steps_in_group(
+    pool: &SqlitePool,
+    task_id: &str,
+    parallel_group: &str,
+) -> ServiceResult<Vec<TaskStep>> {
+    debug!(
+        "Getting steps in parallel group: task_id={}, parallel_group={}",
+        task_id, parallel_group
+    );
+
+    let steps = sqlx::query_as::<_, TaskStep>(&format!(
+        "SELECT {} FROM task_steps WHERE task_id = ? AND parallel_group = ? ORDER BY step_index ASC",
+        STEP_COLUMNS
+    ))
+    .bind(task_id)
+    .bind(parallel_group)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| {
+        error!(
+            "Failed to get steps in group {}/{}: {}",
+            task_id, parallel_group, e
+        );
+        ServiceError::Database(e)
+    })?;
+
+    debug!(
+        "Found {} steps in parallel group {}/{}",
+        steps.len(),
+        task_id,
+        parallel_group
+    );
+
+    Ok(steps)
+}
+
+/// Get all pending steps in a specific parallel group.
+pub async fn get_pending_steps_in_group(
+    pool: &SqlitePool,
+    task_id: &str,
+    parallel_group: &str,
+) -> ServiceResult<Vec<TaskStep>> {
+    debug!(
+        "Getting pending steps in parallel group: task_id={}, parallel_group={}",
+        task_id, parallel_group
+    );
+
+    let steps = sqlx::query_as::<_, TaskStep>(&format!(
+        "SELECT {} FROM task_steps WHERE task_id = ? AND parallel_group = ? AND status = 'pending' ORDER BY step_index ASC",
+        STEP_COLUMNS
+    ))
+    .bind(task_id)
+    .bind(parallel_group)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| {
+        error!(
+            "Failed to get pending steps in group {}/{}: {}",
+            task_id, parallel_group, e
+        );
+        ServiceError::Database(e)
+    })?;
+
+    debug!(
+        "Found {} pending steps in parallel group {}/{}",
+        steps.len(),
+        task_id,
+        parallel_group
+    );
+
+    Ok(steps)
+}
+
+/// Link a step to a worktree (for parallel execution).
+pub async fn link_step_worktree(
+    pool: &SqlitePool,
+    step_id: &str,
+    worktree_id: &str,
+) -> ServiceResult<TaskStep> {
+    debug!(
+        "Linking step to worktree: step_id={}, worktree_id={}",
+        step_id, worktree_id
+    );
+
+    let result = sqlx::query(
+        r#"
+        UPDATE task_steps
+        SET
+            worktree_id = ?,
+            updated_at = datetime('now', 'subsec')
+        WHERE id = ?
+        "#,
+    )
+    .bind(worktree_id)
+    .bind(step_id)
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        error!("Failed to link step to worktree {}: {}", step_id, e);
+        ServiceError::Database(e)
+    })?;
+
+    if result.rows_affected() == 0 {
+        return Err(ServiceError::NotFound {
+            entity: "TaskStep",
+            id: step_id.to_string(),
+        });
+    }
+
+    // Fetch the updated step
+    let step = sqlx::query_as::<_, TaskStep>(&format!(
+        "SELECT {} FROM task_steps WHERE id = ?",
+        STEP_COLUMNS
+    ))
+    .bind(step_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| {
+        error!("Failed to fetch updated step {}: {}", step_id, e);
+        ServiceError::Database(e)
+    })?;
+
+    info!(
+        "Linked step to worktree: step_id={}, worktree_id={}",
+        step.id, worktree_id
+    );
+
+    Ok(step)
+}
+
+/// Check if all steps in a parallel group are complete.
+pub async fn is_group_complete(
+    pool: &SqlitePool,
+    task_id: &str,
+    parallel_group: &str,
+) -> ServiceResult<bool> {
+    debug!(
+        "Checking if parallel group is complete: task_id={}, parallel_group={}",
+        task_id, parallel_group
+    );
+
+    // Count steps that are NOT in a terminal state
+    let count: (i64,) = sqlx::query_as(
+        r#"
+        SELECT COUNT(*) FROM task_steps
+        WHERE task_id = ? AND parallel_group = ?
+        AND status NOT IN ('completed', 'failed', 'skipped')
+        "#,
+    )
+    .bind(task_id)
+    .bind(parallel_group)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| {
+        error!(
+            "Failed to check group completion {}/{}: {}",
+            task_id, parallel_group, e
+        );
+        ServiceError::Database(e)
+    })?;
+
+    let is_complete = count.0 == 0;
+
+    debug!(
+        "Parallel group {}/{} complete: {} (remaining: {})",
+        task_id, parallel_group, is_complete, count.0
+    );
+
+    Ok(is_complete)
+}
+
+/// Check if any step in a parallel group has failed.
+pub async fn has_group_failed(
+    pool: &SqlitePool,
+    task_id: &str,
+    parallel_group: &str,
+) -> ServiceResult<bool> {
+    debug!(
+        "Checking if parallel group has failed: task_id={}, parallel_group={}",
+        task_id, parallel_group
+    );
+
+    let count: (i64,) = sqlx::query_as(
+        r#"
+        SELECT COUNT(*) FROM task_steps
+        WHERE task_id = ? AND parallel_group = ? AND status = 'failed'
+        "#,
+    )
+    .bind(task_id)
+    .bind(parallel_group)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| {
+        error!(
+            "Failed to check group failure {}/{}: {}",
+            task_id, parallel_group, e
+        );
+        ServiceError::Database(e)
+    })?;
+
+    let has_failed = count.0 > 0;
+
+    debug!(
+        "Parallel group {}/{} has_failed: {} (failed count: {})",
+        task_id, parallel_group, has_failed, count.0
+    );
+
+    Ok(has_failed)
+}
+
+/// Skip all remaining steps in a parallel group (used when one step fails).
+pub async fn skip_remaining_in_group(
+    pool: &SqlitePool,
+    task_id: &str,
+    parallel_group: &str,
+) -> ServiceResult<i32> {
+    debug!(
+        "Skipping remaining steps in parallel group: task_id={}, parallel_group={}",
+        task_id, parallel_group
+    );
+
+    let result = sqlx::query(
+        r#"
+        UPDATE task_steps
+        SET
+            status = 'skipped',
+            ended_at = datetime('now', 'subsec'),
+            updated_at = datetime('now', 'subsec')
+        WHERE task_id = ? AND parallel_group = ?
+        AND status IN ('pending', 'running')
+        "#,
+    )
+    .bind(task_id)
+    .bind(parallel_group)
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        error!(
+            "Failed to skip remaining steps in group {}/{}: {}",
+            task_id, parallel_group, e
+        );
+        ServiceError::Database(e)
+    })?;
+
+    let skipped_count = result.rows_affected() as i32;
+
+    info!(
+        "Skipped {} remaining steps in parallel group {}/{}",
+        skipped_count, task_id, parallel_group
+    );
+
+    Ok(skipped_count)
+}
+
+/// Advance past a parallel group by finding the first step after the group.
+///
+/// Returns the index of the first step that is not part of any parallel group
+/// or is part of a different parallel group, or None if no more steps.
+pub async fn advance_past_group(
+    pool: &SqlitePool,
+    task_id: &str,
+    parallel_group: &str,
+) -> ServiceResult<Option<i32>> {
+    debug!(
+        "Advancing past parallel group: task_id={}, parallel_group={}",
+        task_id, parallel_group
+    );
+
+    // Find the highest step_index in the current group
+    let max_index: Option<(i32,)> = sqlx::query_as(
+        r#"
+        SELECT MAX(step_index) FROM task_steps
+        WHERE task_id = ? AND parallel_group = ?
+        "#,
+    )
+    .bind(task_id)
+    .bind(parallel_group)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| {
+        error!(
+            "Failed to get max index in group {}/{}: {}",
+            task_id, parallel_group, e
+        );
+        ServiceError::Database(e)
+    })?;
+
+    let max_group_index = match max_index {
+        Some((idx,)) => idx,
+        None => return Ok(None),
+    };
+
+    // Find the next step after the group
+    let next_step: Option<(i32,)> = sqlx::query_as(
+        r#"
+        SELECT step_index FROM task_steps
+        WHERE task_id = ? AND step_index > ?
+        ORDER BY step_index ASC
+        LIMIT 1
+        "#,
+    )
+    .bind(task_id)
+    .bind(max_group_index)
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| {
+        error!(
+            "Failed to find next step after group {}/{}: {}",
+            task_id, parallel_group, e
+        );
+        ServiceError::Database(e)
+    })?;
+
+    let next_index = next_step.map(|(idx,)| idx);
+
+    if let Some(idx) = next_index {
+        // Update task's current_step_index
+        sqlx::query(
+            r#"
+            UPDATE tasks
+            SET
+                current_step_index = ?,
+                updated_at = datetime('now', 'subsec')
+            WHERE id = ?
+            "#,
+        )
+        .bind(idx)
+        .bind(task_id)
+        .execute(pool)
+        .await
+        .map_err(|e| {
+            error!("Failed to advance task step index {}: {}", task_id, e);
+            ServiceError::Database(e)
+        })?;
+
+        info!(
+            "Advanced past parallel group {}/{} to step index {}",
+            task_id, parallel_group, idx
+        );
+    } else {
+        debug!(
+            "No steps after parallel group {}/{}",
+            task_id, parallel_group
+        );
+    }
+
+    Ok(next_index)
 }
 
 // =============================================================================

@@ -67,6 +67,7 @@ pub use entities::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,
 };
+pub use entities::{DbWorktree, DbWorktreeStatus, DbWorktreeSummary};
 // Request types
 pub use requests::SearchRequest;
 pub use requests::{

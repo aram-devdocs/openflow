@@ -57,6 +57,7 @@ export * from './artifacts';
 export * from './terminal';
 export * from './github';
 export * from './system';
+export * from './worktree';
 
 // Re-export transport types for advanced usage
 export type {

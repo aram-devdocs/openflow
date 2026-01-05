@@ -46,3 +46,8 @@ async-trait = "0.1"
 tempfile.workspace = true
 tokio = { workspace = true, features = ["test-util", "macros"] }
 openflow-db = { workspace = true, features = ["test-utils"] }
+criterion = { version = "0.5", features = ["async_tokio"] }
+
+[[bench]]
+name = "performance"
+harness = false

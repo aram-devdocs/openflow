@@ -254,6 +254,13 @@ impl StepStatus {
 /// a prompt that will be sent to an agent provider. Steps are executed
 /// sequentially by default, or in parallel when using git worktrees.
 ///
+/// # Parallel Execution
+///
+/// Steps with the same `parallel_group` value will be executed concurrently
+/// in separate git worktrees. When all steps in a parallel group complete,
+/// their worktrees are merged back to the main branch before the next
+/// sequential step or parallel group begins.
+///
 /// # Database
 /// @entity
 /// @table: task_steps
@@ -268,6 +275,8 @@ impl StepStatus {
 ///   "prompt": "Create a new React component for user profiles",
 ///   "providerId": "claude-code",
 ///   "status": "pending",
+///   "parallelGroup": "group-1",
+///   "worktreeId": null,
 ///   "sessionId": null,
 ///   "startedAt": null,
 ///   "endedAt": null,
@@ -299,6 +308,15 @@ pub struct TaskStep {
 
     /// Current execution status
     pub status: StepStatus,
+
+    /// Parallel execution group identifier.
+    /// Steps with the same parallel_group value will be executed concurrently
+    /// in separate git worktrees. NULL means sequential execution.
+    pub parallel_group: Option<String>,
+
+    /// Link to the worktree used for this step's parallel execution.
+    /// Only populated when the step is part of a parallel group.
+    pub worktree_id: Option<String>,
 
     /// Link to the agent session when running or completed
     pub session_id: Option<String>,
@@ -335,12 +353,29 @@ impl TaskStep {
             prompt: prompt.into(),
             provider_id: provider_id.into(),
             status: StepStatus::Pending,
+            parallel_group: None,
+            worktree_id: None,
             session_id: None,
             started_at: None,
             ended_at: None,
             created_at: now.clone(),
             updated_at: now,
         }
+    }
+
+    /// Create a new step that is part of a parallel group
+    pub fn new_parallel(
+        id: impl Into<String>,
+        task_id: impl Into<String>,
+        step_index: i32,
+        title: impl Into<String>,
+        prompt: impl Into<String>,
+        provider_id: impl Into<String>,
+        parallel_group: impl Into<String>,
+    ) -> Self {
+        let mut step = Self::new(id, task_id, step_index, title, prompt, provider_id);
+        step.parallel_group = Some(parallel_group.into());
+        step
     }
 
     /// Check if this step has been linked to an agent session
@@ -356,6 +391,16 @@ impl TaskStep {
     /// Check if this step is currently executing
     pub fn is_running(&self) -> bool {
         self.status.is_running()
+    }
+
+    /// Check if this step is part of a parallel group
+    pub fn is_parallel(&self) -> bool {
+        self.parallel_group.is_some()
+    }
+
+    /// Check if this step has a worktree assigned
+    pub fn has_worktree(&self) -> bool {
+        self.worktree_id.is_some()
     }
 
     /// Get the duration if the step has completed
@@ -413,20 +458,29 @@ pub struct TaskStepSummary {
     /// Current execution status
     pub status: StepStatus,
 
+    /// Parallel execution group identifier (if any)
+    pub parallel_group: Option<String>,
+
     /// Whether linked to an agent session
     pub has_session: bool,
+
+    /// Whether linked to a worktree
+    pub has_worktree: bool,
 }
 
 impl From<TaskStep> for TaskStepSummary {
     fn from(step: TaskStep) -> Self {
         let has_session = step.has_session();
+        let has_worktree = step.has_worktree();
         Self {
             id: step.id,
             step_index: step.step_index,
             title: step.title,
             provider_id: step.provider_id,
             status: step.status,
+            parallel_group: step.parallel_group,
             has_session,
+            has_worktree,
         }
     }
 }
@@ -439,7 +493,9 @@ impl From<&TaskStep> for TaskStepSummary {
             title: step.title.clone(),
             provider_id: step.provider_id.clone(),
             status: step.status.clone(),
+            parallel_group: step.parallel_group.clone(),
             has_session: step.has_session(),
+            has_worktree: step.has_worktree(),
         }
     }
 }
@@ -881,6 +937,99 @@ impl TaskWithSteps {
     pub fn next_pending_step(&self) -> Option<&TaskStep> {
         self.steps.iter().find(|s| s.status == StepStatus::Pending)
     }
+
+    /// Check if the task has any parallel steps
+    pub fn has_parallel_steps(&self) -> bool {
+        self.steps.iter().any(|s| s.is_parallel())
+    }
+
+    /// Get all unique parallel group names
+    pub fn parallel_groups(&self) -> Vec<String> {
+        let mut groups: Vec<String> = self.steps
+            .iter()
+            .filter_map(|s| s.parallel_group.clone())
+            .collect();
+        groups.sort();
+        groups.dedup();
+        groups
+    }
+
+    /// Get all steps in a specific parallel group
+    pub fn steps_in_group(&self, group: &str) -> Vec<&TaskStep> {
+        self.steps
+            .iter()
+            .filter(|s| s.parallel_group.as_deref() == Some(group))
+            .collect()
+    }
+
+    /// Get all pending steps in a specific parallel group
+    pub fn pending_steps_in_group(&self, group: &str) -> Vec<&TaskStep> {
+        self.steps
+            .iter()
+            .filter(|s| {
+                s.parallel_group.as_deref() == Some(group) && s.status == StepStatus::Pending
+            })
+            .collect()
+    }
+
+    /// Check if all steps in a parallel group are complete
+    pub fn group_is_complete(&self, group: &str) -> bool {
+        let group_steps = self.steps_in_group(group);
+        !group_steps.is_empty() && group_steps.iter().all(|s| s.status.is_terminal())
+    }
+
+    /// Check if any step in a parallel group has failed
+    pub fn group_has_failed(&self, group: &str) -> bool {
+        self.steps_in_group(group)
+            .iter()
+            .any(|s| s.status == StepStatus::Failed)
+    }
+
+    /// Get the current execution unit: either a single sequential step
+    /// or a group of parallel steps that should execute together.
+    ///
+    /// Returns:
+    /// - `Some(ParallelGroup { group, steps })` if current position is at a parallel group
+    /// - `Some(Sequential { step })` if current position is at a sequential step
+    /// - `None` if no more steps to execute
+    pub fn current_execution_unit(&self) -> Option<ExecutionUnit<'_>> {
+        let current_step = self.current_step()?;
+
+        if let Some(ref group) = current_step.parallel_group {
+            // Find all pending steps in this group
+            let pending_steps: Vec<&TaskStep> = self.pending_steps_in_group(group);
+            if pending_steps.is_empty() {
+                // All steps in this group are done, try next position
+                return None;
+            }
+            Some(ExecutionUnit::Parallel {
+                group: group.clone(),
+                steps: pending_steps,
+            })
+        } else {
+            // Sequential step
+            if current_step.status == StepStatus::Pending {
+                Some(ExecutionUnit::Sequential { step: current_step })
+            } else {
+                None
+            }
+        }
+    }
+}
+
+/// Represents the current unit of work to execute.
+///
+/// The task executor uses this to determine whether to run steps
+/// sequentially or in parallel.
+#[derive(Debug, Clone)]
+pub enum ExecutionUnit<'a> {
+    /// A single sequential step
+    Sequential { step: &'a TaskStep },
+    /// A group of parallel steps that should execute concurrently
+    Parallel {
+        group: String,
+        steps: Vec<&'a TaskStep>,
+    },
 }
 
 // =============================================================================

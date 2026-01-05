@@ -1,4 +1,4 @@
-import { Box } from '@openflow/primitives';
+import { Box, Text } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
@@ -212,7 +212,7 @@ export const ChatTerminal = forwardRef<ChatTerminalHandle, ChatTerminalProps>(fu
             )}
             aria-hidden="true"
           />
-          <span className={CHAT_TERMINAL_BYTES_CLASSES}>{statusText}</span>
+          <Text as="span" className={CHAT_TERMINAL_BYTES_CLASSES}>{statusText}</Text>
         </Box>
       )}
 

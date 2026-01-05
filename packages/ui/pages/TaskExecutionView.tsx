@@ -208,14 +208,15 @@ export const TaskExecutionHeader = forwardRef<HTMLDivElement, TaskExecutionHeade
             <Heading level={1} className="text-xl font-semibold">
               {task.title}
             </Heading>
-            <span
+            <Text
+              as="span"
               className={cn(
                 'rounded-full px-2 py-0.5 text-xs font-medium',
                 TASK_STATUS_COLORS[task.status]
               )}
             >
               {TASK_STATUS_LABELS[task.status]}
-            </span>
+            </Text>
           </Flex>
 
           {/* Execution controls */}
@@ -331,7 +332,7 @@ export const TaskStepItem = forwardRef<HTMLButtonElement, TaskStepItemProps>(
           <Text className="truncate text-sm font-medium">{step.title}</Text>
           <Text className="truncate text-xs text-muted-foreground">{step.providerId}</Text>
         </Flex>
-        <span className="flex-shrink-0 text-xs text-muted-foreground">{step.stepIndex + 1}</span>
+        <Text as="span" className="flex-shrink-0 text-xs text-muted-foreground">{step.stepIndex + 1}</Text>
       </button>
     );
   }
@@ -355,17 +356,17 @@ export const TaskStepList = forwardRef<HTMLDivElement, TaskStepListProps>(
         {/* Progress bar */}
         <Flex direction="column" gap="1">
           <Flex justify="between" className="text-xs text-muted-foreground">
-            <span>Progress</span>
-            <span>
+            <Text as="span">Progress</Text>
+            <Text as="span">
               {completedCount}/{steps.length} steps
-            </span>
+            </Text>
           </Flex>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-            <div
+          <Box className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <Box
               className="h-full bg-primary transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
-          </div>
+          </Box>
         </Flex>
 
         {/* Step list */}
@@ -463,21 +464,21 @@ export const TaskExecutionSkeleton = forwardRef<HTMLDivElement, HTMLAttributes<H
         {/* Header skeleton */}
         <Flex direction="column" gap="4" className="border-b border-border p-4">
           <Flex align="center" gap="3">
-            <div className="h-8 w-8 rounded bg-muted" />
-            <div className="h-6 w-48 rounded bg-muted" />
-            <div className="h-5 w-16 rounded-full bg-muted" />
+            <Box className="h-8 w-8 rounded bg-muted" />
+            <Box className="h-6 w-48 rounded bg-muted" />
+            <Box className="h-5 w-16 rounded-full bg-muted" />
           </Flex>
-          <div className="h-4 w-96 rounded bg-muted" />
+          <Box className="h-4 w-96 rounded bg-muted" />
         </Flex>
 
         {/* Steps skeleton */}
         <Flex direction="column" gap="3" className="p-4">
-          <div className="h-1.5 w-full rounded-full bg-muted" />
+          <Box className="h-1.5 w-full rounded-full bg-muted" />
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3 rounded-md p-2">
-              <div className="h-4 w-4 rounded-full bg-muted" />
-              <div className="h-4 flex-1 rounded bg-muted" />
-            </div>
+            <Flex key={i} align="center" gap="3" className="rounded-md p-2">
+              <Box className="h-4 w-4 rounded-full bg-muted" />
+              <Box className="h-4 flex-1 rounded bg-muted" />
+            </Flex>
           ))}
         </Flex>
       </Flex>

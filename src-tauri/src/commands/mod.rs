@@ -34,6 +34,7 @@ pub mod system;
 pub mod tasks;
 pub mod terminal;
 pub mod workflows;
+pub mod worktrees;
 
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -144,3 +145,4 @@ pub use system::*;
 pub use tasks::*;
 pub use terminal::*;
 pub use workflows::*;
+pub use worktrees::*;

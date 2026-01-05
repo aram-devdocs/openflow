@@ -53,7 +53,8 @@
 use std::sync::Arc;
 
 use openflow_contracts::events::{
-    claude_event_channel, process_output_channel, process_status_channel, tool_state_channel,
+    agent_event_channel, claude_event_channel, permission_request_channel, process_output_channel,
+    process_status_channel, step_progress_channel, task_progress_channel, tool_state_channel,
     ClaudeEventData, DataChangedEvent, ProcessOutputEvent, ProcessStatusEvent, ToolStateEvent,
     WsServerMessage, CHANNEL_DATA_CHANGED,
 };
@@ -212,6 +213,127 @@ impl WsBroadcaster {
                     timestamp,
                 };
                 let message = WsServerMessage::tool_state_event(&contract_event);
+                (channel, message)
+            }
+
+            // Task/Step progress events
+            CoreEvent::TaskProgress {
+                task_id,
+                status,
+                current_step_index,
+                total_steps,
+                details,
+                timestamp,
+            } => {
+                let channel = task_progress_channel(&task_id);
+                let payload = serde_json::json!({
+                    "task_id": task_id,
+                    "status": status,
+                    "current_step_index": current_step_index,
+                    "total_steps": total_steps,
+                    "details": details,
+                    "timestamp": timestamp,
+                });
+                let message = WsServerMessage::event(channel.clone(), payload);
+                (channel, message)
+            }
+
+            CoreEvent::StepProgress {
+                step_id,
+                task_id,
+                step_index,
+                status,
+                session_id,
+                details,
+                timestamp,
+            } => {
+                let channel = step_progress_channel(&step_id);
+                let payload = serde_json::json!({
+                    "step_id": step_id,
+                    "task_id": task_id,
+                    "step_index": step_index,
+                    "status": status,
+                    "session_id": session_id,
+                    "details": details,
+                    "timestamp": timestamp,
+                });
+                let message = WsServerMessage::event(channel.clone(), payload);
+                (channel, message)
+            }
+
+            // Agent session events
+            CoreEvent::AgentEvent {
+                session_id,
+                sequence,
+                event_type,
+                envelope,
+                timestamp,
+            } => {
+                let channel = agent_event_channel(&session_id);
+                let payload = serde_json::json!({
+                    "session_id": session_id,
+                    "sequence": sequence,
+                    "event_type": event_type,
+                    "envelope": envelope,
+                    "timestamp": timestamp,
+                });
+                let message = WsServerMessage::event(channel.clone(), payload);
+                (channel, message)
+            }
+
+            CoreEvent::SessionStatus {
+                session_id,
+                status,
+                exit_code,
+                timestamp,
+            } => {
+                let channel = format!("session:{}", session_id);
+                let payload = serde_json::json!({
+                    "session_id": session_id,
+                    "status": status,
+                    "exit_code": exit_code,
+                    "timestamp": timestamp,
+                });
+                let message = WsServerMessage::event(channel.clone(), payload);
+                (channel, message)
+            }
+
+            // Permission events
+            CoreEvent::PermissionRequest {
+                permission_id,
+                session_id,
+                tool_name,
+                description,
+                file_path,
+                timestamp,
+            } => {
+                let channel = permission_request_channel(&session_id);
+                let payload = serde_json::json!({
+                    "permission_id": permission_id,
+                    "session_id": session_id,
+                    "tool_name": tool_name,
+                    "description": description,
+                    "file_path": file_path,
+                    "timestamp": timestamp,
+                });
+                let message = WsServerMessage::event(channel.clone(), payload);
+                (channel, message)
+            }
+
+            CoreEvent::PermissionResponse {
+                permission_id,
+                session_id,
+                approved,
+                timestamp,
+            } => {
+                let channel = format!("session:{}", session_id);
+                let payload = serde_json::json!({
+                    "permission_id": permission_id,
+                    "session_id": session_id,
+                    "approved": approved,
+                    "timestamp": timestamp,
+                });
+                let message = WsServerMessage::event(channel.clone(), payload);
                 (channel, message)
             }
         }

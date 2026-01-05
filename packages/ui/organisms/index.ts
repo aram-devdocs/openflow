@@ -2256,3 +2256,13 @@ export {
   type ToolStateListProps,
   type TerminalOutputProps,
 } from './StepProgress';
+export {
+  // Components
+  WorktreeStatus,
+  WorktreeList,
+  WorktreeItem,
+  // Types
+  type WorktreeStatusProps,
+  type WorktreeItemProps,
+  type WorktreeListProps,
+} from './WorktreeStatus';
