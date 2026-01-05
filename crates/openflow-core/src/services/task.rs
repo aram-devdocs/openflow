@@ -314,9 +314,9 @@ pub async fn update(
     let title = request.title.unwrap_or(existing.title.clone());
     let description = request.description.or(existing.description.clone());
     let status = request.status.unwrap_or(existing.status);
-    let auto_start_next_step = request
+    let auto_run = request
         .auto_start_next_step
-        .unwrap_or(existing.auto_start_next_step);
+        .unwrap_or(existing.auto_run);
     let default_executor_profile_id = request
         .default_executor_profile_id
         .or(existing.default_executor_profile_id.clone());
@@ -345,7 +345,7 @@ pub async fn update(
     .bind(&title)
     .bind(&description)
     .bind(status.to_string())
-    .bind(auto_start_next_step)
+    .bind(auto_run)
     .bind(&default_executor_profile_id)
     .bind(id)
     .execute(pool)
@@ -523,7 +523,7 @@ pub async fn duplicate(pool: &SqlitePool, id: &str) -> ServiceResult<Task> {
     .bind(&original.description)
     .bind(&original.workflow_template)
     .bind(&original.parent_task_id)
-    .bind(original.auto_start_next_step)
+    .bind(original.auto_run)
     .bind(&original.default_executor_profile_id)
     .bind(&original.base_branch)
     .execute(pool)
