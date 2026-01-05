@@ -1,6 +1,7 @@
 //! Executor Routes
 //!
-//! REST API endpoints for executor profile management and running executors.
+//! REST API endpoints for executor profile management and running executors
+//! via the AgentOrchestrator.
 //!
 //! # Endpoints
 //!
@@ -12,6 +13,8 @@
 //! - `PATCH /api/executor/profiles/:id` - Update an executor profile
 //! - `DELETE /api/executor/profiles/:id` - Delete an executor profile
 
+use std::path::PathBuf;
+
 use axum::{
     extract::{Path, State},
     routing::{get, post},
@@ -22,7 +25,8 @@ use openflow_contracts::{
     UpdateExecutorProfileRequest,
 };
 use openflow_core::events::{EntityType, Event};
-use openflow_core::services::{executor, executor_profile};
+use openflow_core::providers::{AgentConfig, DEFAULT_PROVIDER_ID};
+use openflow_core::services::{executor, executor_profile, process, SpawnAgentRequest};
 
 use crate::{error::ServerResult, state::AppState};
 
@@ -47,12 +51,12 @@ pub fn routes() -> Router<AppState> {
 
 /// POST /api/executor/run
 ///
-/// Run an executor (AI agent) in a chat.
+/// Run an executor (AI agent) in a chat via the AgentOrchestrator.
 async fn run(
     State(state): State<AppState>,
     Json(request): Json<RunExecutorRequest>,
 ) -> ServerResult<Json<ExecutionProcess>> {
-    // Prepare executor context
+    // Prepare executor context (resolves profile, chat, project)
     let context = executor::prepare(
         &state.pool,
         &request.chat_id,
@@ -61,20 +65,38 @@ async fn run(
     )
     .await?;
 
-    // Start the process
-    let process = state
-        .process_service
-        .start(&state.pool, context.create_request, context.start_request)
-        .await?;
+    // Create the process record first
+    let execution_process = process::create(&state.pool, context.create_request).await?;
+
+    // Build agent configuration
+    let mut agent_config =
+        AgentConfig::new(&request.prompt, PathBuf::from(&context.project.git_repo_path));
+
+    // Add session ID for resuming if available
+    if let Some(session_id) = &context.chat.claude_session_id {
+        agent_config = agent_config.with_session_id(session_id);
+    }
+
+    // Add environment variables
+    agent_config = agent_config.with_env(context.env);
+
+    // Spawn agent via orchestrator
+    let spawn_request = SpawnAgentRequest::new(
+        &execution_process.id,
+        DEFAULT_PROVIDER_ID,
+        agent_config,
+    );
+
+    state.agent_orchestrator.spawn_agent(spawn_request).await?;
 
     // Broadcast data changed event
     state.broadcast(Event::created(
         EntityType::Process,
-        process.id.clone(),
-        &process,
+        execution_process.id.clone(),
+        &execution_process,
     ));
 
-    Ok(Json(process))
+    Ok(Json(execution_process))
 }
 
 /// GET /api/executor/profiles

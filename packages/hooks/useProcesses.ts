@@ -39,6 +39,8 @@ const logger = createLogger('useProcesses');
  */
 export const processKeys = {
   all: ['processes'] as const,
+  lists: () => [...processKeys.all, 'list'] as const,
+  list: (filters: { chatId?: string }) => [...processKeys.lists(), filters] as const,
   details: () => [...processKeys.all, 'detail'] as const,
   detail: (id: string) => [...processKeys.details(), id] as const,
 };
@@ -112,6 +114,46 @@ export function useProcess(
     },
     enabled: enabled && Boolean(id),
     refetchInterval,
+    staleTime,
+  });
+}
+
+/**
+ * Fetch processes by chat ID.
+ *
+ * Returns processes for a given chat, sorted by creation date descending.
+ * Useful for finding the most recent process for a chat.
+ *
+ * @param chatId - Chat ID to filter by
+ * @param options - Optional query configuration
+ * @returns Query result with process list
+ */
+export function useProcessesByChat(
+  chatId: string,
+  options: UseProcessOptions = {}
+): UseQueryResult<ExecutionProcess[]> {
+  const { enabled = true, staleTime = 5000 } = options;
+
+  return useQuery({
+    queryKey: processKeys.list({ chatId }),
+    queryFn: async () => {
+      logger.debug('Fetching processes for chat', { chatId });
+      try {
+        const processes = await processQueries.list({ chatId });
+        logger.info('Processes fetched for chat', {
+          chatId,
+          count: processes.length,
+        });
+        return processes;
+      } catch (error) {
+        logger.error('Failed to fetch processes for chat', {
+          chatId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
+    enabled: enabled && Boolean(chatId),
     staleTime,
   });
 }

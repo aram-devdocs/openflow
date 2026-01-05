@@ -141,4 +141,41 @@ export const processQueries = {
       throw error;
     }
   },
+
+  /**
+   * List processes, optionally filtered by chat ID.
+   *
+   * @param options - Filter options
+   * @param options.chatId - Optional chat ID to filter by
+   * @returns List of execution processes
+   * @throws Error if the query fails
+   *
+   * @example
+   * ```ts
+   * // List all processes for a chat
+   * const processes = await processQueries.list({ chatId: 'chat-123' });
+   * ```
+   */
+  list: async (options?: { chatId?: string }): Promise<ExecutionProcess[]> => {
+    logger.debug('Listing processes', { chatId: options?.chatId });
+
+    try {
+      const processes = await invoke<ExecutionProcess[]>('list_processes', {
+        chatId: options?.chatId,
+      });
+
+      logger.info('Listed processes successfully', {
+        count: processes.length,
+        chatId: options?.chatId,
+      });
+
+      return processes;
+    } catch (error) {
+      logger.error('Failed to list processes', {
+        chatId: options?.chatId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  },
 };

@@ -4,72 +4,53 @@
  * This hook encapsulates all the state management and effects for the
  * standalone chat page, keeping the route component pure.
  *
- * Features:
- * - Full logging at DEBUG/INFO/ERROR levels
- * - Toast notifications for user feedback on actions
- * - Proper error handling with try/catch patterns
+ * Uses the AgentOrchestrator backend for agent execution and event streaming.
  */
 
-import type { Chat, Message, Project } from '@openflow/generated';
-import { MessageRole } from '@openflow/generated';
+import type {
+  AgentEventRecord,
+  Chat,
+  Message,
+  Project,
+  UnifiedAgentEvent,
+  UnifiedAgentEventMessage,
+  UnifiedAgentEventToolResult,
+  UnifiedAgentEventToolUse,
+} from '@openflow/generated';
+import {
+  AgentMessageRole,
+  CompletionStatus,
+  MessageRole,
+  SessionStatus,
+  ToolResultStatus,
+} from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 /** View mode for chat display */
 export type ChatViewMode = 'clean' | 'terminal';
+import {
+  useAgentPendingPermission,
+  useAgentRawOutput,
+  useAgentSessionEvents,
+  useAgentSessionWithState,
+  useAgentSessionsByProcess,
+  useRespondAgentPermission,
+} from './useAgentSession';
 import { useChat, useUpdateChat } from './useChats';
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
+import { useCreateMessage, useMessages } from './useMessages';
+import { useProcessLifecycle } from './useProcessLifecycle';
+import { useKillProcess, useProcessesByChat } from './useProcesses';
+import { useProject } from './useProjects';
+import { useToast } from './useToast';
 
-/**
- * @deprecated This hook is being phased out. Use useAgentSession hooks from useAgentSession.ts instead.
- * Permission request type for legacy compatibility.
- */
+/** Permission request type */
 export interface PermissionRequest {
   toolName: string;
   description?: string;
   filePath?: string;
 }
-
-/**
- * @deprecated This hook is being phased out. Use useAgentSession hooks instead.
- * Stub implementation that returns empty/default values for legacy compatibility.
- */
-function useClaudeEvents(
-  processId: string | null,
-  _options?: { onListenersReady?: () => void }
-): {
-  events: unknown[];
-  rawOutput: string[];
-  isRunning: boolean;
-  isComplete: boolean;
-  permissionRequest: PermissionRequest | null;
-  clearPermissionRequest: () => void;
-  clearEvents: () => void;
-  sessionId: string | null;
-} {
-  // Log deprecation warning in development
-  if (processId && process.env.NODE_ENV === 'development') {
-    console.warn(
-      '[DEPRECATED] useChatSession uses useClaudeEvents which has been removed. ' +
-        'Migrate to useAgentSession hooks for the new architecture.'
-    );
-  }
-  return {
-    events: [],
-    rawOutput: [],
-    isRunning: false,
-    isComplete: false,
-    permissionRequest: null,
-    clearPermissionRequest: () => {},
-    clearEvents: () => {},
-    sessionId: null,
-  };
-}
-import { useCreateMessage, useMessages } from './useMessages';
-import { useProcessLifecycle } from './useProcessLifecycle';
-import { useKillProcess, useSendInput } from './useProcesses';
-import { useProject } from './useProjects';
-import { useToast } from './useToast';
 
 // ============================================================================
 // Logger
@@ -94,26 +75,6 @@ interface ToolResult {
   isError?: boolean;
 }
 
-/** Claude event type (matches useClaudeEvents) */
-interface ClaudeEvent {
-  type: 'system' | 'assistant' | 'user' | 'result';
-  subtype?: string;
-  message?: {
-    content?: Array<{
-      type: string;
-      text?: string;
-      id?: string;
-      name?: string;
-      input?: Record<string, unknown>;
-      tool_use_id?: string;
-      // Content can be a string OR an array of content blocks (Claude API format)
-      content?: string | Array<{ text?: string; type?: string }>;
-      is_error?: boolean;
-    }>;
-  };
-  data?: Record<string, unknown>;
-}
-
 /** Display item for rendering */
 export type DisplayItem =
   | { type: 'text'; content: string }
@@ -132,7 +93,7 @@ export type DisplayItem =
 export interface UseChatSessionOptions {
   /** Chat ID to load */
   chatId: string;
-  /** @deprecated Use toast hook integration instead - errors are now shown via toast */
+  /** Optional error callback for backward compatibility */
   onError?: (title: string, message: string) => void;
 }
 
@@ -183,107 +144,60 @@ export interface ChatSessionState {
 // ============================================================================
 
 /**
- * Filter events to only include the current (latest) turn.
- * When using --resume, Claude streams back all historical events.
- * We need to skip events from already-persisted turns.
+ * Extract content from UnifiedAgentEvents for message persistence.
  */
-function filterToCurrentTurn(
-  events: ClaudeEvent[],
-  persistedAssistantCount: number
-): ClaudeEvent[] {
-  if (persistedAssistantCount === 0) {
-    return events;
-  }
-
-  let turnCount = 0;
-  let currentTurnStartIndex = 0;
-  let lastWasResult = false;
-
-  for (let i = 0; i < events.length; i++) {
-    const event = events[i];
-    if (!event) continue;
-
-    if (event.type === 'assistant') {
-      if (i === 0 || lastWasResult) {
-        turnCount++;
-        if (turnCount > persistedAssistantCount) {
-          currentTurnStartIndex = i;
-          break;
-        }
-      }
-      lastWasResult = false;
-    } else if (event.type === 'result') {
-      lastWasResult = true;
-    } else {
-      lastWasResult = false;
-    }
-  }
-
-  if (turnCount <= persistedAssistantCount) {
-    let lastResultIndex = -1;
-    for (let i = events.length - 1; i >= 0; i--) {
-      const event = events[i];
-      if (event?.type === 'result') {
-        lastResultIndex = i;
-        break;
-      }
-    }
-    if (lastResultIndex >= 0 && lastResultIndex < events.length - 1) {
-      return events.slice(lastResultIndex + 1);
-    }
-    return [];
-  }
-
-  return events.slice(currentTurnStartIndex);
-}
-
-/**
- * Extract text content and tool data from Claude events for persistence.
- */
-function extractContentFromEvents(
-  events: ClaudeEvent[],
-  persistedAssistantCount = 0
-): {
+function extractContentFromUnifiedEvents(events: AgentEventRecord[]): {
   textContent: string;
   toolCalls: ToolCall[];
   toolResults: ToolResult[];
 } {
-  const currentTurnEvents = filterToCurrentTurn(events, persistedAssistantCount);
-
   const textParts: string[] = [];
   const toolCalls: ToolCall[] = [];
   const toolResults: ToolResult[] = [];
 
-  for (const event of currentTurnEvents) {
-    if (event.type === 'assistant' && event.message?.content) {
-      for (const block of event.message.content) {
-        if (block.type === 'text' && block.text) {
-          textParts.push(block.text);
-        } else if (block.type === 'tool_use' && block.id && block.name) {
-          toolCalls.push({
-            id: block.id,
-            name: block.name,
-            input: block.input ?? {},
-          });
+  for (const record of events) {
+    const event = record.payload as UnifiedAgentEvent;
+    if (!event || typeof event !== 'object' || !('type' in event)) continue;
+
+    if (event.type === 'message') {
+      const msgEvent = event as UnifiedAgentEventMessage;
+      if (msgEvent.role === AgentMessageRole.Assistant) {
+        for (const block of msgEvent.content) {
+          if (block.type === 'text' && block.text) {
+            textParts.push(block.text);
+          } else if (block.type === 'tool_use' && block.id && block.name) {
+            toolCalls.push({
+              id: block.id,
+              name: block.name,
+              input: (block.input as Record<string, unknown>) ?? {},
+            });
+          }
+        }
+      } else if (msgEvent.role === AgentMessageRole.User) {
+        for (const block of msgEvent.content) {
+          if (block.type === 'tool_result' && block.tool_use_id) {
+            toolResults.push({
+              toolUseId: block.tool_use_id,
+              content: block.content ?? '',
+              isError: block.is_error,
+            });
+          }
         }
       }
-    } else if (event.type === 'user' && event.message?.content) {
-      for (const block of event.message.content) {
-        if (block.type === 'tool_result' && block.tool_use_id) {
-          // Handle content that can be string or array of content blocks
-          const contentStr =
-            typeof block.content === 'string'
-              ? block.content
-              : Array.isArray(block.content)
-                ? block.content.map((c: { text?: string }) => c.text || '').join('')
-                : '';
-          toolResults.push({
-            toolUseId: block.tool_use_id,
-            content: contentStr,
-            isError: block.is_error,
-          });
-        }
-      }
+    } else if (event.type === 'tool_use') {
+      const toolEvent = event as UnifiedAgentEventToolUse;
+      toolCalls.push({
+        id: toolEvent.tool_id,
+        name: toolEvent.tool_name,
+        input: (toolEvent.input as Record<string, unknown>) ?? {},
+      });
+    } else if (event.type === 'tool_result') {
+      const resultEvent = event as UnifiedAgentEventToolResult;
+      toolResults.push({
+        toolUseId: resultEvent.tool_id,
+        content: resultEvent.output,
+        isError: resultEvent.status === ToolResultStatus.Error,
+      });
     }
   }
 
@@ -295,76 +209,78 @@ function extractContentFromEvents(
 }
 
 /**
- * Process events into display items for rendering.
- * Tools are shown immediately when tool_use arrives (with output: undefined),
- * then updated in-place when tool_result arrives.
+ * Process UnifiedAgentEvents into display items for rendering.
  */
-function processEventsToDisplayItems(events: ClaudeEvent[]): DisplayItem[] {
+function processUnifiedEventsToDisplayItems(events: AgentEventRecord[]): DisplayItem[] {
   const items: DisplayItem[] = [];
-  // Map tool_id -> index in items array, for updating when results arrive
   const toolIndexMap = new Map<string, number>();
 
-  for (const event of events) {
-    if (event.type === 'assistant' && event.message?.content) {
-      for (const block of event.message.content) {
-        // Debug: Log ALL block types to understand what we're receiving
-        logger.debug('Processing assistant content block', {
-          blockType: block.type,
-          hasText: !!block.text,
-          hasId: !!block.id,
-          hasName: !!block.name,
-          blockKeys: Object.keys(block),
-        });
-        if (block.type === 'text' && block.text) {
-          items.push({ type: 'text', content: block.text });
-        } else if (block.type === 'tool_use' && block.name && block.id) {
-          // Add tool immediately to display (shows "in progress" state)
-          const toolItem: DisplayItem = {
-            type: 'tool',
-            tool: {
-              id: block.id,
-              name: block.name,
-              input: block.input,
-              output: undefined, // No output yet - tool in progress
-              isError: false,
-            },
-          };
-          items.push(toolItem);
-          // Track index for updating when result arrives
-          toolIndexMap.set(block.id, items.length - 1);
+  for (const record of events) {
+    const event = record.payload as UnifiedAgentEvent;
+    if (!event || typeof event !== 'object' || !('type' in event)) continue;
+
+    if (event.type === 'message') {
+      const msgEvent = event as UnifiedAgentEventMessage;
+      if (msgEvent.role === AgentMessageRole.Assistant) {
+        for (const block of msgEvent.content) {
+          if (block.type === 'text' && block.text) {
+            items.push({ type: 'text', content: block.text });
+          } else if (block.type === 'tool_use' && block.id && block.name) {
+            items.push({
+              type: 'tool',
+              tool: {
+                id: block.id,
+                name: block.name,
+                input: block.input as Record<string, unknown>,
+                output: undefined,
+                isError: false,
+              },
+            });
+            toolIndexMap.set(block.id, items.length - 1);
+          }
         }
-      }
-    } else if (event.type === 'user' && event.message?.content) {
-      for (const block of event.message.content) {
-        if (block.type === 'tool_result' && block.tool_use_id) {
-          const toolIndex = toolIndexMap.get(block.tool_use_id);
-          logger.debug('Processing tool_result', {
-            toolUseId: block.tool_use_id,
-            foundToolIndex: toolIndex,
-            toolMapKeys: Array.from(toolIndexMap.keys()),
-          });
-          if (toolIndex !== undefined) {
-            // Update existing tool item with result (in-place)
-            const existingItem = items[toolIndex];
-            if (existingItem && existingItem.type === 'tool') {
-              // Use empty string for undefined content - tool completed but no output
-              // This distinguishes from undefined which means tool still running
-              // Handle content that can be string or array of content blocks
-              const outputStr =
-                typeof block.content === 'string'
-                  ? block.content
-                  : Array.isArray(block.content)
-                    ? block.content.map((c: { text?: string }) => c.text || '').join('')
-                    : '';
-              existingItem.tool.output = outputStr;
-              existingItem.tool.isError = block.is_error ?? false;
+      } else if (msgEvent.role === AgentMessageRole.User) {
+        for (const block of msgEvent.content) {
+          if (block.type === 'tool_result' && block.tool_use_id) {
+            const toolIndex = toolIndexMap.get(block.tool_use_id);
+            if (toolIndex !== undefined) {
+              const existingItem = items[toolIndex];
+              if (existingItem?.type === 'tool') {
+                existingItem.tool.output = block.content ?? '';
+                existingItem.tool.isError = block.is_error ?? false;
+              }
+              toolIndexMap.delete(block.tool_use_id);
             }
-            toolIndexMap.delete(block.tool_use_id);
           }
         }
       }
-    } else if (event.type === 'result') {
-      items.push({ type: 'result', subtype: event.subtype ?? 'unknown' });
+    } else if (event.type === 'tool_use') {
+      const toolEvent = event as UnifiedAgentEventToolUse;
+      items.push({
+        type: 'tool',
+        tool: {
+          id: toolEvent.tool_id,
+          name: toolEvent.tool_name,
+          input: toolEvent.input as Record<string, unknown>,
+          output: undefined,
+          isError: false,
+        },
+      });
+      toolIndexMap.set(toolEvent.tool_id, items.length - 1);
+    } else if (event.type === 'tool_result') {
+      const resultEvent = event as UnifiedAgentEventToolResult;
+      const toolIndex = toolIndexMap.get(resultEvent.tool_id);
+      if (toolIndex !== undefined) {
+        const existingItem = items[toolIndex];
+        if (existingItem?.type === 'tool') {
+          existingItem.tool.output = resultEvent.output;
+          existingItem.tool.isError = resultEvent.status === ToolResultStatus.Error;
+        }
+        toolIndexMap.delete(resultEvent.tool_id);
+      }
+    } else if (event.type === 'complete') {
+      const status = event.status === CompletionStatus.Success ? 'complete' : 'error';
+      items.push({ type: 'result', subtype: status });
     }
   }
 
@@ -449,99 +365,208 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   // Mutations
   const runExecutor = useRunExecutor();
   const createMessage = useCreateMessage();
-  const sendInput = useSendInput();
   const updateChat = useUpdateChat();
   const killProcess = useKillProcess();
+  const respondPermission = useRespondAgentPermission();
 
-  // Claude events for streaming output
-  // Pass lifecycle.onListenersReady to coordinate process startup
-  const {
-    events: claudeEvents,
-    rawOutput,
-    isRunning,
-    isComplete,
-    permissionRequest,
-    clearPermissionRequest,
-    clearEvents,
-    sessionId,
-    // listenersReady is handled via the onListenersReady callback
-  } = useClaudeEvents(lifecycle.processId, {
-    onListenersReady: lifecycle.onListenersReady,
+  // Discover existing processes for this chat (for page loads with history)
+  // Only query when we don't have an active process
+  const { data: existingProcesses = [] } = useProcessesByChat(chatId, {
+    enabled: !!chatId && !lifecycle.processId,
   });
+
+  // Auto-discover most recent process if we don't have one
+  // This is used for viewing history, NOT for engaging the lifecycle
+  const discoveredProcessId = existingProcesses.length > 0 ? existingProcesses[0]?.id : null;
+
+  // Log discovered processes (but don't engage lifecycle for them)
+  useEffect(() => {
+    if (discoveredProcessId && !lifecycle.processId) {
+      logger.debug('Discovered existing process for chat (historical viewing)', {
+        chatId,
+        processId: discoveredProcessId,
+      });
+    }
+  }, [discoveredProcessId, lifecycle.processId, chatId]);
+
+  // Use lifecycle process ID when we have one (active), otherwise use discovered (historical)
+  const activeProcessId = lifecycle.processId ?? discoveredProcessId;
+
+  // Get agent sessions for the current process
+  const { data: agentSessions = [] } = useAgentSessionsByProcess(activeProcessId ?? '', {
+    enabled: !!activeProcessId,
+  });
+  const agentSessionId = agentSessions[0]?.id ?? null;
+
+  // Get session state for status tracking
+  const { data: sessionState } = useAgentSessionWithState(agentSessionId ?? '', {
+    enabled: !!agentSessionId,
+    refetchInterval: agentSessionId ? 500 : false,
+  });
+
+  // Determine if session is running for refetch intervals
+  const isSessionRunning = sessionState?.session.status === SessionStatus.Running;
+
+  // Get events for the agent session - accumulate in local state
+  const [accumulatedEvents, setAccumulatedEvents] = useState<AgentEventRecord[]>([]);
+  const lastSequenceRef = useRef<number>(-1);
+
+  // Track whether we initiated this session (via handleSend) vs discovered it
+  const initiatedSessionRef = useRef<string | null>(null);
+
+  // Query for events - don't use afterSequence in query key to get all events on initial load
+  const { data: fetchedEvents = [] } = useAgentSessionEvents(agentSessionId ?? '', {
+    enabled: !!agentSessionId,
+    // Only poll for new events when session is running
+    refetchInterval: isSessionRunning ? 500 : false,
+  });
+
+  // Accumulate events when new ones arrive
+  useEffect(() => {
+    if (fetchedEvents.length > 0) {
+      setAccumulatedEvents((prev) => {
+        // Merge new events, avoiding duplicates by sequence number
+        const existingSequences = new Set(prev.map((e) => e.sequence));
+        const newEvents = fetchedEvents.filter((e) => !existingSequences.has(e.sequence));
+
+        if (newEvents.length > 0) {
+          // Sort by sequence to maintain order
+          const merged = [...prev, ...newEvents].sort((a, b) => a.sequence - b.sequence);
+          const maxSequence = Math.max(...merged.map((e) => e.sequence));
+          lastSequenceRef.current = maxSequence;
+          logger.debug('Accumulated events', {
+            previousCount: prev.length,
+            newCount: newEvents.length,
+            totalCount: merged.length,
+            maxSequence,
+          });
+          return merged;
+        }
+        return prev;
+      });
+    }
+  }, [fetchedEvents]);
+
+  // NOTE: We deliberately do NOT clear events when session changes
+  // Events should persist to show historical data for discovered sessions
+  // Events are only cleared when starting a NEW session via handleSend
+
+  // Use accumulated events for display
+  const agentEvents = accumulatedEvents;
+
+  // Get pending permission
+  const { data: pendingPermission } = useAgentPendingPermission(agentSessionId ?? '', {
+    enabled: !!agentSessionId,
+    refetchInterval: isSessionRunning ? 1000 : false,
+  });
+
+  // Get raw output
+  const { data: rawOutputData } = useAgentRawOutput(agentSessionId ?? '', {
+    enabled: !!agentSessionId,
+    refetchInterval: isSessionRunning ? 500 : false,
+  });
+  const rawOutput = useMemo(() => {
+    // Safely handle the case where rawOutputData might be an object, null, or undefined
+    const rawOutputString = typeof rawOutputData === 'string' ? rawOutputData : '';
+    return rawOutputString ? rawOutputString.split('\n') : [];
+  }, [rawOutputData]);
+
+  // Extract session status
+  const isRunning = sessionState?.session.status === SessionStatus.Running;
+  const isComplete =
+    sessionState?.session.status === SessionStatus.Completed ||
+    sessionState?.session.status === SessionStatus.Failed;
+  const sessionId = sessionState?.session.externalSessionId ?? null;
+
+  // Convert permission to legacy format
+  const permissionRequest: PermissionRequest | null = pendingPermission
+    ? {
+        toolName: pendingPermission.toolName,
+        description: pendingPermission.description ?? undefined,
+        filePath: pendingPermission.filePath ?? undefined,
+      }
+    : null;
+
+  // Function to clear accumulated events for new sessions
+  const clearEvents = useCallback(() => {
+    setAccumulatedEvents([]);
+    lastSequenceRef.current = -1;
+  }, []);
+
+  // Notify when listeners are ready (session is available)
+  useEffect(() => {
+    if (agentSessionId && lifecycle.onListenersReady) {
+      lifecycle.onListenersReady();
+    }
+  }, [agentSessionId, lifecycle.onListenersReady]);
 
   // Log streaming state changes
   useEffect(() => {
     if (isRunning && lifecycle.processState === 'running') {
-      logger.debug('Claude process started running', { processId: lifecycle.processId });
+      logger.debug('Agent process started running', { processId: lifecycle.processId });
     }
   }, [isRunning, lifecycle.processState, lifecycle.processId]);
 
   useEffect(() => {
     if (isComplete && lifecycle.processId) {
-      logger.debug('Claude process completed', {
+      logger.debug('Agent process completed', {
         processId: lifecycle.processId,
-        eventCount: claudeEvents.length,
+        eventCount: agentEvents.length,
       });
     }
-  }, [isComplete, lifecycle.processId, claudeEvents.length]);
+  }, [isComplete, lifecycle.processId, agentEvents.length]);
 
   // Get selected executor profile
   const selectedExecutorProfileId = chat?.executorProfileId ?? executorProfiles[0]?.id ?? '';
 
-  // Count persisted assistant messages for filtering replayed events
-  const persistedAssistantCount = messages.filter((m) => m.role === MessageRole.Assistant).length;
-
-  // Filter and process events for display - memoized to avoid recalculation on every keystroke
+  // Process events for display - memoized to avoid recalculation on every keystroke
   const displayItems = useMemo(() => {
-    const currentTurnEvents = filterToCurrentTurn(
-      claudeEvents as ClaudeEvent[],
-      persistedAssistantCount
-    );
-    return processEventsToDisplayItems(currentTurnEvents);
-  }, [claudeEvents, persistedAssistantCount]);
+    return processUnifiedEventsToDisplayItems(agentEvents);
+  }, [agentEvents]);
 
   // Save assistant response to database when process completes
-  // Uses lifecycle manager to prevent race conditions
+  // ONLY for sessions we initiated via handleSend, NOT for discovered sessions
   useEffect(() => {
-    // Only proceed if process completed and we have basic requirements
     if (!isComplete || !chatId || !lifecycle.processId) {
       return;
     }
 
-    // Already saved this process
+    // Only persist for sessions WE initiated (via handleSend), not discovered sessions
+    // This prevents the clear loop for already-completed historical sessions
+    if (initiatedSessionRef.current !== agentSessionId) {
+      logger.debug('Skipping persistence for discovered/historical session', {
+        chatId,
+        processId: lifecycle.processId,
+        agentSessionId,
+        initiatedSession: initiatedSessionRef.current,
+      });
+      return;
+    }
+
     if (savedProcessRef.current === lifecycle.processId) {
       return;
     }
 
-    // Only start completion flow if in running state
     if (lifecycle.processState !== 'running') {
       return;
     }
 
-    // Mark as completing to prevent duplicate effect runs
     lifecycle.markCompleting();
 
-    // Extract content from events for persistence
-    // Note: claudeEvents from closure is current at this point since we're in the effect body
-    const { textContent, toolCalls, toolResults } = extractContentFromEvents(
-      claudeEvents as ClaudeEvent[],
-      persistedAssistantCount
-    );
+    const { textContent, toolCalls, toolResults } = extractContentFromUnifiedEvents(agentEvents);
 
     if (textContent || toolCalls.length > 0) {
       savedProcessRef.current = lifecycle.processId;
 
-      // Use placeholder content for tool-only responses (validation requires non-empty content)
       const contentToSave = textContent || (toolCalls.length > 0 ? '[Tool execution]' : '');
 
       logger.debug('Persisting assistant response', {
         chatId,
         processId: lifecycle.processId,
         textLength: textContent.length,
-        contentToSave: contentToSave.substring(0, 50),
         toolCallCount: toolCalls.length,
         toolResultCount: toolResults.length,
-        eventCount: claudeEvents.length,
+        eventCount: agentEvents.length,
       });
 
       createMessage.mutate(
@@ -554,38 +579,28 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
         },
         {
           onSuccess: () => {
-            logger.info('Assistant response persisted successfully', {
-              chatId,
-              processId: lifecycle.processId,
-            });
-            // Clear streaming events now that message is persisted
+            logger.info('Assistant response persisted successfully', { chatId });
             clearEvents();
+            initiatedSessionRef.current = null; // Reset after successful persistence
             lifecycle.clearProcess();
           },
           onError: (error) => {
             logger.error('Failed to persist assistant response', {
               chatId,
-              processId: lifecycle.processId,
               error: error instanceof Error ? error.message : String(error),
             });
-            toast.error(
-              'Failed to Save Response',
-              'The assistant response could not be saved. Please try again.'
-            );
+            toast.error('Failed to Save Response', 'Please try again.');
+            initiatedSessionRef.current = null; // Reset on error too
             lifecycle.clearProcess();
           },
         }
       );
     } else {
-      logger.debug('No content to persist, clearing process', {
-        chatId,
-        processId: lifecycle.processId,
-        eventCount: claudeEvents.length,
-      });
+      logger.debug('No content to persist, clearing process', { chatId });
       clearEvents();
+      initiatedSessionRef.current = null; // Reset
       lifecycle.clearProcess();
     }
-    // No cleanup needed - we call processCompletion synchronously
   }, [
     isComplete,
     chatId,
@@ -595,8 +610,8 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
     lifecycle.clearProcess,
     createMessage,
     clearEvents,
-    claudeEvents,
-    persistedAssistantCount,
+    agentEvents,
+    agentSessionId,
     toast,
   ]);
 
@@ -639,18 +654,35 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   // Auto-scroll to bottom when new content arrives (only if user is near bottom)
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally trigger on content changes
   useEffect(() => {
-    // Use dedicated scroll container ref instead of fragile parent traversal
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    // Check if user is near bottom (within 150px)
     const isNearBottom =
       scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 150;
 
     if (isNearBottom && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [messages, claudeEvents, isRunning]);
+  }, [messages, agentEvents, isRunning]);
+
+  // Track the process ID we initiated to link to session when it appears
+  const initiatedProcessIdRef = useRef<string | null>(null);
+
+  // When a new session appears for a process we initiated, mark it as initiated
+  useEffect(() => {
+    if (
+      agentSessionId &&
+      initiatedProcessIdRef.current &&
+      lifecycle.processId === initiatedProcessIdRef.current
+    ) {
+      logger.debug('Linking initiated process to session', {
+        processId: initiatedProcessIdRef.current,
+        agentSessionId,
+      });
+      initiatedSessionRef.current = agentSessionId;
+      initiatedProcessIdRef.current = null; // Clear after linking
+    }
+  }, [agentSessionId, lifecycle.processId]);
 
   // Handle send message
   const handleSend = useCallback(async () => {
@@ -674,6 +706,9 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
       messageLength: trimmedValue.length,
       executorProfileId: selectedExecutorProfileId,
     });
+
+    // Clear events from previous session when starting a new one
+    clearEvents();
 
     setInputValue('');
 
@@ -712,6 +747,8 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
         processId: process.id,
         executorProfileId: selectedExecutorProfileId,
       });
+      // Mark this process as initiated by us (for persistence tracking)
+      initiatedProcessIdRef.current = process.id;
       // Use lifecycle manager to start process - this triggers listener setup
       lifecycle.startProcess(process.id);
     } catch (error) {
@@ -737,6 +774,7 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
     createMessage,
     runExecutor,
     selectedExecutorProfileId,
+    clearEvents,
     toast,
     onError,
   ]);
@@ -780,68 +818,78 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
 
   // Permission handlers
   const handleApprovePermission = useCallback(() => {
-    if (!lifecycle.processId) {
-      logger.debug('Approve permission aborted: no active process');
+    if (!agentSessionId || !pendingPermission) {
+      logger.debug('Approve permission aborted: no session or permission');
       return;
     }
 
     logger.debug('Approving permission request', {
-      processId: lifecycle.processId,
-      permissionType: permissionRequest?.toolName,
+      sessionId: agentSessionId,
+      permissionId: pendingPermission.id,
+      permissionType: pendingPermission.toolName,
     });
 
-    sendInput.mutate(
-      { processId: lifecycle.processId, input: 'y\n' },
+    respondPermission.mutate(
+      {
+        sessionId: agentSessionId,
+        permissionId: pendingPermission.id,
+        approved: true,
+      },
       {
         onSuccess: () => {
           logger.info('Permission approved successfully', {
-            processId: lifecycle.processId,
-            permissionType: permissionRequest?.toolName,
+            sessionId: agentSessionId,
+            permissionId: pendingPermission.id,
           });
         },
         onError: (error) => {
-          logger.error('Failed to send permission approval', {
-            processId: lifecycle.processId,
+          logger.error('Failed to approve permission', {
+            sessionId: agentSessionId,
+            permissionId: pendingPermission.id,
             error: error instanceof Error ? error.message : String(error),
           });
-          toast.error('Permission Error', 'Failed to send permission response.');
+          toast.error('Permission Error', 'Failed to approve permission.');
         },
       }
     );
-    clearPermissionRequest();
-  }, [lifecycle.processId, sendInput, clearPermissionRequest, permissionRequest, toast]);
+  }, [agentSessionId, pendingPermission, respondPermission, toast]);
 
   const handleDenyPermission = useCallback(() => {
-    if (!lifecycle.processId) {
-      logger.debug('Deny permission aborted: no active process');
+    if (!agentSessionId || !pendingPermission) {
+      logger.debug('Deny permission aborted: no session or permission');
       return;
     }
 
     logger.debug('Denying permission request', {
-      processId: lifecycle.processId,
-      permissionType: permissionRequest?.toolName,
+      sessionId: agentSessionId,
+      permissionId: pendingPermission.id,
+      permissionType: pendingPermission.toolName,
     });
 
-    sendInput.mutate(
-      { processId: lifecycle.processId, input: 'n\n' },
+    respondPermission.mutate(
+      {
+        sessionId: agentSessionId,
+        permissionId: pendingPermission.id,
+        approved: false,
+      },
       {
         onSuccess: () => {
           logger.info('Permission denied successfully', {
-            processId: lifecycle.processId,
-            permissionType: permissionRequest?.toolName,
+            sessionId: agentSessionId,
+            permissionId: pendingPermission.id,
           });
         },
         onError: (error) => {
-          logger.error('Failed to send permission denial', {
-            processId: lifecycle.processId,
+          logger.error('Failed to deny permission', {
+            sessionId: agentSessionId,
+            permissionId: pendingPermission.id,
             error: error instanceof Error ? error.message : String(error),
           });
-          toast.error('Permission Error', 'Failed to send permission response.');
+          toast.error('Permission Error', 'Failed to deny permission.');
         },
       }
     );
-    clearPermissionRequest();
-  }, [lifecycle.processId, sendInput, clearPermissionRequest, permissionRequest, toast]);
+  }, [agentSessionId, pendingPermission, respondPermission, toast]);
 
   const toggleRawOutput = useCallback(() => {
     setShowRawOutput((prev) => {
@@ -861,7 +909,7 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
 
   // Use lifecycle state for more accurate processing status
   const isProcessing = runExecutor.isPending || lifecycle.processState !== 'idle';
-  const hasContent = messages.length > 0 || claudeEvents.length > 0;
+  const hasContent = messages.length > 0 || agentEvents.length > 0;
 
   return {
     // Data

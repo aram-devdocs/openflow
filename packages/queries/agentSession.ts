@@ -82,7 +82,8 @@ export const agentSessionQueries = {
     logger.debug('Getting agent session', { sessionId });
 
     try {
-      const session = await invoke<AgentSession>('get_agent_session', { sessionId });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const session = await invoke<AgentSession>('get_agent_session', { id: sessionId, sessionId });
 
       logger.debug('Agent session retrieved', {
         id: session.id,
@@ -113,7 +114,9 @@ export const agentSessionQueries = {
     logger.debug('Getting agent session with state', { sessionId });
 
     try {
+      // Pass both id (for HTTP) and sessionId (for Tauri)
       const result = await invoke<AgentSessionWithState>('get_agent_session_with_state', {
+        id: sessionId,
         sessionId,
       });
 
@@ -148,7 +151,11 @@ export const agentSessionQueries = {
     logger.debug('Getting agent session summary', { sessionId });
 
     try {
-      const summary = await invoke<AgentSessionSummary>('get_agent_session_summary', { sessionId });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const summary = await invoke<AgentSessionSummary>('get_agent_session_summary', {
+        id: sessionId,
+        sessionId,
+      });
 
       logger.debug('Agent session summary retrieved', {
         id: summary.id,
@@ -247,7 +254,9 @@ export const agentSessionQueries = {
     });
 
     try {
+      // Pass both id (for HTTP) and sessionId (for Tauri)
       const events = await invoke<AgentEventRecord[]>('get_agent_session_events', {
+        id: sessionId,
         sessionId,
         afterSequence: options?.afterSequence,
       });
@@ -282,7 +291,11 @@ export const agentSessionQueries = {
     logger.debug('Getting latest sequence for session', { sessionId });
 
     try {
-      const sequence = await invoke<number | null>('get_agent_latest_sequence', { sessionId });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const sequence = await invoke<number | null>('get_agent_latest_sequence', {
+        id: sessionId,
+        sessionId,
+      });
 
       logger.debug('Latest sequence retrieved', { sessionId, sequence });
 
@@ -306,7 +319,11 @@ export const agentSessionQueries = {
     logger.debug('Counting agent session events', { sessionId });
 
     try {
-      const count = await invoke<number>('count_agent_session_events', { sessionId });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const count = await invoke<number>('count_agent_session_events', {
+        id: sessionId,
+        sessionId,
+      });
 
       logger.debug('Agent session events counted', { sessionId, count });
 
@@ -338,7 +355,9 @@ export const agentSessionQueries = {
     logger.debug('Getting pending permission', { sessionId });
 
     try {
+      // Pass both id (for HTTP) and sessionId (for Tauri)
       const permission = await invoke<Permission | null>('get_agent_pending_permission', {
+        id: sessionId,
         sessionId,
       });
 
@@ -379,7 +398,9 @@ export const agentSessionQueries = {
     logger.debug('Responding to permission', { sessionId, permissionId, approved });
 
     try {
+      // Pass both id (for HTTP) and sessionId (for Tauri)
       const permission = await invoke<Permission>('respond_agent_permission', {
+        id: sessionId,
         sessionId,
         permissionId,
         approved,
@@ -423,7 +444,8 @@ export const agentSessionQueries = {
     logger.debug('Checking if session is active', { sessionId });
 
     try {
-      const active = await invoke<boolean>('is_agent_session_active', { sessionId });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const active = await invoke<boolean>('is_agent_session_active', { id: sessionId, sessionId });
 
       logger.debug('Session active status', { sessionId, active });
 
@@ -493,7 +515,11 @@ export const agentSessionQueries = {
     logger.debug('Killing agent session', { sessionId });
 
     try {
-      const session = await invoke<AgentSession>('kill_agent_session', { sessionId });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const session = await invoke<AgentSession>('kill_agent_session', {
+        id: sessionId,
+        sessionId,
+      });
 
       logger.info('Agent session killed', {
         id: session.id,
@@ -521,7 +547,8 @@ export const agentSessionQueries = {
     logger.debug('Writing input to session', { sessionId, inputLength: input.length });
 
     try {
-      await invoke<void>('write_agent_input', { sessionId, input });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      await invoke<void>('write_agent_input', { id: sessionId, sessionId, input });
 
       logger.debug('Input written to session', { sessionId });
     } catch (error) {
@@ -547,7 +574,8 @@ export const agentSessionQueries = {
     logger.debug('Resizing agent terminal', { sessionId, cols, rows });
 
     try {
-      await invoke<void>('resize_agent_terminal', { sessionId, cols, rows });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      await invoke<void>('resize_agent_terminal', { id: sessionId, sessionId, cols, rows });
 
       logger.debug('Agent terminal resized', { sessionId, cols, rows });
     } catch (error) {
@@ -575,7 +603,8 @@ export const agentSessionQueries = {
     logger.debug('Getting raw output for session', { sessionId });
 
     try {
-      const output = await invoke<string>('get_agent_raw_output', { sessionId });
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const output = await invoke<string>('get_agent_raw_output', { id: sessionId, sessionId });
 
       logger.debug('Raw output retrieved', { sessionId, length: output.length });
 
