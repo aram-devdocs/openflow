@@ -33,8 +33,8 @@ use sqlx::SqlitePool;
 use uuid::Uuid;
 
 use openflow_contracts::{
-    Chat, CreateTaskRequest, StepStatus, Task, TaskStatus, TaskStep, TaskWithChats, TaskWithSteps,
-    UpdateTaskRequest,
+    Chat, CreateStepRequest, CreateTaskRequest, StepStatus, Task, TaskStatus, TaskStep,
+    TaskWithChats, TaskWithSteps, UpdateTaskRequest,
 };
 
 use super::{ServiceError, ServiceResult};
@@ -1068,6 +1068,35 @@ pub async fn create_step(
     );
 
     Ok(step)
+}
+
+/// Create a new step for a task using a request object.
+///
+/// This is the preferred API for creating steps as it uses the typed request.
+/// Validates the request before creating the step.
+pub async fn create_step_from_request(
+    pool: &SqlitePool,
+    task_id: &str,
+    request: CreateStepRequest,
+) -> ServiceResult<TaskStep> {
+    use openflow_contracts::validation::Validate;
+
+    // Validate the request
+    request.validate().map_err(|e| ServiceError::InvalidInput {
+        field: "request".to_string(),
+        message: e.to_string(),
+    })?;
+
+    // Delegate to the existing create_step function
+    create_step(
+        pool,
+        task_id,
+        request.step_index,
+        &request.title,
+        &request.prompt,
+        &request.provider_id,
+    )
+    .await
 }
 
 /// Get a step by ID.
@@ -2251,5 +2280,62 @@ mod tests {
             .await
             .expect("Failed to list steps");
         assert!(steps.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_create_step_from_request() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+
+        let request = test_create_request(&project_id, "Request Step Task");
+        let task = create(&test_db.pool, request)
+            .await
+            .expect("Failed to create task");
+
+        let step_request = CreateStepRequest::new(
+            0,
+            "First Step",
+            "Do the first thing",
+            "claude-code",
+        );
+
+        let step = create_step_from_request(&test_db.pool, &task.id, step_request)
+            .await
+            .expect("Failed to create step from request");
+
+        assert_eq!(step.task_id, task.id);
+        assert_eq!(step.step_index, 0);
+        assert_eq!(step.title, "First Step");
+        assert_eq!(step.prompt, "Do the first thing");
+        assert_eq!(step.provider_id, "claude-code");
+        assert_eq!(step.status, StepStatus::Pending);
+    }
+
+    #[tokio::test]
+    async fn test_create_step_from_request_validates() {
+        let test_db = setup_test_db().await;
+        let project_id = create_test_project(&test_db.pool, "Test Project").await;
+
+        let request = test_create_request(&project_id, "Validation Task");
+        let task = create(&test_db.pool, request)
+            .await
+            .expect("Failed to create task");
+
+        // Invalid request with empty title
+        let step_request = CreateStepRequest {
+            step_index: 0,
+            title: "".to_string(),
+            prompt: "Do something".to_string(),
+            provider_id: "claude-code".to_string(),
+        };
+
+        let result = create_step_from_request(&test_db.pool, &task.id, step_request).await;
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::InvalidInput { field, .. } => {
+                assert_eq!(field, "request");
+            }
+            other => panic!("Expected InvalidInput error, got: {:?}", other),
+        }
     }
 }

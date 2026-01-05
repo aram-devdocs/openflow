@@ -94,7 +94,7 @@ pub use requests::{
     GetCurrentBranchRequest, GetDiffRequest, GetHeadCommitRequest, GetTaskCommitsRequest,
     GetTaskDiffRequest, HasUncommittedChangesRequest, ListWorktreesRequest, PushBranchRequest,
 };
-pub use requests::{CreateTaskRequest, UpdateTaskRequest};
+pub use requests::{CreateStepRequest, CreateTaskRequest, UpdateStepRequest, UpdateTaskRequest};
 pub use requests::{DefaultShellResponse, GetDefaultShellRequest, SpawnTerminalRequest};
 pub use requests::{
     DeleteAllSettingsRequest, DeleteAllSettingsResponse, DeleteSettingRequest,
