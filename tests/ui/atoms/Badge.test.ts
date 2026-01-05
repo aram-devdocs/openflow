@@ -24,10 +24,11 @@ type BadgeVariant =
   | 'warning'
   | 'error'
   | 'info'
-  | 'todo'
-  | 'inprogress'
-  | 'inreview'
-  | 'done'
+  | 'pending'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
   | 'cancelled';
 
 const variantClasses: Record<BadgeVariant, string> = {
@@ -36,10 +37,11 @@ const variantClasses: Record<BadgeVariant, string> = {
   warning: 'bg-warning/20 text-warning',
   error: 'bg-error/20 text-error',
   info: 'bg-info/20 text-info',
-  todo: 'bg-status-todo/20 text-status-todo',
-  inprogress: 'bg-status-inprogress/20 text-status-inprogress',
-  inreview: 'bg-status-inreview/20 text-status-inreview',
-  done: 'bg-status-done/20 text-status-done',
+  pending: 'bg-status-pending/20 text-status-pending',
+  running: 'bg-status-running/20 text-status-running',
+  paused: 'bg-status-paused/20 text-status-paused',
+  completed: 'bg-status-completed/20 text-status-completed',
+  failed: 'bg-status-failed/20 text-status-failed',
   cancelled: 'bg-status-cancelled/20 text-status-cancelled',
 };
 
@@ -106,20 +108,20 @@ describe('ui/atoms/Badge - Utility Functions', () => {
       expect(variantClasses.info).toBe('bg-info/20 text-info');
     });
 
-    it('todo status variant has correct classes', () => {
-      expect(variantClasses.todo).toBe('bg-status-todo/20 text-status-todo');
+    it('pending status variant has correct classes', () => {
+      expect(variantClasses.pending).toBe('bg-status-pending/20 text-status-pending');
     });
 
-    it('inprogress status variant has correct classes', () => {
-      expect(variantClasses.inprogress).toBe('bg-status-inprogress/20 text-status-inprogress');
+    it('running status variant has correct classes', () => {
+      expect(variantClasses.running).toBe('bg-status-running/20 text-status-running');
     });
 
-    it('inreview status variant has correct classes', () => {
-      expect(variantClasses.inreview).toBe('bg-status-inreview/20 text-status-inreview');
+    it('paused status variant has correct classes', () => {
+      expect(variantClasses.paused).toBe('bg-status-paused/20 text-status-paused');
     });
 
-    it('done status variant has correct classes', () => {
-      expect(variantClasses.done).toBe('bg-status-done/20 text-status-done');
+    it('completed status variant has correct classes', () => {
+      expect(variantClasses.completed).toBe('bg-status-completed/20 text-status-completed');
     });
 
     it('cancelled status variant has correct classes', () => {
@@ -223,20 +225,24 @@ describe('ui/atoms/Badge - Utility Functions', () => {
   // ===========================================================================
 
   describe('taskStatusToVariant', () => {
-    it('maps todo status to todo variant', () => {
-      expect(taskStatusToVariant(TaskStatus.Todo)).toBe('todo');
+    it('maps pending status to pending variant', () => {
+      expect(taskStatusToVariant(TaskStatus.Pending)).toBe('pending');
     });
 
-    it('maps inprogress status to inprogress variant', () => {
-      expect(taskStatusToVariant(TaskStatus.Inprogress)).toBe('inprogress');
+    it('maps running status to running variant', () => {
+      expect(taskStatusToVariant(TaskStatus.Running)).toBe('running');
     });
 
-    it('maps inreview status to inreview variant', () => {
-      expect(taskStatusToVariant(TaskStatus.Inreview)).toBe('inreview');
+    it('maps paused status to paused variant', () => {
+      expect(taskStatusToVariant(TaskStatus.Paused)).toBe('paused');
     });
 
-    it('maps done status to done variant', () => {
-      expect(taskStatusToVariant(TaskStatus.Done)).toBe('done');
+    it('maps completed status to completed variant', () => {
+      expect(taskStatusToVariant(TaskStatus.Completed)).toBe('completed');
+    });
+
+    it('maps failed status to failed variant', () => {
+      expect(taskStatusToVariant(TaskStatus.Failed)).toBe('failed');
     });
 
     it('maps cancelled status to cancelled variant', () => {
@@ -245,10 +251,11 @@ describe('ui/atoms/Badge - Utility Functions', () => {
 
     it('maps all TaskStatus values correctly', () => {
       const statusToVariant: Record<TaskStatus, string> = {
-        [TaskStatus.Todo]: 'todo',
-        [TaskStatus.Inprogress]: 'inprogress',
-        [TaskStatus.Inreview]: 'inreview',
-        [TaskStatus.Done]: 'done',
+        [TaskStatus.Pending]: 'pending',
+        [TaskStatus.Running]: 'running',
+        [TaskStatus.Paused]: 'paused',
+        [TaskStatus.Completed]: 'completed',
+        [TaskStatus.Failed]: 'failed',
         [TaskStatus.Cancelled]: 'cancelled',
       };
 
@@ -263,20 +270,24 @@ describe('ui/atoms/Badge - Utility Functions', () => {
   // ===========================================================================
 
   describe('taskStatusToLabel', () => {
-    it('maps todo status to "To Do" label', () => {
-      expect(taskStatusToLabel(TaskStatus.Todo)).toBe('To Do');
+    it('maps pending status to "Pending" label', () => {
+      expect(taskStatusToLabel(TaskStatus.Pending)).toBe('Pending');
     });
 
-    it('maps inprogress status to "In Progress" label', () => {
-      expect(taskStatusToLabel(TaskStatus.Inprogress)).toBe('In Progress');
+    it('maps running status to "Running" label', () => {
+      expect(taskStatusToLabel(TaskStatus.Running)).toBe('Running');
     });
 
-    it('maps inreview status to "In Review" label', () => {
-      expect(taskStatusToLabel(TaskStatus.Inreview)).toBe('In Review');
+    it('maps paused status to "Paused" label', () => {
+      expect(taskStatusToLabel(TaskStatus.Paused)).toBe('Paused');
     });
 
-    it('maps done status to "Done" label', () => {
-      expect(taskStatusToLabel(TaskStatus.Done)).toBe('Done');
+    it('maps completed status to "Completed" label', () => {
+      expect(taskStatusToLabel(TaskStatus.Completed)).toBe('Completed');
+    });
+
+    it('maps failed status to "Failed" label', () => {
+      expect(taskStatusToLabel(TaskStatus.Failed)).toBe('Failed');
     });
 
     it('maps cancelled status to "Cancelled" label', () => {
@@ -285,10 +296,11 @@ describe('ui/atoms/Badge - Utility Functions', () => {
 
     it('maps all TaskStatus values correctly', () => {
       const statusToLabel: Record<TaskStatus, string> = {
-        [TaskStatus.Todo]: 'To Do',
-        [TaskStatus.Inprogress]: 'In Progress',
-        [TaskStatus.Inreview]: 'In Review',
-        [TaskStatus.Done]: 'Done',
+        [TaskStatus.Pending]: 'Pending',
+        [TaskStatus.Running]: 'Running',
+        [TaskStatus.Paused]: 'Paused',
+        [TaskStatus.Completed]: 'Completed',
+        [TaskStatus.Failed]: 'Failed',
         [TaskStatus.Cancelled]: 'Cancelled',
       };
 
@@ -312,10 +324,11 @@ describe('ui/atoms/Badge - Utility Functions', () => {
 
     it('all task status variants use 20% opacity backgrounds', () => {
       const statusVariants: BadgeVariant[] = [
-        'todo',
-        'inprogress',
-        'inreview',
-        'done',
+        'pending',
+        'running',
+        'paused',
+        'completed',
+        'failed',
         'cancelled',
       ];
       for (const variant of statusVariants) {

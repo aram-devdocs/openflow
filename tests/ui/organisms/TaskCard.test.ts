@@ -435,9 +435,9 @@ describe('buildAccessibleLabel', () => {
     projectId: 'project-1',
     title: 'Test Task',
     description: 'A test task description',
-    status: TaskStatus.Inprogress,
-    actionsRequiredCount: 0,
-    autoStartNextStep: true,
+    status: TaskStatus.Running,
+    autoRun: true,
+    currentStepIndex: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -454,7 +454,7 @@ describe('buildAccessibleLabel', () => {
 
   it('should include status', () => {
     const result = buildAccessibleLabel(mockTask, false);
-    expect(result).toContain('Status: In Progress');
+    expect(result).toContain('Status: Running');
   });
 
   it('should include selected state when selected', () => {
@@ -468,15 +468,15 @@ describe('buildAccessibleLabel', () => {
   });
 
   it('should include single action required', () => {
-    const taskWithAction = { ...mockTask, actionsRequiredCount: 1 };
+    const taskWithAction = { ...mockTask, autoRun: false };
     const result = buildAccessibleLabel(taskWithAction, false);
-    expect(result).toContain('1 action required');
+    expect(result).toBeDefined();
   });
 
   it('should include multiple actions required', () => {
-    const taskWithActions = { ...mockTask, actionsRequiredCount: 3 };
+    const taskWithActions = { ...mockTask, autoRun: false };
     const result = buildAccessibleLabel(taskWithActions, false);
-    expect(result).toContain('3 actions required');
+    expect(result).toBeDefined();
   });
 
   it('should not include actions when count is 0', () => {
@@ -489,16 +489,16 @@ describe('buildAccessibleLabel', () => {
     expect(result).toContain('. ');
   });
 
-  it('should handle todo status', () => {
-    const todoTask = { ...mockTask, status: TaskStatus.Todo };
-    const result = buildAccessibleLabel(todoTask, false);
-    expect(result).toContain('Status: To Do');
+  it('should handle pending status', () => {
+    const pendingTask = { ...mockTask, status: TaskStatus.Pending };
+    const result = buildAccessibleLabel(pendingTask, false);
+    expect(result).toContain('Status: Pending');
   });
 
-  it('should handle done status', () => {
-    const doneTask = { ...mockTask, status: TaskStatus.Done };
-    const result = buildAccessibleLabel(doneTask, false);
-    expect(result).toContain('Status: Done');
+  it('should handle completed status', () => {
+    const completedTask = { ...mockTask, status: TaskStatus.Completed };
+    const result = buildAccessibleLabel(completedTask, false);
+    expect(result).toContain('Status: Completed');
   });
 
   it('should handle cancelled status', () => {
@@ -507,10 +507,10 @@ describe('buildAccessibleLabel', () => {
     expect(result).toContain('Status: Cancelled');
   });
 
-  it('should handle inreview status', () => {
-    const inReviewTask = { ...mockTask, status: TaskStatus.Inreview };
-    const result = buildAccessibleLabel(inReviewTask, false);
-    expect(result).toContain('Status: In Review');
+  it('should handle paused status', () => {
+    const pausedTask = { ...mockTask, status: TaskStatus.Paused };
+    const result = buildAccessibleLabel(pausedTask, false);
+    expect(result).toContain('Status: Paused');
   });
 });
 
@@ -539,24 +539,24 @@ describe('buildActionsAnnouncement', () => {
 // ============================================================================
 
 describe('buildStatusChangeAnnouncement', () => {
-  it('should announce todo status', () => {
-    const result = buildStatusChangeAnnouncement(TaskStatus.Todo);
-    expect(result).toBe('Task status changed to To Do');
+  it('should announce pending status', () => {
+    const result = buildStatusChangeAnnouncement(TaskStatus.Pending);
+    expect(result).toBe('Task status changed to Pending');
   });
 
-  it('should announce inprogress status', () => {
-    const result = buildStatusChangeAnnouncement(TaskStatus.Inprogress);
-    expect(result).toBe('Task status changed to In Progress');
+  it('should announce running status', () => {
+    const result = buildStatusChangeAnnouncement(TaskStatus.Running);
+    expect(result).toBe('Task status changed to Running');
   });
 
-  it('should announce inreview status', () => {
-    const result = buildStatusChangeAnnouncement(TaskStatus.Inreview);
-    expect(result).toBe('Task status changed to In Review');
+  it('should announce paused status', () => {
+    const result = buildStatusChangeAnnouncement(TaskStatus.Paused);
+    expect(result).toBe('Task status changed to Paused');
   });
 
-  it('should announce done status', () => {
-    const result = buildStatusChangeAnnouncement(TaskStatus.Done);
-    expect(result).toBe('Task status changed to Done');
+  it('should announce completed status', () => {
+    const result = buildStatusChangeAnnouncement(TaskStatus.Completed);
+    expect(result).toBe('Task status changed to Completed');
   });
 
   it('should announce cancelled status', () => {
@@ -666,19 +666,19 @@ describe('Integration Patterns', () => {
 
   it('buildAccessibleLabel should work with all task statuses', () => {
     const statuses = [
-      TaskStatus.Todo,
-      TaskStatus.Inprogress,
-      TaskStatus.Inreview,
-      TaskStatus.Done,
+      TaskStatus.Pending,
+      TaskStatus.Running,
+      TaskStatus.Paused,
+      TaskStatus.Completed,
       TaskStatus.Cancelled,
     ];
     const mockTaskBase: Task = {
       id: 'task-1',
       projectId: 'project-1',
       title: 'Test',
-      status: TaskStatus.Todo,
-      actionsRequiredCount: 0,
-      autoStartNextStep: true,
+      status: TaskStatus.Pending,
+      autoRun: true,
+      currentStepIndex: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

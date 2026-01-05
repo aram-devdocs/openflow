@@ -1,4 +1,5 @@
-import { type Task, TaskStatus } from '@openflow/generated';
+import type { Task } from '@openflow/generated';
+import { TaskStatus } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import {
@@ -115,15 +116,15 @@ function createMockTask(
   id: string,
   title: string,
   status: TaskStatus,
-  options: { description?: string; actionsRequiredCount?: number } = {}
+  options: { description?: string } = {}
 ): Task {
   const task: Task = {
     id,
     projectId: 'project-1',
     title,
     status,
-    actionsRequiredCount: options.actionsRequiredCount ?? 0,
-    autoStartNextStep: true,
+    autoRun: true,
+    currentStepIndex: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -141,29 +142,28 @@ function createMockTask(
 
 /** Mock tasks for stories */
 const mockTasks: Task[] = [
-  createMockTask('task-1', 'Set up project scaffolding', TaskStatus.Done, {
+  createMockTask('task-1', 'Set up project scaffolding', TaskStatus.Completed, {
     description: 'Initialize the project with Vite, React, and TypeScript.',
   }),
-  createMockTask('task-2', 'Implement user authentication', TaskStatus.Inprogress, {
+  createMockTask('task-2', 'Implement user authentication', TaskStatus.Running, {
     description: 'Add OAuth2 authentication with Google and GitHub providers.',
-    actionsRequiredCount: 2,
   }),
-  createMockTask('task-3', 'Design database schema', TaskStatus.Inreview, {
+  createMockTask('task-3', 'Design database schema', TaskStatus.Paused, {
     description: 'Create SQLite schema for tasks, projects, and chats.',
   }),
-  createMockTask('task-4', 'Add dark mode support', TaskStatus.Todo, {
+  createMockTask('task-4', 'Add dark mode support', TaskStatus.Pending, {
     description: 'Implement dark mode with system preference detection.',
   }),
-  createMockTask('task-5', 'Write unit tests', TaskStatus.Todo, {
+  createMockTask('task-5', 'Write unit tests', TaskStatus.Pending, {
     description: 'Add comprehensive unit tests for all services.',
   }),
-  createMockTask('task-6', 'Legacy API migration', TaskStatus.Cancelled, {
+  createMockTask('task-6', 'Legacy API migration', TaskStatus.Failed, {
     description: 'Migrate deprecated API endpoints to the new REST API.',
   }),
-  createMockTask('task-7', 'Performance optimization', TaskStatus.Inprogress, {
+  createMockTask('task-7', 'Performance optimization', TaskStatus.Running, {
     description: 'Optimize database queries and reduce bundle size.',
   }),
-  createMockTask('task-8', 'Documentation', TaskStatus.Todo, {
+  createMockTask('task-8', 'Documentation', TaskStatus.Pending, {
     description: 'Write comprehensive API documentation.',
   }),
 ];
@@ -375,8 +375,8 @@ export const InteractiveKanban: Story = {
 export const SparseKanban: Story = {
   args: {
     tasks: [
-      createMockTask('task-1', 'Only todo task', TaskStatus.Todo),
-      createMockTask('task-2', 'Only done task', TaskStatus.Done),
+      createMockTask('task-1', 'Only pending task', TaskStatus.Pending),
+      createMockTask('task-2', 'Only completed task', TaskStatus.Completed),
     ],
     groupByStatus: true,
   },
@@ -546,13 +546,13 @@ export const ManyTasks: Story = {
 export const WithActionsRequired: Story = {
   args: {
     tasks: [
-      createMockTask('task-1', 'Task needing attention', TaskStatus.Inprogress, {
-        actionsRequiredCount: 3,
+      createMockTask('task-1', 'Task needing attention', TaskStatus.Running, {
+        description: 'This task requires immediate attention.',
       }),
-      createMockTask('task-2', 'Another urgent task', TaskStatus.Inprogress, {
-        actionsRequiredCount: 1,
+      createMockTask('task-2', 'Another urgent task', TaskStatus.Running, {
+        description: 'This task is also urgent.',
       }),
-      createMockTask('task-3', 'Normal task', TaskStatus.Todo),
+      createMockTask('task-3', 'Normal task', TaskStatus.Pending),
     ],
   },
   decorators: [

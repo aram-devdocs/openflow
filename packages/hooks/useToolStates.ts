@@ -93,7 +93,7 @@ export function useToolStates(processId: string | null): ToolStatesState {
           logger.debug('Tool state update received', {
             processId,
             toolId: toolState.id,
-            toolName: toolState.name,
+            toolName: toolState.toolName,
             status: toolState.status,
           });
 
@@ -128,7 +128,11 @@ export function useToolStates(processId: string | null): ToolStatesState {
   }, [processId, clearToolStates]);
 
   // Convert map to array for iteration
-  const toolStatesArray = Array.from(toolStates.values()).sort((a, b) => a.sequence - b.sequence);
+  const toolStatesArray = Array.from(toolStates.values()).sort((a, b) => {
+    const aTime = new Date(a.startedAt).getTime();
+    const bTime = new Date(b.startedAt).getTime();
+    return aTime - bTime;
+  });
 
   // Calculate status counts
   const statusCounts = {

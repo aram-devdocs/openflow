@@ -175,10 +175,8 @@ pub async fn delete_process(state: State<'_, AppState>, id: String) -> Result<()
 #[tauri::command]
 pub async fn get_process_snapshot(id: String) -> Result<ProcessSnapshot, String> {
     let manager = ProcessManager::global();
-    if let Some(snapshot) = manager.get_snapshot(&id) {
-        Ok(snapshot)
-    } else {
-        // Return empty snapshot for non-existent buffers (process may have ended)
-        Ok(ProcessSnapshot::new(&id))
-    }
+    // Return existing snapshot or empty snapshot for non-existent buffers (process may have ended)
+    Ok(manager
+        .get_snapshot(&id)
+        .unwrap_or_else(|| ProcessSnapshot::new(&id)))
 }

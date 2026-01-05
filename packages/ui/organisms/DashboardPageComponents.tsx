@@ -30,9 +30,9 @@ import type {
   Project,
   SearchResult,
   Task,
-  TaskStatus,
   WorkflowTemplate,
 } from '@openflow/generated';
+import { TaskStatus } from '@openflow/generated';
 import { SearchResultType } from '@openflow/generated';
 import {
   type A11yProps,
@@ -387,20 +387,22 @@ export const SR_COMPLETED = 'completed';
 
 /** Status labels for screen readers */
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  todo: 'To Do',
-  inprogress: 'In Progress',
-  inreview: 'In Review',
-  done: 'Done',
-  cancelled: 'Cancelled',
+  [TaskStatus.Pending]: 'Pending',
+  [TaskStatus.Running]: 'In Progress',
+  [TaskStatus.Paused]: 'Paused',
+  [TaskStatus.Completed]: 'Completed',
+  [TaskStatus.Failed]: 'Failed',
+  [TaskStatus.Cancelled]: 'Cancelled',
 };
 
 /** Status styles for visual display */
 export const STATUS_STYLES: Record<TaskStatus, string> = {
-  todo: 'bg-status-todo/20 text-status-todo',
-  inprogress: 'bg-status-inprogress/20 text-status-inprogress',
-  inreview: 'bg-status-inreview/20 text-status-inreview',
-  done: 'bg-status-done/20 text-status-done',
-  cancelled: 'bg-status-cancelled/20 text-status-cancelled',
+  [TaskStatus.Pending]: 'bg-status-pending/20 text-status-pending',
+  [TaskStatus.Running]: 'bg-status-running/20 text-status-running',
+  [TaskStatus.Paused]: 'bg-status-paused/20 text-status-paused',
+  [TaskStatus.Completed]: 'bg-status-completed/20 text-status-completed',
+  [TaskStatus.Failed]: 'bg-status-failed/20 text-status-failed',
+  [TaskStatus.Cancelled]: 'bg-status-cancelled/20 text-status-cancelled',
 };
 
 /** Variant styles for StatCard */
@@ -536,11 +538,11 @@ export function getResponsiveSizeClasses(
  */
 export function buildStatsAnnouncement(tasks: Task[]): string {
   const total = tasks.length;
-  const inProgress = tasks.filter((t) => t.status === 'inprogress').length;
-  const inReview = tasks.filter((t) => t.status === 'inreview').length;
-  const done = tasks.filter((t) => t.status === 'done').length;
+  const inProgress = tasks.filter((t) => t.status === TaskStatus.Running).length;
+  const paused = tasks.filter((t) => t.status === TaskStatus.Paused).length;
+  const completed = tasks.filter((t) => t.status === TaskStatus.Completed).length;
 
-  return `${total} ${SR_TASK_COUNT}: ${inProgress} ${SR_IN_PROGRESS}, ${inReview} ${SR_IN_REVIEW}, ${done} ${SR_COMPLETED}`;
+  return `${total} ${SR_TASK_COUNT}: ${inProgress} ${SR_IN_PROGRESS}, ${paused} ${SR_IN_REVIEW}, ${completed} ${SR_COMPLETED}`;
 }
 
 /**
@@ -555,7 +557,7 @@ export function buildTaskAccessibleLabel(task: Task): string {
  */
 export function buildHeaderSubtitle(tasks: Task[], isLoading: boolean): string | undefined {
   if (isLoading) return undefined;
-  const inProgressCount = tasks.filter((t) => t.status === 'inprogress').length;
+  const inProgressCount = tasks.filter((t) => t.status === TaskStatus.Running).length;
   if (inProgressCount === 0) return `${tasks.length} tasks`;
   return `${inProgressCount} task${inProgressCount === 1 ? '' : 's'} in progress`;
 }
@@ -926,9 +928,9 @@ export const DashboardStatsGrid = forwardRef<HTMLDivElement, DashboardStatsGridP
     const gapClasses = getResponsiveSizeClasses(size, STATS_GRID_GAP_CLASSES);
     const statsId = useId();
 
-    const inProgressCount = tasks.filter((t) => t.status === 'inprogress').length;
-    const inReviewCount = tasks.filter((t) => t.status === 'inreview').length;
-    const doneCount = tasks.filter((t) => t.status === 'done').length;
+    const inProgressCount = tasks.filter((t) => t.status === TaskStatus.Running).length;
+    const pausedCount = tasks.filter((t) => t.status === TaskStatus.Paused).length;
+    const completedCount = tasks.filter((t) => t.status === TaskStatus.Completed).length;
 
     return (
       <Box
@@ -963,18 +965,18 @@ export const DashboardStatsGrid = forwardRef<HTMLDivElement, DashboardStatsGridP
           data-testid={testId ? `${testId}-inprogress` : undefined}
         />
         <StatCard
-          label="In Review"
-          value={inReviewCount}
+          label="Paused"
+          value={pausedCount}
           variant="warning"
           size={size}
-          data-testid={testId ? `${testId}-inreview` : undefined}
+          data-testid={testId ? `${testId}-paused` : undefined}
         />
         <StatCard
           label="Completed"
-          value={doneCount}
+          value={completedCount}
           variant="success"
           size={size}
-          data-testid={testId ? `${testId}-done` : undefined}
+          data-testid={testId ? `${testId}-completed` : undefined}
         />
       </Box>
     );

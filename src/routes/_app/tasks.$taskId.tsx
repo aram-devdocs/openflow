@@ -17,6 +17,7 @@
 import { useTaskSession, useToast } from '@openflow/hooks';
 import { TaskPage } from '@openflow/ui';
 import type { TaskPageTab } from '@openflow/ui';
+import type { ClaudeEvent } from '@openflow/ui/organisms';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { FileText, GitCommitHorizontal, GitCompare, ListTodo } from 'lucide-react';
 import { useMemo } from 'react';
@@ -111,7 +112,7 @@ function TaskDetailRoute() {
         onViewChat: session.handleViewStepChat,
       }}
       mainPanel={{
-        claudeEvents: session.claudeEvents,
+        claudeEvents: (session.claudeEvents as ClaudeEvent[]) || [],
         rawOutput: session.rawOutput,
         isRunning: session.isRunning,
         showRawOutput: session.showRawOutput,

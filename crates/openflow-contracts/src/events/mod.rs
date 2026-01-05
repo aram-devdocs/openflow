@@ -25,13 +25,16 @@
 //! │         │─────────────────────▶│                      │                 │
 //! │         │                      │                      │                 │
 //! │         │                      │ Broadcast:           │                 │
-//! │         │                      │ DataChangedEvent     │                 │
-//! │         │                      │ {project, created}   │                 │
+//! │         │                      │ EventEnvelope {      │                 │
+//! │         │                      │   session_id, seq,   │                 │
+//! │         │                      │   payload: {...}     │                 │
+//! │         │                      │ }                    │                 │
 //! │         │◀─────────────────────│─────────────────────▶│                 │
 //! │         │    WebSocket         │     Tauri Event      │                 │
 //! │         │                      │                      │                 │
-//! │         │  Invalidate cache    │                      │  Invalidate     │
-//! │         │  Update UI           │                      │  cache, UI      │
+//! │         │  Check sequence      │                      │  Check sequence │
+//! │         │  Deduplicate         │                      │  Deduplicate    │
+//! │         │  Update cache        │                      │  Update cache   │
 //! │         │                      │                      │                 │
 //! │  └──────┴──────┘      └────────┴────────┘      └──────┴──────┘          │
 //! │                                                                          │
@@ -43,156 +46,100 @@
 //! - **ProcessOutputEvent**: Streaming output from running processes
 //! - **ProcessStatusEvent**: Process lifecycle changes (started, completed, failed)
 //! - **DataChangedEvent**: CRUD operations on entities (project, task, chat, etc.)
+//! - **UnifiedAgentEvent**: Provider-agnostic events from agent sessions
+//! - **EventEnvelope**: Wrapper for all events with sequence and timestamp metadata
 //!
 //! # Channels
 //!
-//! Events are published to specific channels:
-//! - `process-output-{process_id}`: Output for a specific process
-//! - `process-status-{process_id}`: Status changes for a specific process
+//! Events are published to specific channels. See the [`channels`] module for
+//! all available channel constants and helper functions.
+//!
+//! Static channels (no ID):
 //! - `data-changed`: All data changes (entity type in payload)
 //! - `*`: Wildcard subscription (all events)
+//!
+//! Dynamic channels (with ID):
+//! - `process-output-{process_id}`: Output for a specific process
+//! - `process-status-{process_id}`: Status changes for a specific process
+//! - `agent-event-{session_id}`: Agent events for a specific session
+//! - `task-progress-{task_id}`: Task progress events
+//! - `step-progress-{step_id}`: Step progress events
+//! - `permission-request-{session_id}`: Permission request events
+//! - `task:{task_id}`: All events for a specific task (entity-scoped)
+//! - `session:{session_id}`: All events for a specific session (entity-scoped)
+
+pub mod agent_event;
+pub mod channels;
+pub mod envelope;
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
+
+// Re-export agent event types
+pub use agent_event::{
+    AgentMessageRole, AgentStats, CompletionStatus, ContentBlock, PermissionRequest,
+    ToolResultStatus, UnifiedAgentEvent,
+};
+
+// Re-export channel constants and helpers from dedicated module
+pub use channels::{
+    // Static channel constants
+    CHANNEL_DATA_CHANGED,
+    CHANNEL_WILDCARD,
+    // Format string constants
+    CHANNEL_AGENT_EVENT_FMT,
+    CHANNEL_CLAUDE_EVENT_FMT,
+    CHANNEL_PERMISSION_REQUEST_FMT,
+    CHANNEL_PROCESS_OUTPUT_FMT,
+    CHANNEL_PROCESS_STATUS_FMT,
+    CHANNEL_SESSION_FMT,
+    CHANNEL_STEP_PROGRESS_FMT,
+    CHANNEL_TASK_FMT,
+    CHANNEL_TASK_PROGRESS_FMT,
+    CHANNEL_TOOL_STATE_FMT,
+    // Prefix constants
+    PREFIX_AGENT_EVENT,
+    PREFIX_CLAUDE_EVENT,
+    PREFIX_PERMISSION_REQUEST,
+    PREFIX_PROCESS_OUTPUT,
+    PREFIX_PROCESS_STATUS,
+    PREFIX_SESSION,
+    PREFIX_STEP_PROGRESS,
+    PREFIX_TASK,
+    PREFIX_TASK_PROGRESS,
+    PREFIX_TOOL_STATE,
+    // Channel helper functions
+    agent_event_channel,
+    claude_event_channel,
+    parse_agent_event_channel,
+    parse_claude_event_channel,
+    parse_permission_request_channel,
+    parse_process_output_channel,
+    parse_process_status_channel,
+    parse_session_channel,
+    parse_step_progress_channel,
+    parse_task_channel,
+    parse_task_progress_channel,
+    parse_tool_state_channel,
+    permission_request_channel,
+    process_output_channel,
+    process_status_channel,
+    session_channel,
+    step_progress_channel,
+    task_channel,
+    task_progress_channel,
+    tool_state_channel,
+    // Channel type detection
+    ChannelType,
+};
+
+// Re-export envelope types
+pub use envelope::{AgentEventRecord, EventEnvelope, EventType};
 
 // Re-export process events from entities
 pub use crate::entities::process::{
     OutputType, ProcessOutputEvent, ProcessStatus, ProcessStatusEvent,
 };
-
-// =============================================================================
-// Event Channel Constants
-// =============================================================================
-
-/// Event channel for data changes
-pub const CHANNEL_DATA_CHANGED: &str = "data-changed";
-
-/// Format string for process output channel
-/// Use: format!(CHANNEL_PROCESS_OUTPUT_FMT, process_id)
-pub const CHANNEL_PROCESS_OUTPUT_FMT: &str = "process-output-{}";
-
-/// Format string for process status channel
-/// Use: format!(CHANNEL_PROCESS_STATUS_FMT, process_id)
-pub const CHANNEL_PROCESS_STATUS_FMT: &str = "process-status-{}";
-
-/// Format string for Claude event channel
-/// Use: format!(CHANNEL_CLAUDE_EVENT_FMT, process_id)
-pub const CHANNEL_CLAUDE_EVENT_FMT: &str = "claude-event-{}";
-
-/// Format string for tool state channel
-/// Use: format!(CHANNEL_TOOL_STATE_FMT, process_id)
-pub const CHANNEL_TOOL_STATE_FMT: &str = "tool-state-{}";
-
-/// Wildcard channel (subscribe to all events)
-pub const CHANNEL_WILDCARD: &str = "*";
-
-// =============================================================================
-// Channel Helper Functions
-// =============================================================================
-
-/// Generate the channel name for process output events
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::process_output_channel;
-/// let channel = process_output_channel("abc-123");
-/// assert_eq!(channel, "process-output-abc-123");
-/// ```
-pub fn process_output_channel(process_id: &str) -> String {
-    format!("process-output-{}", process_id)
-}
-
-/// Generate the channel name for process status events
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::process_status_channel;
-/// let channel = process_status_channel("abc-123");
-/// assert_eq!(channel, "process-status-abc-123");
-/// ```
-pub fn process_status_channel(process_id: &str) -> String {
-    format!("process-status-{}", process_id)
-}
-
-/// Parse a process ID from a process output channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_process_output_channel;
-/// let id = parse_process_output_channel("process-output-abc-123");
-/// assert_eq!(id, Some("abc-123".to_string()));
-/// ```
-pub fn parse_process_output_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("process-output-")
-        .map(|s| s.to_string())
-}
-
-/// Parse a process ID from a process status channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_process_status_channel;
-/// let id = parse_process_status_channel("process-status-abc-123");
-/// assert_eq!(id, Some("abc-123".to_string()));
-/// ```
-pub fn parse_process_status_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("process-status-")
-        .map(|s| s.to_string())
-}
-
-/// Generate the channel name for Claude event messages
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::claude_event_channel;
-/// let channel = claude_event_channel("abc-123");
-/// assert_eq!(channel, "claude-event-abc-123");
-/// ```
-pub fn claude_event_channel(process_id: &str) -> String {
-    format!("claude-event-{}", process_id)
-}
-
-/// Generate the channel name for tool state events
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::tool_state_channel;
-/// let channel = tool_state_channel("abc-123");
-/// assert_eq!(channel, "tool-state-abc-123");
-/// ```
-pub fn tool_state_channel(process_id: &str) -> String {
-    format!("tool-state-{}", process_id)
-}
-
-/// Parse a process ID from a Claude event channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_claude_event_channel;
-/// let id = parse_claude_event_channel("claude-event-abc-123");
-/// assert_eq!(id, Some("abc-123".to_string()));
-/// ```
-pub fn parse_claude_event_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("claude-event-")
-        .map(|s| s.to_string())
-}
-
-/// Parse a process ID from a tool state channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_tool_state_channel;
-/// let id = parse_tool_state_channel("tool-state-abc-123");
-/// assert_eq!(id, Some("abc-123".to_string()));
-/// ```
-pub fn parse_tool_state_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("tool-state-")
-        .map(|s| s.to_string())
-}
 
 // =============================================================================
 // Entity Type Enum
@@ -213,6 +160,8 @@ pub enum EntityType {
     Project,
     /// Task entity
     Task,
+    /// Task step entity
+    Step,
     /// Chat entity
     Chat,
     /// Message entity
@@ -227,6 +176,10 @@ pub enum EntityType {
     WorkflowTemplate,
     /// Git worktree
     Worktree,
+    /// Agent session entity
+    Session,
+    /// Permission entity
+    Permission,
 }
 
 impl std::fmt::Display for EntityType {
@@ -234,6 +187,7 @@ impl std::fmt::Display for EntityType {
         match self {
             EntityType::Project => write!(f, "project"),
             EntityType::Task => write!(f, "task"),
+            EntityType::Step => write!(f, "step"),
             EntityType::Chat => write!(f, "chat"),
             EntityType::Message => write!(f, "message"),
             EntityType::ExecutorProfile => write!(f, "executor_profile"),
@@ -241,6 +195,8 @@ impl std::fmt::Display for EntityType {
             EntityType::Setting => write!(f, "setting"),
             EntityType::WorkflowTemplate => write!(f, "workflow_template"),
             EntityType::Worktree => write!(f, "worktree"),
+            EntityType::Session => write!(f, "session"),
+            EntityType::Permission => write!(f, "permission"),
         }
     }
 }
@@ -252,6 +208,7 @@ impl std::str::FromStr for EntityType {
         match s.to_lowercase().as_str() {
             "project" => Ok(EntityType::Project),
             "task" => Ok(EntityType::Task),
+            "step" | "task_step" | "taskstep" => Ok(EntityType::Step),
             "chat" => Ok(EntityType::Chat),
             "message" => Ok(EntityType::Message),
             "executor_profile" | "executorprofile" => Ok(EntityType::ExecutorProfile),
@@ -259,6 +216,8 @@ impl std::str::FromStr for EntityType {
             "setting" => Ok(EntityType::Setting),
             "workflow_template" | "workflowtemplate" => Ok(EntityType::WorkflowTemplate),
             "worktree" => Ok(EntityType::Worktree),
+            "session" | "agent_session" | "agentsession" => Ok(EntityType::Session),
+            "permission" => Ok(EntityType::Permission),
             _ => Err(format!("Invalid entity type: {}", s)),
         }
     }
@@ -280,6 +239,7 @@ impl EntityType {
         match self {
             EntityType::Project => "projects",
             EntityType::Task => "tasks",
+            EntityType::Step => "steps",
             EntityType::Chat => "chats",
             EntityType::Message => "messages",
             EntityType::ExecutorProfile => "executorProfiles",
@@ -287,6 +247,8 @@ impl EntityType {
             EntityType::Setting => "settings",
             EntityType::WorkflowTemplate => "workflowTemplates",
             EntityType::Worktree => "worktrees",
+            EntityType::Session => "sessions",
+            EntityType::Permission => "permissions",
         }
     }
 
@@ -295,6 +257,7 @@ impl EntityType {
         &[
             EntityType::Project,
             EntityType::Task,
+            EntityType::Step,
             EntityType::Chat,
             EntityType::Message,
             EntityType::ExecutorProfile,
@@ -302,6 +265,8 @@ impl EntityType {
             EntityType::Setting,
             EntityType::WorkflowTemplate,
             EntityType::Worktree,
+            EntityType::Session,
+            EntityType::Permission,
         ]
     }
 }
@@ -936,6 +901,24 @@ mod tests {
         );
         assert_eq!(parse_process_status_channel("process-output-abc-123"), None);
         assert_eq!(parse_process_status_channel("invalid"), None);
+    }
+
+    #[test]
+    fn test_agent_event_channel() {
+        assert_eq!(
+            agent_event_channel("session-abc-123"),
+            "agent-event-session-abc-123"
+        );
+    }
+
+    #[test]
+    fn test_parse_agent_event_channel() {
+        assert_eq!(
+            parse_agent_event_channel("agent-event-session-abc-123"),
+            Some("session-abc-123".to_string())
+        );
+        assert_eq!(parse_agent_event_channel("process-output-abc-123"), None);
+        assert_eq!(parse_agent_event_channel("invalid"), None);
     }
 
     // =========================================================================

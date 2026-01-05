@@ -670,38 +670,34 @@ describe('TaskLayout - getCurrentBranch', () => {
 
 describe('TaskLayout - buildTaskHeaderAccessibleLabel', () => {
   it('should build label with title and status', () => {
-    const result = buildTaskHeaderAccessibleLabel('My Task', TaskStatus.Inprogress, 0);
+    const result = buildTaskHeaderAccessibleLabel('My Task', TaskStatus.Running);
     expect(result).toContain('Task: My Task');
-    expect(result).toContain('Status: In Progress');
+    expect(result).toContain('Status: Running');
   });
 
-  it('should include actions required when > 0', () => {
-    const result = buildTaskHeaderAccessibleLabel('My Task', TaskStatus.Inprogress, 2);
-    expect(result).toContain('2 actions required');
+  it('should work with completed status', () => {
+    const result = buildTaskHeaderAccessibleLabel('My Task', TaskStatus.Completed);
+    expect(result).toContain('Task: My Task');
+    expect(result).toContain('Status: Completed');
   });
 
-  it('should not include actions when 0', () => {
-    const result = buildTaskHeaderAccessibleLabel('My Task', TaskStatus.Done, 0);
-    expect(result).not.toContain('actions required');
-  });
-
-  it('should use singular for 1 action', () => {
-    const result = buildTaskHeaderAccessibleLabel('My Task', TaskStatus.Inreview, 1);
-    expect(result).toContain('1 action required');
-    expect(result).not.toContain('actions');
+  it('should work with paused status', () => {
+    const result = buildTaskHeaderAccessibleLabel('My Task', TaskStatus.Paused);
+    expect(result).toContain('Task: My Task');
+    expect(result).toContain('Status: Paused');
   });
 
   it('should work with all statuses', () => {
     const statuses: TaskStatus[] = [
-      TaskStatus.Todo,
-      TaskStatus.Inprogress,
-      TaskStatus.Inreview,
-      TaskStatus.Done,
+      TaskStatus.Pending,
+      TaskStatus.Running,
+      TaskStatus.Paused,
+      TaskStatus.Completed,
       TaskStatus.Cancelled,
     ];
 
     for (const status of statuses) {
-      const result = buildTaskHeaderAccessibleLabel('Task', status, 0);
+      const result = buildTaskHeaderAccessibleLabel('Task', status);
       expect(result).toContain('Task: Task');
       expect(result).toContain('Status:');
     }
@@ -749,21 +745,21 @@ describe('TaskLayout - buildTabChangeAnnouncement', () => {
 
 describe('TaskLayout - buildStatusChangeAnnouncement', () => {
   it('should build announcement with status label', () => {
-    expect(buildStatusChangeAnnouncement(TaskStatus.Done)).toContain('Done');
-    expect(buildStatusChangeAnnouncement(TaskStatus.Inprogress)).toContain('In Progress');
+    expect(buildStatusChangeAnnouncement(TaskStatus.Completed)).toContain('Completed');
+    expect(buildStatusChangeAnnouncement(TaskStatus.Running)).toContain('Running');
   });
 
   it('should use SR_STATUS_CHANGED prefix', () => {
-    const result = buildStatusChangeAnnouncement(TaskStatus.Todo);
+    const result = buildStatusChangeAnnouncement(TaskStatus.Pending);
     expect(result.startsWith(SR_STATUS_CHANGED)).toBe(true);
   });
 
   it('should work with all statuses', () => {
     const statuses: TaskStatus[] = [
-      TaskStatus.Todo,
-      TaskStatus.Inprogress,
-      TaskStatus.Inreview,
-      TaskStatus.Done,
+      TaskStatus.Pending,
+      TaskStatus.Running,
+      TaskStatus.Paused,
+      TaskStatus.Completed,
       TaskStatus.Cancelled,
     ];
 
@@ -874,7 +870,9 @@ describe('TaskLayout - Component Behavior Documentation', () => {
 
   describe('status dropdown', () => {
     it('should announce status changes', () => {
-      expect(buildStatusChangeAnnouncement(TaskStatus.Done)).toContain('Task status changed to');
+      expect(buildStatusChangeAnnouncement(TaskStatus.Completed)).toContain(
+        'Task status changed to'
+      );
     });
 
     it('should have all status options', () => {

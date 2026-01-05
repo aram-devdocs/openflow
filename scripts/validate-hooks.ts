@@ -5,7 +5,7 @@
  * - No direct @tauri-apps/api/core imports (use queries instead)
  * - Data-fetching hooks should use @openflow/queries
  *
- * Event subscription hooks (useClaudeEvents, useProcessOutput, etc.) are allowed
+ * Event subscription hooks (useEventSubscription, useAgentSession events, etc.) are allowed
  * to import from @tauri-apps/api/event as they need direct access to the event system.
  *
  * Local state hooks (useConfirmDialog, useTheme, etc.) are exempt from the
@@ -73,11 +73,10 @@ const RULES: HookRule[] = [
  * These hooks use Tauri events directly and are allowed to import from @tauri-apps/api/event.
  */
 const EVENT_HOOK_PATTERNS = [
-  /Events?$/i, // useClaudeEvents, useSomeEvents
-  /Output$/i, // useProcessOutput
-  /Stream$/i, // useOutputStream
+  /Events?$/i, // useAgentSessionEvents, useSomeEvents
   /Subscription$/i, // useEventSubscription
   /Listener$/i, // useEventListener
+  /Stream$/i, // useOutputStream
 ];
 
 /**
@@ -453,7 +452,7 @@ Philosophy:
   cache invalidation. They should never call invoke() directly.
 
 Exceptions:
-  - Event subscription hooks (useClaudeEvents, useProcessOutput) may use
+  - Event subscription hooks (useEventSubscription, useAgentSession events) may use
     @tauri-apps/api/event for real-time event handling
   - Local state hooks (useConfirmDialog, useTheme) don't need queries
   - packages/hooks/index.ts (re-exports only) is excluded

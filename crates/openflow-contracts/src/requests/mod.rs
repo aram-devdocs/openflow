@@ -42,7 +42,7 @@ pub use settings::{
     GetAllSettingsRequest, GetSettingOrDefaultRequest, GetSettingRequest, SetSettingRequest,
     SettingExistsRequest, SettingExistsResponse,
 };
-pub use task::{CreateTaskRequest, UpdateTaskRequest};
+pub use task::{CreateStepRequest, CreateTaskRequest, UpdateStepRequest, UpdateTaskRequest};
 pub use terminal::{DefaultShellResponse, GetDefaultShellRequest, SpawnTerminalRequest};
 pub use workflow::{
     ApplyWorkflowToTaskRequest, CreateWorkflowTemplateRequest, DeleteWorkflowTemplateRequest,

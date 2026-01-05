@@ -32,10 +32,10 @@ export const Route = createFileRoute('/_app/tasks')({
 /** Status filter options for the filter bar */
 const STATUS_FILTERS: TasksStatusFilterOption[] = [
   { label: 'All', value: 'all' },
-  { label: 'To Do', value: TaskStatus.Todo },
-  { label: 'In Progress', value: TaskStatus.Inprogress },
-  { label: 'In Review', value: TaskStatus.Inreview },
-  { label: 'Done', value: TaskStatus.Done },
+  { label: 'To Do', value: TaskStatus.Pending },
+  { label: 'In Progress', value: TaskStatus.Running },
+  { label: 'In Review', value: TaskStatus.Paused },
+  { label: 'Done', value: TaskStatus.Completed },
 ];
 
 function TasksPage() {

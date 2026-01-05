@@ -13,7 +13,8 @@
  * - axe-core compliant
  */
 
-import type { Task, TaskStatus } from '@openflow/generated';
+import type { Task } from '@openflow/generated';
+import { TaskStatus } from '@openflow/generated';
 import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import { AlertTriangle, ClipboardList, RefreshCw } from 'lucide-react';
@@ -93,29 +94,32 @@ const BREAKPOINT_ORDER: TaskListBreakpoint[] = ['base', 'sm', 'md', 'lg', 'xl', 
 
 /** Order of status columns for kanban view */
 export const STATUS_ORDER: TaskStatus[] = [
-  'todo' as TaskStatus,
-  'inprogress' as TaskStatus,
-  'inreview' as TaskStatus,
-  'done' as TaskStatus,
-  'cancelled' as TaskStatus,
+  TaskStatus.Pending,
+  TaskStatus.Running,
+  TaskStatus.Paused,
+  TaskStatus.Completed,
+  TaskStatus.Failed,
+  TaskStatus.Cancelled,
 ];
 
 /** Labels for status columns */
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  todo: 'To Do',
-  inprogress: 'In Progress',
-  inreview: 'In Review',
-  done: 'Done',
-  cancelled: 'Cancelled',
+  [TaskStatus.Pending]: 'Pending',
+  [TaskStatus.Running]: 'Running',
+  [TaskStatus.Paused]: 'Paused',
+  [TaskStatus.Completed]: 'Completed',
+  [TaskStatus.Failed]: 'Failed',
+  [TaskStatus.Cancelled]: 'Cancelled',
 };
 
 /** Colors for status column headers */
 export const STATUS_COLORS: Record<TaskStatus, string> = {
-  todo: 'text-status-todo',
-  inprogress: 'text-status-inprogress',
-  inreview: 'text-status-inreview',
-  done: 'text-status-done',
-  cancelled: 'text-status-cancelled',
+  [TaskStatus.Pending]: 'text-status-pending',
+  [TaskStatus.Running]: 'text-status-running',
+  [TaskStatus.Paused]: 'text-status-paused',
+  [TaskStatus.Completed]: 'text-status-completed',
+  [TaskStatus.Failed]: 'text-status-failed',
+  [TaskStatus.Cancelled]: 'text-status-cancelled',
 };
 
 /** Default aria label for task list */
@@ -309,11 +313,12 @@ export function getResponsiveSizeClasses(
  */
 export function groupTasksByStatus(tasks: Task[]): Record<TaskStatus, Task[]> {
   const groups: Record<TaskStatus, Task[]> = {
-    todo: [],
-    inprogress: [],
-    inreview: [],
-    done: [],
-    cancelled: [],
+    [TaskStatus.Pending]: [],
+    [TaskStatus.Running]: [],
+    [TaskStatus.Paused]: [],
+    [TaskStatus.Completed]: [],
+    [TaskStatus.Failed]: [],
+    [TaskStatus.Cancelled]: [],
   };
 
   for (const task of tasks) {

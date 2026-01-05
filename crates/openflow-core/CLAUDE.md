@@ -4,6 +4,26 @@
 
 Contains all business logic as pure service functions. Shared by both the HTTP server and Tauri desktop app. No transport-specific code lives here.
 
+## Key Services
+
+- **AgentOrchestrator** - Manages agent processes, parses PTY output, persists events to DB
+- **TaskExecutor** - Runs tasks autonomously, advances through steps, handles pause/resume/cancel
+- **AgentSessionService** - CRUD for agent sessions, events, permissions
+- **TaskService** - CRUD for tasks and steps, status management
+- **ToolStateService** - Tracks tool lifecycle (running → completed/error)
+- **AuditService** - Logs all significant actions to audit_logs table
+
+## Providers
+
+The `providers/` directory contains AgentProvider implementations:
+
+- **ClaudeCodeProvider** - Parses Claude Code's stream-json format
+- **GeminiCLIProvider** - Parses Gemini CLI's JSONL format
+- **CodexCLIProvider** - Parses Codex CLI's item-based format
+- **MockProvider** - Configurable mock for testing
+
+All providers normalize output to `UnifiedAgentEvent` enum.
+
 ## Service Function Pattern
 
 Services take dependencies as arguments and return Results. They're pure functions that don't know about HTTP, Tauri, or any transport.
@@ -31,3 +51,15 @@ Services don't broadcast events directly. They return results, and the caller (r
 ## Testing
 
 Services are pure functions, making them easy to test. Use in-memory databases for unit tests. Mock external dependencies.
+
+## Performance Benchmarks
+
+Run benchmarks with: `cargo bench -p openflow-core`
+
+Performance verification tests: `cargo test -p openflow-core --test performance_verification --release`
+
+Key targets:
+- Event throughput: >=1000 events/sec
+- Full query (5000 events): <100ms
+- Incremental query: <50ms
+- Session state query: <50ms

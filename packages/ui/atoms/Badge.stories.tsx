@@ -48,10 +48,11 @@ Supports responsive sizes via object notation:
         'warning',
         'error',
         'info',
-        'todo',
-        'inprogress',
-        'inreview',
-        'done',
+        'pending',
+        'running',
+        'paused',
+        'completed',
+        'failed',
         'cancelled',
       ],
       description: 'Visual style variant',
@@ -206,38 +207,47 @@ export const AllVariants: Story = {
 // Task Status Variants
 // =============================================================================
 
-/** Task status: To Do */
-export const StatusTodo: Story = {
+/** Task status: Pending */
+export const StatusPending: Story = {
   args: {
-    children: 'To Do',
-    variant: 'todo',
+    children: 'Pending',
+    variant: 'pending',
     isStatus: true,
   },
 };
 
-/** Task status: In Progress */
-export const StatusInProgress: Story = {
+/** Task status: Running */
+export const StatusRunning: Story = {
   args: {
-    children: 'In Progress',
-    variant: 'inprogress',
+    children: 'Running',
+    variant: 'running',
     isStatus: true,
   },
 };
 
-/** Task status: In Review */
-export const StatusInReview: Story = {
+/** Task status: Paused */
+export const StatusPaused: Story = {
   args: {
-    children: 'In Review',
-    variant: 'inreview',
+    children: 'Paused',
+    variant: 'paused',
     isStatus: true,
   },
 };
 
-/** Task status: Done */
-export const StatusDone: Story = {
+/** Task status: Completed */
+export const StatusCompleted: Story = {
   args: {
-    children: 'Done',
-    variant: 'done',
+    children: 'Completed',
+    variant: 'completed',
+    isStatus: true,
+  },
+};
+
+/** Task status: Failed */
+export const StatusFailed: Story = {
+  args: {
+    children: 'Failed',
+    variant: 'failed',
     isStatus: true,
   },
 };
@@ -255,17 +265,20 @@ export const StatusCancelled: Story = {
 export const AllTaskStatuses: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
-      <Badge variant="todo" isStatus>
-        To Do
+      <Badge variant="pending" isStatus>
+        Pending
       </Badge>
-      <Badge variant="inprogress" isStatus>
-        In Progress
+      <Badge variant="running" isStatus>
+        Running
       </Badge>
-      <Badge variant="inreview" isStatus>
-        In Review
+      <Badge variant="paused" isStatus>
+        Paused
       </Badge>
-      <Badge variant="done" isStatus>
-        Done
+      <Badge variant="completed" isStatus>
+        Completed
+      </Badge>
+      <Badge variant="failed" isStatus>
+        Failed
       </Badge>
       <Badge variant="cancelled" isStatus>
         Cancelled
@@ -327,17 +340,20 @@ export const AllVariantsWithIcons: Story = {
 export const TaskStatusesWithIcons: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
-      <Badge variant="todo" icon={<Circle className="h-3 w-3" />} isStatus>
-        To Do
+      <Badge variant="pending" icon={<Circle className="h-3 w-3" />} isStatus>
+        Pending
       </Badge>
-      <Badge variant="inprogress" icon={<Clock className="h-3 w-3" />} isStatus>
-        In Progress
+      <Badge variant="running" icon={<Clock className="h-3 w-3" />} isStatus>
+        Running
       </Badge>
-      <Badge variant="inreview" icon={<Eye className="h-3 w-3" />} isStatus>
-        In Review
+      <Badge variant="paused" icon={<Eye className="h-3 w-3" />} isStatus>
+        Paused
       </Badge>
-      <Badge variant="done" icon={<CheckCircle2 className="h-3 w-3" />} isStatus>
-        Done
+      <Badge variant="completed" icon={<CheckCircle2 className="h-3 w-3" />} isStatus>
+        Completed
+      </Badge>
+      <Badge variant="failed" icon={<AlertCircle className="h-3 w-3" />} isStatus>
+        Failed
       </Badge>
       <Badge variant="cancelled" icon={<XCircle className="h-3 w-3" />} isStatus>
         Cancelled
@@ -363,10 +379,11 @@ export const WithTaskStatusEnum: Story = {
   render: () => (
     <div className="flex flex-wrap gap-2">
       {[
-        TaskStatus.Todo,
-        TaskStatus.Inprogress,
-        TaskStatus.Inreview,
-        TaskStatus.Done,
+        TaskStatus.Pending,
+        TaskStatus.Running,
+        TaskStatus.Paused,
+        TaskStatus.Completed,
+        TaskStatus.Failed,
         TaskStatus.Cancelled,
       ].map((status) => (
         <Badge key={status} variant={taskStatusToVariant(status)} isStatus>
@@ -435,11 +452,11 @@ export const AccessibilityDemo: Story = {
       <div className="space-y-2">
         <h3 className="text-sm font-medium">Screen Reader Announcements</h3>
         <div className="flex gap-2">
-          <Badge variant="inprogress" isStatus>
-            In Progress
+          <Badge variant="running" isStatus>
+            Running
           </Badge>
           <span className="text-xs text-muted-foreground">
-            → announces as &ldquo;Status: In Progress&rdquo;
+            → announces as &ldquo;Status: Running&rdquo;
           </span>
         </div>
       </div>

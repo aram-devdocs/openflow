@@ -2,9 +2,16 @@
 
 ## Crate Hierarchy
 
-Contracts define the API surface (entities, requests, responses, events). Core contains all business logic as pure service functions. Server and Tauri are thin layers that call core services.
+Contracts define the API surface (entities, requests, responses, events). Core contains all business logic including the AgentOrchestrator, TaskExecutor, and AgentProvider implementations. Server and Tauri are thin layers that call core services.
 
 **Dependency flow:** Server/Tauri → Core → Contracts, DB, Process
+
+## Key Components
+
+- **AgentOrchestrator** (`core/services/agent_orchestrator.rs`) - Manages agent processes, parses output, persists events
+- **TaskExecutor** (`core/services/task_executor.rs`) - Autonomous task runner, executes steps sequentially
+- **AgentProvider trait** (`core/providers/mod.rs`) - Normalizes CLI outputs to UnifiedAgentEvent
+- **Providers** (`core/providers/`) - Claude Code, Gemini CLI, Codex CLI, Mock implementations
 
 ## Service Layer Pattern
 
@@ -32,5 +39,19 @@ Use `anyhow` for context-rich errors. Chain errors with `.context()` or `.with_c
 4. Add route handlers in server that call services
 5. Add Tauri commands that call the same services
 6. Broadcast events after mutations
+
+## Adding New Agent Providers
+
+1. Create `crates/openflow-core/src/providers/my_provider.rs`
+2. Implement `AgentProvider` trait methods:
+   - `provider_id()` - Unique identifier (e.g., "my-cli")
+   - `build_command()` - Convert AgentConfig to PtyConfig
+   - `parse_line()` - Parse output to UnifiedAgentEvent
+   - `is_permission_prompt()` - Detect permission prompts
+3. Add to `PROVIDER_IDS` array in `registry.rs`
+4. Register in `ProviderRegistry::new()` match statement
+5. Add tests with sample CLI output
+
+See `claude_code.rs` as reference.
 
 See individual crate CLAUDE.md files for crate-specific patterns.

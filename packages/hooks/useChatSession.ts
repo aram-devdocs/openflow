@@ -18,8 +18,53 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 /** View mode for chat display */
 export type ChatViewMode = 'clean' | 'terminal';
 import { useChat, useUpdateChat } from './useChats';
-import { type PermissionRequest, useClaudeEvents } from './useClaudeEvents';
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
+
+/**
+ * @deprecated This hook is being phased out. Use useAgentSession hooks from useAgentSession.ts instead.
+ * Permission request type for legacy compatibility.
+ */
+export interface PermissionRequest {
+  toolName: string;
+  description?: string;
+  filePath?: string;
+}
+
+/**
+ * @deprecated This hook is being phased out. Use useAgentSession hooks instead.
+ * Stub implementation that returns empty/default values for legacy compatibility.
+ */
+function useClaudeEvents(
+  processId: string | null,
+  _options?: { onListenersReady?: () => void }
+): {
+  events: unknown[];
+  rawOutput: string[];
+  isRunning: boolean;
+  isComplete: boolean;
+  permissionRequest: PermissionRequest | null;
+  clearPermissionRequest: () => void;
+  clearEvents: () => void;
+  sessionId: string | null;
+} {
+  // Log deprecation warning in development
+  if (processId && process.env.NODE_ENV === 'development') {
+    console.warn(
+      '[DEPRECATED] useChatSession uses useClaudeEvents which has been removed. ' +
+        'Migrate to useAgentSession hooks for the new architecture.'
+    );
+  }
+  return {
+    events: [],
+    rawOutput: [],
+    isRunning: false,
+    isComplete: false,
+    permissionRequest: null,
+    clearPermissionRequest: () => {},
+    clearEvents: () => {},
+    sessionId: null,
+  };
+}
 import { useCreateMessage, useMessages } from './useMessages';
 import { useProcessLifecycle } from './useProcessLifecycle';
 import { useKillProcess, useSendInput } from './useProcesses';

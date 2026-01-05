@@ -166,6 +166,139 @@ impl<R: Runtime> EventBroadcaster for TauriBroadcaster<R> {
                     log::error!("Failed to emit tool state event: {}", e);
                 }
             }
+
+            // Task progress events
+            Event::TaskProgress {
+                task_id,
+                status,
+                current_step_index,
+                total_steps,
+                details,
+                timestamp,
+            } => {
+                let channel = format!("task-progress-{}", task_id);
+                let payload = serde_json::json!({
+                    "task_id": task_id,
+                    "status": status,
+                    "current_step_index": current_step_index,
+                    "total_steps": total_steps,
+                    "details": details,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit task progress event: {}", e);
+                }
+            }
+
+            Event::StepProgress {
+                step_id,
+                task_id,
+                step_index,
+                status,
+                session_id,
+                details,
+                timestamp,
+            } => {
+                let channel = format!("step-progress-{}", step_id);
+                let payload = serde_json::json!({
+                    "step_id": step_id,
+                    "task_id": task_id,
+                    "step_index": step_index,
+                    "status": status,
+                    "session_id": session_id,
+                    "details": details,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit step progress event: {}", e);
+                }
+            }
+
+            // Agent session events
+            Event::AgentEvent {
+                session_id,
+                sequence,
+                event_type,
+                envelope,
+                timestamp,
+            } => {
+                let channel = format!("agent-event-{}", session_id);
+                let payload = serde_json::json!({
+                    "session_id": session_id,
+                    "sequence": sequence,
+                    "event_type": event_type,
+                    "envelope": envelope,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit agent event: {}", e);
+                }
+            }
+
+            Event::SessionStatus {
+                session_id,
+                status,
+                exit_code,
+                timestamp,
+            } => {
+                let channel = format!("session-status-{}", session_id);
+                let payload = serde_json::json!({
+                    "session_id": session_id,
+                    "status": status,
+                    "exit_code": exit_code,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit session status event: {}", e);
+                }
+            }
+
+            // Permission events
+            Event::PermissionRequest {
+                permission_id,
+                session_id,
+                tool_name,
+                description,
+                file_path,
+                timestamp,
+            } => {
+                let channel = format!("permission-request-{}", session_id);
+                let payload = serde_json::json!({
+                    "permission_id": permission_id,
+                    "session_id": session_id,
+                    "tool_name": tool_name,
+                    "description": description,
+                    "file_path": file_path,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit permission request event: {}", e);
+                }
+            }
+
+            Event::PermissionResponse {
+                permission_id,
+                session_id,
+                approved,
+                timestamp,
+            } => {
+                let channel = format!("permission-response-{}", session_id);
+                let payload = serde_json::json!({
+                    "permission_id": permission_id,
+                    "session_id": session_id,
+                    "approved": approved,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit permission response event: {}", e);
+                }
+            }
         }
     }
 }

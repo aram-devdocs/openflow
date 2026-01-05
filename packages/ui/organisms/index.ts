@@ -2242,3 +2242,27 @@ export {
   TERMINAL_PANEL_ERROR_MESSAGE_CLASSES,
   TERMINAL_PANEL_ERROR_BUTTON_CLASSES,
 } from './TerminalPanel';
+export {
+  // Components
+  StepProgress,
+  EventList,
+  ToolStateList,
+  TerminalOutput,
+  EventItem,
+  ToolStateItem,
+  // Types
+  type StepProgressProps,
+  type EventListProps,
+  type ToolStateListProps,
+  type TerminalOutputProps,
+} from './StepProgress';
+export {
+  // Components
+  WorktreeStatus,
+  WorktreeList,
+  WorktreeItem,
+  // Types
+  type WorktreeStatusProps,
+  type WorktreeItemProps,
+  type WorktreeListProps,
+} from './WorktreeStatus';

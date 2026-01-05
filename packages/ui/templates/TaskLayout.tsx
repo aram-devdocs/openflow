@@ -491,19 +491,9 @@ export function getCurrentBranch(chats: Chat[]): string | null {
 /**
  * Build accessible label for task header
  */
-export function buildTaskHeaderAccessibleLabel(
-  title: string,
-  status: TaskStatus,
-  actionsRequired: number
-): string {
+export function buildTaskHeaderAccessibleLabel(title: string, status: TaskStatus): string {
   const statusLabel = taskStatusToLabel(status);
-  const parts = [`Task: ${title}`, `Status: ${statusLabel}`];
-
-  if (actionsRequired > 0) {
-    parts.push(`${actionsRequired} action${actionsRequired > 1 ? 's' : ''} required`);
-  }
-
-  return parts.join('. ');
+  return `Task: ${title}. Status: ${statusLabel}`;
 }
 
 /**
@@ -704,7 +694,6 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
 ) {
   const id = useId();
   const currentBranch = getCurrentBranch(chats);
-  const hasChanges = task.actionsRequiredCount > 0;
 
   // Mobile steps panel collapse state
   const [isStepsPanelCollapsed, setIsStepsPanelCollapsed] = useState(true);
@@ -802,11 +791,7 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
   previousStatusRef.current = task.status;
 
   // Build accessible header label
-  const headerAccessibleLabel = buildTaskHeaderAccessibleLabel(
-    task.title,
-    task.status,
-    task.actionsRequiredCount
-  );
+  const headerAccessibleLabel = buildTaskHeaderAccessibleLabel(task.title, task.status);
 
   return (
     <Flex
@@ -920,21 +905,6 @@ export const TaskLayout = forwardRef<HTMLDivElement, TaskLayoutProps>(function T
               >
                 {taskStatusToLabel(task.status)}
               </Badge>
-            )}
-
-            {/* Actions required indicator */}
-            {hasChanges && (
-              <Tooltip
-                content={`${task.actionsRequiredCount} action${task.actionsRequiredCount > 1 ? 's' : ''} required`}
-              >
-                <Badge
-                  variant="warning"
-                  aria-label={`${task.actionsRequiredCount} actions required`}
-                  data-testid={dataTestId ? `${dataTestId}-actions-required` : undefined}
-                >
-                  {task.actionsRequiredCount}
-                </Badge>
-              </Tooltip>
             )}
           </Flex>
 

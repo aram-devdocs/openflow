@@ -37,7 +37,12 @@ pub mod validation;
 
 // Re-export commonly used types for convenience
 // Entity types
+pub use entities::{
+    AgentSession, AgentSessionSummary, AgentSessionWithState, Permission, PermissionStatus,
+    SessionStatus,
+};
 pub use entities::ArtifactFile;
+pub use entities::{AuditAction, AuditActor, AuditEntityType, AuditEntry, AuditLog, AuditLogSummary};
 pub use entities::{
     Branch, Commit, CommitSummary, DiffHunk, FileChangeType, FileDiff, FileDiffSummary,
     GitFileStatus, GitStatus, GitStatusFile, PullRequestResult, Worktree, WorktreeStatus,
@@ -53,11 +58,16 @@ pub use entities::{Message, MessageRole, MessageSummary};
 pub use entities::{Project, ProjectSummary, ProjectWithStats};
 pub use entities::{SearchResult, SearchResultType};
 pub use entities::{Setting, SettingsMap};
-pub use entities::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
+pub use entities::{
+    StepStatus, Task, TaskStatus, TaskStep, TaskStepSummary, TaskSummary, TaskWithChatCount,
+    TaskWithChats, TaskWithSteps,
+};
+pub use entities::{ToolState, ToolStateSummary, ToolStatus};
 pub use entities::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,
 };
+pub use entities::{DbWorktree, DbWorktreeStatus, DbWorktreeSummary};
 // Request types
 pub use requests::SearchRequest;
 pub use requests::{
@@ -85,7 +95,7 @@ pub use requests::{
     GetCurrentBranchRequest, GetDiffRequest, GetHeadCommitRequest, GetTaskCommitsRequest,
     GetTaskDiffRequest, HasUncommittedChangesRequest, ListWorktreesRequest, PushBranchRequest,
 };
-pub use requests::{CreateTaskRequest, UpdateTaskRequest};
+pub use requests::{CreateStepRequest, CreateTaskRequest, UpdateStepRequest, UpdateTaskRequest};
 pub use requests::{DefaultShellResponse, GetDefaultShellRequest, SpawnTerminalRequest};
 pub use requests::{
     DeleteAllSettingsRequest, DeleteAllSettingsResponse, DeleteSettingRequest,
@@ -94,14 +104,24 @@ pub use requests::{
 };
 // Event types
 pub use events::{
-    parse_process_output_channel, parse_process_status_channel, process_output_channel,
-    process_status_channel,
+    agent_event_channel, parse_agent_event_channel, parse_process_output_channel,
+    parse_process_status_channel, process_output_channel, process_status_channel,
 };
 pub use events::{
-    DataAction, DataChangedEvent, EntityType, Event, WsClientMessage, WsServerMessage,
+    AgentMessageRole, AgentStats, CompletionStatus, ContentBlock, DataAction, DataChangedEvent,
+    EntityType, Event, PermissionRequest, ToolResultStatus, UnifiedAgentEvent, WsClientMessage,
+    WsServerMessage,
 };
 pub use events::{
-    CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT, CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
+    CHANNEL_AGENT_EVENT_FMT, CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT,
+    CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
+};
+// Event envelope types (for real-time delivery with ordering/deduplication)
+pub use events::{
+    parse_permission_request_channel, parse_step_progress_channel, parse_task_progress_channel,
+    permission_request_channel, step_progress_channel, task_progress_channel, AgentEventRecord,
+    EventEnvelope, EventType, CHANNEL_PERMISSION_REQUEST_FMT, CHANNEL_STEP_PROGRESS_FMT,
+    CHANNEL_TASK_PROGRESS_FMT,
 };
 // Response types
 pub use responses::{AuthStatusResponse, CliInstalledResponse};

@@ -12,10 +12,9 @@ import type {
   Project,
   SearchResult,
   Task,
-  TaskStatus,
   WorkflowTemplate,
 } from '@openflow/generated';
-import { ChatRole, SearchResultType } from '@openflow/generated';
+import { ChatRole, SearchResultType, TaskStatus } from '@openflow/generated';
 import type {
   ExecutorProfile,
   SearchResultType as SearchResultTypeEnum,
@@ -1112,7 +1111,7 @@ export function useDashboardSession({
   // Build header subtitle
   const getHeaderSubtitle = (): string | undefined => {
     if (isLoadingTasks) return undefined; // Let skeleton handle loading
-    const inProgressCount = tasks.filter((t) => t.status === 'inprogress').length;
+    const inProgressCount = tasks.filter((t) => t.status === TaskStatus.Running).length;
     if (inProgressCount === 0) return `${tasks.length} tasks`;
     return `${inProgressCount} task${inProgressCount === 1 ? '' : 's'} in progress`;
   };

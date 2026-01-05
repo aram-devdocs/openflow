@@ -1,8 +1,10 @@
 /**
+ * @deprecated This hook is being phased out. Use useAgentSession hooks instead.
+ *
  * useProcessLifecycle - Manages process lifecycle with guaranteed event listener setup
  *
  * This hook solves the race condition where event listeners might not be attached
- * before Claude events start streaming. It provides:
+ * before agent events start streaming. It provides:
  *
  * 1. State machine: idle → starting → running → completing → idle
  * 2. Guarantees listeners are ready before marking "running"
@@ -16,8 +18,11 @@
  * Without this, there's a race condition where:
  * 1. Process A completes, setActiveProcessId(null) called
  * 2. User sends message, new process B starts, setActiveProcessId(processId)
- * 3. useClaudeEvents useEffect runs, starts async setupListeners()
+ * 3. Event listener useEffect runs, starts async setupListeners()
  * 4. Events stream before setupListeners() completes → events lost!
+ *
+ * NOTE: The new architecture (AgentOrchestrator + useAgentSession) handles this
+ * by persisting events to the database, eliminating client-side race conditions.
  */
 
 import { createLogger } from '@openflow/utils';
@@ -41,7 +46,7 @@ export interface ProcessLifecycleState {
   /** Start a new process - transitions from idle to starting */
   startProcess: (id: string) => void;
 
-  /** Called by useClaudeEvents when listeners are attached */
+  /** Called by event listener hook when listeners are attached */
   onListenersReady: () => void;
 
   /** Mark process as completing (started by completion useEffect) */
@@ -55,6 +60,8 @@ export interface ProcessLifecycleState {
 }
 
 /**
+ * @deprecated This hook is being phased out. Use useAgentSession hooks instead.
+ *
  * Hook for managing process lifecycle with guaranteed listener setup.
  *
  * @example
@@ -66,8 +73,8 @@ export interface ProcessLifecycleState {
  * const process = await runExecutor.mutateAsync({...});
  * lifecycle.startProcess(process.id);
  *
- * // Pass to useClaudeEvents:
- * const events = useClaudeEvents(lifecycle.processId, {
+ * // Pass to event listener hook:
+ * const events = useEventListener(lifecycle.processId, {
  *   onListenersReady: lifecycle.onListenersReady,
  * });
  *
@@ -137,7 +144,7 @@ export function useProcessLifecycle(): ProcessLifecycleState {
 
   /**
    * Start a new process. This transitions from idle to starting,
-   * and sets the process ID which triggers useClaudeEvents to setup listeners.
+   * and sets the process ID which triggers event listeners to setup.
    */
   const startProcess = useCallback(
     (id: string) => {
@@ -158,7 +165,7 @@ export function useProcessLifecycle(): ProcessLifecycleState {
       setProcessState('starting');
       setIsReady(false);
 
-      // Set the process ID - this triggers useClaudeEvents to setup listeners
+      // Set the process ID - this triggers event listeners to setup
       setProcessId(id);
 
       logger.info('Process starting', { processId: id });
@@ -167,7 +174,7 @@ export function useProcessLifecycle(): ProcessLifecycleState {
   );
 
   /**
-   * Called by useClaudeEvents when listeners are fully attached.
+   * Called by event listener hook when listeners are fully attached.
    * Only transitions to running if we're still in the starting state
    * for the same process.
    */

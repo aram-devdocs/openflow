@@ -44,6 +44,15 @@ pub enum ServiceError {
     #[error("External service error: {0}")]
     External(String),
 
+    /// Invalid input value
+    #[error("Invalid input for {field}: {message}")]
+    InvalidInput {
+        /// The field that has invalid input
+        field: String,
+        /// Description of why the input is invalid
+        message: String,
+    },
+
     /// Concurrent modification conflict
     #[error("Conflict: {0}")]
     Conflict(String),
@@ -87,6 +96,14 @@ impl ServiceError {
     /// Create a config error
     pub fn config(message: impl Into<String>) -> Self {
         Self::Config(message.into())
+    }
+
+    /// Create an invalid input error
+    pub fn invalid_input(field: impl Into<String>, message: impl Into<String>) -> Self {
+        Self::InvalidInput {
+            field: field.into(),
+            message: message.into(),
+        }
     }
 
     /// Create an external service error

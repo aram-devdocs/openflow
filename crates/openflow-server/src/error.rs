@@ -109,6 +109,9 @@ impl From<openflow_core::services::ServiceError> for ServerError {
                 ServerError::NotFound(format!("{} with id {} not found", entity, id))
             }
             ServiceError::Validation(msg) => ServerError::BadRequest(msg),
+            ServiceError::InvalidInput { field, message } => {
+                ServerError::BadRequest(format!("Invalid {}: {}", field, message))
+            }
             ServiceError::Conflict(msg) => ServerError::Conflict(msg),
             ServiceError::PermissionDenied(msg) => ServerError::Forbidden(msg),
             ServiceError::Database(e) => ServerError::Database(e.to_string()),

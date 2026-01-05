@@ -235,10 +235,11 @@ export const SR_CHATS_SECTION_COLLAPSED = 'Chats section collapsed';
  */
 export const STATUS_FILTER_OPTIONS: readonly { value: StatusFilter; label: string }[] = [
   { value: 'all' as const, label: 'All Tasks' },
-  { value: 'todo' as StatusFilter, label: 'To Do' },
-  { value: 'inprogress' as StatusFilter, label: 'In Progress' },
-  { value: 'inreview' as StatusFilter, label: 'In Review' },
-  { value: 'done' as StatusFilter, label: 'Done' },
+  { value: 'pending' as StatusFilter, label: 'Pending' },
+  { value: 'running' as StatusFilter, label: 'Running' },
+  { value: 'paused' as StatusFilter, label: 'Paused' },
+  { value: 'completed' as StatusFilter, label: 'Completed' },
+  { value: 'failed' as StatusFilter, label: 'Failed' },
   { value: 'cancelled' as StatusFilter, label: 'Cancelled' },
 ] as const;
 
@@ -480,10 +481,11 @@ export function filterTasksByStatus(tasks: Task[], filter: StatusFilter): Task[]
 export function getTaskCounts(tasks: Task[]): Record<StatusFilter, number> {
   return {
     all: tasks.length,
-    todo: tasks.filter((t) => t.status === 'todo').length,
-    inprogress: tasks.filter((t) => t.status === 'inprogress').length,
-    inreview: tasks.filter((t) => t.status === 'inreview').length,
-    done: tasks.filter((t) => t.status === 'done').length,
+    pending: tasks.filter((t) => t.status === 'pending').length,
+    running: tasks.filter((t) => t.status === 'running').length,
+    paused: tasks.filter((t) => t.status === 'paused').length,
+    completed: tasks.filter((t) => t.status === 'completed').length,
+    failed: tasks.filter((t) => t.status === 'failed').length,
     cancelled: tasks.filter((t) => t.status === 'cancelled').length,
   };
 }

@@ -4,6 +4,26 @@
 
 Defines the API surface - all types shared between backend and frontend. This is the single source of truth for domain entities, request/response types, and events.
 
+## Key Types
+
+### Agent Events
+- **UnifiedAgentEvent** - Provider-agnostic event enum (Init, Message, ToolUse, ToolResult, Complete, Error, Permission)
+- **EventEnvelope** - Wrapper with session_id, sequence, timestamp, payload
+- **AgentEventRecord** - Flattened form for database storage
+
+### Task Execution
+- **Task** - Task entity with status (Pending, Running, Paused, Completed, Failed, Cancelled)
+- **TaskStep** - Individual step with prompt, provider_id, session_id
+- **TaskWithSteps** - Task with all steps for execution view
+
+### Sessions
+- **AgentSession** - Session entity with process_id, provider_id, status, exit_code
+- **Permission** - Permission request from agent with tool_name, description
+
+### Channels
+- **channels.rs** - Constants for all event channels (task-progress, agent-event, etc.)
+- Helper functions: `task_channel()`, `session_channel()`, `agent_event_channel()`
+
 ## Type Definition Pattern
 
 All types use `#[typeshare]` for TypeScript generation. Use `#[serde(rename_all = "camelCase")]` for JavaScript conventions.

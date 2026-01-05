@@ -10,6 +10,30 @@ Commands are thin wrappers that extract state, call core services, and return re
 3. Broadcast event if mutation occurred
 4. Return result or map error
 
+## AppState Components
+
+AppState contains shared resources managed by Tauri:
+
+- **SqlitePool** - Database connection pool
+- **AgentOrchestrator** - Manages agent processes and sessions
+- **TaskExecutor** - Autonomous task execution engine
+- **Broadcaster** - Event broadcasting to all connected clients
+
+Access via `state.get_pool()`, `state.get_agent_orchestrator()`, etc.
+
+## Key Command Groups
+
+### Task Execution (`commands/tasks.rs`)
+- `start_task`, `pause_task`, `resume_task`, `cancel_task` - Task lifecycle
+- `get_task_with_steps`, `list_task_steps` - Task queries
+- `respond_to_task_permission` - Permission handling
+
+### Agent Sessions (`commands/agents.rs`)
+- `get_agent_session_with_state` - Session with event/tool counts
+- `get_agent_session_events` - Events with sequence filtering
+- `respond_agent_permission` - Permission approval/denial
+- `kill_agent_session`, `write_agent_input`, `resize_agent_terminal` - Session control
+
 ## State Management
 
 Use Tauri's managed state for shared resources (database pool, event channels). Access via command parameters with State extractor.

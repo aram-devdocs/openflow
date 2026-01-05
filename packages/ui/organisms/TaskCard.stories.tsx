@@ -57,9 +57,9 @@ const mockTask: Task = {
   title: 'Implement user authentication',
   description:
     'Add OAuth2 authentication with Google and GitHub providers. Include session management and token refresh.',
-  status: TaskStatus.Inprogress,
-  actionsRequiredCount: 0,
-  autoStartNextStep: true,
+  status: TaskStatus.Running,
+  autoRun: true,
+  currentStepIndex: 0,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -69,8 +69,7 @@ const mockTaskWithActions: Task = {
   id: 'task-2',
   title: 'Fix checkout validation',
   description: 'Validation errors are not showing correctly on the checkout form.',
-  status: TaskStatus.Inprogress,
-  actionsRequiredCount: 2,
+  status: TaskStatus.Running,
 };
 
 const mockTaskTodo: Task = {
@@ -78,7 +77,7 @@ const mockTaskTodo: Task = {
   id: 'task-3',
   title: 'Add dark mode support',
   description: 'Implement dark mode with system preference detection.',
-  status: TaskStatus.Todo,
+  status: TaskStatus.Pending,
 };
 
 const mockTaskDone: Task = {
@@ -86,7 +85,7 @@ const mockTaskDone: Task = {
   id: 'task-4',
   title: 'Setup CI/CD pipeline',
   description: 'Configure GitHub Actions for automated testing and deployment.',
-  status: TaskStatus.Done,
+  status: TaskStatus.Completed,
 };
 
 const mockTaskCancelled: Task = {
@@ -102,16 +101,16 @@ const mockTaskInReview: Task = {
   id: 'task-6',
   title: 'Code review for PR #42',
   description: 'Review the authentication changes submitted in the pull request.',
-  status: TaskStatus.Inreview,
+  status: TaskStatus.Paused,
 };
 
 const mockTaskNoDescription: Task = {
   id: 'task-7',
   projectId: 'project-1',
   title: 'Quick fix for typo in README',
-  status: TaskStatus.Todo,
-  actionsRequiredCount: 0,
-  autoStartNextStep: true,
+  status: TaskStatus.Pending,
+  autoRun: true,
+  currentStepIndex: 0,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -122,7 +121,7 @@ const mockTaskLongTitle: Task = {
   title:
     'Implement comprehensive error handling with retry logic and circuit breaker patterns for external API calls',
   description: 'This is a complex task that requires careful planning.',
-  status: TaskStatus.Todo,
+  status: TaskStatus.Pending,
 };
 
 // ============================================================================
@@ -320,22 +319,22 @@ export const CardList: Story = {
 // Actions Required Variants
 // ============================================================================
 
-/** Task card with single action required */
-export const SingleActionRequired: Story = {
+/** Task card with paused status */
+export const PausedStatus: Story = {
   args: {
     task: {
       ...mockTask,
-      actionsRequiredCount: 1,
+      status: TaskStatus.Paused,
     },
   },
 };
 
-/** Task card with many actions required */
-export const ManyActionsRequired: Story = {
+/** Task card with completed status */
+export const CompletedStatus: Story = {
   args: {
     task: {
       ...mockTask,
-      actionsRequiredCount: 5,
+      status: TaskStatus.Completed,
     },
   },
 };
@@ -522,7 +521,7 @@ export const TaskBoardColumn: Story = {
     ),
   ],
   render: function TaskBoardColumnDemo() {
-    const [tasks, setTasks] = useState([mockTaskTodo, mockTask, mockTaskWithActions]);
+    const [tasks, setTasks] = useState([mockTaskTodo, mockTask, { ...mockTaskWithActions }]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
     const handleStatusChange = (id: string, status: TaskStatus) => {
@@ -565,7 +564,7 @@ export const DashboardWidget: Story = {
   render: function DashboardWidgetDemo() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
 
-    const tasks = [{ ...mockTaskWithActions, actionsRequiredCount: 3 }, mockTask, mockTaskInReview];
+    const tasks = [mockTaskWithActions, mockTask, mockTaskInReview];
 
     return (
       <div className="rounded-lg border p-4">
@@ -710,7 +709,7 @@ export const ConstantsReference: Story = {
           <div>
             <code className="font-mono">buildStatusChangeAnnouncement(status)</code>
             <p className="text-muted-foreground">
-              Example: {buildStatusChangeAnnouncement(TaskStatus.Done)}
+              Example: {buildStatusChangeAnnouncement(TaskStatus.Completed)}
             </p>
           </div>
         </div>

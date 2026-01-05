@@ -4,7 +4,9 @@
 //! These are the primary data structures stored in the database
 //! and transferred between frontend and backend.
 
+pub mod agent_session;
 pub mod artifact;
+pub mod audit;
 pub mod chat;
 pub mod executor;
 pub mod git;
@@ -16,9 +18,15 @@ pub mod settings;
 pub mod task;
 pub mod tool_state;
 pub mod workflow;
+pub mod worktree;
 
 // Re-export entity types for convenience
+pub use agent_session::{
+    AgentSession, AgentSessionSummary, AgentSessionWithState, Permission, PermissionStatus,
+    SessionStatus,
+};
 pub use artifact::ArtifactFile;
+pub use audit::{AuditAction, AuditActor, AuditEntityType, AuditEntry, AuditLog, AuditLogSummary};
 pub use chat::{Chat, ChatRole, ChatSummary, ChatWithMessageCount, ChatWithMessages};
 pub use executor::{CliToolType, ExecutorProfile, ExecutorProfileSummary};
 pub use git::{
@@ -34,9 +42,13 @@ pub use process::{
 pub use project::{Project, ProjectSummary, ProjectWithStats};
 pub use search::{SearchResult, SearchResultType};
 pub use settings::{Setting, SettingsMap};
-pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
-pub use tool_state::{ToolState, ToolStatus};
+pub use task::{
+    StepStatus, Task, TaskStatus, TaskStep, TaskStepSummary, TaskSummary, TaskWithChatCount,
+    TaskWithChats, TaskWithSteps,
+};
+pub use tool_state::{ToolState, ToolStateSummary, ToolStatus};
 pub use workflow::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,
 };
+pub use worktree::{DbWorktree, DbWorktreeStatus, DbWorktreeSummary};

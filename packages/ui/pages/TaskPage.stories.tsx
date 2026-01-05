@@ -81,9 +81,9 @@ const mockTask: Task = {
   projectId: 'project-1',
   title: 'Implement user authentication',
   description: 'Add login and signup functionality with OAuth support',
-  status: TaskStatus.Inprogress,
-  actionsRequiredCount: 2,
-  autoStartNextStep: true,
+  status: TaskStatus.Running,
+  autoRun: true,
+  currentStepIndex: 1,
   createdAt: '2024-01-15T10:00:00Z',
   updatedAt: '2024-01-15T14:30:00Z',
 };
@@ -672,7 +672,7 @@ export const DoneStatus: Story = {
   args: createDefaultProps({
     task: {
       ...mockTask,
-      status: TaskStatus.Done,
+      status: TaskStatus.Completed,
     },
     stepsPanel: {
       ...defaultStepsPanel,
@@ -689,7 +689,7 @@ export const InReviewStatus: Story = {
   args: createDefaultProps({
     task: {
       ...mockTask,
-      status: TaskStatus.Inreview,
+      status: TaskStatus.Paused,
     },
     stepsPanel: {
       ...defaultStepsPanel,

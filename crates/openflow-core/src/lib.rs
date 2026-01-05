@@ -34,6 +34,7 @@
 //! ```
 
 pub mod events;
+pub mod providers;
 pub mod services;
 
 // Re-export common types for convenience

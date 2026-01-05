@@ -1,7 +1,7 @@
 import type { Task, TaskStatus } from '@openflow/generated';
 import { Box, type ResponsiveValue, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
-import { AlertCircle, MoreVertical } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { type HTMLAttributes, forwardRef } from 'react';
 import { Badge, taskStatusToLabel, taskStatusToVariant } from '../atoms/Badge';
 import { Icon } from '../atoms/Icon';
@@ -293,15 +293,6 @@ export function buildAccessibleLabel(
   // Status
   parts.push(`Status: ${taskStatusToLabel(task.status)}`);
 
-  // Actions required
-  if (task.actionsRequiredCount > 0) {
-    const actionWord =
-      task.actionsRequiredCount === 1
-        ? DEFAULT_SINGLE_ACTION_LABEL
-        : DEFAULT_MULTIPLE_ACTIONS_LABEL;
-    parts.push(`${task.actionsRequiredCount} ${actionWord}`);
-  }
-
   // Selected state
   if (isSelected) {
     parts.push(DEFAULT_SELECTED_LABEL);
@@ -416,7 +407,6 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
       onMoreClick?.(task.id, e);
     };
 
-    const hasActionsRequired = task.actionsRequiredCount > 0;
     const accessibleLabel = buildAccessibleLabel(task, isSelected, ariaLabel);
 
     // Generate responsive classes
@@ -520,23 +510,7 @@ export const TaskCard = forwardRef<HTMLDivElement, TaskCardProps>(
 
           {/* Footer: Metadata and indicators */}
           <Box className={cn(TASK_CARD_FOOTER_CLASSES, footerMarginClasses)}>
-            {/* Actions required badge */}
-            {hasActionsRequired ? (
-              <Badge
-                variant="warning"
-                size={badgeSize}
-                icon={<Icon icon={AlertCircle} size={iconSize} aria-hidden={true} />}
-                aria-label={buildActionsAnnouncement(task.actionsRequiredCount)}
-                data-testid={testId ? `${testId}-actions-badge` : undefined}
-              >
-                <Text as="span" aria-hidden={true}>
-                  {task.actionsRequiredCount}{' '}
-                  {task.actionsRequiredCount === 1 ? 'action' : 'actions'} required
-                </Text>
-              </Badge>
-            ) : (
-              <Text as="span" aria-hidden={true} />
-            )}
+            <Text as="span" aria-hidden={true} />
 
             {/* Context menu button - visible on hover */}
             <Box
