@@ -16,6 +16,7 @@ export * from './schemas-generated.js';
 export {
   // Enum schemas
   taskStatusSchema,
+  stepStatusSchema,
   chatRoleSchema,
   messageRoleSchema,
   processStatusSchema,
@@ -23,12 +24,16 @@ export {
   outputTypeSchema,
   searchResultTypeSchema,
   workflowStepStatusSchema,
+  providerIdSchema,
   // Project schemas
   createProjectSchema,
   updateProjectSchema,
   // Task schemas
   createTaskSchema,
   updateTaskSchema,
+  // Task step schemas (agent orchestration)
+  createStepSchema,
+  updateStepSchema,
   // Chat schemas
   createChatSchema,
   createStandaloneChatSchema,
@@ -54,6 +59,7 @@ export {
   pullRequestResultSchema,
   // Inferred types - Input types
   type TaskStatusInput,
+  type StepStatusInput,
   type ChatRoleInput,
   type MessageRoleInput,
   type ProcessStatusInput,
@@ -61,10 +67,13 @@ export {
   type OutputTypeInput,
   type SearchResultTypeInput,
   type WorkflowStepStatusInput,
+  type ProviderIdInput,
   type CreateProjectInput,
   type UpdateProjectInput,
   type CreateTaskInput,
   type UpdateTaskInput,
+  type CreateStepInput,
+  type UpdateStepInput,
   type CreateChatInput,
   type CreateStandaloneChatInput,
   type UpdateChatInput,

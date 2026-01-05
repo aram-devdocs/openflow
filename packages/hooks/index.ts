@@ -10,6 +10,7 @@
 
 export * from './useProjects';
 export * from './useTasks';
+export * from './useTaskExecution';
 export * from './useChats';
 export * from './useMessages';
 export * from './useProcesses';

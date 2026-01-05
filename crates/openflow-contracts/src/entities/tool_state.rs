@@ -304,7 +304,7 @@ pub struct ToolStateSummary {
     /// When started
     pub started_at: String,
     /// Duration in ms (if completed)
-    pub duration_ms: Option<i64>,
+    pub duration_ms: Option<i32>,
 }
 
 impl From<&ToolState> for ToolStateSummary {
@@ -315,7 +315,8 @@ impl From<&ToolState> for ToolStateSummary {
             status: state.status.clone(),
             is_error: state.is_error != 0,
             started_at: state.started_at.clone(),
-            duration_ms: state.duration_ms(),
+            // Truncate i64 to i32 for typeshare compatibility (~24 day max duration)
+            duration_ms: state.duration_ms().map(|d| d as i32),
         }
     }
 }

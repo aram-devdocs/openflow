@@ -4,8 +4,33 @@ import { z } from 'zod';
 // Enum Schemas
 // =============================================================================
 
-export const taskStatusSchema = z.enum(['todo', 'inprogress', 'inreview', 'done', 'cancelled']);
+/**
+ * Task status schema.
+ * Supports both new status values (pending, running, paused, completed, failed, cancelled)
+ * and legacy values (todo, inprogress, inreview, done) for backward compatibility.
+ */
+export const taskStatusSchema = z.enum([
+  // New status values (from migration 011)
+  'pending',
+  'running',
+  'paused',
+  'completed',
+  'failed',
+  'cancelled',
+  // Legacy values (for backward compatibility)
+  'todo',
+  'inprogress',
+  'inreview',
+  'done',
+]);
 export type TaskStatusInput = z.infer<typeof taskStatusSchema>;
+
+/**
+ * Step status schema for task steps.
+ * Matches CHECK constraint in task_steps table (migration 012).
+ */
+export const stepStatusSchema = z.enum(['pending', 'running', 'completed', 'failed', 'skipped']);
+export type StepStatusInput = z.infer<typeof stepStatusSchema>;
 
 export const chatRoleSchema = z.enum(['main', 'review', 'test', 'terminal']);
 export type ChatRoleInput = z.infer<typeof chatRoleSchema>;
@@ -339,3 +364,56 @@ export const pullRequestResultSchema = z.object({
   branch: z.string().min(1),
 });
 export type PullRequestResultOutput = z.infer<typeof pullRequestResultSchema>;
+
+// =============================================================================
+// Task Step Schemas (Agent Orchestration)
+// =============================================================================
+
+/**
+ * Valid provider IDs for agent execution.
+ * These must match the providers registered in the backend.
+ */
+export const providerIdSchema = z.enum(['claude-code', 'gemini-cli', 'codex-cli', 'mock']);
+export type ProviderIdInput = z.infer<typeof providerIdSchema>;
+
+/**
+ * Schema for creating a task step.
+ * Steps define the execution sequence for a task's agent workflow.
+ *
+ * @example
+ * ```ts
+ * const step = createStepSchema.parse({
+ *   stepIndex: 0,
+ *   title: 'Implement feature',
+ *   prompt: 'Create a new React component for user profiles',
+ *   providerId: 'claude-code',
+ * });
+ * ```
+ */
+export const createStepSchema = z.object({
+  /** Order of execution (0-based) */
+  stepIndex: z.number().int().min(0, 'Step index must be non-negative'),
+  /** Human-readable step name */
+  title: z.string().min(1, 'Step title is required').max(500),
+  /** The prompt to send to the agent */
+  prompt: z.string().min(1, 'Prompt is required'),
+  /** Which agent provider to use */
+  providerId: z.string().min(1, 'Provider ID is required').max(100),
+});
+export type CreateStepInput = z.infer<typeof createStepSchema>;
+
+/**
+ * Schema for updating a task step (if needed).
+ * All fields are optional - only provided fields will be updated.
+ */
+export const updateStepSchema = z.object({
+  /** Updated step title */
+  title: z.string().min(1).max(500).optional(),
+  /** Updated prompt */
+  prompt: z.string().min(1).optional(),
+  /** Updated provider ID */
+  providerId: z.string().min(1).max(100).optional(),
+  /** Updated status */
+  status: stepStatusSchema.optional(),
+});
+export type UpdateStepInput = z.infer<typeof updateStepSchema>;

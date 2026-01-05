@@ -43,6 +43,7 @@ export * from './utils';
 // Domain-specific queries
 export * from './projects';
 export * from './tasks';
+export * from './taskExecution';
 export * from './chats';
 export * from './messages';
 export * from './processes';
