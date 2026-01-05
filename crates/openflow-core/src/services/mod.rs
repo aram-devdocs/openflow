@@ -13,11 +13,13 @@
 //!
 //! # Available Services
 //!
+//! - **agent_orchestrator**: Agent process lifecycle and output handling
 //! - **agent_session**: Agent session lifecycle and event persistence
 //! - **artifact**: Task artifact file management
 //! - **audit**: Action audit logging for compliance and debugging
 //! - **project**: Project CRUD operations
 //! - **task**: Task CRUD operations
+//! - **task_executor**: Autonomous task execution engine
 //! - **chat**: Chat session management
 //! - **message**: Message CRUD operations
 //! - **executor**: AI agent execution
@@ -51,9 +53,11 @@ pub mod project;
 pub mod search;
 pub mod settings;
 pub mod task;
+pub mod task_executor;
 pub mod terminal;
 pub mod tool_state;
 pub mod workflow;
 
 pub use agent_orchestrator::{AgentOrchestrator, AgentOutputSink, SpawnAgentRequest};
 pub use error::{ServiceError, ServiceResult};
+pub use task_executor::TaskExecutor;
