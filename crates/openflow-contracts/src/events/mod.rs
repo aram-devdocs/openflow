@@ -970,7 +970,7 @@ mod tests {
     #[test]
     fn test_entity_type_all() {
         let all = EntityType::all();
-        assert_eq!(all.len(), 12);
+        assert_eq!(all.len(), 9);
         assert!(all.contains(&EntityType::Project));
         assert!(all.contains(&EntityType::Worktree));
     }

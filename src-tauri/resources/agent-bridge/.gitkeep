@@ -1,2 +1,0 @@
-# This directory is populated during build by scripts/build-bridge.sh
-# The .gitkeep file ensures the directory exists for development

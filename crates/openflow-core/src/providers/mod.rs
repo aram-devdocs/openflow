@@ -47,7 +47,6 @@
 //! ```
 
 pub mod claude_code;
-pub mod claude_sdk;
 pub mod codex_cli;
 pub mod gemini_cli;
 pub mod mock;
@@ -55,7 +54,6 @@ pub mod registry;
 
 // Re-export provider implementations
 pub use claude_code::ClaudeCodeProvider;
-pub use claude_sdk::ClaudeSdkProvider;
 pub use codex_cli::CodexCLIProvider;
 pub use gemini_cli::GeminiCLIProvider;
 pub use mock::{MockProvider, MockProviderBuilder, MockProviderConfig};

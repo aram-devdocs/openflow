@@ -33,9 +33,8 @@ use std::sync::Arc;
 
 use openflow_core::events::EventBroadcaster;
 use openflow_core::services::process::ProcessService;
-use openflow_core::services::{AgentOrchestrator, BridgeManager, TaskExecutor};
+use openflow_core::services::{AgentOrchestrator, TaskExecutor};
 use sqlx::SqlitePool;
-use tokio::sync::RwLock;
 
 use crate::ws::ClientManager;
 
@@ -82,12 +81,6 @@ pub struct AppState {
     /// Runs tasks from start to finish in background threads.
     /// Coordinates with AgentOrchestrator to execute steps sequentially.
     pub task_executor: Arc<TaskExecutor>,
-
-    /// Bridge manager for Agent SDK subprocess
-    ///
-    /// Manages the lifecycle of the Node.js agent-bridge subprocess
-    /// which proxies requests to the Claude Agent SDK.
-    pub bridge_manager: Arc<RwLock<BridgeManager>>,
 }
 
 impl AppState {
@@ -108,9 +101,6 @@ impl AppState {
         broadcaster: Arc<dyn EventBroadcaster>,
         client_manager: Arc<ClientManager>,
     ) -> Self {
-        // Create bridge manager for Agent SDK subprocess
-        let bridge_manager = Arc::new(RwLock::new(BridgeManager::default_port()));
-
         // Create agent orchestrator (needs pool and broadcaster)
         let agent_orchestrator = Arc::new(AgentOrchestrator::new(
             pool.clone(),
@@ -131,7 +121,6 @@ impl AppState {
             client_manager,
             agent_orchestrator,
             task_executor,
-            bridge_manager,
         }
     }
 
@@ -146,7 +135,6 @@ impl AppState {
 
         let broadcaster: Arc<dyn EventBroadcaster> = Arc::new(NullBroadcaster);
         let client_manager = ClientManager::new();
-        let bridge_manager = Arc::new(RwLock::new(BridgeManager::default_port()));
 
         // Create agent orchestrator and task executor for testing
         let agent_orchestrator = Arc::new(AgentOrchestrator::new(
@@ -166,7 +154,6 @@ impl AppState {
             client_manager,
             agent_orchestrator,
             task_executor,
-            bridge_manager,
         }
     }
 
@@ -229,28 +216,6 @@ impl AppState {
         Arc::clone(&self.task_executor)
     }
 
-    /// Get a clone of the bridge manager Arc
-    pub fn get_bridge_manager(&self) -> Arc<RwLock<BridgeManager>> {
-        Arc::clone(&self.bridge_manager)
-    }
-
-    /// Initialize the bridge manager (start the subprocess).
-    ///
-    /// This should be called during server startup to ensure the bridge
-    /// is running before any agent operations are attempted.
-    pub async fn initialize_bridge(&self) -> Result<(), String> {
-        let mut manager = self.bridge_manager.write().await;
-        manager.start().await.map_err(|e| e.to_string())
-    }
-
-    /// Stop the bridge manager (shutdown the subprocess).
-    ///
-    /// This should be called during server shutdown.
-    pub async fn shutdown_bridge(&self) -> Result<(), String> {
-        let mut manager = self.bridge_manager.write().await;
-        manager.stop().await.map_err(|e| e.to_string())
-    }
-
     /// Broadcast an event to connected clients
     ///
     /// Convenience method that calls the broadcaster.
@@ -268,7 +233,6 @@ impl std::fmt::Debug for AppState {
             .field("client_manager", &"ClientManager")
             .field("agent_orchestrator", &"AgentOrchestrator")
             .field("task_executor", &"TaskExecutor")
-            .field("bridge_manager", &"BridgeManager")
             .finish()
     }
 }

@@ -71,7 +71,6 @@ use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
 
 use super::claude_code::{ClaudeCodeProvider, PROVIDER_ID as CLAUDE_CODE_ID};
-use super::claude_sdk::{ClaudeSdkProvider, PROVIDER_ID as CLAUDE_SDK_ID};
 use super::codex_cli::{CodexCLIProvider, PROVIDER_ID as CODEX_CLI_ID};
 use super::gemini_cli::{GeminiCLIProvider, PROVIDER_ID as GEMINI_CLI_ID};
 use super::mock::{MockProvider, PROVIDER_ID as MOCK_ID};
@@ -82,7 +81,7 @@ use super::AgentProvider;
 // =============================================================================
 
 /// All registered provider IDs.
-pub const PROVIDER_IDS: &[&str] = &[CLAUDE_SDK_ID, CLAUDE_CODE_ID, GEMINI_CLI_ID, CODEX_CLI_ID, MOCK_ID];
+pub const PROVIDER_IDS: &[&str] = &[CLAUDE_CODE_ID, GEMINI_CLI_ID, CODEX_CLI_ID, MOCK_ID];
 
 /// Default provider ID (Claude Code).
 pub const DEFAULT_PROVIDER_ID: &str = CLAUDE_CODE_ID;
@@ -139,7 +138,6 @@ impl ProviderRegistry {
         let mut providers: HashMap<&'static str, Arc<dyn AgentProvider>> = HashMap::new();
 
         // Register all built-in providers
-        providers.insert(CLAUDE_SDK_ID, Arc::new(ClaudeSdkProvider::new()));
         providers.insert(CLAUDE_CODE_ID, Arc::new(ClaudeCodeProvider::new()));
         providers.insert(GEMINI_CLI_ID, Arc::new(GeminiCLIProvider::new()));
         providers.insert(CODEX_CLI_ID, Arc::new(CodexCLIProvider::new()));
@@ -335,7 +333,7 @@ mod tests {
     #[test]
     fn test_registry_new() {
         let registry = ProviderRegistry::new();
-        assert_eq!(registry.count(), 5);
+        assert_eq!(registry.count(), 4);
     }
 
     #[test]
@@ -388,18 +386,16 @@ mod tests {
     fn test_registry_list_ids() {
         let registry = ProviderRegistry::new();
         let ids = registry.list_ids();
-        assert!(ids.contains(&"claude-sdk"));
         assert!(ids.contains(&"claude-code"));
         assert!(ids.contains(&"gemini-cli"));
         assert!(ids.contains(&"codex-cli"));
         assert!(ids.contains(&"mock"));
-        assert_eq!(ids.len(), 5);
+        assert_eq!(ids.len(), 4);
     }
 
     #[test]
     fn test_registry_exists() {
         let registry = ProviderRegistry::new();
-        assert!(registry.exists("claude-sdk"));
         assert!(registry.exists("claude-code"));
         assert!(registry.exists("gemini-cli"));
         assert!(registry.exists("codex-cli"));
@@ -410,7 +406,7 @@ mod tests {
     #[test]
     fn test_registry_count() {
         let registry = ProviderRegistry::new();
-        assert_eq!(registry.count(), 5);
+        assert_eq!(registry.count(), 4);
     }
 
     #[test]
@@ -424,18 +420,17 @@ mod tests {
     fn test_registry_all() {
         let registry = ProviderRegistry::new();
         let providers = registry.all();
-        assert_eq!(providers.len(), 5);
+        assert_eq!(providers.len(), 4);
     }
 
     #[test]
     fn test_registry_info() {
         let registry = ProviderRegistry::new();
         let info = registry.info();
-        assert_eq!(info.len(), 5);
+        assert_eq!(info.len(), 4);
 
         // Check that all providers are represented
         let ids: Vec<_> = info.iter().map(|(id, _)| *id).collect();
-        assert!(ids.contains(&"claude-sdk"));
         assert!(ids.contains(&"claude-code"));
         assert!(ids.contains(&"gemini-cli"));
         assert!(ids.contains(&"codex-cli"));
@@ -456,7 +451,7 @@ mod tests {
     #[test]
     fn test_registry_default_impl() {
         let registry = ProviderRegistry::default();
-        assert_eq!(registry.count(), 5); // claude-code, gemini-cli, codex-cli, mock, claude-sdk
+        assert_eq!(registry.count(), 4);
     }
 
     #[test]
@@ -490,7 +485,6 @@ mod tests {
     #[test]
     fn test_static_list_provider_ids() {
         let ids = list_provider_ids();
-        assert!(ids.contains(&"claude-sdk"));
         assert!(ids.contains(&"claude-code"));
         assert!(ids.contains(&"gemini-cli"));
         assert!(ids.contains(&"codex-cli"));
@@ -499,7 +493,6 @@ mod tests {
 
     #[test]
     fn test_static_provider_exists() {
-        assert!(provider_exists("claude-sdk"));
         assert!(provider_exists("claude-code"));
         assert!(provider_exists("gemini-cli"));
         assert!(provider_exists("codex-cli"));
@@ -516,7 +509,7 @@ mod tests {
     #[test]
     fn test_static_provider_info() {
         let info = provider_info();
-        assert_eq!(info.len(), 5);
+        assert_eq!(info.len(), 4);
     }
 
     // =========================================================================
@@ -525,8 +518,7 @@ mod tests {
 
     #[test]
     fn test_provider_ids_constant() {
-        assert_eq!(PROVIDER_IDS.len(), 5);
-        assert!(PROVIDER_IDS.contains(&"claude-sdk"));
+        assert_eq!(PROVIDER_IDS.len(), 4);
         assert!(PROVIDER_IDS.contains(&"claude-code"));
         assert!(PROVIDER_IDS.contains(&"gemini-cli"));
         assert!(PROVIDER_IDS.contains(&"codex-cli"));
