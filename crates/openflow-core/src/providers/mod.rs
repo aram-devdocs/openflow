@@ -50,6 +50,7 @@ pub mod claude_code;
 pub mod codex_cli;
 pub mod gemini_cli;
 pub mod mock;
+pub mod registry;
 
 // Re-export provider implementations
 pub use claude_code::ClaudeCodeProvider;
@@ -57,10 +58,15 @@ pub use codex_cli::CodexCLIProvider;
 pub use gemini_cli::GeminiCLIProvider;
 pub use mock::{MockProvider, MockProviderBuilder, MockProviderConfig};
 
+// Re-export registry types and functions
+pub use registry::{
+    default_provider, get_provider, list_provider_ids, provider_exists, provider_info,
+    ProviderRegistry, DEFAULT_PROVIDER_ID, PROVIDER_IDS,
+};
+
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use openflow_contracts::events::{PermissionRequest, UnifiedAgentEvent};
 use openflow_process::PtyConfig;
@@ -346,66 +352,6 @@ pub trait AgentProvider: Send + Sync + Debug {
     }
 }
 
-// =============================================================================
-// Provider Registry
-// =============================================================================
-
-/// Get a provider by its ID.
-///
-/// # Arguments
-///
-/// * `id` - Provider identifier (e.g., "claude-code", "gemini-cli")
-///
-/// # Returns
-///
-/// - `Some(provider)` if a provider with that ID exists
-/// - `None` if no provider matches
-///
-/// # Example
-///
-/// ```
-/// use openflow_core::providers::get_provider;
-///
-/// if let Some(provider) = get_provider("claude-code") {
-///     println!("Found provider: {}", provider.display_name());
-/// }
-/// ```
-pub fn get_provider(id: &str) -> Option<Arc<dyn AgentProvider>> {
-    match id {
-        claude_code::PROVIDER_ID => Some(Arc::new(ClaudeCodeProvider::new())),
-        codex_cli::PROVIDER_ID => Some(Arc::new(CodexCLIProvider::new())),
-        gemini_cli::PROVIDER_ID => Some(Arc::new(GeminiCLIProvider::new())),
-        mock::PROVIDER_ID => Some(Arc::new(MockProvider::default())),
-        _ => None,
-    }
-}
-
-/// List all available provider IDs.
-///
-/// # Returns
-///
-/// A vector of all registered provider identifiers.
-pub fn list_provider_ids() -> Vec<&'static str> {
-    vec![
-        claude_code::PROVIDER_ID,
-        codex_cli::PROVIDER_ID,
-        gemini_cli::PROVIDER_ID,
-        mock::PROVIDER_ID,
-    ]
-}
-
-/// Check if a provider exists.
-///
-/// # Arguments
-///
-/// * `id` - Provider identifier to check
-///
-/// # Returns
-///
-/// `true` if a provider with that ID exists, `false` otherwise.
-pub fn provider_exists(id: &str) -> bool {
-    get_provider(id).is_some()
-}
 
 // =============================================================================
 // Tests
@@ -525,71 +471,4 @@ mod tests {
         assert!(!caps.supports_resume);
     }
 
-    // =========================================================================
-    // Registry Tests
-    // =========================================================================
-
-    #[test]
-    fn test_get_provider_claude_code() {
-        let provider = get_provider("claude-code");
-        assert!(provider.is_some());
-        let provider = provider.unwrap();
-        assert_eq!(provider.provider_id(), "claude-code");
-        assert_eq!(provider.display_name(), "Claude Code");
-        assert_eq!(provider.command(), "claude");
-    }
-
-    #[test]
-    fn test_get_provider_codex_cli() {
-        let provider = get_provider("codex-cli");
-        assert!(provider.is_some());
-        let provider = provider.unwrap();
-        assert_eq!(provider.provider_id(), "codex-cli");
-        assert_eq!(provider.display_name(), "Codex CLI");
-        assert_eq!(provider.command(), "codex");
-    }
-
-    #[test]
-    fn test_get_provider_gemini_cli() {
-        let provider = get_provider("gemini-cli");
-        assert!(provider.is_some());
-        let provider = provider.unwrap();
-        assert_eq!(provider.provider_id(), "gemini-cli");
-        assert_eq!(provider.display_name(), "Gemini CLI");
-        assert_eq!(provider.command(), "gemini");
-    }
-
-    #[test]
-    fn test_get_provider_mock() {
-        let provider = get_provider("mock");
-        assert!(provider.is_some());
-        let provider = provider.unwrap();
-        assert_eq!(provider.provider_id(), "mock");
-        assert_eq!(provider.display_name(), "Mock Provider");
-        assert_eq!(provider.command(), "mock-agent");
-    }
-
-    #[test]
-    fn test_get_provider_unknown() {
-        assert!(get_provider("unknown-provider").is_none());
-    }
-
-    #[test]
-    fn test_provider_exists() {
-        assert!(provider_exists("claude-code"));
-        assert!(provider_exists("codex-cli"));
-        assert!(provider_exists("gemini-cli"));
-        assert!(provider_exists("mock"));
-        assert!(!provider_exists("unknown-provider"));
-    }
-
-    #[test]
-    fn test_list_provider_ids() {
-        let ids = list_provider_ids();
-        assert!(ids.contains(&"claude-code"));
-        assert!(ids.contains(&"codex-cli"));
-        assert!(ids.contains(&"gemini-cli"));
-        assert!(ids.contains(&"mock"));
-        assert_eq!(ids.len(), 4);
-    }
 }
