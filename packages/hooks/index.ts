@@ -5,6 +5,9 @@
  * These hooks wrap the query functions from @openflow/queries
  * with React Query for state management, caching, and invalidation.
  *
+ * Also includes Zustand stores for UI-only state (viewStore).
+ * UI state is separate from business state - business data comes from queries.
+ *
  * Level 3 in dependency hierarchy - imports from queries, validation, generated, utils.
  */
 
@@ -48,3 +51,6 @@ export * from './useTerminal';
 export * from './useGitHub';
 export * from './useGlobalShortcuts';
 export * from './useSystem';
+
+// Zustand stores for UI-only state
+export * from './stores';
