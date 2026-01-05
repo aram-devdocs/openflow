@@ -79,7 +79,9 @@ impl std::str::FromStr for AgentMessageRole {
 ///
 /// Messages can contain multiple content blocks of different types.
 /// This allows rich content like text mixed with tool results.
-#[typeshare]
+///
+/// Note: This uses internally-tagged serde which typeshare doesn't support.
+/// The TypeScript type is manually defined in types-manual.ts.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ContentBlock {
@@ -279,15 +281,15 @@ impl CompletionStatus {
 #[serde(rename_all = "camelCase")]
 pub struct AgentStats {
     /// Number of input tokens used
-    pub input_tokens: Option<i64>,
+    pub input_tokens: Option<i32>,
     /// Number of output tokens used
-    pub output_tokens: Option<i64>,
+    pub output_tokens: Option<i32>,
     /// Total tokens used
-    pub total_tokens: Option<i64>,
+    pub total_tokens: Option<i32>,
     /// Number of tool calls made
     pub tool_calls: Option<i32>,
     /// Duration in milliseconds
-    pub duration_ms: Option<i64>,
+    pub duration_ms: Option<i32>,
     /// Model used for this session
     pub model: Option<String>,
 }
@@ -299,7 +301,7 @@ impl AgentStats {
     }
 
     /// Create stats with token counts
-    pub fn with_tokens(input: i64, output: i64) -> Self {
+    pub fn with_tokens(input: i32, output: i32) -> Self {
         Self {
             input_tokens: Some(input),
             output_tokens: Some(output),
@@ -385,7 +387,9 @@ impl PermissionRequest {
 /// ```json
 /// {"type": "message", "role": "assistant", "content": [...]}
 /// ```
-#[typeshare]
+///
+/// Note: This uses internally-tagged serde which typeshare doesn't support.
+/// The TypeScript type is manually defined in types-manual.ts.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum UnifiedAgentEvent {

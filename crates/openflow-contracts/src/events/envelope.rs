@@ -206,7 +206,7 @@ pub struct EventEnvelope<T> {
     /// - Ordering events (events with lower sequence came first)
     /// - Deduplication (ignore events with sequence <= last seen)
     /// - Gap detection (sequence jumps indicate missed events)
-    pub sequence: u64,
+    pub sequence: i32,
 
     /// ISO 8601 timestamp when the event was created
     ///
@@ -222,7 +222,7 @@ impl<T> EventEnvelope<T> {
     ///
     /// The event_type is automatically inferred when T is UnifiedAgentEvent.
     /// For other types, use `new_with_type` to specify the type explicitly.
-    pub fn now(session_id: impl Into<String>, sequence: u64, event_type: EventType, payload: T) -> Self {
+    pub fn now(session_id: impl Into<String>, sequence: i32, event_type: EventType, payload: T) -> Self {
         Self {
             event_type,
             session_id: session_id.into(),
@@ -235,7 +235,7 @@ impl<T> EventEnvelope<T> {
     /// Create a new envelope with a custom timestamp
     pub fn with_timestamp(
         session_id: impl Into<String>,
-        sequence: u64,
+        sequence: i32,
         event_type: EventType,
         timestamp: impl Into<String>,
         payload: T,
@@ -260,7 +260,7 @@ impl<T> EventEnvelope<T> {
     }
 
     /// Get the sequence number
-    pub fn sequence(&self) -> u64 {
+    pub fn sequence(&self) -> i32 {
         self.sequence
     }
 
@@ -298,7 +298,7 @@ impl EventEnvelope<UnifiedAgentEvent> {
     /// Create a new envelope for a UnifiedAgentEvent
     ///
     /// The event_type is automatically inferred from the event variant.
-    pub fn new(session_id: impl Into<String>, sequence: u64, event: UnifiedAgentEvent) -> Self {
+    pub fn new(session_id: impl Into<String>, sequence: i32, event: UnifiedAgentEvent) -> Self {
         let event_type = EventType::from_agent_event(&event);
         Self::now(session_id, sequence, event_type, event)
     }
@@ -306,7 +306,7 @@ impl EventEnvelope<UnifiedAgentEvent> {
     /// Create an envelope from a UnifiedAgentEvent with custom timestamp
     pub fn new_at(
         session_id: impl Into<String>,
-        sequence: u64,
+        sequence: i32,
         timestamp: impl Into<String>,
         event: UnifiedAgentEvent,
     ) -> Self {
@@ -319,7 +319,7 @@ impl EventEnvelope<serde_json::Value> {
     /// Create an envelope from any serializable payload
     pub fn from_value<T: Serialize>(
         session_id: impl Into<String>,
-        sequence: u64,
+        sequence: i32,
         event_type: EventType,
         payload: &T,
     ) -> Result<Self, serde_json::Error> {
@@ -347,7 +347,7 @@ pub struct AgentEventRecord {
     pub session_id: String,
 
     /// Monotonically increasing sequence number
-    pub sequence: i64,
+    pub sequence: i32,
 
     /// Event type as string
     pub event_type: String,
@@ -365,7 +365,7 @@ impl AgentEventRecord {
         Self {
             id: id.into(),
             session_id: envelope.session_id.clone(),
-            sequence: envelope.sequence as i64,
+            sequence: envelope.sequence,
             event_type: envelope.event_type.to_string(),
             payload: serde_json::to_value(&envelope.payload).unwrap_or_default(),
             created_at: envelope.timestamp.clone(),
@@ -379,7 +379,7 @@ impl AgentEventRecord {
         Ok(EventEnvelope {
             event_type,
             session_id: self.session_id.clone(),
-            sequence: self.sequence as u64,
+            sequence: self.sequence,
             timestamp: self.created_at.clone(),
             payload: event,
         })
