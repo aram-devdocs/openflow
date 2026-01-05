@@ -37,6 +37,10 @@ pub mod validation;
 
 // Re-export commonly used types for convenience
 // Entity types
+pub use entities::{
+    AgentSession, AgentSessionSummary, AgentSessionWithState, Permission, PermissionStatus,
+    SessionStatus,
+};
 pub use entities::ArtifactFile;
 pub use entities::{
     Branch, Commit, CommitSummary, DiffHunk, FileChangeType, FileDiff, FileDiffSummary,

@@ -4,6 +4,7 @@
 //! These are the primary data structures stored in the database
 //! and transferred between frontend and backend.
 
+pub mod agent_session;
 pub mod artifact;
 pub mod chat;
 pub mod executor;
@@ -18,6 +19,10 @@ pub mod tool_state;
 pub mod workflow;
 
 // Re-export entity types for convenience
+pub use agent_session::{
+    AgentSession, AgentSessionSummary, AgentSessionWithState, Permission, PermissionStatus,
+    SessionStatus,
+};
 pub use artifact::ArtifactFile;
 pub use chat::{Chat, ChatRole, ChatSummary, ChatWithMessageCount, ChatWithMessages};
 pub use executor::{CliToolType, ExecutorProfile, ExecutorProfileSummary};
