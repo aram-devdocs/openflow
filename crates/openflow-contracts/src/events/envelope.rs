@@ -387,52 +387,12 @@ impl AgentEventRecord {
 }
 
 // =============================================================================
-// Channel Constants for Enveloped Events
+// Channel Constants (re-exported from channels module for convenience)
 // =============================================================================
 
-/// Channel format for task progress events
-/// Use: format!(CHANNEL_TASK_PROGRESS_FMT, task_id)
-pub const CHANNEL_TASK_PROGRESS_FMT: &str = "task-progress-{}";
-
-/// Channel format for step progress events
-/// Use: format!(CHANNEL_STEP_PROGRESS_FMT, step_id)
-pub const CHANNEL_STEP_PROGRESS_FMT: &str = "step-progress-{}";
-
-/// Channel format for permission request events
-/// Use: format!(CHANNEL_PERMISSION_REQUEST_FMT, session_id)
-pub const CHANNEL_PERMISSION_REQUEST_FMT: &str = "permission-request-{}";
-
-/// Generate the channel name for task progress events
-pub fn task_progress_channel(task_id: &str) -> String {
-    format!("task-progress-{}", task_id)
-}
-
-/// Parse a task ID from a task progress channel name
-pub fn parse_task_progress_channel(channel: &str) -> Option<String> {
-    channel.strip_prefix("task-progress-").map(|s| s.to_string())
-}
-
-/// Generate the channel name for step progress events
-pub fn step_progress_channel(step_id: &str) -> String {
-    format!("step-progress-{}", step_id)
-}
-
-/// Parse a step ID from a step progress channel name
-pub fn parse_step_progress_channel(channel: &str) -> Option<String> {
-    channel.strip_prefix("step-progress-").map(|s| s.to_string())
-}
-
-/// Generate the channel name for permission request events
-pub fn permission_request_channel(session_id: &str) -> String {
-    format!("permission-request-{}", session_id)
-}
-
-/// Parse a session ID from a permission request channel name
-pub fn parse_permission_request_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("permission-request-")
-        .map(|s| s.to_string())
-}
+// Note: Channel constants and helper functions are now centralized in the
+// `channels` module. They are re-exported through the parent `events` module.
+// See `crates/openflow-contracts/src/events/channels.rs` for the complete set.
 
 // =============================================================================
 // Tests
@@ -751,52 +711,6 @@ mod tests {
         assert_eq!(record, deserialized);
     }
 
-    // =========================================================================
-    // Channel Helper Tests
-    // =========================================================================
-
-    #[test]
-    fn test_task_progress_channel() {
-        assert_eq!(task_progress_channel("task-123"), "task-progress-task-123");
-    }
-
-    #[test]
-    fn test_parse_task_progress_channel() {
-        assert_eq!(
-            parse_task_progress_channel("task-progress-task-123"),
-            Some("task-123".to_string())
-        );
-        assert_eq!(parse_task_progress_channel("other-channel"), None);
-    }
-
-    #[test]
-    fn test_step_progress_channel() {
-        assert_eq!(step_progress_channel("step-456"), "step-progress-step-456");
-    }
-
-    #[test]
-    fn test_parse_step_progress_channel() {
-        assert_eq!(
-            parse_step_progress_channel("step-progress-step-456"),
-            Some("step-456".to_string())
-        );
-        assert_eq!(parse_step_progress_channel("invalid"), None);
-    }
-
-    #[test]
-    fn test_permission_request_channel() {
-        assert_eq!(
-            permission_request_channel("sess-789"),
-            "permission-request-sess-789"
-        );
-    }
-
-    #[test]
-    fn test_parse_permission_request_channel() {
-        assert_eq!(
-            parse_permission_request_channel("permission-request-sess-789"),
-            Some("sess-789".to_string())
-        );
-        assert_eq!(parse_permission_request_channel("wrong"), None);
-    }
+    // Note: Channel helper tests have been moved to the `channels` module.
+    // See `crates/openflow-contracts/src/events/channels.rs` for comprehensive tests.
 }

@@ -51,17 +51,25 @@
 //!
 //! # Channels
 //!
-//! Events are published to specific channels:
+//! Events are published to specific channels. See the [`channels`] module for
+//! all available channel constants and helper functions.
+//!
+//! Static channels (no ID):
+//! - `data-changed`: All data changes (entity type in payload)
+//! - `*`: Wildcard subscription (all events)
+//!
+//! Dynamic channels (with ID):
 //! - `process-output-{process_id}`: Output for a specific process
 //! - `process-status-{process_id}`: Status changes for a specific process
-//! - `data-changed`: All data changes (entity type in payload)
 //! - `agent-event-{session_id}`: Agent events for a specific session
 //! - `task-progress-{task_id}`: Task progress events
 //! - `step-progress-{step_id}`: Step progress events
 //! - `permission-request-{session_id}`: Permission request events
-//! - `*`: Wildcard subscription (all events)
+//! - `task:{task_id}`: All events for a specific task (entity-scoped)
+//! - `session:{session_id}`: All events for a specific session (entity-scoped)
 
 pub mod agent_event;
+pub mod channels;
 pub mod envelope;
 
 use serde::{Deserialize, Serialize};
@@ -73,182 +81,65 @@ pub use agent_event::{
     ToolResultStatus, UnifiedAgentEvent,
 };
 
-// Re-export envelope types
-pub use envelope::{
-    parse_permission_request_channel, parse_step_progress_channel, parse_task_progress_channel,
-    permission_request_channel, step_progress_channel, task_progress_channel, AgentEventRecord,
-    EventEnvelope, EventType, CHANNEL_PERMISSION_REQUEST_FMT, CHANNEL_STEP_PROGRESS_FMT,
+// Re-export channel constants and helpers from dedicated module
+pub use channels::{
+    // Static channel constants
+    CHANNEL_DATA_CHANGED,
+    CHANNEL_WILDCARD,
+    // Format string constants
+    CHANNEL_AGENT_EVENT_FMT,
+    CHANNEL_CLAUDE_EVENT_FMT,
+    CHANNEL_PERMISSION_REQUEST_FMT,
+    CHANNEL_PROCESS_OUTPUT_FMT,
+    CHANNEL_PROCESS_STATUS_FMT,
+    CHANNEL_SESSION_FMT,
+    CHANNEL_STEP_PROGRESS_FMT,
+    CHANNEL_TASK_FMT,
     CHANNEL_TASK_PROGRESS_FMT,
+    CHANNEL_TOOL_STATE_FMT,
+    // Prefix constants
+    PREFIX_AGENT_EVENT,
+    PREFIX_CLAUDE_EVENT,
+    PREFIX_PERMISSION_REQUEST,
+    PREFIX_PROCESS_OUTPUT,
+    PREFIX_PROCESS_STATUS,
+    PREFIX_SESSION,
+    PREFIX_STEP_PROGRESS,
+    PREFIX_TASK,
+    PREFIX_TASK_PROGRESS,
+    PREFIX_TOOL_STATE,
+    // Channel helper functions
+    agent_event_channel,
+    claude_event_channel,
+    parse_agent_event_channel,
+    parse_claude_event_channel,
+    parse_permission_request_channel,
+    parse_process_output_channel,
+    parse_process_status_channel,
+    parse_session_channel,
+    parse_step_progress_channel,
+    parse_task_channel,
+    parse_task_progress_channel,
+    parse_tool_state_channel,
+    permission_request_channel,
+    process_output_channel,
+    process_status_channel,
+    session_channel,
+    step_progress_channel,
+    task_channel,
+    task_progress_channel,
+    tool_state_channel,
+    // Channel type detection
+    ChannelType,
 };
+
+// Re-export envelope types
+pub use envelope::{AgentEventRecord, EventEnvelope, EventType};
 
 // Re-export process events from entities
 pub use crate::entities::process::{
     OutputType, ProcessOutputEvent, ProcessStatus, ProcessStatusEvent,
 };
-
-// =============================================================================
-// Event Channel Constants
-// =============================================================================
-
-/// Event channel for data changes
-pub const CHANNEL_DATA_CHANGED: &str = "data-changed";
-
-/// Format string for process output channel
-/// Use: format!(CHANNEL_PROCESS_OUTPUT_FMT, process_id)
-pub const CHANNEL_PROCESS_OUTPUT_FMT: &str = "process-output-{}";
-
-/// Format string for process status channel
-/// Use: format!(CHANNEL_PROCESS_STATUS_FMT, process_id)
-pub const CHANNEL_PROCESS_STATUS_FMT: &str = "process-status-{}";
-
-/// Format string for Claude event channel
-/// Use: format!(CHANNEL_CLAUDE_EVENT_FMT, process_id)
-pub const CHANNEL_CLAUDE_EVENT_FMT: &str = "claude-event-{}";
-
-/// Format string for tool state channel
-/// Use: format!(CHANNEL_TOOL_STATE_FMT, process_id)
-pub const CHANNEL_TOOL_STATE_FMT: &str = "tool-state-{}";
-
-/// Format string for agent event channel
-/// Use: format!(CHANNEL_AGENT_EVENT_FMT, session_id)
-pub const CHANNEL_AGENT_EVENT_FMT: &str = "agent-event-{}";
-
-/// Wildcard channel (subscribe to all events)
-pub const CHANNEL_WILDCARD: &str = "*";
-
-// =============================================================================
-// Channel Helper Functions
-// =============================================================================
-
-/// Generate the channel name for process output events
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::process_output_channel;
-/// let channel = process_output_channel("abc-123");
-/// assert_eq!(channel, "process-output-abc-123");
-/// ```
-pub fn process_output_channel(process_id: &str) -> String {
-    format!("process-output-{}", process_id)
-}
-
-/// Generate the channel name for process status events
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::process_status_channel;
-/// let channel = process_status_channel("abc-123");
-/// assert_eq!(channel, "process-status-abc-123");
-/// ```
-pub fn process_status_channel(process_id: &str) -> String {
-    format!("process-status-{}", process_id)
-}
-
-/// Parse a process ID from a process output channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_process_output_channel;
-/// let id = parse_process_output_channel("process-output-abc-123");
-/// assert_eq!(id, Some("abc-123".to_string()));
-/// ```
-pub fn parse_process_output_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("process-output-")
-        .map(|s| s.to_string())
-}
-
-/// Parse a process ID from a process status channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_process_status_channel;
-/// let id = parse_process_status_channel("process-status-abc-123");
-/// assert_eq!(id, Some("abc-123".to_string()));
-/// ```
-pub fn parse_process_status_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("process-status-")
-        .map(|s| s.to_string())
-}
-
-/// Generate the channel name for Claude event messages
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::claude_event_channel;
-/// let channel = claude_event_channel("abc-123");
-/// assert_eq!(channel, "claude-event-abc-123");
-/// ```
-pub fn claude_event_channel(process_id: &str) -> String {
-    format!("claude-event-{}", process_id)
-}
-
-/// Generate the channel name for tool state events
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::tool_state_channel;
-/// let channel = tool_state_channel("abc-123");
-/// assert_eq!(channel, "tool-state-abc-123");
-/// ```
-pub fn tool_state_channel(process_id: &str) -> String {
-    format!("tool-state-{}", process_id)
-}
-
-/// Parse a process ID from a Claude event channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_claude_event_channel;
-/// let id = parse_claude_event_channel("claude-event-abc-123");
-/// assert_eq!(id, Some("abc-123".to_string()));
-/// ```
-pub fn parse_claude_event_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("claude-event-")
-        .map(|s| s.to_string())
-}
-
-/// Parse a process ID from a tool state channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_tool_state_channel;
-/// let id = parse_tool_state_channel("tool-state-abc-123");
-/// assert_eq!(id, Some("abc-123".to_string()));
-/// ```
-pub fn parse_tool_state_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("tool-state-")
-        .map(|s| s.to_string())
-}
-
-/// Generate the channel name for agent events
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::agent_event_channel;
-/// let channel = agent_event_channel("session-abc-123");
-/// assert_eq!(channel, "agent-event-session-abc-123");
-/// ```
-pub fn agent_event_channel(session_id: &str) -> String {
-    format!("agent-event-{}", session_id)
-}
-
-/// Parse a session ID from an agent event channel name
-///
-/// # Example
-/// ```
-/// use openflow_contracts::events::parse_agent_event_channel;
-/// let id = parse_agent_event_channel("agent-event-session-abc-123");
-/// assert_eq!(id, Some("session-abc-123".to_string()));
-/// ```
-pub fn parse_agent_event_channel(channel: &str) -> Option<String> {
-    channel
-        .strip_prefix("agent-event-")
-        .map(|s| s.to_string())
-}
 
 // =============================================================================
 // Entity Type Enum
