@@ -449,6 +449,176 @@ impl TaskExecutor {
         Ok(updated_task)
     }
 
+    /// Respond to a permission request for a running task.
+    ///
+    /// This method:
+    /// 1. Finds the current step's session for the task
+    /// 2. Updates the permission record in the database
+    /// 3. Sends the approval/denial to the agent's stdin
+    /// 4. Creates an audit trail
+    ///
+    /// # Arguments
+    /// * `task_id` - ID of the task
+    /// * `permission_id` - ID of the permission request
+    /// * `approved` - Whether the permission was approved
+    ///
+    /// # Returns
+    /// The updated permission record.
+    ///
+    /// # Errors
+    /// - Task not found
+    /// - Task not running
+    /// - No active session for current step
+    /// - Permission not found
+    pub async fn respond_to_permission(
+        &self,
+        task_id: &str,
+        permission_id: &str,
+        approved: bool,
+    ) -> ServiceResult<openflow_contracts::Permission> {
+        info!(
+            "Responding to permission: task_id={}, permission_id={}, approved={}",
+            task_id, permission_id, approved
+        );
+
+        // Verify task is running
+        let task_with_steps = task::get_with_steps(&self.pool, task_id).await?;
+        let task = &task_with_steps.task;
+
+        if task.status != TaskStatus::Running {
+            warn!(
+                "Cannot respond to permission for non-running task: id={}, status={}",
+                task_id, task.status
+            );
+            return Err(ServiceError::InvalidInput {
+                field: "status".to_string(),
+                message: format!(
+                    "Task is not running. Current status: '{}'",
+                    task.status
+                ),
+            });
+        }
+
+        // Get current step and its session
+        let current_step = task_with_steps.current_step().ok_or_else(|| {
+            error!("No current step for running task: id={}", task_id);
+            ServiceError::InvalidInput {
+                field: "step".to_string(),
+                message: "Task has no current step".to_string(),
+            }
+        })?;
+
+        let session_id = current_step.session_id.as_ref().ok_or_else(|| {
+            error!(
+                "Current step has no session: task_id={}, step_id={}",
+                task_id, current_step.id
+            );
+            ServiceError::InvalidInput {
+                field: "session".to_string(),
+                message: "Current step has no active session".to_string(),
+            }
+        })?;
+
+        // Verify the permission belongs to this session
+        let pending_permission = agent_session::get_pending_permission(&self.pool, session_id)
+            .await?
+            .ok_or_else(|| {
+                error!(
+                    "No pending permission for session: session_id={}",
+                    session_id
+                );
+                ServiceError::NotFound {
+                    entity: "Permission",
+                    id: permission_id.to_string(),
+                }
+            })?;
+
+        if pending_permission.id != permission_id {
+            warn!(
+                "Permission mismatch: expected={}, got={}",
+                pending_permission.id, permission_id
+            );
+            return Err(ServiceError::InvalidInput {
+                field: "permission_id".to_string(),
+                message: format!(
+                    "Permission {} does not match current pending permission {}",
+                    permission_id, pending_permission.id
+                ),
+            });
+        }
+
+        // Delegate to orchestrator to handle the permission response
+        // This will:
+        // 1. Update the permission record in the database
+        // 2. Send the response to the agent's stdin
+        // 3. Create an audit trail
+        let permission = self
+            .agent_orchestrator
+            .handle_permission(session_id, permission_id, approved)
+            .await?;
+
+        // Broadcast update event for the task
+        self.broadcaster.broadcast(Event::data_changed(
+            EntityType::Task,
+            DataAction::Updated,
+            task_id,
+            Some(serde_json::json!({
+                "event": "permission_response",
+                "step_id": current_step.id,
+                "step_index": current_step.step_index,
+                "permission_id": permission_id,
+                "approved": approved,
+            })),
+        ));
+
+        info!(
+            "Permission {} {} for task {} step {}",
+            permission_id,
+            if approved { "approved" } else { "denied" },
+            task_id,
+            current_step.step_index
+        );
+
+        Ok(permission)
+    }
+
+    /// Get the pending permission for a running task.
+    ///
+    /// Returns the pending permission for the current step's session, if any.
+    ///
+    /// # Arguments
+    /// * `task_id` - ID of the task
+    ///
+    /// # Returns
+    /// The pending permission, or None if there is no pending permission.
+    pub async fn get_pending_permission(
+        &self,
+        task_id: &str,
+    ) -> ServiceResult<Option<openflow_contracts::Permission>> {
+        // Get task and current step
+        let task_with_steps = task::get_with_steps(&self.pool, task_id).await?;
+
+        // If task isn't running, no pending permission
+        if task_with_steps.task.status != TaskStatus::Running {
+            return Ok(None);
+        }
+
+        // Get current step
+        let current_step = match task_with_steps.current_step() {
+            Some(step) => step,
+            None => return Ok(None),
+        };
+
+        // Get session ID
+        let session_id = match &current_step.session_id {
+            Some(id) => id,
+            None => return Ok(None),
+        };
+
+        // Get pending permission for the session
+        agent_session::get_pending_permission(&self.pool, session_id).await
+    }
+
     /// Check if a task is currently running.
     pub async fn is_running(&self, task_id: &str) -> bool {
         let running = self.running_tasks.read().await;
@@ -1341,5 +1511,281 @@ mod tests {
             "Task should be running or terminal, got {:?}",
             final_task.status
         );
+    }
+
+    // =========================================================================
+    // Permission Handling Tests
+    // =========================================================================
+
+    #[tokio::test]
+    async fn test_respond_to_permission_requires_running_task() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Add a step
+        task::create_step(&fixture.pool, &task_id, 0, "Step 0", "step 0", "mock")
+            .await
+            .unwrap();
+
+        // Task is pending (not running), should fail
+        let result = fixture
+            .executor
+            .respond_to_permission(&task_id, "fake-permission-id", true)
+            .await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::InvalidInput { field, message } => {
+                assert_eq!(field, "status");
+                assert!(
+                    message.contains("not running"),
+                    "Expected 'not running' but got: {}",
+                    message
+                );
+            }
+            other => panic!("Expected InvalidInput error, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_respond_to_permission_requires_current_step() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Set task to running WITHOUT any steps
+        task::update_status(&fixture.pool, &task_id, TaskStatus::Running)
+            .await
+            .unwrap();
+
+        let result = fixture
+            .executor
+            .respond_to_permission(&task_id, "fake-permission-id", true)
+            .await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::InvalidInput { field, message } => {
+                assert_eq!(field, "step");
+                assert!(
+                    message.contains("no current step"),
+                    "Expected 'no current step' but got: {}",
+                    message
+                );
+            }
+            other => panic!("Expected InvalidInput error, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_respond_to_permission_requires_active_session() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Add a step but don't link it to a session
+        task::create_step(&fixture.pool, &task_id, 0, "Step 0", "step 0", "mock")
+            .await
+            .unwrap();
+
+        // Set task to running
+        task::update_status(&fixture.pool, &task_id, TaskStatus::Running)
+            .await
+            .unwrap();
+
+        let result = fixture
+            .executor
+            .respond_to_permission(&task_id, "fake-permission-id", true)
+            .await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::InvalidInput { field, message } => {
+                assert_eq!(field, "session");
+                assert!(
+                    message.contains("no active session"),
+                    "Expected 'no active session' but got: {}",
+                    message
+                );
+            }
+            other => panic!("Expected InvalidInput error, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_pending_permission_returns_none_for_pending_task() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Task is pending, should return None
+        let result = fixture
+            .executor
+            .get_pending_permission(&task_id)
+            .await
+            .expect("Failed to get pending permission");
+
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_pending_permission_returns_none_when_no_step() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Set task to running without steps
+        task::update_status(&fixture.pool, &task_id, TaskStatus::Running)
+            .await
+            .unwrap();
+
+        // Should return None (no current step)
+        let result = fixture
+            .executor
+            .get_pending_permission(&task_id)
+            .await
+            .expect("Failed to get pending permission");
+
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_get_pending_permission_returns_none_when_no_session() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Add a step but don't link to session
+        task::create_step(&fixture.pool, &task_id, 0, "Step 0", "step 0", "mock")
+            .await
+            .unwrap();
+
+        // Set task to running
+        task::update_status(&fixture.pool, &task_id, TaskStatus::Running)
+            .await
+            .unwrap();
+
+        // Should return None (step has no session)
+        let result = fixture
+            .executor
+            .get_pending_permission(&task_id)
+            .await
+            .expect("Failed to get pending permission");
+
+        assert!(result.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_respond_to_permission_validates_permission_id() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Create an execution process for the session
+        let process_id = uuid::Uuid::new_v4().to_string();
+        sqlx::query(
+            r#"
+            INSERT INTO execution_processes (id, project_id, process_type, status, working_directory)
+            VALUES (?, ?, 'agent', 'running', '/tmp/test')
+            "#,
+        )
+        .bind(&process_id)
+        .bind(&project_id)
+        .execute(&fixture.pool)
+        .await
+        .expect("Failed to create process");
+
+        // Create a session
+        let session = agent_session::create(
+            &fixture.pool,
+            agent_session::CreateSessionRequest::new(&process_id, "mock"),
+        )
+        .await
+        .expect("Failed to create session");
+
+        // Create a permission for this session
+        let permission = agent_session::create_permission(
+            &fixture.pool,
+            &session.id,
+            "Write",
+            "Create file",
+            None,
+        )
+        .await
+        .expect("Failed to create permission");
+
+        // Add a step and link it to the session
+        let step = task::create_step(&fixture.pool, &task_id, 0, "Step 0", "step 0", "mock")
+            .await
+            .unwrap();
+        task::link_step_session(&fixture.pool, &step.id, &session.id)
+            .await
+            .unwrap();
+
+        // Set task to running
+        task::update_status(&fixture.pool, &task_id, TaskStatus::Running)
+            .await
+            .unwrap();
+
+        // Try with wrong permission ID - should fail
+        let result = fixture
+            .executor
+            .respond_to_permission(&task_id, "wrong-permission-id", true)
+            .await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::InvalidInput { field, message } => {
+                assert_eq!(field, "permission_id");
+                assert!(
+                    message.contains("does not match"),
+                    "Expected 'does not match' but got: {}",
+                    message
+                );
+            }
+            other => panic!("Expected InvalidInput error, got: {:?}", other),
+        }
+
+        // Cleanup - respond to the permission to avoid test pollution
+        // Note: This will fail because the session isn't active in the orchestrator,
+        // but we're testing the validation logic above
+        let _ = agent_session::respond_to_permission(&fixture.pool, &permission.id, true).await;
+    }
+
+    #[tokio::test]
+    async fn test_task_not_found_for_permission() {
+        let fixture = setup().await;
+
+        let result = fixture
+            .executor
+            .respond_to_permission("nonexistent-task", "fake-permission-id", true)
+            .await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::NotFound { entity, .. } => {
+                assert_eq!(entity, "Task");
+            }
+            other => panic!("Expected NotFound error, got: {:?}", other),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_get_pending_permission_task_not_found() {
+        let fixture = setup().await;
+
+        let result = fixture
+            .executor
+            .get_pending_permission("nonexistent-task")
+            .await;
+
+        assert!(result.is_err());
+        match result.unwrap_err() {
+            ServiceError::NotFound { entity, .. } => {
+                assert_eq!(entity, "Task");
+            }
+            other => panic!("Expected NotFound error, got: {:?}", other),
+        }
     }
 }
