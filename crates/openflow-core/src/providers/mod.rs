@@ -46,6 +46,11 @@
 //! }
 //! ```
 
+pub mod claude_code;
+
+// Re-export provider implementations
+pub use claude_code::ClaudeCodeProvider;
+
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::PathBuf;
@@ -361,8 +366,8 @@ pub trait AgentProvider: Send + Sync + Debug {
 /// ```
 pub fn get_provider(id: &str) -> Option<Arc<dyn AgentProvider>> {
     match id {
-        // TODO: Add provider implementations in Phase 3.2-3.5
-        // "claude-code" => Some(Arc::new(ClaudeCodeProvider)),
+        claude_code::PROVIDER_ID => Some(Arc::new(ClaudeCodeProvider::new())),
+        // TODO: Add provider implementations in Phase 3.3-3.5
         // "gemini-cli" => Some(Arc::new(GeminiCLIProvider)),
         // "codex-cli" => Some(Arc::new(CodexCLIProvider)),
         // "mock" => Some(Arc::new(MockProvider::default())),
@@ -376,8 +381,10 @@ pub fn get_provider(id: &str) -> Option<Arc<dyn AgentProvider>> {
 ///
 /// A vector of all registered provider identifiers.
 pub fn list_provider_ids() -> Vec<&'static str> {
-    // TODO: Add provider IDs as they are implemented
-    vec![]
+    vec![
+        claude_code::PROVIDER_ID,
+        // TODO: Add more provider IDs as they are implemented
+    ]
 }
 
 /// Check if a provider exists.
@@ -516,19 +523,29 @@ mod tests {
     // =========================================================================
 
     #[test]
+    fn test_get_provider_claude_code() {
+        let provider = get_provider("claude-code");
+        assert!(provider.is_some());
+        let provider = provider.unwrap();
+        assert_eq!(provider.provider_id(), "claude-code");
+        assert_eq!(provider.display_name(), "Claude Code");
+        assert_eq!(provider.command(), "claude");
+    }
+
+    #[test]
     fn test_get_provider_unknown() {
         assert!(get_provider("unknown-provider").is_none());
     }
 
     #[test]
     fn test_provider_exists() {
+        assert!(provider_exists("claude-code"));
         assert!(!provider_exists("unknown-provider"));
     }
 
     #[test]
     fn test_list_provider_ids() {
         let ids = list_provider_ids();
-        // Currently empty until providers are implemented
-        assert!(ids.is_empty());
+        assert!(ids.contains(&"claude-code"));
     }
 }
