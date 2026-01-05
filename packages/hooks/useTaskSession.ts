@@ -22,8 +22,32 @@ import { createLogger } from '@openflow/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useArtifactContent, useArtifacts, useOpenArtifact } from './useArtifacts';
 import { useChat, useCreateChat, useToggleStepComplete } from './useChats';
-import { useClaudeEvents } from './useClaudeEvents';
 import { useConfirmDialog } from './useConfirmDialog';
+
+/**
+ * @deprecated This hook is being phased out. Use useAgentSession hooks instead.
+ * Stub implementation that returns empty/default values for legacy compatibility.
+ */
+function useClaudeEvents(processId: string | null): {
+  events: unknown[];
+  rawOutput: string[];
+  isRunning: boolean;
+  isComplete: boolean;
+} {
+  // Log deprecation warning in development
+  if (processId && process.env.NODE_ENV === 'development') {
+    console.warn(
+      '[DEPRECATED] useTaskSession uses useClaudeEvents which has been removed. ' +
+        'Migrate to useTaskExecution hooks for the new architecture.'
+    );
+  }
+  return {
+    events: [],
+    rawOutput: [],
+    isRunning: false,
+    isComplete: false,
+  };
+}
 import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
 import { useTaskCommits, useTaskDiff } from './useGit';
 import { useCreatePullRequest, useGhAuthStatus, useGhCliInstalled } from './useGitHub';

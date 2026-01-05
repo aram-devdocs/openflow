@@ -15,7 +15,6 @@
 import {
   useDashboardSession,
   useNavigation,
-  useProcessOutput,
   useResizeTerminal,
   useSendInput,
   useTheme,
@@ -46,9 +45,11 @@ function DashboardRoute() {
   });
 
   // Terminal hooks - only subscribe to output when terminal is open and has a process
-  const { rawOutput, isRunning } = useProcessOutput(
-    session.terminalOpen && session.terminalProcessId ? session.terminalProcessId : ''
-  );
+  // NOTE: useProcessOutput has been deprecated. Terminal output should come from
+  // the new AgentOrchestrator backend. For now, use empty defaults.
+  // TODO: Migrate to useAgentRawOutput from useAgentSession hooks
+  const rawOutput = '';
+  const isRunning = false;
   const sendInput = useSendInput();
   const resizeTerminal = useResizeTerminal();
 
