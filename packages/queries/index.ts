@@ -44,6 +44,7 @@ export * from './utils';
 export * from './projects';
 export * from './tasks';
 export * from './taskExecution';
+export * from './agentSession';
 export * from './chats';
 export * from './messages';
 export * from './processes';
