@@ -19,6 +19,7 @@ export * from './useProcessOutput';
 export * from './useDataSync';
 export * from './useExecutorProfiles';
 export * from './useClaudeEvents';
+export * from './useEventSubscription';
 export * from './useProcessLifecycle';
 export * from './useRawOutputStream';
 export * from './useToolStates';
