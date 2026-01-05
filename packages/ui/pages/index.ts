@@ -460,3 +460,27 @@ export {
   formatKeysForScreenReader,
   // Note: defaultShortcutGroups is exported from organisms/KeyboardShortcutsDialog
 } from './KeyboardShortcutsSettingsPage';
+
+export {
+  // Main component
+  TaskExecutionView,
+  // Sub-components
+  TaskExecutionHeader,
+  TaskStepItem,
+  TaskStepList,
+  PermissionPrompt,
+  TaskExecutionSkeleton,
+  TaskExecutionError,
+  TaskExecutionNotFound,
+  // Props types
+  type TaskExecutionViewProps,
+  type TaskExecutionHeaderProps,
+  type TaskStepItemProps,
+  type TaskStepListProps,
+  type PermissionPromptProps,
+  // Constants
+  STEP_STATUS_ICONS,
+  STEP_STATUS_COLORS,
+  TASK_STATUS_LABELS,
+  TASK_STATUS_COLORS,
+} from './TaskExecutionView';
