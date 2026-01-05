@@ -19,6 +19,7 @@
 //! }
 //! ```
 
+pub mod agents;
 pub mod artifacts;
 pub mod chats;
 pub mod executor;
@@ -128,6 +129,7 @@ impl AppState {
 }
 
 // Re-export all command functions for registration in lib.rs
+pub use agents::*;
 pub use artifacts::*;
 pub use chats::*;
 pub use executor::*;
