@@ -233,17 +233,17 @@ export const Loading: Story = {
  * Shows empty state UI with call-to-action to create first project.
  */
 export const Empty: Story = {
-  args: (() => {
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      content: {
-        ...defaults.content!,
-        projects: [],
-      },
-      projectCount: 0,
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    content: {
+      isLoading: false,
+      projects: [],
+      onCreateProject: noop,
+      onSelectProject: noopString,
+      onProjectSettings: noopString,
+      onDeleteProject: noopDelete,
+    },
+    projectCount: 0,
+  }),
 };
 
 /**
@@ -264,125 +264,124 @@ export const ErrorState: Story = {
  * Single project.
  */
 export const SingleProject: Story = {
-  args: (() => {
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      content: {
-        ...defaults.content!,
-        projects: mockProjects[0] ? [mockProjects[0]] : [],
-      },
-      projectCount: 1,
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    content: {
+      isLoading: false,
+      projects: mockProjects[0] ? [mockProjects[0]] : [],
+      onCreateProject: noop,
+      onSelectProject: noopString,
+      onProjectSettings: noopString,
+      onDeleteProject: noopDelete,
+    },
+    projectCount: 1,
+  }),
 };
 
 /**
  * Many projects (scrollable grid).
  */
+const manyProjects: Project[] = [
+  ...mockProjects,
+  ...Array.from({ length: 12 }, (_, i) => ({
+    id: `project-extra-${i}`,
+    name: `Project ${i + 5}`,
+    gitRepoPath: `/Users/dev/project-${i + 5}`,
+    baseBranch: 'main',
+    setupScript: 'npm install',
+    devScript: 'npm run dev',
+    workflowsFolder: '.openflow/workflows',
+    icon: 'folder',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  })),
+];
+
 export const ManyProjects: Story = {
-  args: (() => {
-    const manyProjects: Project[] = [
-      ...mockProjects,
-      ...Array.from({ length: 12 }, (_, i) => ({
-        id: `project-extra-${i}`,
-        name: `Project ${i + 5}`,
-        gitRepoPath: `/Users/dev/project-${i + 5}`,
-        baseBranch: 'main',
-        setupScript: 'npm install',
-        devScript: 'npm run dev',
-        workflowsFolder: '.openflow/workflows',
-        icon: 'folder',
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      })),
-    ];
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      content: {
-        ...defaults.content!,
-        projects: manyProjects,
-      },
-      projectCount: manyProjects.length,
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    content: {
+      isLoading: false,
+      projects: manyProjects,
+      onCreateProject: noop,
+      onSelectProject: noopString,
+      onProjectSettings: noopString,
+      onDeleteProject: noopDelete,
+    },
+    projectCount: manyProjects.length,
+  }),
 };
 
 // ============================================================================
 // Dialog States
 // ============================================================================
 
+/** Default createDialog props for stories */
+const defaultCreateDialog = {
+  isOpen: false,
+  onClose: noop,
+  projectName: '',
+  onProjectNameChange: noopString,
+  projectPath: '',
+  onProjectPathChange: noopString,
+  onBrowseFolder: noopAsync,
+  onCreate: noop,
+  isPending: false,
+  error: null,
+};
+
 /**
  * Create dialog open.
  */
 export const CreateDialogOpen: Story = {
-  args: (() => {
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      createDialog: {
-        ...defaults.createDialog!,
-        isOpen: true,
-      },
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    createDialog: {
+      ...defaultCreateDialog,
+      isOpen: true,
+    },
+  }),
 };
 
 /**
  * Create dialog with values.
  */
 export const CreateDialogFilled: Story = {
-  args: (() => {
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      createDialog: {
-        ...defaults.createDialog!,
-        isOpen: true,
-        projectName: 'New Feature App',
-        projectPath: '/Users/dev/new-feature-app',
-      },
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    createDialog: {
+      ...defaultCreateDialog,
+      isOpen: true,
+      projectName: 'New Feature App',
+      projectPath: '/Users/dev/new-feature-app',
+    },
+  }),
 };
 
 /**
  * Create dialog pending.
  */
 export const CreateDialogPending: Story = {
-  args: (() => {
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      createDialog: {
-        ...defaults.createDialog!,
-        isOpen: true,
-        projectName: 'New Feature App',
-        projectPath: '/Users/dev/new-feature-app',
-        isPending: true,
-      },
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    createDialog: {
+      ...defaultCreateDialog,
+      isOpen: true,
+      projectName: 'New Feature App',
+      projectPath: '/Users/dev/new-feature-app',
+      isPending: true,
+    },
+  }),
 };
 
 /**
  * Create dialog with error.
  */
 export const CreateDialogError: Story = {
-  args: (() => {
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      createDialog: {
-        ...defaults.createDialog!,
-        isOpen: true,
-        projectName: 'New Feature App',
-        projectPath: '/invalid/path',
-        error: 'The specified path is not a valid git repository',
-      },
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    createDialog: {
+      ...defaultCreateDialog,
+      isOpen: true,
+      projectName: 'New Feature App',
+      projectPath: '/invalid/path',
+      error: 'The specified path is not a valid git repository',
+    },
+  }),
 };
 
 /**
@@ -597,14 +596,17 @@ export const ScreenReaderDemo: Story = {
         <p className="text-sm text-muted-foreground mb-2">Screen reader announces: "{SR_EMPTY}"</p>
         <div className="h-[300px] border rounded overflow-hidden">
           <ProjectsListPage
-            {...(() => {
-              const defaults = createDefaultProps();
-              return {
-                ...defaults,
-                content: { ...defaults.content!, projects: [] },
-                projectCount: 0,
-              } as ProjectsListPageProps;
-            })()}
+            {...createDefaultProps({
+              content: {
+                isLoading: false,
+                projects: [],
+                onCreateProject: noop,
+                onSelectProject: noopString,
+                onProjectSettings: noopString,
+                onDeleteProject: noopDelete,
+              },
+              projectCount: 0,
+            })}
           />
         </div>
       </div>
@@ -740,14 +742,17 @@ export const DataAttributesDemo: Story = {
         </code>
         <div className="h-[200px] border rounded overflow-hidden">
           <ProjectsListPage
-            {...(() => {
-              const defaults = createDefaultProps();
-              return {
-                ...defaults,
-                content: { ...defaults.content!, projects: [] },
-                projectCount: 0,
-              } as ProjectsListPageProps;
-            })()}
+            {...createDefaultProps({
+              content: {
+                isLoading: false,
+                projects: [],
+                onCreateProject: noop,
+                onSelectProject: noopString,
+                onProjectSettings: noopString,
+                onDeleteProject: noopDelete,
+              },
+              projectCount: 0,
+            })}
             data-testid="empty-demo"
           />
         </div>
@@ -777,17 +782,17 @@ export const DataAttributesDemo: Story = {
  * First-time user experience (empty).
  */
 export const FirstTimeUser: Story = {
-  args: (() => {
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      content: {
-        ...defaults.content!,
-        projects: [],
-      },
-      projectCount: 0,
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    content: {
+      isLoading: false,
+      projects: [],
+      onCreateProject: noop,
+      onSelectProject: noopString,
+      onProjectSettings: noopString,
+      onDeleteProject: noopDelete,
+    },
+    projectCount: 0,
+  }),
   parameters: {
     docs: {
       description: {
@@ -800,30 +805,31 @@ export const FirstTimeUser: Story = {
 /**
  * Power user with many projects.
  */
+const powerUserProjects: Project[] = Array.from({ length: 20 }, (_, i) => ({
+  id: `project-${i + 1}`,
+  name: `Project ${i + 1}`,
+  gitRepoPath: `/Users/dev/project-${i + 1}`,
+  baseBranch: 'main',
+  setupScript: 'pnpm install',
+  devScript: 'pnpm dev',
+  workflowsFolder: '.openflow/workflows',
+  icon: ['folder', 'code', 'server', 'layout', 'lock'][i % 5] ?? 'folder',
+  createdAt: new Date(2024, 0, i + 1).toISOString(),
+  updatedAt: new Date(2024, 0, i + 1).toISOString(),
+}));
+
 export const PowerUser: Story = {
-  args: (() => {
-    const manyProjects: Project[] = Array.from({ length: 20 }, (_, i) => ({
-      id: `project-${i + 1}`,
-      name: `Project ${i + 1}`,
-      gitRepoPath: `/Users/dev/project-${i + 1}`,
-      baseBranch: 'main',
-      setupScript: 'pnpm install',
-      devScript: 'pnpm dev',
-      workflowsFolder: '.openflow/workflows',
-      icon: ['folder', 'code', 'server', 'layout', 'lock'][i % 5] ?? 'folder',
-      createdAt: new Date(2024, 0, i + 1).toISOString(),
-      updatedAt: new Date(2024, 0, i + 1).toISOString(),
-    }));
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      content: {
-        ...defaults.content!,
-        projects: manyProjects,
-      },
-      projectCount: manyProjects.length,
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    content: {
+      isLoading: false,
+      projects: powerUserProjects,
+      onCreateProject: noop,
+      onSelectProject: noopString,
+      onProjectSettings: noopString,
+      onDeleteProject: noopDelete,
+    },
+    projectCount: powerUserProjects.length,
+  }),
   parameters: {
     docs: {
       description: {
@@ -857,18 +863,17 @@ export const NetworkError: Story = {
  * Loading after initial render (content loading).
  */
 export const ContentLoading: Story = {
-  args: (() => {
-    const defaults = createDefaultProps();
-    return {
-      ...defaults,
-      content: {
-        ...defaults.content!,
-        isLoading: true,
-        projects: [],
-      },
-      projectCount: 0,
-    } as ProjectsListPageProps;
-  })(),
+  args: createDefaultProps({
+    content: {
+      isLoading: true,
+      projects: [],
+      onCreateProject: noop,
+      onSelectProject: noopString,
+      onProjectSettings: noopString,
+      onDeleteProject: noopDelete,
+    },
+    projectCount: 0,
+  }),
   parameters: {
     docs: {
       description: {

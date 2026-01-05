@@ -1,11 +1,5 @@
-import type {
-  Permission,
-  StepStatus,
-  Task,
-  TaskStatus,
-  TaskStep,
-  TaskWithSteps,
-} from '@openflow/generated';
+import type { Permission, Task, TaskStep, TaskWithSteps } from '@openflow/generated';
+import { PermissionStatus, StepStatus, TaskStatus } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
 import {
@@ -100,17 +94,17 @@ function createMockTask(overrides: Partial<Task> = {}): Task {
     projectId: 'project-1',
     title: 'Implement user authentication',
     description: 'Add OAuth2 authentication with Google and GitHub providers',
-    status: 'pending' as TaskStatus,
+    status: TaskStatus.Pending,
     autoRun: false,
     currentStepIndex: 0,
-    worktreeId: null,
-    workflowTemplate: null,
-    parentTaskId: null,
-    defaultExecutorProfileId: null,
+    worktreeId: undefined,
+    workflowTemplate: undefined,
+    parentTaskId: undefined,
+    defaultExecutorProfileId: undefined,
     baseBranch: 'main',
-    archivedAt: null,
-    startedAt: null,
-    endedAt: null,
+    archivedAt: undefined,
+    startedAt: undefined,
+    endedAt: undefined,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...overrides,
@@ -125,10 +119,10 @@ function createMockStep(overrides: Partial<TaskStep> = {}): TaskStep {
     title: 'Create authentication module',
     prompt: 'Create a new authentication module with OAuth2 support for Google and GitHub.',
     providerId: 'claude-code',
-    status: 'pending' as StepStatus,
-    sessionId: null,
-    startedAt: null,
-    endedAt: null,
+    status: StepStatus.Pending,
+    sessionId: undefined,
+    startedAt: undefined,
+    endedAt: undefined,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...overrides,
@@ -168,10 +162,10 @@ function createMockPermission(): Permission {
     toolName: 'Write',
     description: 'Write to file src/auth/oauth.ts',
     filePath: 'src/auth/oauth.ts',
-    status: 'pending',
+    status: PermissionStatus.Pending,
     createdAt: new Date().toISOString(),
-    respondedAt: null,
-    expiredAt: null,
+    respondedAt: undefined,
+    expiredAt: undefined,
   };
 }
 
@@ -201,7 +195,7 @@ export const NotFound: Story = {
 /**
  * Error state - failed to load task.
  */
-export const Error: Story = {
+export const ErrorState: Story = {
   args: {
     state: 'error',
     errorMessage: 'Failed to load task: network error',
@@ -220,7 +214,7 @@ export const Error: Story = {
 export const PendingTask: Story = {
   args: {
     state: 'ready',
-    taskWithSteps: createMockTaskWithSteps({ status: 'pending' }),
+    taskWithSteps: createMockTaskWithSteps({ status: TaskStatus.Pending }),
     onStart: fn(),
     onBack: fn(),
   },
@@ -232,9 +226,11 @@ export const PendingTask: Story = {
 export const RunningTask: Story = {
   args: {
     state: 'ready',
-    taskWithSteps: createMockTaskWithSteps(
-      { status: 'running', currentStepIndex: 1, startedAt: new Date().toISOString() }
-    ),
+    taskWithSteps: createMockTaskWithSteps({
+      status: TaskStatus.Running,
+      currentStepIndex: 1,
+      startedAt: new Date().toISOString(),
+    }),
     isRunning: true,
     onPause: fn(),
     onCancel: fn(),
@@ -242,11 +238,12 @@ export const RunningTask: Story = {
   },
   render: (args) => {
     // Override steps to show mixed statuses
+    if (!args.taskWithSteps) return <TaskExecutionView {...args} />;
     const taskWithSteps = {
-      ...args.taskWithSteps!,
-      steps: args.taskWithSteps!.steps.map((step, i) => ({
+      ...args.taskWithSteps,
+      steps: args.taskWithSteps.steps.map((step, i) => ({
         ...step,
-        status: i === 0 ? 'completed' as const : i === 1 ? 'running' as const : 'pending' as const,
+        status: i === 0 ? StepStatus.Completed : i === 1 ? StepStatus.Running : StepStatus.Pending,
       })),
     };
     return <TaskExecutionView {...args} taskWithSteps={taskWithSteps} />;
@@ -259,19 +256,22 @@ export const RunningTask: Story = {
 export const PausedTask: Story = {
   args: {
     state: 'ready',
-    taskWithSteps: createMockTaskWithSteps(
-      { status: 'paused', currentStepIndex: 1, startedAt: new Date().toISOString() }
-    ),
+    taskWithSteps: createMockTaskWithSteps({
+      status: TaskStatus.Paused,
+      currentStepIndex: 1,
+      startedAt: new Date().toISOString(),
+    }),
     onResume: fn(),
     onCancel: fn(),
     onBack: fn(),
   },
   render: (args) => {
+    if (!args.taskWithSteps) return <TaskExecutionView {...args} />;
     const taskWithSteps = {
-      ...args.taskWithSteps!,
-      steps: args.taskWithSteps!.steps.map((step, i) => ({
+      ...args.taskWithSteps,
+      steps: args.taskWithSteps.steps.map((step, i) => ({
         ...step,
-        status: i === 0 ? 'completed' as const : i === 1 ? 'failed' as const : 'pending' as const,
+        status: i === 0 ? StepStatus.Completed : i === 1 ? StepStatus.Failed : StepStatus.Pending,
       })),
     };
     return <TaskExecutionView {...args} taskWithSteps={taskWithSteps} />;
@@ -285,7 +285,7 @@ export const CompletedTask: Story = {
   args: {
     state: 'ready',
     taskWithSteps: createMockTaskWithSteps({
-      status: 'completed',
+      status: TaskStatus.Completed,
       currentStepIndex: 3,
       startedAt: new Date(Date.now() - 300000).toISOString(),
       endedAt: new Date().toISOString(),
@@ -293,11 +293,12 @@ export const CompletedTask: Story = {
     onBack: fn(),
   },
   render: (args) => {
+    if (!args.taskWithSteps) return <TaskExecutionView {...args} />;
     const taskWithSteps = {
-      ...args.taskWithSteps!,
-      steps: args.taskWithSteps!.steps.map((step) => ({
+      ...args.taskWithSteps,
+      steps: args.taskWithSteps.steps.map((step) => ({
         ...step,
-        status: 'completed' as const,
+        status: StepStatus.Completed,
       })),
     };
     return <TaskExecutionView {...args} taskWithSteps={taskWithSteps} />;
@@ -311,7 +312,7 @@ export const FailedTask: Story = {
   args: {
     state: 'ready',
     taskWithSteps: createMockTaskWithSteps({
-      status: 'failed',
+      status: TaskStatus.Failed,
       currentStepIndex: 1,
       startedAt: new Date(Date.now() - 60000).toISOString(),
       endedAt: new Date().toISOString(),
@@ -319,11 +320,12 @@ export const FailedTask: Story = {
     onBack: fn(),
   },
   render: (args) => {
+    if (!args.taskWithSteps) return <TaskExecutionView {...args} />;
     const taskWithSteps = {
-      ...args.taskWithSteps!,
-      steps: args.taskWithSteps!.steps.map((step, i) => ({
+      ...args.taskWithSteps,
+      steps: args.taskWithSteps.steps.map((step, i) => ({
         ...step,
-        status: i === 0 ? 'completed' as const : i === 1 ? 'failed' as const : 'pending' as const,
+        status: i === 0 ? StepStatus.Completed : i === 1 ? StepStatus.Failed : StepStatus.Pending,
       })),
     };
     return <TaskExecutionView {...args} taskWithSteps={taskWithSteps} />;
@@ -337,7 +339,7 @@ export const CancelledTask: Story = {
   args: {
     state: 'ready',
     taskWithSteps: createMockTaskWithSteps({
-      status: 'cancelled',
+      status: TaskStatus.Cancelled,
       currentStepIndex: 1,
       startedAt: new Date(Date.now() - 30000).toISOString(),
       endedAt: new Date().toISOString(),
@@ -345,11 +347,12 @@ export const CancelledTask: Story = {
     onBack: fn(),
   },
   render: (args) => {
+    if (!args.taskWithSteps) return <TaskExecutionView {...args} />;
     const taskWithSteps = {
-      ...args.taskWithSteps!,
-      steps: args.taskWithSteps!.steps.map((step, i) => ({
+      ...args.taskWithSteps,
+      steps: args.taskWithSteps.steps.map((step, i) => ({
         ...step,
-        status: i === 0 ? 'completed' as const : 'skipped' as const,
+        status: i === 0 ? StepStatus.Completed : StepStatus.Skipped,
       })),
     };
     return <TaskExecutionView {...args} taskWithSteps={taskWithSteps} />;
@@ -366,9 +369,11 @@ export const CancelledTask: Story = {
 export const WithPendingPermission: Story = {
   args: {
     state: 'ready',
-    taskWithSteps: createMockTaskWithSteps(
-      { status: 'running', currentStepIndex: 0, startedAt: new Date().toISOString() }
-    ),
+    taskWithSteps: createMockTaskWithSteps({
+      status: TaskStatus.Running,
+      currentStepIndex: 0,
+      startedAt: new Date().toISOString(),
+    }),
     isRunning: true,
     pendingPermission: createMockPermission(),
     onApprovePermission: fn(),
@@ -378,11 +383,12 @@ export const WithPendingPermission: Story = {
     onBack: fn(),
   },
   render: (args) => {
+    if (!args.taskWithSteps) return <TaskExecutionView {...args} />;
     const taskWithSteps = {
-      ...args.taskWithSteps!,
-      steps: args.taskWithSteps!.steps.map((step, i) => ({
+      ...args.taskWithSteps,
+      steps: args.taskWithSteps.steps.map((step, i) => ({
         ...step,
-        status: i === 0 ? 'running' as const : 'pending' as const,
+        status: i === 0 ? StepStatus.Running : StepStatus.Pending,
       })),
     };
     return <TaskExecutionView {...args} taskWithSteps={taskWithSteps} />;
@@ -399,7 +405,7 @@ export const WithPendingPermission: Story = {
 export const StartingTask: Story = {
   args: {
     state: 'ready',
-    taskWithSteps: createMockTaskWithSteps({ status: 'pending' }),
+    taskWithSteps: createMockTaskWithSteps({ status: TaskStatus.Pending }),
     isStarting: true,
     onStart: fn(),
     onBack: fn(),
@@ -412,7 +418,7 @@ export const StartingTask: Story = {
 export const PausingTask: Story = {
   args: {
     state: 'ready',
-    taskWithSteps: createMockTaskWithSteps({ status: 'running' }),
+    taskWithSteps: createMockTaskWithSteps({ status: TaskStatus.Running }),
     isRunning: true,
     isPausing: true,
     onPause: fn(),
@@ -431,7 +437,7 @@ export const PausingTask: Story = {
 export const NoSteps: Story = {
   args: {
     state: 'ready',
-    taskWithSteps: createMockTaskWithSteps({ status: 'pending' }, 0),
+    taskWithSteps: createMockTaskWithSteps({ status: TaskStatus.Pending }, 0),
     onStart: fn(),
     onBack: fn(),
   },
@@ -442,14 +448,14 @@ export const NoSteps: Story = {
  */
 export const ManySteps: Story = {
   render: () => {
-    const task = createMockTask({ status: 'running', currentStepIndex: 5 });
+    const task = createMockTask({ status: TaskStatus.Running, currentStepIndex: 5 });
     const steps: TaskStep[] = Array.from({ length: 10 }, (_, i) =>
       createMockStep({
         id: `step-${i + 1}`,
         stepIndex: i,
         title: `Step ${i + 1}: ${['Setup', 'Configure', 'Implement', 'Test', 'Deploy', 'Monitor', 'Optimize', 'Document', 'Review', 'Finalize'][i]}`,
         prompt: `Execute step ${i + 1} of the workflow`,
-        status: i < 5 ? 'completed' as const : i === 5 ? 'running' as const : 'pending' as const,
+        status: i < 5 ? StepStatus.Completed : i === 5 ? StepStatus.Running : StepStatus.Pending,
       })
     );
     return (
@@ -475,7 +481,14 @@ export const ManySteps: Story = {
 export const HeaderComponent: Story = {
   render: () => (
     <div className="space-y-4">
-      {(['pending', 'running', 'paused', 'completed', 'failed', 'cancelled'] as const).map((status) => (
+      {[
+        TaskStatus.Pending,
+        TaskStatus.Running,
+        TaskStatus.Paused,
+        TaskStatus.Completed,
+        TaskStatus.Failed,
+        TaskStatus.Cancelled,
+      ].map((status) => (
         <TaskExecutionHeader
           key={status}
           task={createMockTask({ status })}
@@ -496,11 +509,20 @@ export const HeaderComponent: Story = {
 export const StepItemComponent: Story = {
   render: () => (
     <div className="w-80 space-y-2 p-4">
-      {(['pending', 'running', 'completed', 'failed', 'skipped'] as const).map((status) => (
+      {[
+        StepStatus.Pending,
+        StepStatus.Running,
+        StepStatus.Completed,
+        StepStatus.Failed,
+        StepStatus.Skipped,
+      ].map((status) => (
         <TaskStepItem
           key={status}
-          step={createMockStep({ status, title: `${status.charAt(0).toUpperCase() + status.slice(1)} step` })}
-          isActive={status === 'running'}
+          step={createMockStep({
+            status,
+            title: `${status.charAt(0).toUpperCase() + status.slice(1)} step`,
+          })}
+          isActive={status === StepStatus.Running}
           onClick={fn()}
         />
       ))}
@@ -514,9 +536,24 @@ export const StepItemComponent: Story = {
 export const StepListComponent: Story = {
   render: () => {
     const steps = [
-      createMockStep({ id: 'step-1', stepIndex: 0, title: 'Completed step', status: 'completed' }),
-      createMockStep({ id: 'step-2', stepIndex: 1, title: 'Running step', status: 'running' }),
-      createMockStep({ id: 'step-3', stepIndex: 2, title: 'Pending step', status: 'pending' }),
+      createMockStep({
+        id: 'step-1',
+        stepIndex: 0,
+        title: 'Completed step',
+        status: StepStatus.Completed,
+      }),
+      createMockStep({
+        id: 'step-2',
+        stepIndex: 1,
+        title: 'Running step',
+        status: StepStatus.Running,
+      }),
+      createMockStep({
+        id: 'step-3',
+        stepIndex: 2,
+        title: 'Pending step',
+        status: StepStatus.Pending,
+      }),
     ];
     return (
       <div className="w-80 border rounded">
@@ -532,11 +569,7 @@ export const StepListComponent: Story = {
 export const PermissionPromptComponent: Story = {
   render: () => (
     <div className="w-[500px] p-4">
-      <PermissionPrompt
-        permission={createMockPermission()}
-        onApprove={fn()}
-        onDeny={fn()}
-      />
+      <PermissionPrompt permission={createMockPermission()} onApprove={fn()} onDeny={fn()} />
     </div>
   ),
 };

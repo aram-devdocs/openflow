@@ -132,9 +132,9 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Implement user authentication',
     description: 'Add OAuth2 login flow with Google and GitHub providers',
-    status: TaskStatusEnum.Inprogress,
-    actionsRequiredCount: 2,
-    autoStartNextStep: false,
+    status: TaskStatusEnum.Running,
+    autoRun: false,
+    currentStepIndex: 0,
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: '2024-01-20T15:30:00Z',
   },
@@ -143,9 +143,9 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Fix database connection pool',
     description: 'Connections are not being released properly',
-    status: TaskStatusEnum.Todo,
-    actionsRequiredCount: 0,
-    autoStartNextStep: true,
+    status: TaskStatusEnum.Pending,
+    autoRun: true,
+    currentStepIndex: 0,
     createdAt: '2024-01-14T08:00:00Z',
     updatedAt: '2024-01-14T08:00:00Z',
   },
@@ -154,9 +154,9 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Add unit tests for auth module',
     description: 'Cover login, logout, and session management',
-    status: TaskStatusEnum.Inreview,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    status: TaskStatusEnum.Paused,
+    autoRun: false,
+    currentStepIndex: 0,
     createdAt: '2024-01-13T12:00:00Z',
     updatedAt: '2024-01-19T10:00:00Z',
   },
@@ -165,9 +165,9 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Update documentation',
     description: 'Document the new API endpoints and authentication flow',
-    status: TaskStatusEnum.Done,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    status: TaskStatusEnum.Completed,
+    autoRun: false,
+    currentStepIndex: 0,
     createdAt: '2024-01-12T09:00:00Z',
     updatedAt: '2024-01-18T14:00:00Z',
   },
@@ -177,8 +177,8 @@ const mockTasks: Task[] = [
     title: 'Refactor settings page',
     description: 'Old approach using class components',
     status: TaskStatusEnum.Cancelled,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    autoRun: false,
+    currentStepIndex: 0,
     createdAt: '2024-01-10T11:00:00Z',
     updatedAt: '2024-01-15T16:00:00Z',
   },
@@ -187,9 +187,9 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Optimize bundle size',
     description: 'Reduce initial load time by code splitting',
-    status: TaskStatusEnum.Todo,
-    actionsRequiredCount: 1,
-    autoStartNextStep: false,
+    status: TaskStatusEnum.Pending,
+    autoRun: false,
+    currentStepIndex: 0,
     createdAt: '2024-01-09T10:00:00Z',
     updatedAt: '2024-01-09T10:00:00Z',
   },
@@ -314,7 +314,7 @@ export const FilteredInProgress: Story = {
     tasks: mockTasks,
     chats: mockChats,
     selectedProjectId: 'proj-1',
-    statusFilter: TaskStatusEnum.Inprogress as StatusFilter,
+    statusFilter: TaskStatusEnum.Running as StatusFilter,
     isCollapsed: false,
   },
 };
@@ -328,7 +328,7 @@ export const FilteredTodo: Story = {
     tasks: mockTasks,
     chats: mockChats,
     selectedProjectId: 'proj-1',
-    statusFilter: TaskStatusEnum.Todo as StatusFilter,
+    statusFilter: TaskStatusEnum.Pending as StatusFilter,
     isCollapsed: false,
   },
 };
@@ -342,7 +342,7 @@ export const FilteredDone: Story = {
     tasks: mockTasks,
     chats: mockChats,
     selectedProjectId: 'proj-1',
-    statusFilter: TaskStatusEnum.Done as StatusFilter,
+    statusFilter: TaskStatusEnum.Completed as StatusFilter,
     isCollapsed: false,
   },
 };
@@ -358,16 +358,16 @@ export const FilteredNoResults: Story = {
         id: 'task-only-done',
         projectId: 'proj-1',
         title: 'Completed task',
-        status: TaskStatusEnum.Done,
-        actionsRequiredCount: 0,
-        autoStartNextStep: false,
+        status: TaskStatusEnum.Completed,
+        autoRun: false,
+        currentStepIndex: 0,
         createdAt: '2024-01-15T10:00:00Z',
         updatedAt: '2024-01-20T15:30:00Z',
       },
     ],
     chats: mockChats,
     selectedProjectId: 'proj-1',
-    statusFilter: TaskStatusEnum.Inprogress as StatusFilter, // No in-progress tasks
+    statusFilter: TaskStatusEnum.Running as StatusFilter, // No in-progress tasks
     isCollapsed: false,
   },
 };
@@ -449,9 +449,9 @@ export const ManyTasks: Story = {
         projectId: 'proj-1',
         title: 'Add dark mode support',
         description: 'Implement theme switching with persistence',
-        status: TaskStatusEnum.Todo,
-        actionsRequiredCount: 0,
-        autoStartNextStep: false,
+        status: TaskStatusEnum.Pending,
+        autoRun: false,
+        currentStepIndex: 0,
         createdAt: '2024-01-08T10:00:00Z',
         updatedAt: '2024-01-08T10:00:00Z',
       },
@@ -460,9 +460,9 @@ export const ManyTasks: Story = {
         projectId: 'proj-1',
         title: 'Implement keyboard shortcuts',
         description: 'Add common shortcuts for power users',
-        status: TaskStatusEnum.Inprogress,
-        actionsRequiredCount: 0,
-        autoStartNextStep: true,
+        status: TaskStatusEnum.Running,
+        autoRun: true,
+        currentStepIndex: 0,
         createdAt: '2024-01-07T10:00:00Z',
         updatedAt: '2024-01-19T11:00:00Z',
       },
@@ -471,9 +471,9 @@ export const ManyTasks: Story = {
         projectId: 'proj-1',
         title: 'Fix mobile responsive issues',
         description: 'Sidebar overlaps content on small screens',
-        status: TaskStatusEnum.Todo,
-        actionsRequiredCount: 0,
-        autoStartNextStep: false,
+        status: TaskStatusEnum.Pending,
+        autoRun: false,
+        currentStepIndex: 0,
         createdAt: '2024-01-06T10:00:00Z',
         updatedAt: '2024-01-06T10:00:00Z',
       },
@@ -482,9 +482,9 @@ export const ManyTasks: Story = {
         projectId: 'proj-1',
         title: 'Add export to PDF feature',
         description: 'Allow users to export reports as PDF',
-        status: TaskStatusEnum.Done,
-        actionsRequiredCount: 0,
-        autoStartNextStep: false,
+        status: TaskStatusEnum.Completed,
+        autoRun: false,
+        currentStepIndex: 0,
         createdAt: '2024-01-05T10:00:00Z',
         updatedAt: '2024-01-17T14:00:00Z',
       },
@@ -510,9 +510,9 @@ export const LongTaskTitles: Story = {
         title:
           'This is a very long task title that should be truncated when displayed in the sidebar task list',
         description: 'This description is also quite long and should be truncated appropriately',
-        status: TaskStatusEnum.Inprogress,
-        actionsRequiredCount: 0,
-        autoStartNextStep: false,
+        status: TaskStatusEnum.Running,
+        autoRun: false,
+        currentStepIndex: 0,
         createdAt: '2024-01-15T10:00:00Z',
         updatedAt: '2024-01-20T15:30:00Z',
       },
@@ -520,9 +520,9 @@ export const LongTaskTitles: Story = {
         id: 'task-long-2',
         projectId: 'proj-1',
         title: 'Another extremely long task title that tests the UI truncation behavior',
-        status: TaskStatusEnum.Todo,
-        actionsRequiredCount: 2,
-        autoStartNextStep: false,
+        status: TaskStatusEnum.Pending,
+        autoRun: false,
+        currentStepIndex: 0,
         createdAt: '2024-01-14T08:00:00Z',
         updatedAt: '2024-01-14T08:00:00Z',
       },
@@ -546,9 +546,9 @@ export const TasksWithActions: Story = {
         projectId: 'proj-1',
         title: 'Review pull request',
         description: 'PR #42 needs code review before merge',
-        status: TaskStatusEnum.Inprogress,
-        actionsRequiredCount: 3,
-        autoStartNextStep: false,
+        status: TaskStatusEnum.Running,
+        autoRun: false,
+        currentStepIndex: 0,
         createdAt: '2024-01-15T10:00:00Z',
         updatedAt: '2024-01-20T15:30:00Z',
       },
@@ -557,9 +557,9 @@ export const TasksWithActions: Story = {
         projectId: 'proj-1',
         title: 'Deploy to staging',
         description: 'Waiting for approval',
-        status: TaskStatusEnum.Inreview,
-        actionsRequiredCount: 1,
-        autoStartNextStep: false,
+        status: TaskStatusEnum.Paused,
+        autoRun: false,
+        currentStepIndex: 0,
         createdAt: '2024-01-14T08:00:00Z',
         updatedAt: '2024-01-19T12:00:00Z',
       },
@@ -822,7 +822,7 @@ export const DataAttributes: Story = {
     selectedProjectId: 'proj-1',
     selectedTaskId: 'task-1',
     selectedChatId: 'chat-1',
-    statusFilter: TaskStatusEnum.Inprogress as StatusFilter,
+    statusFilter: TaskStatusEnum.Running as StatusFilter,
     isCollapsed: false,
     'data-testid': 'sidebar',
   },
@@ -1102,12 +1102,12 @@ export const ConstantsReference: Story = {
             {getResponsiveSizeClasses('sm', SIDEBAR_PADDING_CLASSES)}"
           </div>
           <div>
-            <code>getStatusFilterLabel(TaskStatus.Inprogress)</code> = "
-            {getStatusFilterLabel(TaskStatusEnum.Inprogress)}"
+            <code>getStatusFilterLabel(TaskStatus.Running)</code> = "
+            {getStatusFilterLabel(TaskStatusEnum.Running)}"
           </div>
           <div>
-            <code>buildFilterAnnouncement(TaskStatus.Todo, 3)</code> = "
-            {buildFilterAnnouncement(TaskStatusEnum.Todo, 3)}"
+            <code>buildFilterAnnouncement(TaskStatus.Pending, 3)</code> = "
+            {buildFilterAnnouncement(TaskStatusEnum.Pending, 3)}"
           </div>
           <div>
             <code>buildChatsSectionAnnouncement(true, 5)</code> = "
@@ -1124,8 +1124,8 @@ export const ConstantsReference: Story = {
             <code>getTaskCounts(mockTasks)</code> = {JSON.stringify(getTaskCounts(mockTasks))}
           </div>
           <div>
-            <code>filterTasksByStatus(mockTasks, TaskStatus.Todo).length</code> ={' '}
-            {filterTasksByStatus(mockTasks, TaskStatusEnum.Todo).length}
+            <code>filterTasksByStatus(mockTasks, TaskStatus.Pending).length</code> ={' '}
+            {filterTasksByStatus(mockTasks, TaskStatusEnum.Pending).length}
           </div>
         </div>
       </section>

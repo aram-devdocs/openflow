@@ -283,7 +283,7 @@ export const TaskCard: Story = {
       <CardHeader>
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Implement authentication</h3>
-          <Badge variant="inprogress">In Progress</Badge>
+          <Badge variant="running">In Progress</Badge>
         </div>
       </CardHeader>
       <CardContent>
@@ -372,9 +372,9 @@ export const CardList: Story = {
   ],
   render: () => {
     const items = [
-      { id: '1', title: 'First Item', status: 'todo' as const },
-      { id: '2', title: 'Second Item', status: 'inprogress' as const },
-      { id: '3', title: 'Third Item', status: 'done' as const },
+      { id: '1', title: 'First Item', status: 'pending' as const },
+      { id: '2', title: 'Second Item', status: 'running' as const },
+      { id: '3', title: 'Third Item', status: 'completed' as const },
     ];
 
     return (

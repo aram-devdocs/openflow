@@ -104,9 +104,9 @@ const mockTasks: Task[] = [
     projectId: 'project-1',
     title: 'Implement user authentication',
     description: 'Add login and signup functionality with OAuth support',
-    status: TaskStatusEnum.Inprogress,
-    actionsRequiredCount: 2,
-    autoStartNextStep: false,
+    status: TaskStatusEnum.Running,
+    autoRun: false,
+    currentStepIndex: 1,
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: '2024-01-15T14:30:00Z',
   },
@@ -115,9 +115,9 @@ const mockTasks: Task[] = [
     projectId: 'project-1',
     title: 'Fix sidebar navigation bug',
     description: 'Navigation links not highlighting correctly on route change',
-    status: TaskStatusEnum.Todo,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    status: TaskStatusEnum.Pending,
+    autoRun: false,
+    currentStepIndex: 0,
     createdAt: '2024-01-14T09:00:00Z',
     updatedAt: '2024-01-14T09:00:00Z',
   },
@@ -126,9 +126,9 @@ const mockTasks: Task[] = [
     projectId: 'project-1',
     title: 'Add dark mode support',
     description: 'Implement theme switching with system preference detection',
-    status: TaskStatusEnum.Done,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    status: TaskStatusEnum.Completed,
+    autoRun: false,
+    currentStepIndex: 2,
     createdAt: '2024-01-13T08:00:00Z',
     updatedAt: '2024-01-13T16:00:00Z',
   },
@@ -137,9 +137,9 @@ const mockTasks: Task[] = [
     projectId: 'project-1',
     title: 'Refactor database layer',
     description: 'Improve query performance and add connection pooling',
-    status: TaskStatusEnum.Inreview,
-    actionsRequiredCount: 1,
-    autoStartNextStep: false,
+    status: TaskStatusEnum.Paused,
+    autoRun: false,
+    currentStepIndex: 1,
     createdAt: '2024-01-12T11:00:00Z',
     updatedAt: '2024-01-14T10:00:00Z',
   },
@@ -355,35 +355,35 @@ export const EmptyProject: Story = {
 // ============================================================================
 
 /**
- * Filtered by in progress status
+ * Filtered by running status
  */
 export const FilteredInProgress: Story = {
   args: createDefaultProps({
     sidebar: {
       ...defaultSidebar,
-      statusFilter: TaskStatusEnum.Inprogress as StatusFilter,
-      tasks: mockTasks.filter((t) => t.status === TaskStatusEnum.Inprogress),
+      statusFilter: TaskStatusEnum.Running as StatusFilter,
+      tasks: mockTasks.filter((t) => t.status === TaskStatusEnum.Running),
     },
     content: {
       ...defaultContent,
-      tasks: mockTasks.filter((t) => t.status === TaskStatusEnum.Inprogress),
+      tasks: mockTasks.filter((t) => t.status === TaskStatusEnum.Running),
     },
   }),
 };
 
 /**
- * Filtered by todo status
+ * Filtered by pending status
  */
 export const FilteredTodo: Story = {
   args: createDefaultProps({
     sidebar: {
       ...defaultSidebar,
-      statusFilter: TaskStatusEnum.Todo as StatusFilter,
-      tasks: mockTasks.filter((t) => t.status === TaskStatusEnum.Todo),
+      statusFilter: TaskStatusEnum.Pending as StatusFilter,
+      tasks: mockTasks.filter((t) => t.status === TaskStatusEnum.Pending),
     },
     content: {
       ...defaultContent,
-      tasks: mockTasks.filter((t) => t.status === TaskStatusEnum.Todo),
+      tasks: mockTasks.filter((t) => t.status === TaskStatusEnum.Pending),
     },
   }),
 };
@@ -567,13 +567,13 @@ export const ManyTasks: Story = {
         title: `Task ${i + 5}`,
         description: `Description for task ${i + 5}`,
         status: [
-          TaskStatusEnum.Todo,
-          TaskStatusEnum.Inprogress,
-          TaskStatusEnum.Inreview,
-          TaskStatusEnum.Done,
+          TaskStatusEnum.Pending,
+          TaskStatusEnum.Running,
+          TaskStatusEnum.Paused,
+          TaskStatusEnum.Completed,
         ][i % 4] as TaskStatus,
-        actionsRequiredCount: i % 3,
-        autoStartNextStep: false,
+        autoRun: false,
+        currentStepIndex: i % 3,
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',
       })),

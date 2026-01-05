@@ -1,8 +1,8 @@
+import type { DbWorktreeSummary } from '@openflow/generated';
+import { DbWorktreeStatus } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import type { DbWorktreeSummary, DbWorktreeStatus } from '@openflow/generated';
-import { WorktreeStatus, WorktreeList, WorktreeItem } from './WorktreeStatus';
-import type { WorktreeStatusProps } from './WorktreeStatus';
+import { WorktreeList, WorktreeStatus } from './WorktreeStatus';
 
 // ============================================================================
 // Mock Data
@@ -18,31 +18,46 @@ const createMockWorktree = (
   branchName,
   path: `/Users/dev/.openflow/worktrees/project-123/${branchName.replace(/\//g, '-')}`,
   status,
-  mergedAt: mergedAt ?? null,
+  mergedAt: mergedAt ?? undefined,
 });
 
 const activeWorktrees: DbWorktreeSummary[] = [
-  createMockWorktree('wt-1', 'openflow/task-abc123/step-0', 'active'),
-  createMockWorktree('wt-2', 'openflow/task-abc123/step-1', 'active'),
-  createMockWorktree('wt-3', 'openflow/task-def456/step-0', 'active'),
+  createMockWorktree('wt-1', 'openflow/task-abc123/step-0', DbWorktreeStatus.Active),
+  createMockWorktree('wt-2', 'openflow/task-abc123/step-1', DbWorktreeStatus.Active),
+  createMockWorktree('wt-3', 'openflow/task-def456/step-0', DbWorktreeStatus.Active),
 ];
 
 const mixedWorktrees: DbWorktreeSummary[] = [
-  createMockWorktree('wt-1', 'openflow/task-abc123/step-0', 'active'),
-  createMockWorktree('wt-2', 'openflow/task-abc123/step-1', 'conflict'),
-  createMockWorktree('wt-3', 'openflow/task-def456/step-0', 'merged', '2024-01-15T10:30:00Z'),
-  createMockWorktree('wt-4', 'openflow/task-ghi789/step-0', 'deleted'),
+  createMockWorktree('wt-1', 'openflow/task-abc123/step-0', DbWorktreeStatus.Active),
+  createMockWorktree('wt-2', 'openflow/task-abc123/step-1', DbWorktreeStatus.Conflict),
+  createMockWorktree(
+    'wt-3',
+    'openflow/task-def456/step-0',
+    DbWorktreeStatus.Merged,
+    '2024-01-15T10:30:00Z'
+  ),
+  createMockWorktree('wt-4', 'openflow/task-ghi789/step-0', DbWorktreeStatus.Deleted),
 ];
 
 const conflictWorktrees: DbWorktreeSummary[] = [
-  createMockWorktree('wt-1', 'openflow/task-abc123/step-0', 'conflict'),
-  createMockWorktree('wt-2', 'openflow/task-abc123/step-1', 'conflict'),
+  createMockWorktree('wt-1', 'openflow/task-abc123/step-0', DbWorktreeStatus.Conflict),
+  createMockWorktree('wt-2', 'openflow/task-abc123/step-1', DbWorktreeStatus.Conflict),
 ];
 
 const mergedWorktrees: DbWorktreeSummary[] = [
-  createMockWorktree('wt-1', 'openflow/task-old1/step-0', 'merged', '2024-01-14T08:00:00Z'),
-  createMockWorktree('wt-2', 'openflow/task-old2/step-0', 'merged', '2024-01-13T15:30:00Z'),
-  createMockWorktree('wt-3', 'openflow/task-old3/step-0', 'deleted'),
+  createMockWorktree(
+    'wt-1',
+    'openflow/task-old1/step-0',
+    DbWorktreeStatus.Merged,
+    '2024-01-14T08:00:00Z'
+  ),
+  createMockWorktree(
+    'wt-2',
+    'openflow/task-old2/step-0',
+    DbWorktreeStatus.Merged,
+    '2024-01-13T15:30:00Z'
+  ),
+  createMockWorktree('wt-3', 'openflow/task-old3/step-0', DbWorktreeStatus.Deleted),
 ];
 
 // ============================================================================
@@ -293,27 +308,15 @@ export const AllSizes: Story = {
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2">Small</h3>
-        <WorktreeStatus
-          worktrees={activeWorktrees.slice(0, 2)}
-          showControls
-          size="sm"
-        />
+        <WorktreeStatus worktrees={activeWorktrees.slice(0, 2)} showControls size="sm" />
       </div>
       <div>
         <h3 className="text-lg font-semibold mb-2">Medium (default)</h3>
-        <WorktreeStatus
-          worktrees={activeWorktrees.slice(0, 2)}
-          showControls
-          size="md"
-        />
+        <WorktreeStatus worktrees={activeWorktrees.slice(0, 2)} showControls size="md" />
       </div>
       <div>
         <h3 className="text-lg font-semibold mb-2">Large</h3>
-        <WorktreeStatus
-          worktrees={activeWorktrees.slice(0, 2)}
-          showControls
-          size="lg"
-        />
+        <WorktreeStatus worktrees={activeWorktrees.slice(0, 2)} showControls size="lg" />
       </div>
     </div>
   ),
@@ -385,7 +388,7 @@ export const Interactive: Story = {
         setWorktrees((prev) =>
           prev.map((wt) =>
             wt.id === id
-              ? { ...wt, status: 'merged' as const, mergedAt: new Date().toISOString() }
+              ? { ...wt, status: DbWorktreeStatus.Merged, mergedAt: new Date().toISOString() }
               : wt
           )
         );
@@ -398,11 +401,7 @@ export const Interactive: Story = {
       // Simulate delete operation
       setTimeout(() => {
         setWorktrees((prev) =>
-          prev.map((wt) =>
-            wt.id === id
-              ? { ...wt, status: 'deleted' as const }
-              : wt
-          )
+          prev.map((wt) => (wt.id === id ? { ...wt, status: DbWorktreeStatus.Deleted } : wt))
         );
         setDeletingId(undefined);
       }, 1000);
@@ -413,7 +412,7 @@ export const Interactive: Story = {
       setWorktrees((prev) =>
         prev.map((wt) =>
           wt.id === id
-            ? { ...wt, status: 'merged' as const, mergedAt: new Date().toISOString() }
+            ? { ...wt, status: DbWorktreeStatus.Merged, mergedAt: new Date().toISOString() }
             : wt
         )
       );
@@ -462,7 +461,11 @@ export const ManyWorktrees: Story = {
       createMockWorktree(
         `wt-${i + 1}`,
         `openflow/task-${String.fromCharCode(97 + i)}bc123/step-${i % 3}`,
-        i < 6 ? 'active' : i < 8 ? 'merged' : 'deleted',
+        i < 6
+          ? DbWorktreeStatus.Active
+          : i < 8
+            ? DbWorktreeStatus.Merged
+            : DbWorktreeStatus.Deleted,
         i >= 6 ? '2024-01-15T10:30:00Z' : undefined
       )
     ),
@@ -483,12 +486,12 @@ export const LongBranchNames: Story = {
       createMockWorktree(
         'wt-1',
         'openflow/very-long-task-id-that-might-overflow-the-container-abc123/step-0',
-        'active'
+        DbWorktreeStatus.Active
       ),
       createMockWorktree(
         'wt-2',
         'feature/another-incredibly-long-branch-name-for-testing-purposes',
-        'active'
+        DbWorktreeStatus.Active
       ),
     ],
     showControls: true,
@@ -549,9 +552,8 @@ export const InProjectContext: Story = {
 
       <div className="text-sm text-muted-foreground">
         <p>
-          <strong>Note:</strong> Worktrees are automatically created when running
-          parallel task steps. You can merge them back to the base branch or
-          delete them when no longer needed.
+          <strong>Note:</strong> Worktrees are automatically created when running parallel task
+          steps. You can merge them back to the base branch or delete them when no longer needed.
         </p>
       </div>
     </div>

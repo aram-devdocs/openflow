@@ -15,10 +15,11 @@ export type BadgeVariant =
   | 'warning'
   | 'error'
   | 'info'
-  | 'todo'
-  | 'inprogress'
-  | 'inreview'
-  | 'done'
+  | 'pending'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
   | 'cancelled';
 
 export type BadgeSize = 'sm' | 'md' | 'lg';
@@ -54,10 +55,11 @@ const variantClasses: Record<BadgeVariant, string> = {
   error: 'bg-error/20 text-error',
   info: 'bg-info/20 text-info',
   // Task status variants using semantic status colors
-  todo: 'bg-status-todo/20 text-status-todo',
-  inprogress: 'bg-status-inprogress/20 text-status-inprogress',
-  inreview: 'bg-status-inreview/20 text-status-inreview',
-  done: 'bg-status-done/20 text-status-done',
+  pending: 'bg-status-pending/20 text-status-pending',
+  running: 'bg-status-running/20 text-status-running',
+  paused: 'bg-status-paused/20 text-status-paused',
+  completed: 'bg-status-completed/20 text-status-completed',
+  failed: 'bg-status-failed/20 text-status-failed',
   cancelled: 'bg-status-cancelled/20 text-status-cancelled',
 };
 
@@ -143,10 +145,11 @@ function getResponsiveTextSize(size: ResponsiveValue<BadgeSize>): ResponsiveValu
  */
 export function taskStatusToVariant(status: TaskStatus): BadgeVariant {
   const statusMap: Record<TaskStatus, BadgeVariant> = {
-    todo: 'todo',
-    inprogress: 'inprogress',
-    inreview: 'inreview',
-    done: 'done',
+    pending: 'pending',
+    running: 'running',
+    paused: 'paused',
+    completed: 'completed',
+    failed: 'failed',
     cancelled: 'cancelled',
   };
   return statusMap[status] ?? 'default';
@@ -157,10 +160,11 @@ export function taskStatusToVariant(status: TaskStatus): BadgeVariant {
  */
 export function taskStatusToLabel(status: TaskStatus): string {
   const labelMap: Record<TaskStatus, string> = {
-    todo: 'To Do',
-    inprogress: 'In Progress',
-    inreview: 'In Review',
-    done: 'Done',
+    pending: 'Pending',
+    running: 'Running',
+    paused: 'Paused',
+    completed: 'Completed',
+    failed: 'Failed',
     cancelled: 'Cancelled',
   };
   return labelMap[status] ?? status;

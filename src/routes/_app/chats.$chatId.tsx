@@ -76,7 +76,14 @@ function StandaloneChatRoute() {
         onStop: session.handleStopProcess,
       }}
       permissionDialog={{
-        request: session.permissionRequest,
+        request: session.permissionRequest
+          ? {
+              processId: session.activeProcessId ?? '',
+              toolName: session.permissionRequest.toolName,
+              filePath: session.permissionRequest.filePath,
+              description: session.permissionRequest.description ?? '',
+            }
+          : null,
         onApprove: session.handleApprovePermission,
         onDeny: session.handleDenyPermission,
       }}

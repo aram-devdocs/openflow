@@ -31,7 +31,23 @@ export const agentMessageRoleSchema = z.enum(['user', 'assistant', 'system']);
  * Zod schema for AuditAction enum
  * @generated from entities/audit.rs
  */
-export const auditActionSchema = z.enum(['created', 'updated', 'deleted', 'started', 'completed', 'failed', 'paused', 'resumed', 'approved', 'denied', 'killed', 'archived', 'restored', 'cancelled', 'skipped']);
+export const auditActionSchema = z.enum([
+  'created',
+  'updated',
+  'deleted',
+  'started',
+  'completed',
+  'failed',
+  'paused',
+  'resumed',
+  'approved',
+  'denied',
+  'killed',
+  'archived',
+  'restored',
+  'cancelled',
+  'skipped',
+]);
 
 /**
  * Zod schema for AuditActor enum
@@ -43,7 +59,19 @@ export const auditActorSchema = z.enum(['system', 'user', 'agent']);
  * Zod schema for AuditEntityType enum
  * @generated from entities/audit.rs
  */
-export const auditEntityTypeSchema = z.enum(['task', 'step', 'session', 'event', 'permission', 'project', 'chat', 'worktree', 'tool', 'message', 'settings']);
+export const auditEntityTypeSchema = z.enum([
+  'task',
+  'step',
+  'session',
+  'event',
+  'permission',
+  'project',
+  'chat',
+  'worktree',
+  'tool',
+  'message',
+  'settings',
+]);
 
 /**
  * Zod schema for ChatRole enum
@@ -55,13 +83,27 @@ export const chatRoleSchema = z.enum(['main', 'review', 'test', 'terminal']);
  * Zod schema for CliToolType enum
  * @generated from entities/executor.rs
  */
-export const cliToolTypeSchema = z.enum(['claudecode', 'geminicli', 'codexcli', 'cursorcli', 'amazonqcli', 'copilotcli', 'custom']);
+export const cliToolTypeSchema = z.enum([
+  'claudecode',
+  'geminicli',
+  'codexcli',
+  'cursorcli',
+  'amazonqcli',
+  'copilotcli',
+  'custom',
+]);
 
 /**
  * Zod schema for CompletionStatus enum
  * @generated from events/agent_event.rs
  */
-export const completionStatusSchema = z.enum(['success', 'error', 'interrupted', 'timeout', 'killed']);
+export const completionStatusSchema = z.enum([
+  'success',
+  'error',
+  'interrupted',
+  'timeout',
+  'killed',
+]);
 
 /**
  * Zod schema for DataAction enum
@@ -79,7 +121,20 @@ export const dbWorktreeStatusSchema = z.enum(['active', 'merged', 'deleted', 'co
  * Zod schema for EntityType enum
  * @generated from events/mod.rs
  */
-export const entityTypeSchema = z.enum(['project', 'task', 'step', 'chat', 'message', 'executorprofile', 'process', 'setting', 'workflowtemplate', 'worktree', 'session', 'permission']);
+export const entityTypeSchema = z.enum([
+  'project',
+  'task',
+  'step',
+  'chat',
+  'message',
+  'executorprofile',
+  'process',
+  'setting',
+  'workflowtemplate',
+  'worktree',
+  'session',
+  'permission',
+]);
 
 /**
  * Zod schema for Event enum
@@ -91,7 +146,20 @@ export const eventSchema = z.enum(['datachanged', 'processoutput', 'processstatu
  * Zod schema for EventType enum
  * @generated from events/envelope.rs
  */
-export const eventTypeSchema = z.enum(['init', 'message', 'tooluse', 'toolresult', 'complete', 'error', 'permission', 'taskprogress', 'stepprogress', 'datachanged', 'processoutput', 'processstatus']);
+export const eventTypeSchema = z.enum([
+  'init',
+  'message',
+  'tooluse',
+  'toolresult',
+  'complete',
+  'error',
+  'permission',
+  'taskprogress',
+  'stepprogress',
+  'datachanged',
+  'processoutput',
+  'processstatus',
+]);
 
 /**
  * Zod schema for FileChangeType enum
@@ -103,7 +171,16 @@ export const fileChangeTypeSchema = z.enum(['added', 'modified', 'deleted', 'ren
  * Zod schema for GitFileStatus enum
  * @generated from entities/git.rs
  */
-export const gitFileStatusSchema = z.enum(['untracked', 'modified', 'staged', 'partiallystaged', 'deleted', 'renamed', 'copied', 'conflicted']);
+export const gitFileStatusSchema = z.enum([
+  'untracked',
+  'modified',
+  'staged',
+  'partiallystaged',
+  'deleted',
+  'renamed',
+  'copied',
+  'conflicted',
+]);
 
 /**
  * Zod schema for MessageRole enum
@@ -121,7 +198,13 @@ export const outputTypeSchema = z.enum(['stdout', 'stderr']);
  * Zod schema for PermissionStatus enum
  * @generated from entities/agent_session.rs
  */
-export const permissionStatusSchema = z.enum(['pending', 'approved', 'denied', 'expired', 'cancelled']);
+export const permissionStatusSchema = z.enum([
+  'pending',
+  'approved',
+  'denied',
+  'expired',
+  'cancelled',
+]);
 
 /**
  * Zod schema for ProcessStatus enum
@@ -133,7 +216,14 @@ export const processStatusSchema = z.enum(['running', 'completed', 'failed', 'ki
  * Zod schema for RunReason enum
  * @generated from entities/process.rs
  */
-export const runReasonSchema = z.enum(['setupscript', 'cleanupscript', 'codingagent', 'devserver', 'terminal', 'verification']);
+export const runReasonSchema = z.enum([
+  'setupscript',
+  'cleanupscript',
+  'codingagent',
+  'devserver',
+  'terminal',
+  'verification',
+]);
 
 /**
  * Zod schema for SearchResultType enum
@@ -157,7 +247,14 @@ export const stepStatusSchema = z.enum(['pending', 'running', 'completed', 'fail
  * Zod schema for TaskStatus enum
  * @generated from entities/task.rs
  */
-export const taskStatusSchema = z.enum(['pending', 'running', 'paused', 'completed', 'failed', 'cancelled']);
+export const taskStatusSchema = z.enum([
+  'pending',
+  'running',
+  'paused',
+  'completed',
+  'failed',
+  'cancelled',
+]);
 
 /**
  * Zod schema for ToolResultStatus enum
@@ -181,7 +278,14 @@ export const workflowStepStatusSchema = z.enum(['pending', 'inprogress', 'comple
  * Zod schema for WorkflowVariable enum
  * @generated from entities/workflow.rs
  */
-export const workflowVariableSchema = z.enum(['artifactspath', 'projectroot', 'worktreepath', 'taskid', 'tasktitle', 'projectname']);
+export const workflowVariableSchema = z.enum([
+  'artifactspath',
+  'projectroot',
+  'worktreepath',
+  'taskid',
+  'tasktitle',
+  'projectname',
+]);
 
 /**
  * Zod schema for WorktreeStatus enum
@@ -697,7 +801,10 @@ export const settingExistsRequestSchema = z.object({
 export const spawnTerminalRequestSchema = z.object({
   projectId: z.string(),
   chatId: z.string().optional().nullable(),
-  cwd: z.string() /* PathBuf */.optional().nullable(),
+  cwd: z
+    .string() /* PathBuf */
+    .optional()
+    .nullable(),
   shell: z.string().optional().nullable(),
   cols: z.number().int().nonnegative().optional().nullable(),
   rows: z.number().int().nonnegative().optional().nullable(),
@@ -711,7 +818,10 @@ export const spawnTerminalRequestSchema = z.object({
 export const startProcessRequestSchema = z.object({
   command: z.string(),
   args: z.array(z.string()),
-  cwd: z.string() /* std::path::PathBuf */.optional().nullable(),
+  cwd: z
+    .string() /* std::path::PathBuf */
+    .optional()
+    .nullable(),
   env: z.string() /* std::collections::HashMap<String, String> */,
   usePty: z.boolean(),
   ptyCols: z.number().int().nonnegative().optional().nullable(),
@@ -727,7 +837,10 @@ export const substituteWorkflowVariablesRequestSchema = z.object({
   content: z.string(),
   taskId: z.string().optional().nullable(),
   chatId: z.string().optional().nullable(),
-  customVariables: z.string() /* std::collections::HashMap<String, String> */.optional().nullable(),
+  customVariables: z
+    .string() /* std::collections::HashMap<String, String> */
+    .optional()
+    .nullable(),
 });
 
 /**
@@ -917,7 +1030,10 @@ export const agentSessionWithStateSchema = z.object({
   eventCount: z.number().int(),
   toolCount: z.number().int(),
   pendingToolCount: z.number().int(),
-  pendingPermission: z.string() /* Permission */.optional().nullable(),
+  pendingPermission: z
+    .string() /* Permission */
+    .optional()
+    .nullable(),
 });
 
 /**
@@ -1674,7 +1790,9 @@ export type AgentSessionGenerated = z.infer<typeof agentSessionSchema>;
 export type AgentSessionSummaryGenerated = z.infer<typeof agentSessionSummarySchema>;
 export type AgentSessionWithStateGenerated = z.infer<typeof agentSessionWithStateSchema>;
 export type AgentStatsGenerated = z.infer<typeof agentStatsSchema>;
-export type AppendMessageContentRequestGenerated = z.infer<typeof appendMessageContentRequestSchema>;
+export type AppendMessageContentRequestGenerated = z.infer<
+  typeof appendMessageContentRequestSchema
+>;
 export type ApplyWorkflowToTaskRequestGenerated = z.infer<typeof applyWorkflowToTaskRequestSchema>;
 export type ArtifactFileGenerated = z.infer<typeof artifactFileSchema>;
 export type AuditLogGenerated = z.infer<typeof auditLogSchema>;
@@ -1688,14 +1806,18 @@ export type CliInstalledResponseGenerated = z.infer<typeof cliInstalledResponseS
 export type CommitGenerated = z.infer<typeof commitSchema>;
 export type CommitSummaryGenerated = z.infer<typeof commitSummarySchema>;
 export type CreateChatRequestGenerated = z.infer<typeof createChatRequestSchema>;
-export type CreateExecutorProfileRequestGenerated = z.infer<typeof createExecutorProfileRequestSchema>;
+export type CreateExecutorProfileRequestGenerated = z.infer<
+  typeof createExecutorProfileRequestSchema
+>;
 export type CreateMessageRequestGenerated = z.infer<typeof createMessageRequestSchema>;
 export type CreateProcessRequestGenerated = z.infer<typeof createProcessRequestSchema>;
 export type CreateProjectRequestGenerated = z.infer<typeof createProjectRequestSchema>;
 export type CreatePullRequestRequestGenerated = z.infer<typeof createPullRequestRequestSchema>;
 export type CreateStepRequestGenerated = z.infer<typeof createStepRequestSchema>;
 export type CreateTaskRequestGenerated = z.infer<typeof createTaskRequestSchema>;
-export type CreateWorkflowTemplateRequestGenerated = z.infer<typeof createWorkflowTemplateRequestSchema>;
+export type CreateWorkflowTemplateRequestGenerated = z.infer<
+  typeof createWorkflowTemplateRequestSchema
+>;
 export type CreateWorktreeRequestGenerated = z.infer<typeof createWorktreeRequestSchema>;
 export type DataChangedEventGenerated = z.infer<typeof dataChangedEventSchema>;
 export type DbWorktreeGenerated = z.infer<typeof dbWorktreeSchema>;
@@ -1704,7 +1826,9 @@ export type DefaultShellResponseGenerated = z.infer<typeof defaultShellResponseS
 export type DeleteAllSettingsRequestGenerated = z.infer<typeof deleteAllSettingsRequestSchema>;
 export type DeleteAllSettingsResponseGenerated = z.infer<typeof deleteAllSettingsResponseSchema>;
 export type DeleteSettingRequestGenerated = z.infer<typeof deleteSettingRequestSchema>;
-export type DeleteWorkflowTemplateRequestGenerated = z.infer<typeof deleteWorkflowTemplateRequestSchema>;
+export type DeleteWorkflowTemplateRequestGenerated = z.infer<
+  typeof deleteWorkflowTemplateRequestSchema
+>;
 export type DeleteWorktreeRequestGenerated = z.infer<typeof deleteWorktreeRequestSchema>;
 export type DiffHunkGenerated = z.infer<typeof diffHunkSchema>;
 export type ExecutionProcessGenerated = z.infer<typeof executionProcessSchema>;
@@ -1713,7 +1837,9 @@ export type ExecutorProfileSummaryGenerated = z.infer<typeof executorProfileSumm
 export type FileDiffGenerated = z.infer<typeof fileDiffSchema>;
 export type FileDiffSummaryGenerated = z.infer<typeof fileDiffSummarySchema>;
 export type GenerateBranchNameRequestGenerated = z.infer<typeof generateBranchNameRequestSchema>;
-export type GenerateWorktreePathRequestGenerated = z.infer<typeof generateWorktreePathRequestSchema>;
+export type GenerateWorktreePathRequestGenerated = z.infer<
+  typeof generateWorktreePathRequestSchema
+>;
 export type GetAllSettingsRequestGenerated = z.infer<typeof getAllSettingsRequestSchema>;
 export type GetCommitsRequestGenerated = z.infer<typeof getCommitsRequestSchema>;
 export type GetCurrentBranchRequestGenerated = z.infer<typeof getCurrentBranchRequestSchema>;
@@ -1726,10 +1852,14 @@ export type GetTaskDiffRequestGenerated = z.infer<typeof getTaskDiffRequestSchem
 export type GetWorkflowTemplateRequestGenerated = z.infer<typeof getWorkflowTemplateRequestSchema>;
 export type GitStatusGenerated = z.infer<typeof gitStatusSchema>;
 export type GitStatusFileGenerated = z.infer<typeof gitStatusFileSchema>;
-export type HasUncommittedChangesRequestGenerated = z.infer<typeof hasUncommittedChangesRequestSchema>;
+export type HasUncommittedChangesRequestGenerated = z.infer<
+  typeof hasUncommittedChangesRequestSchema
+>;
 export type KillProcessRequestGenerated = z.infer<typeof killProcessRequestSchema>;
 export type ListProcessesRequestGenerated = z.infer<typeof listProcessesRequestSchema>;
-export type ListWorkflowTemplatesRequestGenerated = z.infer<typeof listWorkflowTemplatesRequestSchema>;
+export type ListWorkflowTemplatesRequestGenerated = z.infer<
+  typeof listWorkflowTemplatesRequestSchema
+>;
 export type ListWorktreesRequestGenerated = z.infer<typeof listWorktreesRequestSchema>;
 export type MessageGenerated = z.infer<typeof messageSchema>;
 export type MessageSummaryGenerated = z.infer<typeof messageSummarySchema>;
@@ -1749,7 +1879,9 @@ export type RunExecutorRequestGenerated = z.infer<typeof runExecutorRequestSchem
 export type SearchRequestGenerated = z.infer<typeof searchRequestSchema>;
 export type SearchResultGenerated = z.infer<typeof searchResultSchema>;
 export type SendProcessInputRequestGenerated = z.infer<typeof sendProcessInputRequestSchema>;
-export type SetDefaultExecutorProfileRequestGenerated = z.infer<typeof setDefaultExecutorProfileRequestSchema>;
+export type SetDefaultExecutorProfileRequestGenerated = z.infer<
+  typeof setDefaultExecutorProfileRequestSchema
+>;
 export type SetMessageStreamingRequestGenerated = z.infer<typeof setMessageStreamingRequestSchema>;
 export type SetSettingRequestGenerated = z.infer<typeof setSettingRequestSchema>;
 export type SettingGenerated = z.infer<typeof settingSchema>;
@@ -1757,7 +1889,9 @@ export type SettingExistsRequestGenerated = z.infer<typeof settingExistsRequestS
 export type SettingExistsResponseGenerated = z.infer<typeof settingExistsResponseSchema>;
 export type SpawnTerminalRequestGenerated = z.infer<typeof spawnTerminalRequestSchema>;
 export type StartProcessRequestGenerated = z.infer<typeof startProcessRequestSchema>;
-export type SubstituteWorkflowVariablesRequestGenerated = z.infer<typeof substituteWorkflowVariablesRequestSchema>;
+export type SubstituteWorkflowVariablesRequestGenerated = z.infer<
+  typeof substituteWorkflowVariablesRequestSchema
+>;
 export type TaskGenerated = z.infer<typeof taskSchema>;
 export type TaskStepGenerated = z.infer<typeof taskStepSchema>;
 export type TaskStepSummaryGenerated = z.infer<typeof taskStepSummarySchema>;
@@ -1768,14 +1902,18 @@ export type ToolStateGenerated = z.infer<typeof toolStateSchema>;
 export type ToolStateEventGenerated = z.infer<typeof toolStateEventSchema>;
 export type ToolStateSummaryGenerated = z.infer<typeof toolStateSummarySchema>;
 export type UpdateChatRequestGenerated = z.infer<typeof updateChatRequestSchema>;
-export type UpdateExecutorProfileRequestGenerated = z.infer<typeof updateExecutorProfileRequestSchema>;
+export type UpdateExecutorProfileRequestGenerated = z.infer<
+  typeof updateExecutorProfileRequestSchema
+>;
 export type UpdateMessageRequestGenerated = z.infer<typeof updateMessageRequestSchema>;
 export type UpdateProcessRequestGenerated = z.infer<typeof updateProcessRequestSchema>;
 export type UpdateProjectRequestGenerated = z.infer<typeof updateProjectRequestSchema>;
 export type UpdateStepRequestGenerated = z.infer<typeof updateStepRequestSchema>;
 export type UpdateTaskRequestGenerated = z.infer<typeof updateTaskRequestSchema>;
 export type UpdateWorkflowStepRequestGenerated = z.infer<typeof updateWorkflowStepRequestSchema>;
-export type UpdateWorkflowTemplateRequestGenerated = z.infer<typeof updateWorkflowTemplateRequestSchema>;
+export type UpdateWorkflowTemplateRequestGenerated = z.infer<
+  typeof updateWorkflowTemplateRequestSchema
+>;
 export type WorkflowContextGenerated = z.infer<typeof workflowContextSchema>;
 export type WorkflowStepGenerated = z.infer<typeof workflowStepSchema>;
 export type WorkflowTemplateGenerated = z.infer<typeof workflowTemplateSchema>;

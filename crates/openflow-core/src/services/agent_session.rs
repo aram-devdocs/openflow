@@ -257,7 +257,7 @@ pub async fn get_summary(pool: &SqlitePool, id: &str) -> ServiceResult<AgentSess
     .bind(id)
     .fetch_one(pool)
     .await
-    .map_err(|e| ServiceError::Database(e))?;
+    .map_err(ServiceError::Database)?;
 
     // Get tool count
     let tool_count: i32 = sqlx::query_scalar(
@@ -266,7 +266,7 @@ pub async fn get_summary(pool: &SqlitePool, id: &str) -> ServiceResult<AgentSess
     .bind(id)
     .fetch_one(pool)
     .await
-    .map_err(|e| ServiceError::Database(e))?;
+    .map_err(ServiceError::Database)?;
 
     // Check for pending permission
     let has_pending_permission: bool = sqlx::query_scalar(
@@ -275,7 +275,7 @@ pub async fn get_summary(pool: &SqlitePool, id: &str) -> ServiceResult<AgentSess
     .bind(id)
     .fetch_one(pool)
     .await
-    .map_err(|e| ServiceError::Database(e))?;
+    .map_err(ServiceError::Database)?;
 
     Ok(AgentSessionSummary::from_session(
         &session,
@@ -749,7 +749,7 @@ pub async fn create_permission(
     .bind(&id)
     .fetch_one(pool)
     .await
-    .map_err(|e| ServiceError::Database(e))?;
+    .map_err(ServiceError::Database)?;
 
     info!(
         "Created permission: id={}, session_id={}, tool_name={}",
@@ -816,7 +816,7 @@ pub async fn respond_to_permission(
     .bind(permission_id)
     .fetch_one(pool)
     .await
-    .map_err(|e| ServiceError::Database(e))?;
+    .map_err(ServiceError::Database)?;
 
     info!(
         "Responded to permission: id={}, status={}",
@@ -851,7 +851,7 @@ pub async fn get_pending_permission(
     .bind(session_id)
     .fetch_optional(pool)
     .await
-    .map_err(|e| ServiceError::Database(e))?;
+    .map_err(ServiceError::Database)?;
 
     Ok(permission)
 }

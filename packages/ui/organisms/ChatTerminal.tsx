@@ -212,7 +212,9 @@ export const ChatTerminal = forwardRef<ChatTerminalHandle, ChatTerminalProps>(fu
             )}
             aria-hidden="true"
           />
-          <Text as="span" className={CHAT_TERMINAL_BYTES_CLASSES}>{statusText}</Text>
+          <Text as="span" className={CHAT_TERMINAL_BYTES_CLASSES}>
+            {statusText}
+          </Text>
         </Box>
       )}
 

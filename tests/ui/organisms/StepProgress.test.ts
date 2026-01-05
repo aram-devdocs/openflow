@@ -12,16 +12,11 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  EventList,
   // Components (for displayName verification)
   StepProgress,
-  EventList,
-  ToolStateList,
   TerminalOutput,
-  // Types
-  type StepProgressProps,
-  type EventListProps,
-  type ToolStateListProps,
-  type TerminalOutputProps,
+  ToolStateList,
 } from '../../../packages/ui/organisms/StepProgress';
 
 // Note: Constants are not exported from the component, so we test them

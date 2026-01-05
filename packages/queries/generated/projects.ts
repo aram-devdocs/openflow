@@ -16,8 +16,8 @@
 // =============================================================================
 
 import type { CreateProjectRequest, Project, UpdateProjectRequest } from '@openflow/generated';
-import { createProjectRequestSchema, updateProjectRequestSchema } from '@openflow/validation';
 import { createLogger } from '@openflow/utils';
+import { createProjectRequestSchema, updateProjectRequestSchema } from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:projects:generated');
@@ -37,7 +37,9 @@ export async function archiveProject(id: string): Promise<Project> {
   try {
     const result = await invoke<Project>('archive_project', { id: id });
 
-    logger.info('archive_project completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('archive_project completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -63,7 +65,9 @@ export async function createProject(request: CreateProjectRequest): Promise<Proj
     const validated = createProjectRequestSchema.parse(request);
     const result = await invoke<Project>('create_project', { request: validated });
 
-    logger.info('create_project completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('create_project completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -184,7 +188,9 @@ export async function unarchiveProject(id: string): Promise<Project> {
   try {
     const result = await invoke<Project>('unarchive_project', { id: id });
 
-    logger.info('unarchive_project completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('unarchive_project completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -211,7 +217,9 @@ export async function updateProject(id: string, request: UpdateProjectRequest): 
     const validated = updateProjectRequestSchema.parse(request);
     const result = await invoke<Project>('update_project', { id: id, request: validated });
 
-    logger.info('update_project completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('update_project completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {

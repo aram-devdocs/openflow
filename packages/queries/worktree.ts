@@ -137,7 +137,11 @@ export const worktreeQueries = {
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('Failed to get worktree by branch', { projectId, branchName, error: errorMessage });
+      logger.error('Failed to get worktree by branch', {
+        projectId,
+        branchName,
+        error: errorMessage,
+      });
       throw error;
     }
   },

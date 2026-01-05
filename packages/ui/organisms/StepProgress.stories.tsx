@@ -1,9 +1,5 @@
-import type {
-  AgentEventRecord,
-  StepStatus,
-  ToolStateSummary,
-  ToolStatus,
-} from '@openflow/generated';
+import type { AgentEventRecord, ToolStateSummary, ToolStatus } from '@openflow/generated';
+import { StepStatus } from '@openflow/generated';
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { Button } from '../atoms/Button';
@@ -187,27 +183,23 @@ const allEvents: AgentEventRecord[] = [
   ...messageEvents,
   ...toolUseEvents.slice(0, 2),
   ...toolResultEvents.slice(0, 2),
-  toolUseEvents[2],
-  toolResultEvents[2],
-  messageEvents[1],
+  toolUseEvents[2] as AgentEventRecord,
+  toolResultEvents[2] as AgentEventRecord,
+  messageEvents[1] as AgentEventRecord,
   completeEvent,
 ];
 
 /** Tool states */
 const runningToolStates: ToolStateSummary[] = [
   {
-    id: 'ts-1',
-    sessionId: 'sess-123',
     toolUseId: 'tool-1',
     toolName: 'Glob',
     status: 'completed' as ToolStatus,
     isError: false,
     startedAt: new Date().toISOString(),
-    completedAt: new Date().toISOString(),
+    durationMs: 1000,
   },
   {
-    id: 'ts-2',
-    sessionId: 'sess-123',
     toolUseId: 'tool-2',
     toolName: 'Read',
     status: 'running' as ToolStatus,
@@ -218,47 +210,39 @@ const runningToolStates: ToolStateSummary[] = [
 
 const completedToolStates: ToolStateSummary[] = [
   {
-    id: 'ts-1',
-    sessionId: 'sess-123',
     toolUseId: 'tool-1',
     toolName: 'Glob',
     status: 'completed' as ToolStatus,
     isError: false,
     startedAt: new Date().toISOString(),
-    completedAt: new Date().toISOString(),
+    durationMs: 1000,
   },
   {
-    id: 'ts-2',
-    sessionId: 'sess-123',
     toolUseId: 'tool-2',
     toolName: 'Read',
     status: 'completed' as ToolStatus,
     isError: false,
     startedAt: new Date().toISOString(),
-    completedAt: new Date().toISOString(),
+    durationMs: 1500,
   },
   {
-    id: 'ts-3',
-    sessionId: 'sess-123',
     toolUseId: 'tool-3',
     toolName: 'Write',
     status: 'completed' as ToolStatus,
     isError: false,
     startedAt: new Date().toISOString(),
-    completedAt: new Date().toISOString(),
+    durationMs: 800,
   },
 ];
 
 const errorToolStates: ToolStateSummary[] = [
   {
-    id: 'ts-1',
-    sessionId: 'sess-123',
     toolUseId: 'tool-1',
     toolName: 'Bash',
     status: 'error' as ToolStatus,
     isError: true,
     startedAt: new Date().toISOString(),
-    completedAt: new Date().toISOString(),
+    durationMs: 500,
   },
 ];
 
@@ -278,7 +262,7 @@ const sampleTerminalOutput = `{"type":"init","session_id":"sess-123","model":"cl
 export const Empty: Story = {
   args: {
     events: [],
-    stepStatus: 'pending',
+    stepStatus: StepStatus.Pending,
     'data-testid': 'step-progress',
   },
 };
@@ -287,7 +271,7 @@ export const Empty: Story = {
 export const Pending: Story = {
   args: {
     events: [],
-    stepStatus: 'pending',
+    stepStatus: StepStatus.Pending,
   },
 };
 
@@ -295,7 +279,7 @@ export const Pending: Story = {
 export const RunningNoEvents: Story = {
   args: {
     events: [],
-    stepStatus: 'running',
+    stepStatus: StepStatus.Running,
     isStreaming: true,
   },
 };
@@ -305,7 +289,7 @@ export const Running: Story = {
   args: {
     events: allEvents.slice(0, 5),
     toolStates: runningToolStates,
-    stepStatus: 'running',
+    stepStatus: StepStatus.Running,
     isStreaming: true,
   },
 };
@@ -315,7 +299,7 @@ export const Completed: Story = {
   args: {
     events: allEvents,
     toolStates: completedToolStates,
-    stepStatus: 'completed',
+    stepStatus: StepStatus.Completed,
     isStreaming: false,
   },
 };
@@ -325,7 +309,7 @@ export const Failed: Story = {
   args: {
     events: [...allEvents.slice(0, 3), errorEvent],
     toolStates: errorToolStates,
-    stepStatus: 'failed',
+    stepStatus: StepStatus.Failed,
     isStreaming: false,
   },
 };
@@ -334,7 +318,7 @@ export const Failed: Story = {
 export const Skipped: Story = {
   args: {
     events: [],
-    stepStatus: 'skipped',
+    stepStatus: StepStatus.Skipped,
   },
 };
 
@@ -347,7 +331,7 @@ export const WithTerminalOutput: Story = {
   args: {
     events: allEvents,
     toolStates: completedToolStates,
-    stepStatus: 'completed',
+    stepStatus: StepStatus.Completed,
     showTerminalOutput: true,
     terminalOutput: sampleTerminalOutput,
   },
@@ -362,7 +346,7 @@ export const SizeSmall: Story = {
   args: {
     events: allEvents.slice(0, 5),
     toolStates: runningToolStates,
-    stepStatus: 'running',
+    stepStatus: StepStatus.Running,
     size: 'sm',
     isStreaming: true,
   },
@@ -373,7 +357,7 @@ export const SizeMedium: Story = {
   args: {
     events: allEvents.slice(0, 5),
     toolStates: runningToolStates,
-    stepStatus: 'running',
+    stepStatus: StepStatus.Running,
     size: 'md',
     isStreaming: true,
   },
@@ -384,7 +368,7 @@ export const SizeLarge: Story = {
   args: {
     events: allEvents.slice(0, 5),
     toolStates: runningToolStates,
-    stepStatus: 'running',
+    stepStatus: StepStatus.Running,
     size: 'lg',
     isStreaming: true,
   },
@@ -402,7 +386,7 @@ export const AllSizes: Story = {
           <StepProgress
             events={allEvents.slice(0, 3)}
             toolStates={runningToolStates}
-            stepStatus="running"
+            stepStatus={StepStatus.Running}
             size={size}
             isStreaming={true}
           />
@@ -464,13 +448,13 @@ export const InteractiveStreamingDemo: Story = {
     const [events, setEvents] = useState<AgentEventRecord[]>([]);
     const [toolStates, setToolStates] = useState<ToolStateSummary[]>([]);
     const [isStreaming, setIsStreaming] = useState(false);
-    const [stepStatus, setStepStatus] = useState<StepStatus>('pending');
+    const [stepStatus, setStepStatus] = useState<StepStatus>(StepStatus.Pending);
 
     const simulateExecution = () => {
       setEvents([]);
       setToolStates([]);
       setIsStreaming(true);
-      setStepStatus('running');
+      setStepStatus(StepStatus.Running);
 
       // Init event
       setTimeout(() => {
@@ -479,76 +463,85 @@ export const InteractiveStreamingDemo: Story = {
 
       // First message
       setTimeout(() => {
-        setEvents((prev) => [...prev, messageEvents[0]]);
+        const event = messageEvents[0];
+        if (event) setEvents((prev) => [...prev, event]);
       }, 800);
 
       // First tool use
       setTimeout(() => {
-        setEvents((prev) => [...prev, toolUseEvents[0]]);
-        setToolStates([
-          {
-            id: 'ts-1',
-            sessionId: 'sess-123',
-            toolUseId: 'tool-1',
-            toolName: 'Glob',
-            status: 'running' as ToolStatus,
-            isError: false,
-            startedAt: new Date().toISOString(),
-          },
-        ]);
+        const event = toolUseEvents[0];
+        if (event) {
+          setEvents((prev) => [...prev, event]);
+          setToolStates([
+            {
+              toolUseId: 'tool-1',
+              toolName: 'Glob',
+              status: 'running' as ToolStatus,
+              isError: false,
+              startedAt: new Date().toISOString(),
+            },
+          ]);
+        }
       }, 1300);
 
       // First tool result
       setTimeout(() => {
-        setEvents((prev) => [...prev, toolResultEvents[0]]);
-        setToolStates([
-          {
-            id: 'ts-1',
-            sessionId: 'sess-123',
-            toolUseId: 'tool-1',
-            toolName: 'Glob',
-            status: 'completed' as ToolStatus,
-            isError: false,
-            startedAt: new Date().toISOString(),
-            completedAt: new Date().toISOString(),
-          },
-        ]);
+        const event = toolResultEvents[0];
+        if (event) {
+          setEvents((prev) => [...prev, event]);
+          setToolStates([
+            {
+              toolUseId: 'tool-1',
+              toolName: 'Glob',
+              status: 'completed' as ToolStatus,
+              isError: false,
+              startedAt: new Date().toISOString(),
+              durationMs: 1200,
+            },
+          ]);
+        }
       }, 2000);
 
       // Second tool use
       setTimeout(() => {
-        setEvents((prev) => [...prev, toolUseEvents[1]]);
-        setToolStates((prev) => [
-          ...prev,
-          {
-            id: 'ts-2',
-            sessionId: 'sess-123',
-            toolUseId: 'tool-2',
-            toolName: 'Read',
-            status: 'running' as ToolStatus,
-            isError: false,
-            startedAt: new Date().toISOString(),
-          },
-        ]);
+        const event = toolUseEvents[1];
+        if (event) {
+          setEvents((prev) => [...prev, event]);
+          setToolStates((prev) => [
+            ...prev,
+            {
+              toolUseId: 'tool-2',
+              toolName: 'Read',
+              status: 'running' as ToolStatus,
+              isError: false,
+              startedAt: new Date().toISOString(),
+            },
+          ]);
+        }
       }, 2500);
 
       // Second tool result
       setTimeout(() => {
-        setEvents((prev) => [...prev, toolResultEvents[1]]);
-        setToolStates((prev) =>
-          prev.map((ts) =>
-            ts.toolUseId === 'tool-2'
-              ? { ...ts, status: 'completed' as ToolStatus, completedAt: new Date().toISOString() }
-              : ts
-          )
-        );
+        const event = toolResultEvents[1];
+        if (event) {
+          setEvents((prev) => [...prev, event]);
+          setToolStates((prev) =>
+            prev.map((ts) =>
+              ts.toolUseId === 'tool-2'
+                ? { ...ts, status: 'completed' as ToolStatus, durationMs: 1800 }
+                : ts
+            )
+          );
+        }
       }, 3200);
 
       // Complete
       setTimeout(() => {
-        setEvents((prev) => [...prev, messageEvents[1], completeEvent]);
+        const event = messageEvents[1];
+        if (event) setEvents((prev) => [...prev, event, completeEvent]);
+        else setEvents((prev) => [...prev, completeEvent]);
         setIsStreaming(false);
-        setStepStatus('completed');
+        setStepStatus(StepStatus.Completed);
       }, 3800);
     };
 
@@ -556,7 +549,7 @@ export const InteractiveStreamingDemo: Story = {
       setEvents([]);
       setToolStates([]);
       setIsStreaming(false);
-      setStepStatus('pending');
+      setStepStatus(StepStatus.Pending);
     };
 
     return (
@@ -598,7 +591,7 @@ export const ManyEvents: Story = {
         }),
       })
     ),
-    stepStatus: 'completed',
+    stepStatus: StepStatus.Completed,
   },
   decorators: [
     (Story) => (
@@ -630,7 +623,7 @@ export const LongEventContent: Story = {
         output: `${'const x = 1;\n'.repeat(50)}`,
       }),
     ],
-    stepStatus: 'completed',
+    stepStatus: StepStatus.Completed,
   },
 };
 
@@ -657,7 +650,7 @@ export const KeyboardNavigation: Story = {
       <StepProgress
         events={allEvents}
         toolStates={completedToolStates}
-        stepStatus="completed"
+        stepStatus={StepStatus.Completed}
         data-testid="keyboard-demo"
       />
     </div>
@@ -682,7 +675,7 @@ export const ScreenReaderFeatures: Story = {
       <StepProgress
         events={allEvents}
         toolStates={runningToolStates}
-        stepStatus="running"
+        stepStatus={StepStatus.Running}
         isStreaming={true}
       />
     </div>
@@ -716,7 +709,7 @@ export const InTaskExecutionContext: Story = {
         <StepProgress
           events={allEvents}
           toolStates={completedToolStates}
-          stepStatus="completed"
+          stepStatus={StepStatus.Completed}
           showTerminalOutput={true}
           terminalOutput={sampleTerminalOutput}
         />

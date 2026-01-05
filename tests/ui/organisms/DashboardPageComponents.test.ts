@@ -147,10 +147,10 @@ describe('Screen Reader Constants', () => {
 
 describe('STATUS_LABELS', () => {
   it('should have all task statuses defined', () => {
-    expect(STATUS_LABELS.todo).toBe('To Do');
-    expect(STATUS_LABELS.inprogress).toBe('In Progress');
-    expect(STATUS_LABELS.inreview).toBe('In Review');
-    expect(STATUS_LABELS.done).toBe('Done');
+    expect(STATUS_LABELS.pending).toBe('Pending');
+    expect(STATUS_LABELS.running).toBe('In Progress');
+    expect(STATUS_LABELS.paused).toBe('Paused');
+    expect(STATUS_LABELS.completed).toBe('Completed');
     expect(STATUS_LABELS.cancelled).toBe('Cancelled');
   });
 
@@ -170,18 +170,18 @@ describe('STATUS_LABELS', () => {
 
 describe('STATUS_STYLES', () => {
   it('should have styles for all task statuses', () => {
-    expect(STATUS_STYLES.todo).toBeDefined();
-    expect(STATUS_STYLES.inprogress).toBeDefined();
-    expect(STATUS_STYLES.inreview).toBeDefined();
-    expect(STATUS_STYLES.done).toBeDefined();
+    expect(STATUS_STYLES.pending).toBeDefined();
+    expect(STATUS_STYLES.running).toBeDefined();
+    expect(STATUS_STYLES.paused).toBeDefined();
+    expect(STATUS_STYLES.completed).toBeDefined();
     expect(STATUS_STYLES.cancelled).toBeDefined();
   });
 
   it('should use status color tokens', () => {
-    expect(STATUS_STYLES.todo).toContain('status-todo');
-    expect(STATUS_STYLES.inprogress).toContain('status-inprogress');
-    expect(STATUS_STYLES.inreview).toContain('status-inreview');
-    expect(STATUS_STYLES.done).toContain('status-done');
+    expect(STATUS_STYLES.pending).toContain('status-pending');
+    expect(STATUS_STYLES.running).toContain('status-running');
+    expect(STATUS_STYLES.paused).toContain('status-paused');
+    expect(STATUS_STYLES.completed).toContain('status-completed');
     expect(STATUS_STYLES.cancelled).toContain('status-cancelled');
   });
 
@@ -577,11 +577,11 @@ describe('getResponsiveSizeClasses', () => {
 
 describe('buildStatsAnnouncement', () => {
   const mockTasks = [
-    { id: '1', status: 'inprogress' as const },
-    { id: '2', status: 'inprogress' as const },
-    { id: '3', status: 'inreview' as const },
-    { id: '4', status: 'done' as const },
-    { id: '5', status: 'todo' as const },
+    { id: '1', status: 'running' as const },
+    { id: '2', status: 'running' as const },
+    { id: '3', status: 'paused' as const },
+    { id: '4', status: 'completed' as const },
+    { id: '5', status: 'pending' as const },
   ];
 
   it('should include total task count', () => {
@@ -614,11 +614,11 @@ describe('buildStatsAnnouncement', () => {
   });
 
   it('should handle tasks with all same status', () => {
-    const allDone = [
-      { id: '1', status: 'done' as const },
-      { id: '2', status: 'done' as const },
+    const allCompleted = [
+      { id: '1', status: 'completed' as const },
+      { id: '2', status: 'completed' as const },
     ];
-    const result = buildStatsAnnouncement(allDone as any);
+    const result = buildStatsAnnouncement(allCompleted as any);
     expect(result).toContain('2 tasks');
     expect(result).toContain('0 in progress');
     expect(result).toContain('2 completed');
@@ -631,24 +631,24 @@ describe('buildStatsAnnouncement', () => {
 
 describe('buildTaskAccessibleLabel', () => {
   it('should include task title', () => {
-    const task = { id: '1', title: 'Implement feature', status: TaskStatus.Todo } as any;
+    const task = { id: '1', title: 'Implement feature', status: TaskStatus.Pending } as any;
     const result = buildTaskAccessibleLabel(task);
     expect(result).toContain('Implement feature');
   });
 
   it('should include status label', () => {
-    const task = { id: '1', title: 'Test task', status: TaskStatus.Inprogress } as any;
+    const task = { id: '1', title: 'Test task', status: TaskStatus.Running } as any;
     const result = buildTaskAccessibleLabel(task);
     expect(result).toContain('Status:');
-    expect(result).toContain(STATUS_LABELS.inprogress);
+    expect(result).toContain(STATUS_LABELS.running);
   });
 
   it('should format correctly for all statuses', () => {
     const statuses = [
-      TaskStatus.Todo,
-      TaskStatus.Inprogress,
-      TaskStatus.Inreview,
-      TaskStatus.Done,
+      TaskStatus.Pending,
+      TaskStatus.Running,
+      TaskStatus.Paused,
+      TaskStatus.Completed,
       TaskStatus.Cancelled,
     ];
 
@@ -672,8 +672,8 @@ describe('buildHeaderSubtitle', () => {
 
   it('should show total count when no in-progress tasks', () => {
     const tasks = [
-      { id: '1', status: 'todo' as const },
-      { id: '2', status: 'done' as const },
+      { id: '1', status: 'pending' as const },
+      { id: '2', status: 'completed' as const },
     ];
     const result = buildHeaderSubtitle(tasks as any, false);
     expect(result).toBe('2 tasks');
@@ -681,8 +681,8 @@ describe('buildHeaderSubtitle', () => {
 
   it('should show in-progress count when tasks are in progress', () => {
     const tasks = [
-      { id: '1', status: 'inprogress' as const },
-      { id: '2', status: 'todo' as const },
+      { id: '1', status: 'running' as const },
+      { id: '2', status: 'pending' as const },
     ];
     const result = buildHeaderSubtitle(tasks as any, false);
     expect(result).toContain('1 task');
@@ -690,16 +690,16 @@ describe('buildHeaderSubtitle', () => {
   });
 
   it('should use singular for 1 task in progress', () => {
-    const tasks = [{ id: '1', status: 'inprogress' as const }];
+    const tasks = [{ id: '1', status: 'running' as const }];
     const result = buildHeaderSubtitle(tasks as any, false);
     expect(result).toBe('1 task in progress');
   });
 
   it('should use plural for multiple tasks in progress', () => {
     const tasks = [
-      { id: '1', status: 'inprogress' as const },
-      { id: '2', status: 'inprogress' as const },
-      { id: '3', status: 'inprogress' as const },
+      { id: '1', status: 'running' as const },
+      { id: '2', status: 'running' as const },
+      { id: '3', status: 'running' as const },
     ];
     const result = buildHeaderSubtitle(tasks as any, false);
     expect(result).toBe('3 tasks in progress');
@@ -741,7 +741,7 @@ describe('Accessibility Behavior Documentation', () => {
 
     it('should document aria-label with human-readable status', () => {
       // aria-label={`Status: ${STATUS_LABELS[status]}`}
-      expect(STATUS_LABELS.inprogress).toBe('In Progress');
+      expect(STATUS_LABELS.running).toBe('In Progress');
     });
   });
 
@@ -916,8 +916,8 @@ describe('Props Documentation', () => {
   describe('StatusBadgeProps', () => {
     it('should document required status prop', () => {
       // status: TaskStatus - determines color and label
-      expect(Object.keys(STATUS_LABELS)).toContain('todo');
-      expect(Object.keys(STATUS_LABELS)).toContain('inprogress');
+      expect(Object.keys(STATUS_LABELS)).toContain('pending');
+      expect(Object.keys(STATUS_LABELS)).toContain('running');
     });
 
     it('should document optional size prop', () => {

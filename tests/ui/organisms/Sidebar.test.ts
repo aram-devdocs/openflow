@@ -71,7 +71,7 @@ function createMockTask(overrides: Partial<Task> = {}): Task {
     id: `task-${Math.random().toString(36).slice(2)}`,
     projectId: 'project-1',
     title: 'Test Task',
-    status: TaskStatus.Todo,
+    status: TaskStatus.Pending,
     actionsRequiredCount: 0,
     autoStartNextStep: false,
     createdAt: new Date().toISOString(),
@@ -179,7 +179,7 @@ describe('Sidebar Constants', () => {
 
   describe('STATUS_FILTER_OPTIONS', () => {
     it('includes all status filter options', () => {
-      expect(STATUS_FILTER_OPTIONS).toHaveLength(6);
+      expect(STATUS_FILTER_OPTIONS).toHaveLength(7);
     });
 
     it('has "all" as first option', () => {
@@ -190,25 +190,25 @@ describe('Sidebar Constants', () => {
     });
 
     it('includes todo option', () => {
-      const todoOption = STATUS_FILTER_OPTIONS.find((opt) => opt.value === TaskStatus.Todo);
-      expect(todoOption).toEqual({ value: TaskStatus.Todo, label: 'To Do' });
+      const todoOption = STATUS_FILTER_OPTIONS.find((opt) => opt.value === TaskStatus.Pending);
+      expect(todoOption).toEqual({ value: TaskStatus.Pending, label: 'Pending' });
     });
 
     it('includes inprogress option', () => {
       const inProgressOption = STATUS_FILTER_OPTIONS.find(
-        (opt) => opt.value === TaskStatus.Inprogress
+        (opt) => opt.value === TaskStatus.Running
       );
-      expect(inProgressOption).toEqual({ value: TaskStatus.Inprogress, label: 'In Progress' });
+      expect(inProgressOption).toEqual({ value: TaskStatus.Running, label: 'Running' });
     });
 
     it('includes inreview option', () => {
-      const inReviewOption = STATUS_FILTER_OPTIONS.find((opt) => opt.value === TaskStatus.Inreview);
-      expect(inReviewOption).toEqual({ value: TaskStatus.Inreview, label: 'In Review' });
+      const inReviewOption = STATUS_FILTER_OPTIONS.find((opt) => opt.value === TaskStatus.Paused);
+      expect(inReviewOption).toEqual({ value: TaskStatus.Paused, label: 'Paused' });
     });
 
     it('includes done option', () => {
-      const doneOption = STATUS_FILTER_OPTIONS.find((opt) => opt.value === TaskStatus.Done);
-      expect(doneOption).toEqual({ value: TaskStatus.Done, label: 'Done' });
+      const doneOption = STATUS_FILTER_OPTIONS.find((opt) => opt.value === TaskStatus.Completed);
+      expect(doneOption).toEqual({ value: TaskStatus.Completed, label: 'Completed' });
     });
 
     it('includes cancelled option', () => {
@@ -450,12 +450,12 @@ describe('Sidebar Utility Functions', () => {
 
   describe('filterTasksByStatus', () => {
     const mockTasks = createMockTasks([
-      TaskStatus.Todo,
-      TaskStatus.Todo,
-      TaskStatus.Inprogress,
-      TaskStatus.Inreview,
-      TaskStatus.Done,
-      TaskStatus.Done,
+      TaskStatus.Pending,
+      TaskStatus.Pending,
+      TaskStatus.Running,
+      TaskStatus.Paused,
+      TaskStatus.Completed,
+      TaskStatus.Completed,
       TaskStatus.Cancelled,
     ]);
 
@@ -466,27 +466,27 @@ describe('Sidebar Utility Functions', () => {
     });
 
     it('filters todo tasks correctly', () => {
-      const result = filterTasksByStatus(mockTasks, TaskStatus.Todo);
+      const result = filterTasksByStatus(mockTasks, TaskStatus.Pending);
       expect(result).toHaveLength(2);
-      expect(result.every((t) => t.status === TaskStatus.Todo)).toBe(true);
+      expect(result.every((t) => t.status === TaskStatus.Pending)).toBe(true);
     });
 
     it('filters inprogress tasks correctly', () => {
-      const result = filterTasksByStatus(mockTasks, TaskStatus.Inprogress);
+      const result = filterTasksByStatus(mockTasks, TaskStatus.Running);
       expect(result).toHaveLength(1);
-      expect(result.every((t) => t.status === TaskStatus.Inprogress)).toBe(true);
+      expect(result.every((t) => t.status === TaskStatus.Running)).toBe(true);
     });
 
     it('filters inreview tasks correctly', () => {
-      const result = filterTasksByStatus(mockTasks, TaskStatus.Inreview);
+      const result = filterTasksByStatus(mockTasks, TaskStatus.Paused);
       expect(result).toHaveLength(1);
-      expect(result.every((t) => t.status === TaskStatus.Inreview)).toBe(true);
+      expect(result.every((t) => t.status === TaskStatus.Paused)).toBe(true);
     });
 
     it('filters done tasks correctly', () => {
-      const result = filterTasksByStatus(mockTasks, TaskStatus.Done);
+      const result = filterTasksByStatus(mockTasks, TaskStatus.Completed);
       expect(result).toHaveLength(2);
-      expect(result.every((t) => t.status === TaskStatus.Done)).toBe(true);
+      expect(result.every((t) => t.status === TaskStatus.Completed)).toBe(true);
     });
 
     it('filters cancelled tasks correctly', () => {
@@ -496,13 +496,13 @@ describe('Sidebar Utility Functions', () => {
     });
 
     it('returns empty array when no tasks match filter', () => {
-      const todoOnlyTasks = createMockTasks([TaskStatus.Todo, TaskStatus.Todo]);
-      const result = filterTasksByStatus(todoOnlyTasks, TaskStatus.Done);
+      const todoOnlyTasks = createMockTasks([TaskStatus.Pending, TaskStatus.Pending]);
+      const result = filterTasksByStatus(todoOnlyTasks, TaskStatus.Completed);
       expect(result).toHaveLength(0);
     });
 
     it('returns empty array for empty task list', () => {
-      const result = filterTasksByStatus([], TaskStatus.Todo);
+      const result = filterTasksByStatus([], TaskStatus.Pending);
       expect(result).toHaveLength(0);
     });
   });
@@ -512,26 +512,27 @@ describe('Sidebar Utility Functions', () => {
       const result = getTaskCounts([]);
       expect(result).toEqual({
         all: 0,
-        todo: 0,
-        inprogress: 0,
-        inreview: 0,
-        done: 0,
+        pending: 0,
+        running: 0,
+        paused: 0,
+        completed: 0,
+        failed: 0,
         cancelled: 0,
       });
     });
 
     it('counts tasks correctly by status', () => {
       const mockTasks = createMockTasks([
-        TaskStatus.Todo,
-        TaskStatus.Todo,
-        TaskStatus.Todo,
-        TaskStatus.Inprogress,
-        TaskStatus.Inprogress,
-        TaskStatus.Inreview,
-        TaskStatus.Done,
-        TaskStatus.Done,
-        TaskStatus.Done,
-        TaskStatus.Done,
+        TaskStatus.Pending,
+        TaskStatus.Pending,
+        TaskStatus.Pending,
+        TaskStatus.Running,
+        TaskStatus.Running,
+        TaskStatus.Paused,
+        TaskStatus.Completed,
+        TaskStatus.Completed,
+        TaskStatus.Completed,
+        TaskStatus.Completed,
         TaskStatus.Cancelled,
       ]);
 
@@ -539,24 +540,26 @@ describe('Sidebar Utility Functions', () => {
 
       expect(result).toEqual({
         all: 11,
-        todo: 3,
-        inprogress: 2,
-        inreview: 1,
-        done: 4,
+        pending: 3,
+        running: 2,
+        paused: 1,
+        completed: 4,
+        failed: 0,
         cancelled: 1,
       });
     });
 
     it('handles single task correctly', () => {
-      const singleTask = createMockTasks([TaskStatus.Inprogress]);
+      const singleTask = createMockTasks([TaskStatus.Running]);
       const result = getTaskCounts(singleTask);
 
       expect(result).toEqual({
         all: 1,
-        todo: 0,
-        inprogress: 1,
-        inreview: 0,
-        done: 0,
+        pending: 0,
+        running: 1,
+        paused: 0,
+        completed: 0,
+        failed: 0,
         cancelled: 0,
       });
     });
@@ -567,20 +570,20 @@ describe('Sidebar Utility Functions', () => {
       expect(getStatusFilterLabel('all')).toBe('All Tasks');
     });
 
-    it('returns "To Do" for "todo" filter', () => {
-      expect(getStatusFilterLabel(TaskStatus.Todo)).toBe('To Do');
+    it('returns "Pending" for "todo" filter', () => {
+      expect(getStatusFilterLabel(TaskStatus.Pending)).toBe('Pending');
     });
 
-    it('returns "In Progress" for "inprogress" filter', () => {
-      expect(getStatusFilterLabel(TaskStatus.Inprogress)).toBe('In Progress');
+    it('returns "Running" for "inprogress" filter', () => {
+      expect(getStatusFilterLabel(TaskStatus.Running)).toBe('Running');
     });
 
-    it('returns "In Review" for "inreview" filter', () => {
-      expect(getStatusFilterLabel(TaskStatus.Inreview)).toBe('In Review');
+    it('returns "Paused" for "inreview" filter', () => {
+      expect(getStatusFilterLabel(TaskStatus.Paused)).toBe('Paused');
     });
 
-    it('returns "Done" for "done" filter', () => {
-      expect(getStatusFilterLabel(TaskStatus.Done)).toBe('Done');
+    it('returns "Completed" for "done" filter', () => {
+      expect(getStatusFilterLabel(TaskStatus.Completed)).toBe('Completed');
     });
 
     it('returns "Cancelled" for "cancelled" filter', () => {
@@ -594,18 +597,18 @@ describe('Sidebar Utility Functions', () => {
 
   describe('buildFilterAnnouncement', () => {
     it('builds announcement with singular task for count of 1', () => {
-      const result = buildFilterAnnouncement(TaskStatus.Todo, 1);
-      expect(result).toBe('Filter changed to To Do, 1 task');
+      const result = buildFilterAnnouncement(TaskStatus.Pending, 1);
+      expect(result).toBe('Filter changed to Pending, 1 task');
     });
 
     it('builds announcement with plural tasks for count > 1', () => {
-      const result = buildFilterAnnouncement(TaskStatus.Inprogress, 5);
-      expect(result).toBe('Filter changed to In Progress, 5 tasks');
+      const result = buildFilterAnnouncement(TaskStatus.Running, 5);
+      expect(result).toBe('Filter changed to Running, 5 tasks');
     });
 
     it('builds announcement with plural tasks for count of 0', () => {
-      const result = buildFilterAnnouncement(TaskStatus.Done, 0);
-      expect(result).toBe('Filter changed to Done, 0 tasks');
+      const result = buildFilterAnnouncement(TaskStatus.Completed, 0);
+      expect(result).toBe('Filter changed to Completed, 0 tasks');
     });
 
     it('uses correct label for all filter', () => {
@@ -698,21 +701,21 @@ describe('Sidebar Utility Functions', () => {
 describe('Sidebar Utility Integration', () => {
   describe('Filter and Count Workflow', () => {
     const mockTasks = createMockTasks([
-      TaskStatus.Todo,
-      TaskStatus.Todo,
-      TaskStatus.Inprogress,
-      TaskStatus.Inprogress,
-      TaskStatus.Inprogress,
-      TaskStatus.Done,
+      TaskStatus.Pending,
+      TaskStatus.Pending,
+      TaskStatus.Running,
+      TaskStatus.Running,
+      TaskStatus.Running,
+      TaskStatus.Completed,
     ]);
 
     it('counts match filtered results', () => {
       const counts = getTaskCounts(mockTasks);
 
       expect(filterTasksByStatus(mockTasks, 'all')).toHaveLength(counts.all);
-      expect(filterTasksByStatus(mockTasks, TaskStatus.Todo)).toHaveLength(counts.todo);
-      expect(filterTasksByStatus(mockTasks, TaskStatus.Inprogress)).toHaveLength(counts.inprogress);
-      expect(filterTasksByStatus(mockTasks, TaskStatus.Done)).toHaveLength(counts.done);
+      expect(filterTasksByStatus(mockTasks, TaskStatus.Pending)).toHaveLength(counts.pending);
+      expect(filterTasksByStatus(mockTasks, TaskStatus.Running)).toHaveLength(counts.running);
+      expect(filterTasksByStatus(mockTasks, TaskStatus.Completed)).toHaveLength(counts.completed);
     });
   });
 
@@ -732,7 +735,7 @@ describe('Sidebar Utility Integration', () => {
 
   describe('Announcement Building', () => {
     it('filter announcement uses correct label from getStatusFilterLabel', () => {
-      const filter: StatusFilter = TaskStatus.Inprogress;
+      const filter: StatusFilter = TaskStatus.Running;
       const label = getStatusFilterLabel(filter);
       const announcement = buildFilterAnnouncement(filter, 5);
 

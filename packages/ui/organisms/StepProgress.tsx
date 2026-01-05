@@ -478,7 +478,7 @@ export const ToolStateList = forwardRef<HTMLDivElement, ToolStateListProps>(
           >
             {toolStates.map((toolState, index) => (
               <ToolStateItem
-                key={toolState.id || `tool-${index}`}
+                key={toolState.toolUseId || `tool-${index}`}
                 toolState={toolState}
                 size={size}
                 data-testid={testId ? `${testId}-tool-${index}` : undefined}

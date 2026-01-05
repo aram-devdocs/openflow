@@ -79,7 +79,6 @@ type Story = StoryObj<typeof ChatDiffPanel>;
 const mockDiffs: FileDiff[] = [
   {
     path: 'src/components/Button.tsx',
-    status: 'modified',
     additions: 15,
     deletions: 5,
     hunks: [
@@ -88,27 +87,17 @@ const mockDiffs: FileDiff[] = [
         oldLines: 10,
         newStart: 1,
         newLines: 15,
-        header: '@@ -1,10 +1,15 @@',
-        lines: [
-          { type: 'context', content: 'import React from "react";', oldNumber: 1, newNumber: 1 },
-          { type: 'deletion', content: 'export const Button = () => {', oldNumber: 2, newNumber: null },
-          { type: 'addition', content: 'interface ButtonProps {', oldNumber: null, newNumber: 2 },
-          { type: 'addition', content: '  variant?: "primary" | "secondary";', oldNumber: null, newNumber: 3 },
-          { type: 'addition', content: '}', oldNumber: null, newNumber: 4 },
-          { type: 'addition', content: '', oldNumber: null, newNumber: 5 },
-          { type: 'addition', content: 'export const Button = ({ variant = "primary" }: ButtonProps) => {', oldNumber: null, newNumber: 6 },
-          { type: 'context', content: '  return <button>Click me</button>;', oldNumber: 3, newNumber: 7 },
-          { type: 'context', content: '};', oldNumber: 4, newNumber: 8 },
-        ],
+        content:
+          '@@ -1,10 +1,15 @@\nimport React from "react";\n-export const Button = () => {\n+interface ButtonProps {\n+  variant?: "primary" | "secondary";\n+}\n+\n+export const Button = ({ variant = "primary" }: ButtonProps) => {\n  return <button>Click me</button>;\n };',
       },
     ],
-    oldPath: null,
-    newPath: null,
     isBinary: false,
+    isNew: false,
+    isDeleted: false,
+    isRenamed: false,
   },
   {
     path: 'src/utils/helpers.ts',
-    status: 'added',
     additions: 25,
     deletions: 0,
     hunks: [
@@ -117,25 +106,17 @@ const mockDiffs: FileDiff[] = [
         oldLines: 0,
         newStart: 1,
         newLines: 25,
-        header: '@@ -0,0 +1,25 @@',
-        lines: [
-          { type: 'addition', content: '/**', oldNumber: null, newNumber: 1 },
-          { type: 'addition', content: ' * Utility functions for the application', oldNumber: null, newNumber: 2 },
-          { type: 'addition', content: ' */', oldNumber: null, newNumber: 3 },
-          { type: 'addition', content: '', oldNumber: null, newNumber: 4 },
-          { type: 'addition', content: 'export function formatDate(date: Date): string {', oldNumber: null, newNumber: 5 },
-          { type: 'addition', content: '  return date.toISOString();', oldNumber: null, newNumber: 6 },
-          { type: 'addition', content: '}', oldNumber: null, newNumber: 7 },
-        ],
+        content:
+          '@@ -0,0 +1,25 @@\n/**\n * Utility functions for the application\n */\n\nexport function formatDate(date: Date): string {\n  return date.toISOString();\n}',
       },
     ],
-    oldPath: null,
-    newPath: null,
     isBinary: false,
+    isNew: true,
+    isDeleted: false,
+    isRenamed: false,
   },
   {
     path: 'src/old-file.ts',
-    status: 'deleted',
     additions: 0,
     deletions: 30,
     hunks: [
@@ -144,16 +125,14 @@ const mockDiffs: FileDiff[] = [
         oldLines: 30,
         newStart: 0,
         newLines: 0,
-        header: '@@ -1,30 +0,0 @@',
-        lines: [
-          { type: 'deletion', content: '// This file is no longer needed', oldNumber: 1, newNumber: null },
-          { type: 'deletion', content: 'export const oldFunction = () => {};', oldNumber: 2, newNumber: null },
-        ],
+        content:
+          '@@ -1,30 +0,0 @@\n-// This file is no longer needed\n-export const oldFunction = () => {};',
       },
     ],
-    oldPath: null,
-    newPath: null,
     isBinary: false,
+    isNew: false,
+    isDeleted: true,
+    isRenamed: false,
   },
 ];
 
@@ -229,7 +208,7 @@ export const Loading: Story = {
 /**
  * ChatDiffPanel with error state.
  */
-export const Error: Story = {
+export const ErrorState: Story = {
   render: () => {
     const [retryCount, setRetryCount] = useState(0);
 

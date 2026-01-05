@@ -85,18 +85,18 @@ export default meta;
 
 const mockFilters: StatusFilterOption[] = [
   { label: 'All', value: 'all', count: 15 },
-  { label: 'To Do', value: TaskStatus.Todo, count: 5 },
-  { label: 'In Progress', value: TaskStatus.Inprogress, count: 4 },
-  { label: 'In Review', value: TaskStatus.Inreview, count: 3 },
-  { label: 'Done', value: TaskStatus.Done, count: 3 },
+  { label: 'To Do', value: TaskStatus.Pending, count: 5 },
+  { label: 'In Progress', value: TaskStatus.Running, count: 4 },
+  { label: 'In Review', value: TaskStatus.Paused, count: 3 },
+  { label: 'Done', value: TaskStatus.Completed, count: 3 },
 ];
 
 const mockFiltersWithoutCounts: StatusFilterOption[] = [
   { label: 'All', value: 'all' },
-  { label: 'To Do', value: TaskStatus.Todo },
-  { label: 'In Progress', value: TaskStatus.Inprogress },
-  { label: 'In Review', value: TaskStatus.Inreview },
-  { label: 'Done', value: TaskStatus.Done },
+  { label: 'To Do', value: TaskStatus.Pending },
+  { label: 'In Progress', value: TaskStatus.Running },
+  { label: 'In Review', value: TaskStatus.Paused },
+  { label: 'Done', value: TaskStatus.Completed },
 ];
 
 const mockTasks = [
@@ -104,10 +104,10 @@ const mockTasks = [
     id: 'task-1',
     title: 'Implement user authentication',
     description: 'Add login and registration functionality',
-    status: TaskStatus.Inprogress,
+    status: TaskStatus.Running,
     projectId: 'proj-1',
-    actionsRequiredCount: 2,
-    autoStartNextStep: false,
+    autoRun: false,
+    currentStepIndex: 1,
     createdAt: '2024-01-15',
     updatedAt: '2024-01-15',
   },
@@ -115,10 +115,10 @@ const mockTasks = [
     id: 'task-2',
     title: 'Fix navigation bug',
     description: 'Menu not closing on mobile devices',
-    status: TaskStatus.Todo,
+    status: TaskStatus.Pending,
     projectId: 'proj-1',
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    autoRun: false,
+    currentStepIndex: 0,
     createdAt: '2024-01-14',
     updatedAt: '2024-01-14',
   },
@@ -126,10 +126,10 @@ const mockTasks = [
     id: 'task-3',
     title: 'Add dark mode support',
     description: 'Implement light and dark themes',
-    status: TaskStatus.Done,
+    status: TaskStatus.Completed,
     projectId: 'proj-2',
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    autoRun: false,
+    currentStepIndex: 3,
     createdAt: '2024-01-13',
     updatedAt: '2024-01-15',
   },
@@ -137,10 +137,10 @@ const mockTasks = [
     id: 'task-4',
     title: 'Database optimization',
     description: 'Improve query performance',
-    status: TaskStatus.Inreview,
+    status: TaskStatus.Paused,
     projectId: 'proj-1',
-    actionsRequiredCount: 1,
-    autoStartNextStep: false,
+    autoRun: false,
+    currentStepIndex: 2,
     createdAt: '2024-01-12',
     updatedAt: '2024-01-14',
   },
@@ -148,10 +148,10 @@ const mockTasks = [
     id: 'task-5',
     title: 'API documentation',
     description: 'Document all REST endpoints',
-    status: TaskStatus.Todo,
+    status: TaskStatus.Pending,
     projectId: 'proj-2',
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    autoRun: false,
+    currentStepIndex: 0,
     createdAt: '2024-01-11',
     updatedAt: '2024-01-11',
   },
@@ -178,7 +178,7 @@ export const FilterBarWithCounts: StoryObj<typeof TasksFilterBar> = {
   render: () => (
     <TasksFilterBar
       filters={mockFilters}
-      selectedFilter={TaskStatus.Inprogress}
+      selectedFilter={TaskStatus.Running}
       onFilterChange={(filter) => console.log('Filter:', filter)}
     />
   ),
@@ -354,7 +354,7 @@ export const EmptyFilteredTodo: StoryObj<typeof TasksListEmpty> = {
   name: 'Empty - Filtered (To Do)',
   render: () => (
     <div className="h-96">
-      <TasksListEmpty filter={TaskStatus.Todo} />
+      <TasksListEmpty filter={TaskStatus.Pending} />
     </div>
   ),
 };
@@ -363,7 +363,7 @@ export const EmptyFilteredInProgress: StoryObj<typeof TasksListEmpty> = {
   name: 'Empty - Filtered (In Progress)',
   render: () => (
     <div className="h-96">
-      <TasksListEmpty filter={TaskStatus.Inprogress} />
+      <TasksListEmpty filter={TaskStatus.Running} />
     </div>
   ),
 };
@@ -691,23 +691,23 @@ export const LayoutInteractive: StoryObj<typeof TasksListLayout> = {
       { label: 'All', value: 'all', count: tasks.length },
       {
         label: 'To Do',
-        value: TaskStatus.Todo,
-        count: tasks.filter((t) => t.status === TaskStatus.Todo).length,
+        value: TaskStatus.Pending,
+        count: tasks.filter((t) => t.status === TaskStatus.Pending).length,
       },
       {
         label: 'In Progress',
-        value: TaskStatus.Inprogress,
-        count: tasks.filter((t) => t.status === TaskStatus.Inprogress).length,
+        value: TaskStatus.Running,
+        count: tasks.filter((t) => t.status === TaskStatus.Running).length,
       },
       {
         label: 'In Review',
-        value: TaskStatus.Inreview,
-        count: tasks.filter((t) => t.status === TaskStatus.Inreview).length,
+        value: TaskStatus.Paused,
+        count: tasks.filter((t) => t.status === TaskStatus.Paused).length,
       },
       {
         label: 'Done',
-        value: TaskStatus.Done,
-        count: tasks.filter((t) => t.status === TaskStatus.Done).length,
+        value: TaskStatus.Completed,
+        count: tasks.filter((t) => t.status === TaskStatus.Completed).length,
       },
     ];
 
@@ -896,7 +896,7 @@ export const DataAttributes: StoryObj = {
       </div>
       <TasksFilterBar
         filters={mockFilters}
-        selectedFilter={TaskStatus.Inprogress}
+        selectedFilter={TaskStatus.Running}
         onFilterChange={() => {}}
         size="md"
         data-testid="filter-bar-demo"
@@ -932,23 +932,23 @@ export const RealWorldTasksPage: StoryObj = {
       { label: 'All', value: 'all', count: tasks.length },
       {
         label: 'To Do',
-        value: TaskStatus.Todo,
-        count: tasks.filter((t) => t.status === TaskStatus.Todo).length,
+        value: TaskStatus.Pending,
+        count: tasks.filter((t) => t.status === TaskStatus.Pending).length,
       },
       {
         label: 'In Progress',
-        value: TaskStatus.Inprogress,
-        count: tasks.filter((t) => t.status === TaskStatus.Inprogress).length,
+        value: TaskStatus.Running,
+        count: tasks.filter((t) => t.status === TaskStatus.Running).length,
       },
       {
         label: 'In Review',
-        value: TaskStatus.Inreview,
-        count: tasks.filter((t) => t.status === TaskStatus.Inreview).length,
+        value: TaskStatus.Paused,
+        count: tasks.filter((t) => t.status === TaskStatus.Paused).length,
       },
       {
         label: 'Done',
-        value: TaskStatus.Done,
-        count: tasks.filter((t) => t.status === TaskStatus.Done).length,
+        value: TaskStatus.Completed,
+        count: tasks.filter((t) => t.status === TaskStatus.Completed).length,
       },
     ];
 

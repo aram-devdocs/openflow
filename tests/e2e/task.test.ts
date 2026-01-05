@@ -28,9 +28,9 @@ describe('Task CRUD Operations', () => {
       expect(task.id).toBeDefined();
       expect(task.projectId).toBe(project.id);
       expect(task.title).toBe('My New Task');
-      expect(task.status).toBe('todo'); // Default status
-      expect(task.actionsRequiredCount).toBe(0);
-      expect(task.autoStartNextStep).toBe(false);
+      expect(task.status).toBe('pending'); // Default status
+      expect(task.autoRun).toBe(false);
+      expect(task.currentStepIndex).toBe(0);
       expect(task.archivedAt).toBeUndefined();
       expect(task.createdAt).toBeDefined();
       expect(task.updatedAt).toBeDefined();
@@ -113,22 +113,20 @@ describe('Task CRUD Operations', () => {
     });
 
     it('should filter by status', async () => {
-      const task1 = await taskQueries.create(createTestTask(project.id, { title: 'Todo Task' }));
-      const task2 = await taskQueries.create(
-        createTestTask(project.id, { title: 'In Progress Task' })
-      );
+      const task1 = await taskQueries.create(createTestTask(project.id, { title: 'Pending Task' }));
+      const task2 = await taskQueries.create(createTestTask(project.id, { title: 'Running Task' }));
 
       // Update task2 status
-      await taskQueries.update(task2.id, { status: 'inprogress' as TaskStatus });
+      await taskQueries.update(task2.id, { status: 'running' as TaskStatus });
 
-      const todoTasks = await taskQueries.list(project.id, 'todo' as TaskStatus);
-      const inProgressTasks = await taskQueries.list(project.id, 'inprogress' as TaskStatus);
+      const pendingTasks = await taskQueries.list(project.id, 'pending' as TaskStatus);
+      const runningTasks = await taskQueries.list(project.id, 'running' as TaskStatus);
 
-      expect(todoTasks).toHaveLength(1);
-      expect(todoTasks[0]?.id).toBe(task1.id);
+      expect(pendingTasks).toHaveLength(1);
+      expect(pendingTasks[0]?.id).toBe(task1.id);
 
-      expect(inProgressTasks).toHaveLength(1);
-      expect(inProgressTasks[0]?.id).toBe(task2.id);
+      expect(runningTasks).toHaveLength(1);
+      expect(runningTasks[0]?.id).toBe(task2.id);
     });
 
     it('should exclude archived tasks by default', async () => {
@@ -225,24 +223,22 @@ describe('Task CRUD Operations', () => {
 
     it('should update task status', async () => {
       const updated = await taskQueries.update(existingTask.id, {
-        status: 'inprogress' as TaskStatus,
+        status: 'running' as TaskStatus,
       });
 
-      expect(updated.status).toBe('inprogress');
+      expect(updated.status).toBe('running');
     });
 
     it('should update multiple fields at once', async () => {
       const updated = await taskQueries.update(existingTask.id, {
         title: 'New Title',
         description: 'New Description',
-        status: 'done' as TaskStatus,
-        autoStartNextStep: true,
+        status: 'completed' as TaskStatus,
       });
 
       expect(updated.title).toBe('New Title');
       expect(updated.description).toBe('New Description');
-      expect(updated.status).toBe('done');
-      expect(updated.autoStartNextStep).toBe(true);
+      expect(updated.status).toBe('completed');
     });
 
     it('should update the updatedAt timestamp', async () => {
@@ -370,25 +366,25 @@ describe('Task CRUD Operations', () => {
     it('should transition through status workflow', async () => {
       const task = await taskQueries.create(createTestTask(project.id, { title: 'Workflow Task' }));
 
-      expect(task.status).toBe('todo');
+      expect(task.status).toBe('pending');
 
-      // Move to in progress
-      const inProgress = await taskQueries.update(task.id, {
-        status: 'inprogress' as TaskStatus,
+      // Move to running
+      const running = await taskQueries.update(task.id, {
+        status: 'running' as TaskStatus,
       });
-      expect(inProgress.status).toBe('inprogress');
+      expect(running.status).toBe('running');
 
-      // Move to in review
-      const inReview = await taskQueries.update(task.id, {
-        status: 'inreview' as TaskStatus,
+      // Move to paused
+      const paused = await taskQueries.update(task.id, {
+        status: 'paused' as TaskStatus,
       });
-      expect(inReview.status).toBe('inreview');
+      expect(paused.status).toBe('paused');
 
-      // Move to done
-      const done = await taskQueries.update(task.id, {
-        status: 'done' as TaskStatus,
+      // Move to completed
+      const completed = await taskQueries.update(task.id, {
+        status: 'completed' as TaskStatus,
       });
-      expect(done.status).toBe('done');
+      expect(completed.status).toBe('completed');
     });
 
     it('should allow cancelling a task', async () => {
@@ -422,10 +418,10 @@ describe('Task CRUD Operations', () => {
       // Update
       const updated = await taskQueries.update(created.id, {
         title: 'Updated Lifecycle Test',
-        status: 'inprogress' as TaskStatus,
+        status: 'running' as TaskStatus,
       });
       expect(updated.title).toBe('Updated Lifecycle Test');
-      expect(updated.status).toBe('inprogress');
+      expect(updated.status).toBe('running');
 
       // Archive
       const archived = await taskQueries.archive(created.id);

@@ -15,9 +15,14 @@
 // @see CLAUDE.md - Query Layer Patterns section
 // =============================================================================
 
-import type { Chat, ChatWithMessages, CreateChatRequest, UpdateChatRequest } from '@openflow/generated';
-import { createChatRequestSchema, updateChatRequestSchema } from '@openflow/validation';
+import type {
+  Chat,
+  ChatWithMessages,
+  CreateChatRequest,
+  UpdateChatRequest,
+} from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
+import { createChatRequestSchema, updateChatRequestSchema } from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:chats:generated');
@@ -37,7 +42,9 @@ export async function archiveChat(id: string): Promise<Chat> {
   try {
     const result = await invoke<Chat>('archive_chat', { id: id });
 
-    logger.info('archive_chat completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('archive_chat completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -235,7 +242,9 @@ export async function startWorkflowStep(id: string): Promise<Chat> {
   try {
     const result = await invoke<Chat>('start_workflow_step', { id: id });
 
-    logger.info('start_workflow_step completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('start_workflow_step completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -260,7 +269,9 @@ export async function toggleStepComplete(id: string): Promise<Chat> {
   try {
     const result = await invoke<Chat>('toggle_step_complete', { id: id });
 
-    logger.info('toggle_step_complete completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('toggle_step_complete completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -285,7 +296,9 @@ export async function unarchiveChat(id: string): Promise<Chat> {
   try {
     const result = await invoke<Chat>('unarchive_chat', { id: id });
 
-    logger.info('unarchive_chat completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('unarchive_chat completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {

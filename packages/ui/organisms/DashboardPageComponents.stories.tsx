@@ -83,9 +83,17 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Implement authentication',
     description: 'Add login and registration',
-    status: TaskStatus.Inprogress,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    status: TaskStatus.Running,
+    autoRun: false,
+    currentStepIndex: 0,
+    worktreeId: 'wt-1',
+    workflowTemplate: 'default',
+    parentTaskId: undefined,
+    defaultExecutorProfileId: 'profile-1',
+    baseBranch: 'main',
+    archivedAt: undefined,
+    startedAt: '2024-01-15T10:00:00Z',
+    endedAt: undefined,
     createdAt: '2024-01-15T10:00:00Z',
     updatedAt: '2024-01-15T10:00:00Z',
   },
@@ -94,9 +102,17 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Add dark mode',
     description: 'Support light and dark themes',
-    status: TaskStatus.Todo,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    status: TaskStatus.Pending,
+    autoRun: false,
+    currentStepIndex: 0,
+    worktreeId: 'wt-1',
+    workflowTemplate: 'default',
+    parentTaskId: undefined,
+    defaultExecutorProfileId: 'profile-1',
+    baseBranch: 'main',
+    archivedAt: undefined,
+    startedAt: undefined,
+    endedAt: undefined,
     createdAt: '2024-01-14T10:00:00Z',
     updatedAt: '2024-01-14T10:00:00Z',
   },
@@ -105,9 +121,17 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Write unit tests',
     description: 'Add test coverage',
-    status: TaskStatus.Done,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    status: TaskStatus.Completed,
+    autoRun: false,
+    currentStepIndex: 0,
+    worktreeId: 'wt-1',
+    workflowTemplate: 'default',
+    parentTaskId: undefined,
+    defaultExecutorProfileId: 'profile-1',
+    baseBranch: 'main',
+    archivedAt: undefined,
+    startedAt: '2024-01-13T09:00:00Z',
+    endedAt: '2024-01-13T10:00:00Z',
     createdAt: '2024-01-13T10:00:00Z',
     updatedAt: '2024-01-13T10:00:00Z',
   },
@@ -116,9 +140,17 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Code review',
     description: 'Review pull request',
-    status: TaskStatus.Inreview,
-    actionsRequiredCount: 1,
-    autoStartNextStep: false,
+    status: TaskStatus.Paused,
+    autoRun: false,
+    currentStepIndex: 0,
+    worktreeId: 'wt-1',
+    workflowTemplate: 'default',
+    parentTaskId: undefined,
+    defaultExecutorProfileId: 'profile-1',
+    baseBranch: 'main',
+    archivedAt: undefined,
+    startedAt: '2024-01-12T10:00:00Z',
+    endedAt: undefined,
     createdAt: '2024-01-12T10:00:00Z',
     updatedAt: '2024-01-12T10:00:00Z',
   },
@@ -127,9 +159,17 @@ const mockTasks: Task[] = [
     projectId: 'proj-1',
     title: 'Deploy to staging',
     description: 'Deploy latest changes',
-    status: TaskStatus.Todo,
-    actionsRequiredCount: 0,
-    autoStartNextStep: false,
+    status: TaskStatus.Pending,
+    autoRun: false,
+    currentStepIndex: 0,
+    worktreeId: 'wt-1',
+    workflowTemplate: 'default',
+    parentTaskId: undefined,
+    defaultExecutorProfileId: 'profile-1',
+    baseBranch: 'main',
+    archivedAt: undefined,
+    startedAt: undefined,
+    endedAt: undefined,
     createdAt: '2024-01-11T10:00:00Z',
     updatedAt: '2024-01-11T10:00:00Z',
   },
@@ -271,24 +311,24 @@ export const StatCardAccessibility: StoryObj<typeof StatCard> = {
 // StatusBadge Stories
 // ============================================================================
 
-export const StatusBadgeTodo: StoryObj<typeof StatusBadge> = {
-  name: 'StatusBadge - Todo',
-  render: () => <StatusBadge status={TaskStatus.Todo} data-testid="status-todo" />,
+export const StatusBadgePending: StoryObj<typeof StatusBadge> = {
+  name: 'StatusBadge - Pending',
+  render: () => <StatusBadge status={TaskStatus.Pending} data-testid="status-pending" />,
 };
 
-export const StatusBadgeInProgress: StoryObj<typeof StatusBadge> = {
-  name: 'StatusBadge - In Progress',
-  render: () => <StatusBadge status={TaskStatus.Inprogress} data-testid="status-inprogress" />,
+export const StatusBadgeRunning: StoryObj<typeof StatusBadge> = {
+  name: 'StatusBadge - Running',
+  render: () => <StatusBadge status={TaskStatus.Running} data-testid="status-running" />,
 };
 
-export const StatusBadgeInReview: StoryObj<typeof StatusBadge> = {
-  name: 'StatusBadge - In Review',
-  render: () => <StatusBadge status={TaskStatus.Inreview} data-testid="status-inreview" />,
+export const StatusBadgePaused: StoryObj<typeof StatusBadge> = {
+  name: 'StatusBadge - Paused',
+  render: () => <StatusBadge status={TaskStatus.Paused} data-testid="status-paused" />,
 };
 
-export const StatusBadgeDone: StoryObj<typeof StatusBadge> = {
-  name: 'StatusBadge - Done',
-  render: () => <StatusBadge status={TaskStatus.Done} data-testid="status-done" />,
+export const StatusBadgeCompleted: StoryObj<typeof StatusBadge> = {
+  name: 'StatusBadge - Completed',
+  render: () => <StatusBadge status={TaskStatus.Completed} data-testid="status-completed" />,
 };
 
 export const StatusBadgeCancelled: StoryObj<typeof StatusBadge> = {
@@ -300,10 +340,10 @@ export const StatusBadgeAllVariants: StoryObj<typeof StatusBadge> = {
   name: 'StatusBadge - All Variants',
   render: () => (
     <div className="flex flex-wrap gap-2 p-4">
-      <StatusBadge status={TaskStatus.Todo} />
-      <StatusBadge status={TaskStatus.Inprogress} />
-      <StatusBadge status={TaskStatus.Inreview} />
-      <StatusBadge status={TaskStatus.Done} />
+      <StatusBadge status={TaskStatus.Pending} />
+      <StatusBadge status={TaskStatus.Running} />
+      <StatusBadge status={TaskStatus.Paused} />
+      <StatusBadge status={TaskStatus.Completed} />
       <StatusBadge status={TaskStatus.Cancelled} />
     </div>
   ),
@@ -320,9 +360,9 @@ export const StatusBadgeSizes: StoryObj<typeof StatusBadge> = {
   name: 'StatusBadge - Sizes',
   render: () => (
     <div className="flex flex-wrap items-center gap-4 p-4">
-      <StatusBadge status={TaskStatus.Inprogress} size="sm" />
-      <StatusBadge status={TaskStatus.Inprogress} size="md" />
-      <StatusBadge status={TaskStatus.Inprogress} size="lg" />
+      <StatusBadge status={TaskStatus.Running} size="sm" />
+      <StatusBadge status={TaskStatus.Running} size="md" />
+      <StatusBadge status={TaskStatus.Running} size="lg" />
     </div>
   ),
   parameters: {

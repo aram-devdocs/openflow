@@ -119,9 +119,9 @@ const mockTask: Task = {
   projectId: 'project-1',
   title: 'Implement user authentication',
   description: 'Add login, logout, and session management',
-  status: TaskStatus.Inprogress,
-  actionsRequiredCount: 2,
-  autoStartNextStep: false,
+  status: TaskStatus.Running,
+  autoRun: false,
+  currentStepIndex: 2,
   createdAt: '2024-01-15T10:00:00Z',
   updatedAt: '2024-01-15T14:30:00Z',
 };
@@ -435,8 +435,7 @@ export const TodoStatus: Story = {
     ...Default.args,
     task: {
       ...mockTask,
-      status: TaskStatus.Todo,
-      actionsRequiredCount: 0,
+      status: TaskStatus.Pending,
     },
     chats: [],
   },
@@ -450,8 +449,7 @@ export const InReviewStatus: Story = {
     ...Default.args,
     task: {
       ...mockTask,
-      status: TaskStatus.Inreview,
-      actionsRequiredCount: 1,
+      status: TaskStatus.Paused,
     },
   },
 };
@@ -464,8 +462,7 @@ export const DoneStatus: Story = {
     ...Default.args,
     task: {
       ...mockTask,
-      status: TaskStatus.Done,
-      actionsRequiredCount: 0,
+      status: TaskStatus.Completed,
     },
   },
 };
@@ -479,7 +476,6 @@ export const CancelledStatus: Story = {
     task: {
       ...mockTask,
       status: TaskStatus.Cancelled,
-      actionsRequiredCount: 0,
     },
   },
 };
@@ -684,19 +680,6 @@ export const NoBranch: Story = {
   args: {
     ...Default.args,
     chats: mockChats.map((chat) => ({ ...chat, branch: undefined })),
-  },
-};
-
-/**
- * Task with many actions required
- */
-export const ManyActionsRequired: Story = {
-  args: {
-    ...Default.args,
-    task: {
-      ...mockTask,
-      actionsRequiredCount: 15,
-    },
   },
 };
 
@@ -946,7 +929,7 @@ export const ScreenReaderDemo: Story = {
             </div>
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
               Announcements: "{buildTabChangeAnnouncement('Steps')}", "
-              {buildStatusChangeAnnouncement(TaskStatus.Done)}"
+              {buildStatusChangeAnnouncement(TaskStatus.Completed)}"
             </p>
           </div>
         }
@@ -1106,8 +1089,8 @@ export const NewTaskLayout: Story = {
       ...mockTask,
       id: 'task-new',
       title: 'New Feature Implementation',
-      status: TaskStatus.Todo,
-      actionsRequiredCount: 0,
+      status: TaskStatus.Pending,
+      currentStepIndex: -1,
     },
     chats: [],
     tabs: defaultTabs,
@@ -1153,8 +1136,8 @@ export const CompletedTaskLayout: Story = {
   args: {
     task: {
       ...mockTask,
-      status: TaskStatus.Done,
-      actionsRequiredCount: 0,
+      status: TaskStatus.Completed,
+      currentStepIndex: -1,
     },
     chats: mockChats,
     tabs: defaultTabs,
@@ -1292,15 +1275,15 @@ export const ConstantsReference: Story = {
         <li>getCurrentBranch(mockChats) → "{getCurrentBranch(mockChats)}"</li>
         <li>getCurrentBranch([]) → "{getCurrentBranch([]) ?? 'null'}"</li>
         <li>
-          buildTaskHeaderAccessibleLabel('Task', 'inprogress' as TaskStatusType, 2) → "
-          {buildTaskHeaderAccessibleLabel('Task', TaskStatus.Inprogress, 2)}"
+          buildTaskHeaderAccessibleLabel('Task', 'running' as TaskStatusType) → "
+          {buildTaskHeaderAccessibleLabel('Task', TaskStatus.Running)}"
         </li>
         <li>buildStepsPanelAnnouncement(true) → "{buildStepsPanelAnnouncement(true)}"</li>
         <li>buildStepsPanelAnnouncement(false) → "{buildStepsPanelAnnouncement(false)}"</li>
         <li>buildTabChangeAnnouncement('Steps') → "{buildTabChangeAnnouncement('Steps')}"</li>
         <li>
-          buildStatusChangeAnnouncement('done' as TaskStatusType) → "
-          {buildStatusChangeAnnouncement(TaskStatus.Done)}"
+          buildStatusChangeAnnouncement('completed' as TaskStatusType) → "
+          {buildStatusChangeAnnouncement(TaskStatus.Completed)}"
         </li>
         <li>getStepsPanelId('prefix') → "{getStepsPanelId('prefix')}"</li>
         <li>getMainPanelId('prefix') → "{getMainPanelId('prefix')}"</li>

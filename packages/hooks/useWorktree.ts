@@ -89,7 +89,10 @@ export const worktreeKeys = {
  * @param options - Query options
  * @returns Query result with DbWorktree
  */
-export function useWorktree(id: string, options?: { enabled?: boolean }): UseQueryResult<DbWorktree> {
+export function useWorktree(
+  id: string,
+  options?: { enabled?: boolean }
+): UseQueryResult<DbWorktree> {
   return useQuery({
     queryKey: worktreeKeys.detail(id),
     queryFn: () => worktreeQueries.get(id),
@@ -212,11 +215,7 @@ export function useActiveWorktreeCount(
  * });
  * ```
  */
-export function useCreateWorktree(): UseMutationResult<
-  DbWorktree,
-  Error,
-  CreateWorktreeRequest
-> {
+export function useCreateWorktree(): UseMutationResult<DbWorktree, Error, CreateWorktreeRequest> {
   const queryClient = useQueryClient();
 
   return useMutation({

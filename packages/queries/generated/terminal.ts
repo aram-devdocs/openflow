@@ -16,8 +16,8 @@
 // =============================================================================
 
 import type { ExecutionProcess, SpawnTerminalRequest } from '@openflow/generated';
-import { spawnTerminalRequestSchema } from '@openflow/validation';
 import { createLogger } from '@openflow/utils';
+import { spawnTerminalRequestSchema } from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:terminal:generated');
@@ -38,7 +38,9 @@ export async function spawnTerminal(request: SpawnTerminalRequest): Promise<Exec
     const validated = spawnTerminalRequestSchema.parse(request);
     const result = await invoke<ExecutionProcess>('spawn_terminal', { request: validated });
 
-    logger.info('spawn_terminal completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('spawn_terminal completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {

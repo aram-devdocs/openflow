@@ -84,10 +84,11 @@ export const taskQueries = {
         titles: tasks.slice(0, 3).map((t) => t.title),
         hasMore: tasks.length > 3,
         byStatus: {
-          todo: tasks.filter((t) => t.status === TaskStatus.Todo).length,
-          inprogress: tasks.filter((t) => t.status === TaskStatus.Inprogress).length,
-          inreview: tasks.filter((t) => t.status === TaskStatus.Inreview).length,
-          done: tasks.filter((t) => t.status === TaskStatus.Done).length,
+          pending: tasks.filter((t) => t.status === TaskStatus.Pending).length,
+          running: tasks.filter((t) => t.status === TaskStatus.Running).length,
+          paused: tasks.filter((t) => t.status === TaskStatus.Paused).length,
+          completed: tasks.filter((t) => t.status === TaskStatus.Completed).length,
+          failed: tasks.filter((t) => t.status === TaskStatus.Failed).length,
           cancelled: tasks.filter((t) => t.status === TaskStatus.Cancelled).length,
         },
       });

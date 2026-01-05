@@ -15,14 +15,8 @@
  * @module TaskExecutionView
  */
 
-import type {
-  Permission,
-  StepStatus,
-  Task,
-  TaskStatus,
-  TaskStep,
-  TaskWithSteps,
-} from '@openflow/generated';
+import type { Permission, Task, TaskStep, TaskWithSteps } from '@openflow/generated';
+import { StepStatus, TaskStatus } from '@openflow/generated';
 import { Box, Flex, Heading, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
@@ -126,38 +120,38 @@ export interface TaskExecutionViewProps
 // Constants
 // ============================================================================
 
-const STEP_STATUS_ICONS: Record<StepStatus, typeof Circle> = {
-  pending: Circle,
-  running: Loader2,
-  completed: CheckCircle,
-  failed: XCircle,
-  skipped: SkipForward,
+export const STEP_STATUS_ICONS: Record<StepStatus, typeof Circle> = {
+  [StepStatus.Pending]: Circle,
+  [StepStatus.Running]: Loader2,
+  [StepStatus.Completed]: CheckCircle,
+  [StepStatus.Failed]: XCircle,
+  [StepStatus.Skipped]: SkipForward,
 };
 
-const STEP_STATUS_COLORS: Record<StepStatus, string> = {
-  pending: 'text-muted-foreground',
-  running: 'text-primary animate-spin',
-  completed: 'text-success',
-  failed: 'text-destructive',
-  skipped: 'text-muted-foreground',
+export const STEP_STATUS_COLORS: Record<StepStatus, string> = {
+  [StepStatus.Pending]: 'text-muted-foreground',
+  [StepStatus.Running]: 'text-primary animate-spin',
+  [StepStatus.Completed]: 'text-success',
+  [StepStatus.Failed]: 'text-destructive',
+  [StepStatus.Skipped]: 'text-muted-foreground',
 };
 
-const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
-  pending: 'Pending',
-  running: 'Running',
-  paused: 'Paused',
-  completed: 'Completed',
-  failed: 'Failed',
-  cancelled: 'Cancelled',
+export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  [TaskStatus.Pending]: 'Pending',
+  [TaskStatus.Running]: 'Running',
+  [TaskStatus.Paused]: 'Paused',
+  [TaskStatus.Completed]: 'Completed',
+  [TaskStatus.Failed]: 'Failed',
+  [TaskStatus.Cancelled]: 'Cancelled',
 };
 
-const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
-  pending: 'bg-muted text-muted-foreground',
-  running: 'bg-primary/10 text-primary',
-  paused: 'bg-warning/10 text-warning',
-  completed: 'bg-success/10 text-success',
-  failed: 'bg-destructive/10 text-destructive',
-  cancelled: 'bg-muted text-muted-foreground',
+export const TASK_STATUS_COLORS: Record<TaskStatus, string> = {
+  [TaskStatus.Pending]: 'bg-muted text-muted-foreground',
+  [TaskStatus.Running]: 'bg-primary/10 text-primary',
+  [TaskStatus.Paused]: 'bg-warning/10 text-warning',
+  [TaskStatus.Completed]: 'bg-success/10 text-success',
+  [TaskStatus.Failed]: 'bg-destructive/10 text-destructive',
+  [TaskStatus.Cancelled]: 'bg-muted text-muted-foreground',
 };
 
 // ============================================================================
@@ -183,12 +177,14 @@ export const TaskExecutionHeader = forwardRef<HTMLDivElement, TaskExecutionHeade
     },
     ref
   ) => {
-    const canStart = task.status === 'pending';
-    const canPause = task.status === 'running';
-    const canResume = task.status === 'paused';
-    const canCancel = task.status === 'running' || task.status === 'paused';
+    const canStart = task.status === TaskStatus.Pending;
+    const canPause = task.status === TaskStatus.Running;
+    const canResume = task.status === TaskStatus.Paused;
+    const canCancel = task.status === TaskStatus.Running || task.status === TaskStatus.Paused;
     const isTerminal =
-      task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled';
+      task.status === TaskStatus.Completed ||
+      task.status === TaskStatus.Failed ||
+      task.status === TaskStatus.Cancelled;
 
     return (
       <Flex
@@ -332,7 +328,9 @@ export const TaskStepItem = forwardRef<HTMLButtonElement, TaskStepItemProps>(
           <Text className="truncate text-sm font-medium">{step.title}</Text>
           <Text className="truncate text-xs text-muted-foreground">{step.providerId}</Text>
         </Flex>
-        <Text as="span" className="flex-shrink-0 text-xs text-muted-foreground">{step.stepIndex + 1}</Text>
+        <Text as="span" className="flex-shrink-0 text-xs text-muted-foreground">
+          {step.stepIndex + 1}
+        </Text>
       </button>
     );
   }
@@ -346,7 +344,7 @@ TaskStepItem.displayName = 'TaskStepItem';
 export const TaskStepList = forwardRef<HTMLDivElement, TaskStepListProps>(
   ({ steps, currentStepIndex, onStepClick }, ref) => {
     const completedCount = useMemo(
-      () => steps.filter((s) => s.status === 'completed').length,
+      () => steps.filter((s) => s.status === StepStatus.Completed).length,
       [steps]
     );
     const progressPercent = steps.length > 0 ? (completedCount / steps.length) * 100 : 0;
@@ -694,7 +692,7 @@ export const TaskExecutionView = forwardRef<HTMLDivElement, TaskExecutionViewPro
         <VisuallyHidden>
           <Box as="span" role="status" aria-live="polite">
             Task: {task.title}. Status: {task.status}. {steps.length} steps,{' '}
-            {steps.filter((s) => s.status === 'completed').length} completed.
+            {steps.filter((s) => s.status === StepStatus.Completed).length} completed.
           </Box>
         </VisuallyHidden>
 
@@ -740,11 +738,11 @@ export const TaskExecutionView = forwardRef<HTMLDivElement, TaskExecutionViewPro
               <Flex direction="column" gap="4" className="flex-1">
                 <Flex direction="column" gap="2">
                   <Heading level={2} className="text-lg font-semibold">
-                    {steps[task.currentStepIndex].title}
+                    {steps[task.currentStepIndex]?.title}
                   </Heading>
                   <Text className="text-sm text-muted-foreground">
                     Step {task.currentStepIndex + 1} of {steps.length} • Provider:{' '}
-                    {steps[task.currentStepIndex].providerId}
+                    {steps[task.currentStepIndex]?.providerId}
                   </Text>
                 </Flex>
 
@@ -752,18 +750,18 @@ export const TaskExecutionView = forwardRef<HTMLDivElement, TaskExecutionViewPro
                 <Box className="rounded-md bg-muted/50 p-3">
                   <Text className="text-xs font-medium text-muted-foreground">Prompt:</Text>
                   <Text className="mt-1 whitespace-pre-wrap text-sm">
-                    {steps[task.currentStepIndex].prompt}
+                    {steps[task.currentStepIndex]?.prompt}
                   </Text>
                 </Box>
 
                 {/* Step progress will be implemented in P7.7 */}
                 <Box className="flex-1 rounded-md border border-dashed border-border p-4">
                   <Text className="text-center text-sm text-muted-foreground">
-                    {task.status === 'running'
+                    {task.status === TaskStatus.Running
                       ? 'Step progress will appear here...'
-                      : task.status === 'pending'
+                      : task.status === TaskStatus.Pending
                         ? 'Start the task to begin execution'
-                        : task.status === 'paused'
+                        : task.status === TaskStatus.Paused
                           ? 'Task is paused. Resume to continue.'
                           : 'Task execution finished'}
                   </Text>

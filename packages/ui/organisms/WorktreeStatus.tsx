@@ -15,11 +15,7 @@
  * @module WorktreeStatus
  */
 
-import type {
-  DbWorktree,
-  DbWorktreeSummary,
-  DbWorktreeStatus,
-} from '@openflow/generated';
+import type { DbWorktreeStatus, DbWorktreeSummary } from '@openflow/generated';
 import { Box, Flex, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
 import {
@@ -165,7 +161,8 @@ const WorktreeItem = forwardRef<HTMLDivElement, WorktreeItemProps>(
     const isActive = worktree.status === 'active';
     const hasConflict = worktree.status === 'conflict';
     const canMerge = isActive && !isMerging && !isDeleting;
-    const canDelete = (isActive || hasConflict || worktree.status === 'merged') && !isMerging && !isDeleting;
+    const canDelete =
+      (isActive || hasConflict || worktree.status === 'merged') && !isMerging && !isDeleting;
     const canResolve = hasConflict && !isMerging && !isDeleting;
 
     // Extract task/step info from branch name if following OpenFlow convention
@@ -510,9 +507,7 @@ export const WorktreeStatus = forwardRef<HTMLDivElement, WorktreeStatusProps>(
             className="h-4 w-4 text-muted-foreground"
           />
           <Icon icon={FolderGit} className="h-4 w-4 text-primary" />
-          <Text className={cn('font-medium', SIZE_CLASSES[size])}>
-            Worktrees
-          </Text>
+          <Text className={cn('font-medium', SIZE_CLASSES[size])}>Worktrees</Text>
           {activeWorktrees.length > 0 && (
             <Text className={cn('text-muted-foreground', SIZE_CLASSES[size])}>
               ({activeWorktrees.length} active)

@@ -15,21 +15,15 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+  PermissionPrompt,
+  TaskExecutionError,
+  TaskExecutionHeader,
+  TaskExecutionNotFound,
+  TaskExecutionSkeleton,
   // Components (for displayName verification)
   TaskExecutionView,
-  TaskExecutionHeader,
   TaskStepItem,
   TaskStepList,
-  PermissionPrompt,
-  TaskExecutionSkeleton,
-  TaskExecutionError,
-  TaskExecutionNotFound,
-  // Types
-  type TaskExecutionViewProps,
-  type TaskExecutionHeaderProps,
-  type TaskStepItemProps,
-  type TaskStepListProps,
-  type PermissionPromptProps,
 } from '../../../packages/ui/pages/TaskExecutionView';
 
 // ============================================================================

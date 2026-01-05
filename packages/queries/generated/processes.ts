@@ -15,9 +15,14 @@
 // @see CLAUDE.md - Query Layer Patterns section
 // =============================================================================
 
-import type { ExecutionProcess, ProcessSnapshot, ResizeProcessRequest, SendProcessInputRequest } from '@openflow/generated';
-import { resizeProcessRequestSchema, sendProcessInputRequestSchema } from '@openflow/validation';
+import type {
+  ExecutionProcess,
+  ProcessSnapshot,
+  ResizeProcessRequest,
+  SendProcessInputRequest,
+} from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
+import { resizeProcessRequestSchema, sendProcessInputRequestSchema } from '@openflow/validation';
 import { invoke } from '../utils.js';
 
 const logger = createLogger('queries:processes:generated');
@@ -62,7 +67,9 @@ export async function getProcessSnapshot(id: string): Promise<ProcessSnapshot> {
   try {
     const result = await invoke<ProcessSnapshot>('get_process_snapshot', { id: id });
 
-    logger.info('get_process_snapshot completed', { id: (result as unknown as Record<string, unknown>).id });
+    logger.info('get_process_snapshot completed', {
+      id: (result as unknown as Record<string, unknown>).id,
+    });
 
     return result;
   } catch (error) {
@@ -228,7 +235,10 @@ export async function runningProcessCount(): Promise<number> {
  * @returns Promise resolving to void
  * @throws Error if validation or query fails
  */
-export async function sendProcessInput(id: string, request: SendProcessInputRequest): Promise<void> {
+export async function sendProcessInput(
+  id: string,
+  request: SendProcessInputRequest
+): Promise<void> {
   logger.debug('Calling send_process_input', { id });
 
   try {

@@ -4,7 +4,8 @@
  * Tests for exported constants, utility functions, and accessibility behavior.
  */
 
-import type { Task, TaskStatus } from '@openflow/generated';
+import type { Task } from '@openflow/generated';
+import { TaskStatus } from '@openflow/generated';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_EMPTY_DESCRIPTION,
@@ -166,31 +167,33 @@ describe('TaskList Screen Reader Constants', () => {
 
 describe('TaskList Status Configuration', () => {
   describe('STATUS_ORDER', () => {
-    it('should have 5 status values', () => {
-      expect(STATUS_ORDER).toHaveLength(5);
+    it('should have 6 status values', () => {
+      expect(STATUS_ORDER).toHaveLength(6);
     });
 
     it('should include all expected statuses', () => {
-      expect(STATUS_ORDER).toContain('todo');
-      expect(STATUS_ORDER).toContain('inprogress');
-      expect(STATUS_ORDER).toContain('inreview');
-      expect(STATUS_ORDER).toContain('done');
-      expect(STATUS_ORDER).toContain('cancelled');
+      expect(STATUS_ORDER).toContain(TaskStatus.Pending);
+      expect(STATUS_ORDER).toContain(TaskStatus.Running);
+      expect(STATUS_ORDER).toContain(TaskStatus.Paused);
+      expect(STATUS_ORDER).toContain(TaskStatus.Completed);
+      expect(STATUS_ORDER).toContain(TaskStatus.Failed);
+      expect(STATUS_ORDER).toContain(TaskStatus.Cancelled);
     });
 
-    it('should have correct order (todo first, cancelled last)', () => {
-      expect(STATUS_ORDER[0]).toBe('todo');
-      expect(STATUS_ORDER[STATUS_ORDER.length - 1]).toBe('cancelled');
+    it('should have correct order (pending first, cancelled last)', () => {
+      expect(STATUS_ORDER[0]).toBe(TaskStatus.Pending);
+      expect(STATUS_ORDER[STATUS_ORDER.length - 1]).toBe(TaskStatus.Cancelled);
     });
   });
 
   describe('STATUS_LABELS', () => {
     it('should have labels for all statuses', () => {
-      expect(STATUS_LABELS.todo).toBe('To Do');
-      expect(STATUS_LABELS.inprogress).toBe('In Progress');
-      expect(STATUS_LABELS.inreview).toBe('In Review');
-      expect(STATUS_LABELS.done).toBe('Done');
-      expect(STATUS_LABELS.cancelled).toBe('Cancelled');
+      expect(STATUS_LABELS[TaskStatus.Pending]).toBe('Pending');
+      expect(STATUS_LABELS[TaskStatus.Running]).toBe('Running');
+      expect(STATUS_LABELS[TaskStatus.Paused]).toBe('Paused');
+      expect(STATUS_LABELS[TaskStatus.Completed]).toBe('Completed');
+      expect(STATUS_LABELS[TaskStatus.Failed]).toBe('Failed');
+      expect(STATUS_LABELS[TaskStatus.Cancelled]).toBe('Cancelled');
     });
 
     it('should have user-friendly labels', () => {
@@ -204,11 +207,12 @@ describe('TaskList Status Configuration', () => {
 
   describe('STATUS_COLORS', () => {
     it('should have colors for all statuses', () => {
-      expect(STATUS_COLORS.todo).toBe('text-status-todo');
-      expect(STATUS_COLORS.inprogress).toBe('text-status-inprogress');
-      expect(STATUS_COLORS.inreview).toBe('text-status-inreview');
-      expect(STATUS_COLORS.done).toBe('text-status-done');
-      expect(STATUS_COLORS.cancelled).toBe('text-status-cancelled');
+      expect(STATUS_COLORS[TaskStatus.Pending]).toBe('text-status-pending');
+      expect(STATUS_COLORS[TaskStatus.Running]).toBe('text-status-running');
+      expect(STATUS_COLORS[TaskStatus.Paused]).toBe('text-status-paused');
+      expect(STATUS_COLORS[TaskStatus.Completed]).toBe('text-status-completed');
+      expect(STATUS_COLORS[TaskStatus.Failed]).toBe('text-status-failed');
+      expect(STATUS_COLORS[TaskStatus.Cancelled]).toBe('text-status-cancelled');
     });
 
     it('should use consistent naming pattern', () => {
@@ -456,52 +460,52 @@ describe('TaskList Utility Functions', () => {
       projectId: 'project-1',
       title: `Task ${id}`,
       status,
-      actionsRequiredCount: 0,
-      autoStartNextStep: true,
+      autoRun: true,
+      currentStepIndex: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
 
     it('should group tasks by status', () => {
       const tasks: Task[] = [
-        createTask('1', 'todo' as TaskStatus),
-        createTask('2', 'inprogress' as TaskStatus),
-        createTask('3', 'todo' as TaskStatus),
-        createTask('4', 'done' as TaskStatus),
+        createTask('1', 'pending' as TaskStatus),
+        createTask('2', 'running' as TaskStatus),
+        createTask('3', 'pending' as TaskStatus),
+        createTask('4', 'completed' as TaskStatus),
       ];
 
       const grouped = groupTasksByStatus(tasks);
 
-      expect(grouped.todo).toHaveLength(2);
-      expect(grouped.inprogress).toHaveLength(1);
-      expect(grouped.done).toHaveLength(1);
-      expect(grouped.inreview).toHaveLength(0);
+      expect(grouped.pending).toHaveLength(2);
+      expect(grouped.running).toHaveLength(1);
+      expect(grouped.completed).toHaveLength(1);
+      expect(grouped.paused).toHaveLength(0);
       expect(grouped.cancelled).toHaveLength(0);
     });
 
     it('should handle empty array', () => {
       const grouped = groupTasksByStatus([]);
 
-      expect(grouped.todo).toHaveLength(0);
-      expect(grouped.inprogress).toHaveLength(0);
-      expect(grouped.inreview).toHaveLength(0);
-      expect(grouped.done).toHaveLength(0);
+      expect(grouped.pending).toHaveLength(0);
+      expect(grouped.running).toHaveLength(0);
+      expect(grouped.paused).toHaveLength(0);
+      expect(grouped.completed).toHaveLength(0);
       expect(grouped.cancelled).toHaveLength(0);
     });
 
     it('should maintain task order within groups', () => {
       const tasks: Task[] = [
-        createTask('1', 'todo' as TaskStatus),
-        createTask('2', 'todo' as TaskStatus),
-        createTask('3', 'todo' as TaskStatus),
+        createTask('1', 'pending' as TaskStatus),
+        createTask('2', 'pending' as TaskStatus),
+        createTask('3', 'pending' as TaskStatus),
       ];
 
       const grouped = groupTasksByStatus(tasks);
 
-      expect(grouped.todo).toHaveLength(3);
-      expect(grouped.todo[0]?.id).toBe('1');
-      expect(grouped.todo[1]?.id).toBe('2');
-      expect(grouped.todo[2]?.id).toBe('3');
+      expect(grouped.pending).toHaveLength(3);
+      expect(grouped.pending[0]?.id).toBe('1');
+      expect(grouped.pending[1]?.id).toBe('2');
+      expect(grouped.pending[2]?.id).toBe('3');
     });
   });
 
@@ -510,9 +514,9 @@ describe('TaskList Utility Functions', () => {
       id,
       projectId: 'project-1',
       title: `Task ${id}`,
-      status: 'todo' as TaskStatus,
-      actionsRequiredCount: 0,
-      autoStartNextStep: true,
+      status: 'pending' as TaskStatus,
+      autoRun: true,
+      currentStepIndex: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -701,12 +705,13 @@ describe('TaskList Component Behavior', () => {
 
   describe('Status ordering', () => {
     it('should document kanban column order', () => {
-      // Columns are ordered: todo, inprogress, inreview, done, cancelled
-      expect(STATUS_ORDER[0]).toBe('todo');
-      expect(STATUS_ORDER[1]).toBe('inprogress');
-      expect(STATUS_ORDER[2]).toBe('inreview');
-      expect(STATUS_ORDER[3]).toBe('done');
-      expect(STATUS_ORDER[4]).toBe('cancelled');
+      // Columns are ordered: pending, running, paused, completed, failed, cancelled
+      expect(STATUS_ORDER[0]).toBe(TaskStatus.Pending);
+      expect(STATUS_ORDER[1]).toBe(TaskStatus.Running);
+      expect(STATUS_ORDER[2]).toBe(TaskStatus.Paused);
+      expect(STATUS_ORDER[3]).toBe(TaskStatus.Completed);
+      expect(STATUS_ORDER[4]).toBe(TaskStatus.Failed);
+      expect(STATUS_ORDER[5]).toBe(TaskStatus.Cancelled);
     });
   });
 });
