@@ -65,8 +65,6 @@ export const chatKeys = {
  * @returns Query result with array of chats
  */
 export function useChats(taskId: string): UseQueryResult<Chat[]> {
-  logger.debug('useChats hook called', { taskId, enabled: Boolean(taskId) });
-
   return useQuery({
     queryKey: chatKeys.list(taskId),
     queryFn: async () => {
@@ -97,8 +95,6 @@ export function useChats(taskId: string): UseQueryResult<Chat[]> {
  * @returns Query result with array of standalone chats
  */
 export function useStandaloneChats(projectId: string): UseQueryResult<Chat[]> {
-  logger.debug('useStandaloneChats hook called', { projectId, enabled: Boolean(projectId) });
-
   return useQuery({
     queryKey: chatKeys.standalone(projectId),
     queryFn: async () => {
@@ -129,8 +125,6 @@ export function useStandaloneChats(projectId: string): UseQueryResult<Chat[]> {
  * @returns Query result with array of all chats
  */
 export function useChatsByProject(projectId: string): UseQueryResult<Chat[]> {
-  logger.debug('useChatsByProject hook called', { projectId, enabled: Boolean(projectId) });
-
   return useQuery({
     queryKey: chatKeys.byProject(projectId),
     queryFn: async () => {
@@ -160,8 +154,6 @@ export function useChatsByProject(projectId: string): UseQueryResult<Chat[]> {
  * @returns Query result with array of archived chats
  */
 export function useArchivedChats(): UseQueryResult<Chat[]> {
-  logger.debug('useArchivedChats hook called');
-
   return useQuery({
     queryKey: chatKeys.archived(),
     queryFn: async () => {
@@ -189,8 +181,6 @@ export function useArchivedChats(): UseQueryResult<Chat[]> {
  * @returns Query result with chat and messages data
  */
 export function useChat(id: string): UseQueryResult<ChatWithMessages> {
-  logger.debug('useChat hook called', { id, enabled: Boolean(id) });
-
   return useQuery({
     queryKey: chatKeys.detail(id),
     queryFn: async () => {
@@ -227,8 +217,6 @@ export function useChat(id: string): UseQueryResult<ChatWithMessages> {
 export function useCreateChat(): UseMutationResult<Chat, Error, CreateChatRequest> {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useCreateChat hook initialized');
 
   return useMutation({
     mutationFn: async (request: CreateChatRequest) => {
@@ -290,8 +278,6 @@ export function useStartWorkflowStep(): UseMutationResult<ExecutionProcess, Erro
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  logger.debug('useStartWorkflowStep hook initialized');
-
   return useMutation({
     mutationFn: async (chatId: string) => {
       logger.debug('Starting workflow step', { chatId });
@@ -335,8 +321,6 @@ export function useUpdateChat(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useUpdateChat hook initialized');
 
   return useMutation({
     mutationFn: async ({ id, request }) => {
@@ -390,8 +374,6 @@ export function useDeleteChat(): UseMutationResult<
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  logger.debug('useDeleteChat hook initialized');
-
   return useMutation({
     mutationFn: async ({ id }) => {
       logger.debug('Deleting chat', { id });
@@ -434,8 +416,6 @@ export function useDeleteChat(): UseMutationResult<
 export function useArchiveChat(): UseMutationResult<Chat, Error, string> {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useArchiveChat hook initialized');
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -485,8 +465,6 @@ export function useUnarchiveChat(): UseMutationResult<Chat, Error, string> {
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  logger.debug('useUnarchiveChat hook initialized');
-
   return useMutation({
     mutationFn: async (id: string) => {
       logger.debug('Unarchiving chat', { id });
@@ -535,8 +513,6 @@ export function useUnarchiveChat(): UseMutationResult<Chat, Error, string> {
 export function useToggleStepComplete(): UseMutationResult<Chat, Error, string> {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useToggleStepComplete hook initialized');
 
   return useMutation({
     mutationFn: async (chatId: string) => {

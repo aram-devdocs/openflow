@@ -90,13 +90,6 @@ export function useProcess(
 ): UseQueryResult<ExecutionProcess> {
   const { enabled = true, refetchInterval, staleTime = 5000 } = options;
 
-  logger.debug('useProcess hook called', {
-    id,
-    enabled: enabled && Boolean(id),
-    refetchInterval,
-    staleTime,
-  });
-
   return useQuery({
     queryKey: processKeys.detail(id),
     queryFn: async () => {
@@ -158,8 +151,6 @@ export function useProcess(
 export function useKillProcess(): UseMutationResult<ExecutionProcess, Error, string> {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useKillProcess hook initialized');
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -225,8 +216,6 @@ export function useSendInput(): UseMutationResult<
   { processId: string; input: string }
 > {
   const toast = useToast();
-
-  logger.debug('useSendInput hook initialized');
 
   return useMutation({
     mutationFn: async ({ processId, input }) => {

@@ -90,12 +90,6 @@ export function useMessages(
 ): UseQueryResult<Message[]> {
   const { enabled = true, staleTime = 5000 } = options;
 
-  logger.debug('useMessages hook called', {
-    chatId,
-    enabled: enabled && Boolean(chatId),
-    staleTime,
-  });
-
   return useQuery({
     queryKey: messageKeys.list(chatId),
     queryFn: async () => {
@@ -152,8 +146,6 @@ export function useMessages(
 export function useCreateMessage(): UseMutationResult<Message, Error, CreateMessageRequest> {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useCreateMessage hook initialized');
 
   return useMutation({
     mutationFn: async (request: CreateMessageRequest) => {

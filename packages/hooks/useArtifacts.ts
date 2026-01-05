@@ -67,8 +67,6 @@ export const artifactKeys = {
  * ```
  */
 export function useArtifacts(taskId: string): UseQueryResult<ArtifactFile[]> {
-  logger.debug('useArtifacts hook called', { taskId, enabled: Boolean(taskId) });
-
   return useQuery({
     queryKey: artifactKeys.list(taskId),
     queryFn: async () => {
@@ -113,12 +111,6 @@ export function useArtifacts(taskId: string): UseQueryResult<ArtifactFile[]> {
  * ```
  */
 export function useArtifactContent(taskId: string, fileName: string): UseQueryResult<string> {
-  logger.debug('useArtifactContent hook called', {
-    taskId,
-    fileName,
-    enabled: Boolean(taskId) && Boolean(fileName),
-  });
-
   return useQuery({
     queryKey: artifactKeys.content(taskId, fileName),
     queryFn: async () => {
@@ -171,8 +163,6 @@ export function useArtifactContent(taskId: string, fileName: string): UseQueryRe
 export function useOpenArtifact() {
   const toast = useToast();
 
-  logger.debug('useOpenArtifact hook initialized');
-
   return useMutation({
     mutationFn: async ({ path, fileName }: { path: string; fileName: string }) => {
       logger.debug('Opening artifact', { path, fileName });
@@ -207,8 +197,6 @@ export function useOpenArtifact() {
  * @deprecated Use `useOpenArtifact` with `{ path, fileName }` instead
  */
 export function useOpenArtifactLegacy() {
-  logger.debug('useOpenArtifactLegacy hook initialized (deprecated)');
-
   return useMutation({
     mutationFn: async (path: string) => {
       logger.debug('Opening artifact (legacy)', { path });

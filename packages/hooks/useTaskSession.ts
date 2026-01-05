@@ -245,7 +245,6 @@ export function useTaskSession({
   // Log hook initialization
   const initLoggedRef = useRef(false);
   if (!initLoggedRef.current) {
-    logger.debug('Hook initialized', { taskId });
     initLoggedRef.current = true;
   }
 

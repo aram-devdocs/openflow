@@ -155,8 +155,8 @@ describe('CHAT_PAGE_LAYOUT_CLASSES', () => {
     expect(CHAT_PAGE_LAYOUT_CLASSES).toContain('flex');
   });
 
-  it('should include full height', () => {
-    expect(CHAT_PAGE_LAYOUT_CLASSES).toContain('h-full');
+  it('should include screen height', () => {
+    expect(CHAT_PAGE_LAYOUT_CLASSES).toContain('h-screen');
   });
 
   it('should include flex column', () => {
@@ -173,8 +173,8 @@ describe('CHAT_PAGE_CONTENT_WRAPPER_CLASSES', () => {
     expect(CHAT_PAGE_CONTENT_WRAPPER_CLASSES).toContain('flex-1');
   });
 
-  it('should include overflow scroll', () => {
-    expect(CHAT_PAGE_CONTENT_WRAPPER_CLASSES).toContain('overflow-y-auto');
+  it('should include overflow handling', () => {
+    expect(CHAT_PAGE_CONTENT_WRAPPER_CLASSES).toContain('overflow-hidden');
   });
 });
 

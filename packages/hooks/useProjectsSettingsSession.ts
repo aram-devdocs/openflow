@@ -175,7 +175,6 @@ export function useProjectsSettingsSession({
   useEffect(() => {
     if (!initializedRef.current) {
       initializedRef.current = true;
-      logger.debug('Hook initialized');
     }
   }, []);
 

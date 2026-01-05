@@ -110,8 +110,6 @@ export function useSetting(
 ): UseQueryResult<string | null> {
   const { enabled = Boolean(key), staleTime = Number.POSITIVE_INFINITY } = options;
 
-  logger.debug('useSetting hook called', { key, enabled });
-
   return useQuery({
     queryKey: settingsKeys.detail(key),
     queryFn: async () => {
@@ -163,8 +161,6 @@ export function useAllSettings(
   options: UseAllSettingsOptions = {}
 ): UseQueryResult<Record<string, string>> {
   const { enabled = true, staleTime = Number.POSITIVE_INFINITY } = options;
-
-  logger.debug('useAllSettings hook called', { enabled });
 
   return useQuery({
     queryKey: settingsKeys.list(),

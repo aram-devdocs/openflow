@@ -71,6 +71,17 @@ export interface PermissionRequest {
 }
 
 /**
+ * Options for the useClaudeEvents hook.
+ */
+export interface UseClaudeEventsOptions {
+  /**
+   * Callback fired when event listeners are fully attached and ready.
+   * Use this with useProcessLifecycle to coordinate process startup.
+   */
+  onListenersReady?: () => void;
+}
+
+/**
  * State returned by the useClaudeEvents hook.
  */
 export interface ClaudeEventsState {
@@ -90,6 +101,8 @@ export interface ClaudeEventsState {
   isRunning: boolean;
   /** Whether the process has completed */
   isComplete: boolean;
+  /** Whether event listeners are attached and ready */
+  listenersReady: boolean;
   /** Clear all accumulated events and output */
   clearEvents: () => void;
   /** Clear the current permission request (after user responds) */
@@ -127,27 +140,8 @@ function stripAnsiCodes(s: string): string {
 // Claude Event Parsing
 // =============================================================================
 
-/**
- * Try to parse a line as a Claude event.
- * Returns the parsed event or null if parsing fails.
- */
-function parseClaudeEvent(line: string): ClaudeEvent | null {
-  const trimmed = line.trim();
-  if (!trimmed || !trimmed.startsWith('{')) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(trimmed);
-    // Validate it has a type field
-    if (typeof parsed.type === 'string') {
-      return parsed as ClaudeEvent;
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
+// NOTE: parseClaudeEvent is no longer needed as server now parses Claude events
+// and broadcasts them on the claude-event-{processId} channel
 
 /**
  * Extract tool name from permission prompt.
@@ -205,16 +199,34 @@ function getEventTypeDescription(event: ClaudeEvent): string {
       return `system:${event.subtype}`;
     case 'assistant': {
       const contentTypes = event.message.content?.map((c) => c.type).join(', ') || 'empty';
+      // Debug: Log full assistant event content to understand structure
+      // eslint-disable-next-line no-console
+      console.log(
+        '[useClaudeEvents] Assistant event content:',
+        JSON.stringify(event.message.content, null, 2)
+      );
       return `assistant (${contentTypes})`;
     }
     case 'user': {
       const contentTypes = event.message.content?.map((c) => c.type).join(', ') || 'empty';
+      // Debug: Log user event content to see tool_result structure
+      // eslint-disable-next-line no-console
+      console.log(
+        '[useClaudeEvents] User event content:',
+        JSON.stringify(event.message.content, null, 2)
+      );
       return `user (${contentTypes})`;
     }
     case 'result':
       return `result:${event.subtype}`;
     default:
-      return 'unknown';
+      // Debug: Log unknown event types to understand what we're receiving
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[useClaudeEvents] Unknown event type received:',
+        JSON.stringify(event, null, 2)
+      );
+      return `unknown:${(event as { type?: string }).type || 'no-type'}`;
   }
 }
 
@@ -352,10 +364,19 @@ interface HttpModeCallbacks {
   isMounted: () => boolean;
 }
 
+/** Contract types for server-parsed events */
+interface ClaudeEventData {
+  processId: string;
+  event: unknown;
+  timestamp: string;
+}
+
 /**
  * Set up event listeners for HTTP mode.
- * In HTTP mode, we subscribe to process-output and process-status events via WebSocket,
- * then parse the raw output on the client side to extract Claude events.
+ * In HTTP mode, we subscribe to:
+ * - claude-event-{processId}: Pre-parsed Claude events from server
+ * - process-output-{processId}: Raw output for terminal display
+ * - process-status-{processId}: Process status changes
  * Returns a cleanup function.
  */
 async function setupHttpModeListeners(
@@ -367,7 +388,41 @@ async function setupHttpModeListeners(
   try {
     const transport = await getTransport();
 
-    // Subscribe to process output
+    // Subscribe to pre-parsed Claude events (server parses JSON now)
+    const claudeEventChannel = `claude-event-${processId}`;
+    logger.debug('HTTP: Subscribing to Claude events', { channel: claudeEventChannel });
+
+    const unsubClaudeEvents = transport.subscribe(claudeEventChannel, (event: unknown) => {
+      if (!callbacks.isMounted()) return;
+
+      const claudeEventData = event as ClaudeEventData;
+      const claudeEvent = claudeEventData.event as ClaudeEvent;
+
+      logger.debug('HTTP: Claude event received', {
+        processId,
+        eventType: claudeEvent?.type,
+      });
+
+      // Extract session ID from system "init" events
+      if (claudeEvent?.type === 'system') {
+        const systemEvent = claudeEvent as ClaudeSystemEvent;
+        if (systemEvent.subtype === 'init' && systemEvent.session_id) {
+          logger.info('HTTP: Session ID extracted', {
+            processId,
+            sessionId: systemEvent.session_id,
+          });
+          callbacks.onSessionId(systemEvent.session_id);
+        }
+      }
+
+      if (claudeEvent) {
+        callbacks.onEvent(claudeEvent);
+      }
+    });
+    unsubscribeFns.push(unsubClaudeEvents);
+    logger.info('HTTP: Subscribed to Claude events', { channel: claudeEventChannel });
+
+    // Subscribe to raw process output (for terminal display and permission prompts)
     const outputChannel = `process-output-${processId}`;
     logger.debug('HTTP: Subscribing to process output', { channel: outputChannel });
 
@@ -383,12 +438,11 @@ async function setupHttpModeListeners(
         outputType: outputEvent.outputType,
       });
 
-      // Process each line in the output
+      // Check each line for permission prompts
       const lines = content.split('\n');
       for (const line of lines) {
         if (!line.trim()) continue;
 
-        // Strip ANSI codes
         const cleanLine = stripAnsiCodes(line);
         const trimmed = cleanLine.trim();
 
@@ -406,36 +460,11 @@ async function setupHttpModeListeners(
             filePath: extractFilePath(trimmed),
             description: trimmed,
           });
-          continue;
-        }
-
-        // Try to parse as Claude event
-        const claudeEvent = parseClaudeEvent(trimmed);
-        if (claudeEvent) {
-          logger.debug('HTTP: Claude event parsed', {
-            processId,
-            eventType: getEventTypeDescription(claudeEvent),
-          });
-
-          // Extract session ID from system "init" events
-          if (
-            claudeEvent.type === 'system' &&
-            claudeEvent.subtype === 'init' &&
-            claudeEvent.session_id
-          ) {
-            logger.info('HTTP: Session ID extracted', {
-              processId,
-              sessionId: claudeEvent.session_id,
-            });
-            callbacks.onSessionId(claudeEvent.session_id);
-          }
-
-          callbacks.onEvent(claudeEvent);
-        } else {
-          // Raw output that couldn't be parsed
-          callbacks.onRawOutput(trimmed);
         }
       }
+
+      // Pass raw output for terminal display
+      callbacks.onRawOutput(content);
     });
     unsubscribeFns.push(unsubOutput);
     logger.info('HTTP: Subscribed to process output', { channel: outputChannel });
@@ -515,13 +544,17 @@ async function setupHttpModeListeners(
  * }
  * ```
  */
-export function useClaudeEvents(processId: string | null): ClaudeEventsState {
+export function useClaudeEvents(
+  processId: string | null,
+  options?: UseClaudeEventsOptions
+): ClaudeEventsState {
   const [events, setEvents] = useState<ClaudeEvent[]>([]);
   const [rawOutput, setRawOutput] = useState<string[]>([]);
   const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null);
   const [status, setStatus] = useState<ProcessStatus | null>(null);
   const [exitCode, setExitCode] = useState<number | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [listenersReady, setListenersReady] = useState(false);
 
   // Use ref to track if we're still mounted
   const mountedRef = useRef(true);
@@ -532,14 +565,70 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
   // Track if we're in Tauri context (stable reference)
   const isTauriRef = useRef(checkTauriContext());
 
+  // Track previous processId to determine if we're starting a new process
+  // We only want to clear events when transitioning to a NEW process,
+  // not when processId becomes null (process completed)
+  const prevProcessIdRef = useRef<string | null>(null);
+
+  // Store callback in ref to avoid re-running effect when callback changes
+  const onListenersReadyRef = useRef(options?.onListenersReady);
+  onListenersReadyRef.current = options?.onListenersReady;
+
+  // Buffer for events that arrive before listeners are fully setup
+  const earlyEventBufferRef = useRef<ClaudeEvent[]>([]);
+  const earlyRawOutputBufferRef = useRef<string[]>([]);
+  const isSetupCompleteRef = useRef(false);
+
+  // PERFORMANCE: Batching refs to reduce re-renders during streaming
+  // Instead of updating state on every event, accumulate in refs and flush periodically
+  const pendingEventsRef = useRef<ClaudeEvent[]>([]);
+  const pendingRawOutputRef = useRef<string[]>([]);
+  const flushTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const FLUSH_INTERVAL_MS = 50; // Flush at most every 50ms
+
+  // Flush pending updates to state (batched)
+  const flushPendingUpdates = useCallback(() => {
+    if (!mountedRef.current) return;
+
+    const pendingEvents = pendingEventsRef.current;
+    const pendingRawOutput = pendingRawOutputRef.current;
+
+    if (pendingEvents.length > 0) {
+      setEvents((prev) => [...prev, ...pendingEvents]);
+      pendingEventsRef.current = [];
+    }
+
+    if (pendingRawOutput.length > 0) {
+      setRawOutput((prev) => [...prev, ...pendingRawOutput]);
+      pendingRawOutputRef.current = [];
+    }
+
+    flushTimeoutRef.current = null;
+  }, []);
+
+  // Schedule a flush if not already scheduled
+  const scheduleFlush = useCallback(() => {
+    if (flushTimeoutRef.current === null) {
+      flushTimeoutRef.current = setTimeout(flushPendingUpdates, FLUSH_INTERVAL_MS);
+    }
+  }, [flushPendingUpdates]);
+
   // Log hook initialization
-  logger.debug('Hook initialized', { processId, isTauri: isTauriRef.current });
 
   // Clear events handler
   const clearEvents = useCallback(() => {
     logger.debug('Clearing events and raw output', {
       eventCount: eventCountRef.current,
     });
+    // Clear any pending flush
+    if (flushTimeoutRef.current) {
+      clearTimeout(flushTimeoutRef.current);
+      flushTimeoutRef.current = null;
+    }
+    // Clear pending refs
+    pendingEventsRef.current = [];
+    pendingRawOutputRef.current = [];
+    // Clear state
     setEvents([]);
     setRawOutput([]);
     eventCountRef.current = 0;
@@ -554,26 +643,45 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
   useEffect(() => {
     mountedRef.current = true;
     eventCountRef.current = 0;
+    isSetupCompleteRef.current = false;
+    earlyEventBufferRef.current = [];
+    earlyRawOutputBufferRef.current = [];
     let cleanup: (() => void) | null = null;
 
-    // Skip if no process ID
+    // Skip if no process ID - but DON'T clear events
+    // Events should persist until a NEW process starts
     if (!processId) {
       logger.debug('No process ID provided, skipping subscription');
+      setListenersReady(false);
+      prevProcessIdRef.current = null;
       return;
     }
 
     const isTauri = isTauriRef.current;
     logger.info('Subscribing to Claude events', { processId, mode: isTauri ? 'tauri' : 'http' });
 
-    // Reset state when processId changes
-    setEvents([]);
-    setRawOutput([]);
-    setPermissionRequest(null);
-    setStatus(null);
-    setExitCode(null);
-    setSessionId(null);
+    // Only reset state when starting a NEW process (different from previous)
+    // This preserves events for display when process completes (processId becomes null)
+    const previousProcessId = prevProcessIdRef.current;
+    const isNewProcess = processId !== previousProcessId;
+    prevProcessIdRef.current = processId;
+
+    if (isNewProcess) {
+      logger.debug('New process detected, clearing previous state', {
+        previousProcessId,
+        newProcessId: processId,
+      });
+      setEvents([]);
+      setRawOutput([]);
+      setPermissionRequest(null);
+      setStatus(null);
+      setExitCode(null);
+      setSessionId(null);
+    }
+    setListenersReady(false);
 
     // Common callbacks for both modes
+    // IMPORTANT: These callbacks buffer events until setup is complete
     const callbacks = {
       onEvent: (event: ClaudeEvent) => {
         eventCountRef.current += 1;
@@ -603,14 +711,32 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
           });
         }
 
-        setEvents((prev) => [...prev, event]);
+        // If setup is not complete, buffer the event to prevent loss
+        if (!isSetupCompleteRef.current) {
+          logger.debug('Buffering early event', { processId, eventType });
+          earlyEventBufferRef.current.push(event);
+          return;
+        }
+
+        // PERFORMANCE: Batch event updates instead of updating state on every event
+        pendingEventsRef.current.push(event);
+        scheduleFlush();
       },
       onRawOutput: (line: string) => {
         logger.debug('Raw output received', {
           processId,
           length: line.length,
         });
-        setRawOutput((prev) => [...prev, line]);
+
+        // If setup is not complete, buffer the output to prevent loss
+        if (!isSetupCompleteRef.current) {
+          earlyRawOutputBufferRef.current.push(line);
+          return;
+        }
+
+        // PERFORMANCE: Batch raw output updates instead of updating state on every line
+        pendingRawOutputRef.current.push(line);
+        scheduleFlush();
       },
       onStatus: (newStatus: ProcessStatus, newExitCode?: number | null) => {
         logger.info('Process status changed', {
@@ -656,16 +782,58 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
       isMounted: () => mountedRef.current,
     };
 
-    // Set up listeners based on context
-    const setupListeners = async () => {
-      if (isTauri) {
-        cleanup = await setupTauriModeListeners(processId, callbacks);
-      } else {
-        cleanup = await setupHttpModeListeners(processId, callbacks);
+    // Set up listeners and notify when ready
+    // CRITICAL: We properly await this and flush buffered events after
+    const setupAndNotify = async () => {
+      try {
+        if (isTauri) {
+          cleanup = await setupTauriModeListeners(processId, callbacks);
+        } else {
+          cleanup = await setupHttpModeListeners(processId, callbacks);
+        }
+
+        // Check if still mounted after async operation
+        if (!mountedRef.current) {
+          logger.debug('Component unmounted during setup', { processId });
+          return;
+        }
+
+        // Mark setup as complete
+        isSetupCompleteRef.current = true;
+
+        // Flush any events that arrived during setup
+        const bufferedEvents = earlyEventBufferRef.current;
+        const bufferedRawOutput = earlyRawOutputBufferRef.current;
+
+        if (bufferedEvents.length > 0 || bufferedRawOutput.length > 0) {
+          logger.info('Flushing buffered events from setup phase', {
+            processId,
+            bufferedEventCount: bufferedEvents.length,
+            bufferedRawOutputCount: bufferedRawOutput.length,
+          });
+
+          // Add to pending refs and flush
+          pendingEventsRef.current.push(...bufferedEvents);
+          pendingRawOutputRef.current.push(...bufferedRawOutput);
+          earlyEventBufferRef.current = [];
+          earlyRawOutputBufferRef.current = [];
+          scheduleFlush();
+        }
+
+        // Signal that listeners are ready
+        logger.info('Event listeners ready', { processId });
+        setListenersReady(true);
+        onListenersReadyRef.current?.();
+      } catch (error) {
+        logger.error('Failed to setup event listeners', {
+          processId,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     };
 
-    setupListeners();
+    // Start async setup
+    setupAndNotify();
 
     // Cleanup on unmount or processId change
     return () => {
@@ -674,11 +842,41 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
         totalEventsReceived: eventCountRef.current,
       });
       mountedRef.current = false;
+      isSetupCompleteRef.current = false;
+      setListenersReady(false);
+
+      // Clear flush timeout
+      if (flushTimeoutRef.current) {
+        clearTimeout(flushTimeoutRef.current);
+        flushTimeoutRef.current = null;
+      }
+
+      // Flush any pending updates before cleanup
+      if (pendingEventsRef.current.length > 0 || pendingRawOutputRef.current.length > 0) {
+        // Do a final synchronous flush for any pending data
+        const pendingEvents = pendingEventsRef.current;
+        const pendingRawOutput = pendingRawOutputRef.current;
+
+        if (pendingEvents.length > 0) {
+          setEvents((prev) => [...prev, ...pendingEvents]);
+          pendingEventsRef.current = [];
+        }
+
+        if (pendingRawOutput.length > 0) {
+          setRawOutput((prev) => [...prev, ...pendingRawOutput]);
+          pendingRawOutputRef.current = [];
+        }
+      }
+
+      // Clear early event buffers
+      earlyEventBufferRef.current = [];
+      earlyRawOutputBufferRef.current = [];
+
       if (cleanup) {
         cleanup();
       }
     };
-  }, [processId]);
+  }, [processId, scheduleFlush]);
 
   // Determine if process is running
   const isRunning = status === 'running' || (status === null && processId !== null);
@@ -695,6 +893,7 @@ export function useClaudeEvents(processId: string | null): ClaudeEventsState {
     sessionId,
     isRunning,
     isComplete,
+    listenersReady,
     clearEvents,
     clearPermissionRequest,
   };

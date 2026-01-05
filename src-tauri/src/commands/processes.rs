@@ -14,8 +14,8 @@
 use tauri::{AppHandle, Emitter, State};
 
 use crate::commands::AppState;
-use openflow_contracts::ExecutionProcess;
-use openflow_core::services::process;
+use openflow_contracts::{requests::ProcessSnapshot, ExecutionProcess};
+use openflow_core::services::{process, process_manager::ProcessManager};
 
 /// Get a process by ID.
 ///
@@ -165,4 +165,20 @@ pub async fn running_process_count(state: State<'_, AppState>) -> Result<usize, 
 pub async fn delete_process(state: State<'_, AppState>, id: String) -> Result<(), String> {
     let pool = state.db.lock().await;
     process::delete(&pool, &id).await.map_err(|e| e.to_string())
+}
+
+/// Get a snapshot of a running process buffer.
+///
+/// Returns the current state of a process including all parsed events,
+/// tool states, and raw output. Used for syncing clients with running processes.
+/// Returns an empty snapshot if no buffer exists for the process.
+#[tauri::command]
+pub async fn get_process_snapshot(id: String) -> Result<ProcessSnapshot, String> {
+    let manager = ProcessManager::global();
+    if let Some(snapshot) = manager.get_snapshot(&id) {
+        Ok(snapshot)
+    } else {
+        // Return empty snapshot for non-existent buffers (process may have ended)
+        Ok(ProcessSnapshot::new(&id))
+    }
 }

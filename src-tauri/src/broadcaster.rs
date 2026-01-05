@@ -132,6 +132,40 @@ impl<R: Runtime> EventBroadcaster for TauriBroadcaster<R> {
                     log::error!("Failed to emit data changed event: {}", e);
                 }
             }
+
+            Event::ClaudeEvent {
+                process_id,
+                event,
+                timestamp,
+            } => {
+                let channel = format!("claude-event-{}", process_id);
+                let payload = serde_json::json!({
+                    "process_id": process_id,
+                    "event": event,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit claude event: {}", e);
+                }
+            }
+
+            Event::ToolStateChange {
+                process_id,
+                tool_state,
+                timestamp,
+            } => {
+                let channel = format!("tool-state-{}", process_id);
+                let payload = serde_json::json!({
+                    "process_id": process_id,
+                    "tool_state": tool_state,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit tool state event: {}", e);
+                }
+            }
         }
     }
 }

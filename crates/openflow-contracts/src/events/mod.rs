@@ -75,6 +75,14 @@ pub const CHANNEL_PROCESS_OUTPUT_FMT: &str = "process-output-{}";
 /// Use: format!(CHANNEL_PROCESS_STATUS_FMT, process_id)
 pub const CHANNEL_PROCESS_STATUS_FMT: &str = "process-status-{}";
 
+/// Format string for Claude event channel
+/// Use: format!(CHANNEL_CLAUDE_EVENT_FMT, process_id)
+pub const CHANNEL_CLAUDE_EVENT_FMT: &str = "claude-event-{}";
+
+/// Format string for tool state channel
+/// Use: format!(CHANNEL_TOOL_STATE_FMT, process_id)
+pub const CHANNEL_TOOL_STATE_FMT: &str = "tool-state-{}";
+
 /// Wildcard channel (subscribe to all events)
 pub const CHANNEL_WILDCARD: &str = "*";
 
@@ -131,6 +139,58 @@ pub fn parse_process_output_channel(channel: &str) -> Option<String> {
 pub fn parse_process_status_channel(channel: &str) -> Option<String> {
     channel
         .strip_prefix("process-status-")
+        .map(|s| s.to_string())
+}
+
+/// Generate the channel name for Claude event messages
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::claude_event_channel;
+/// let channel = claude_event_channel("abc-123");
+/// assert_eq!(channel, "claude-event-abc-123");
+/// ```
+pub fn claude_event_channel(process_id: &str) -> String {
+    format!("claude-event-{}", process_id)
+}
+
+/// Generate the channel name for tool state events
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::tool_state_channel;
+/// let channel = tool_state_channel("abc-123");
+/// assert_eq!(channel, "tool-state-abc-123");
+/// ```
+pub fn tool_state_channel(process_id: &str) -> String {
+    format!("tool-state-{}", process_id)
+}
+
+/// Parse a process ID from a Claude event channel name
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::parse_claude_event_channel;
+/// let id = parse_claude_event_channel("claude-event-abc-123");
+/// assert_eq!(id, Some("abc-123".to_string()));
+/// ```
+pub fn parse_claude_event_channel(channel: &str) -> Option<String> {
+    channel
+        .strip_prefix("claude-event-")
+        .map(|s| s.to_string())
+}
+
+/// Parse a process ID from a tool state channel name
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::parse_tool_state_channel;
+/// let id = parse_tool_state_channel("tool-state-abc-123");
+/// assert_eq!(id, Some("abc-123".to_string()));
+/// ```
+pub fn parse_tool_state_channel(channel: &str) -> Option<String> {
+    channel
+        .strip_prefix("tool-state-")
         .map(|s| s.to_string())
 }
 
@@ -484,6 +544,86 @@ impl DataChangedEvent {
 }
 
 // =============================================================================
+// Claude Event (Parsed from CLI output)
+// =============================================================================
+
+/// Event containing a parsed Claude CLI event
+///
+/// Sent when a new Claude event JSON is parsed from the process output stream.
+///
+/// # Channel
+/// @channel: claude-event-{process_id}
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ClaudeEventData {
+    /// Process ID
+    pub process_id: String,
+
+    /// The parsed Claude event JSON
+    pub event: serde_json::Value,
+
+    /// Timestamp when the event was parsed (ISO 8601)
+    pub timestamp: String,
+}
+
+impl ClaudeEventData {
+    /// Create a new Claude event
+    pub fn new(process_id: impl Into<String>, event: serde_json::Value) -> Self {
+        Self {
+            process_id: process_id.into(),
+            event,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    /// Get the channel name for this event
+    pub fn channel(&self) -> String {
+        claude_event_channel(&self.process_id)
+    }
+}
+
+// =============================================================================
+// Tool State Event
+// =============================================================================
+
+/// Event for tool state changes
+///
+/// Sent when a tool's state changes (pending, running, complete, error).
+///
+/// # Channel
+/// @channel: tool-state-{process_id}
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolStateEvent {
+    /// Process ID
+    pub process_id: String,
+
+    /// The tool state
+    pub tool_state: crate::entities::tool_state::ToolState,
+
+    /// Timestamp when the state changed (ISO 8601)
+    pub timestamp: String,
+}
+
+impl ToolStateEvent {
+    /// Create a new tool state event
+    pub fn new(process_id: impl Into<String>, tool_state: crate::entities::tool_state::ToolState) -> Self {
+        Self {
+            process_id: process_id.into(),
+            tool_state,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    /// Get the channel name for this event
+    pub fn channel(&self) -> String {
+        tool_state_channel(&self.process_id)
+    }
+}
+
+// =============================================================================
 // WebSocket Message Types
 // =============================================================================
 
@@ -677,6 +817,22 @@ impl WsServerMessage {
     pub fn process_status(event: &ProcessStatusEvent) -> Self {
         WsServerMessage::Event {
             channel: process_status_channel(&event.process_id),
+            payload: serde_json::to_value(event).unwrap_or_default(),
+        }
+    }
+
+    /// Create an event message from a ClaudeEventData
+    pub fn claude_event(event: &ClaudeEventData) -> Self {
+        WsServerMessage::Event {
+            channel: claude_event_channel(&event.process_id),
+            payload: serde_json::to_value(event).unwrap_or_default(),
+        }
+    }
+
+    /// Create an event message from a ToolStateEvent
+    pub fn tool_state_event(event: &ToolStateEvent) -> Self {
+        WsServerMessage::Event {
+            channel: tool_state_channel(&event.process_id),
             payload: serde_json::to_value(event).unwrap_or_default(),
         }
     }

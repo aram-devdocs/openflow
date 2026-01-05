@@ -2,6 +2,7 @@
 //!
 //! Defines all event types for real-time synchronization.
 
+use openflow_contracts::entities::tool_state::ToolState;
 use serde::{Deserialize, Serialize};
 
 /// Type of entity that changed
@@ -137,6 +138,32 @@ pub enum Event {
         /// Full entity data (for create/update)
         data: Option<serde_json::Value>,
     },
+
+    /// Claude event (parsed from CLI output)
+    ///
+    /// Sent when a new Claude event is parsed from the process output.
+    /// Channel: `claude-event-{process_id}`
+    ClaudeEvent {
+        /// Process ID
+        process_id: String,
+        /// The parsed Claude event JSON
+        event: serde_json::Value,
+        /// Timestamp (ISO 8601)
+        timestamp: String,
+    },
+
+    /// Tool state change event
+    ///
+    /// Sent when a tool's state changes (pending, running, complete, error).
+    /// Channel: `tool-state-{process_id}`
+    ToolStateChange {
+        /// Process ID
+        process_id: String,
+        /// The tool state
+        tool_state: ToolState,
+        /// Timestamp (ISO 8601)
+        timestamp: String,
+    },
 }
 
 impl Event {
@@ -146,6 +173,8 @@ impl Event {
             Self::ProcessOutput { process_id, .. } => format!("process-output-{}", process_id),
             Self::ProcessStatus { process_id, .. } => format!("process-status-{}", process_id),
             Self::DataChanged { .. } => "data-changed".to_string(),
+            Self::ClaudeEvent { process_id, .. } => format!("claude-event-{}", process_id),
+            Self::ToolStateChange { process_id, .. } => format!("tool-state-{}", process_id),
         }
     }
 
@@ -214,6 +243,24 @@ impl Event {
     /// Create a deleted event for an entity
     pub fn deleted(entity: EntityType, id: impl Into<String>) -> Self {
         Self::data_changed(entity, DataAction::Deleted, id, None)
+    }
+
+    /// Create a Claude event
+    pub fn claude_event(process_id: impl Into<String>, event: serde_json::Value) -> Self {
+        Self::ClaudeEvent {
+            process_id: process_id.into(),
+            event,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    /// Create a tool state change event
+    pub fn tool_state(process_id: impl Into<String>, tool_state: ToolState) -> Self {
+        Self::ToolStateChange {
+            process_id: process_id.into(),
+            tool_state,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
     }
 }
 

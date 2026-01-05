@@ -102,13 +102,6 @@ export function useTaskDiff(
 ): UseQueryResult<FileDiff[]> {
   const { enabled = true, refetchInterval, staleTime = 5000 } = options;
 
-  logger.debug('useTaskDiff hook called', {
-    taskId,
-    enabled: enabled && !!taskId,
-    refetchInterval,
-    staleTime,
-  });
-
   return useQuery({
     queryKey: gitKeys.taskDiff(taskId),
     queryFn: async () => {
@@ -164,13 +157,6 @@ export function useTaskCommits(
   options: UseTaskCommitsOptions = {}
 ): UseQueryResult<Commit[]> {
   const { enabled = true, limit, staleTime = 30000 } = options;
-
-  logger.debug('useTaskCommits hook called', {
-    taskId,
-    enabled: enabled && !!taskId,
-    limit,
-    staleTime,
-  });
 
   return useQuery({
     queryKey: gitKeys.taskCommit(taskId, limit),

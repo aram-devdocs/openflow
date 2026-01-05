@@ -61,16 +61,23 @@ export type ChatPageSize = 'sm' | 'md' | 'lg';
 /** Breakpoints supported for responsive sizing */
 export type ChatPageBreakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
+/** View mode type */
+export type ChatViewMode = 'clean' | 'terminal';
+
 /** Props for the header section */
 export interface ChatPageHeaderProps {
   /** Chat title */
   title?: string;
   /** Project name */
   projectName?: string;
-  /** Whether raw output is shown */
-  showRawOutput: boolean;
-  /** Callback to toggle raw output */
-  onToggleRawOutput: () => void;
+  /** Current view mode */
+  viewMode?: ChatViewMode;
+  /** Callback to toggle view mode */
+  onToggleViewMode?: () => void;
+  /** Whether raw output is shown (deprecated, use viewMode) */
+  showRawOutput?: boolean;
+  /** Callback to toggle raw output (deprecated, use onToggleViewMode) */
+  onToggleRawOutput?: () => void;
   /** Callback when back button is clicked */
   onBack: () => void;
 }
@@ -89,12 +96,16 @@ export interface ChatPageContentProps {
   activeProcessId: string | null;
   /** Whether Claude is currently responding */
   isRunning: boolean;
-  /** Whether to show raw output */
-  showRawOutput: boolean;
+  /** View mode: 'clean' for formatted messages, 'terminal' for xterm.js */
+  viewMode?: ChatViewMode;
+  /** Whether to show raw output (deprecated, use viewMode) */
+  showRawOutput?: boolean;
   /** Raw output lines */
   rawOutput: string[];
   /** Ref for scroll anchor */
   scrollRef?: RefObject<HTMLDivElement>;
+  /** Ref for scroll container - use for auto-scroll behavior */
+  scrollContainerRef?: RefObject<HTMLDivElement>;
 }
 
 /** Props for the input area section */
@@ -816,6 +827,7 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
       </VisuallyHidden>
 
       <ChatPageLayout
+        scrollContainerRef={content.scrollContainerRef}
         permissionDialog={
           permissionDialog && (
             <ChatPermissionDialog
@@ -829,6 +841,8 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
           <ChatHeader
             title={header.title}
             projectName={header.projectName}
+            viewMode={header.viewMode}
+            onToggleViewMode={header.onToggleViewMode}
             showRawOutput={header.showRawOutput}
             onToggleRawOutput={header.onToggleRawOutput}
             onBack={header.onBack}
@@ -853,6 +867,7 @@ export const ChatPage = forwardRef<HTMLDivElement, ChatPageProps>(function ChatP
           displayItems={content.displayItems}
           activeProcessId={content.activeProcessId}
           isRunning={content.isRunning}
+          viewMode={content.viewMode}
           showRawOutput={content.showRawOutput}
           rawOutput={content.rawOutput}
           scrollRef={content.scrollRef}

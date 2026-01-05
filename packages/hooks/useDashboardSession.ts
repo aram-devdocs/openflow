@@ -283,8 +283,6 @@ export function useDashboardSession({
   onSuccess,
   onError,
 }: UseDashboardSessionOptions): DashboardSessionState {
-  logger.debug('Hook initialized');
-
   const keyboardShortcutsDialog = useKeyboardShortcutsDialog();
 
   // Project selection from context (persisted to localStorage)

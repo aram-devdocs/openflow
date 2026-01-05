@@ -14,6 +14,7 @@ pub mod project;
 pub mod search;
 pub mod settings;
 pub mod task;
+pub mod tool_state;
 pub mod workflow;
 
 // Re-export entity types for convenience
@@ -34,6 +35,7 @@ pub use project::{Project, ProjectSummary, ProjectWithStats};
 pub use search::{SearchResult, SearchResultType};
 pub use settings::{Setting, SettingsMap};
 pub use task::{Task, TaskStatus, TaskSummary, TaskWithChatCount, TaskWithChats};
+pub use tool_state::{ToolState, ToolStatus};
 pub use workflow::{
     WorkflowContext, WorkflowStep, WorkflowStepStatus, WorkflowTemplate, WorkflowTemplateSummary,
     WorkflowVariable,

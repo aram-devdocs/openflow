@@ -675,6 +675,17 @@ pub static ENDPOINTS: &[Endpoint] = &[
         description: "Get count of running processes",
         tags: &["processes", "status"],
     },
+    Endpoint {
+        command: "get_process_snapshot",
+        method: HttpMethod::Get,
+        path: "/api/processes/:id/snapshot",
+        request_type: None,
+        response_type: "ProcessSnapshot",
+        path_params: &["id"],
+        query_params: &[],
+        description: "Get a snapshot of process output buffer",
+        tags: &["processes", "read"],
+    },
     // ==========================================================================
     // EXECUTOR PROFILES
     // ==========================================================================

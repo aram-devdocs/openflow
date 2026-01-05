@@ -255,22 +255,33 @@ fn spawn_json_output_streamer(
             }
 
             // Try to parse as ClaudeEvent
-            if let Ok(event) = serde_json::from_str::<ClaudeEvent>(trimmed) {
-                // Check for session ID in system "init" events and emit it
-                if let ClaudeEvent::System {
-                    subtype,
-                    session_id: Some(ref sid),
-                    ..
-                } = &event
-                {
-                    if subtype == "init" {
-                        let _ = app_handle.emit(&session_channel, sid);
+            match serde_json::from_str::<ClaudeEvent>(trimmed) {
+                Ok(event) => {
+                    // Check for session ID in system "init" events and emit it
+                    if let ClaudeEvent::System {
+                        subtype,
+                        session_id: Some(ref sid),
+                        ..
+                    } = &event
+                    {
+                        if subtype == "init" {
+                            let _ = app_handle.emit(&session_channel, sid);
+                        }
                     }
+                    let _ = app_handle.emit(&event_channel, &event);
                 }
-                let _ = app_handle.emit(&event_channel, &event);
-            } else {
-                // Fallback: emit raw line for unparsed output (already cleaned)
-                let _ = app_handle.emit(&raw_channel, trimmed);
+                Err(e) => {
+                    // Debug: Log failed parses if they look like JSON (start with {)
+                    if trimmed.starts_with('{') {
+                        eprintln!(
+                            "[executor] Failed to parse Claude event: {} - JSON preview: {}",
+                            e,
+                            &trimmed[..trimmed.len().min(200)]
+                        );
+                    }
+                    // Fallback: emit raw line for unparsed output (already cleaned)
+                    let _ = app_handle.emit(&raw_channel, trimmed);
+                }
             }
         }
 

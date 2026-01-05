@@ -739,6 +739,127 @@ impl Validate for StartProcessRequest {
 }
 
 // =============================================================================
+// Process Snapshot Response
+// =============================================================================
+
+/// Response containing the current state of a process buffer
+///
+/// Used to sync clients with the current process state.
+/// Includes all events, tool states, and raw output position.
+///
+/// # Endpoint
+/// @endpoint: GET /api/processes/:id/snapshot
+/// @command: get_process_snapshot
+///
+/// # Example
+/// ```json
+/// {
+///   "processId": "550e8400-e29b-41d4-a716-446655440000",
+///   "status": "running",
+///   "exitCode": null,
+///   "events": [...],
+///   "toolStates": [...],
+///   "rawOutputOffset": 12345,
+///   "sessionId": "abc123"
+/// }
+/// ```
+#[typeshare]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProcessSnapshot {
+    /// Process ID
+    pub process_id: String,
+
+    /// Current process status
+    pub status: ProcessStatus,
+
+    /// Exit code if process finished
+    pub exit_code: Option<i32>,
+
+    /// Parsed Claude events
+    pub events: Vec<serde_json::Value>,
+
+    /// Current tool states
+    pub tool_states: Vec<crate::entities::tool_state::ToolState>,
+
+    /// Current position in raw output buffer (for streaming from this point)
+    pub raw_output_offset: i32,
+
+    /// Raw output as string (for initial sync)
+    pub raw_output: String,
+
+    /// Claude Code session ID (for resuming)
+    pub session_id: Option<String>,
+
+    /// Timestamp of snapshot
+    pub timestamp: String,
+}
+
+impl ProcessSnapshot {
+    /// Create an empty snapshot for a new process
+    pub fn new(process_id: impl Into<String>) -> Self {
+        Self {
+            process_id: process_id.into(),
+            status: ProcessStatus::Running,
+            exit_code: None,
+            events: Vec::new(),
+            tool_states: Vec::new(),
+            raw_output_offset: 0,
+            raw_output: String::new(),
+            session_id: None,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    /// Create a snapshot for a completed process
+    pub fn completed(process_id: impl Into<String>, exit_code: i32) -> Self {
+        Self {
+            process_id: process_id.into(),
+            status: if exit_code == 0 {
+                ProcessStatus::Completed
+            } else {
+                ProcessStatus::Failed
+            },
+            exit_code: Some(exit_code),
+            events: Vec::new(),
+            tool_states: Vec::new(),
+            raw_output_offset: 0,
+            raw_output: String::new(),
+            session_id: None,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    /// Set the events
+    pub fn with_events(mut self, events: Vec<serde_json::Value>) -> Self {
+        self.events = events;
+        self
+    }
+
+    /// Set the tool states
+    pub fn with_tool_states(
+        mut self,
+        tool_states: Vec<crate::entities::tool_state::ToolState>,
+    ) -> Self {
+        self.tool_states = tool_states;
+        self
+    }
+
+    /// Set the raw output
+    pub fn with_raw_output(mut self, raw_output: impl Into<String>, offset: usize) -> Self {
+        self.raw_output = raw_output.into();
+        self.raw_output_offset = offset as i32;
+        self
+    }
+
+    /// Set the session ID
+    pub fn with_session_id(mut self, session_id: impl Into<String>) -> Self {
+        self.session_id = Some(session_id.into());
+        self
+    }
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

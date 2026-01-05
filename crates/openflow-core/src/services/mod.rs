@@ -39,6 +39,8 @@ pub mod git;
 pub mod github;
 pub mod message;
 pub mod process;
+pub mod process_buffer;
+pub mod process_manager;
 pub mod project;
 pub mod search;
 pub mod settings;

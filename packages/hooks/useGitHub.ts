@@ -67,8 +67,6 @@ export const githubKeys = {
  * ```
  */
 export function useGhCliInstalled(): UseQueryResult<boolean> {
-  logger.debug('useGhCliInstalled hook called');
-
   return useQuery({
     queryKey: githubKeys.ghCliInstalled(),
     queryFn: async () => {
@@ -117,8 +115,6 @@ export function useGhCliInstalled(): UseQueryResult<boolean> {
  * ```
  */
 export function useGhAuthStatus(): UseQueryResult<AuthStatusResponse> {
-  logger.debug('useGhAuthStatus hook called');
-
   return useQuery({
     queryKey: githubKeys.ghAuthStatus(),
     queryFn: async () => {
@@ -189,8 +185,6 @@ export function useCreatePullRequest(): UseMutationResult<
   CreatePullRequestInput
 > {
   const toast = useToast();
-
-  logger.debug('useCreatePullRequest hook initialized');
 
   return useMutation({
     mutationFn: async (input: CreatePullRequestInput) => {

@@ -91,8 +91,6 @@ export interface RevealInExplorerInput {
 export function useOpenInEditor(): UseMutationResult<void, Error, OpenInEditorInput> {
   const toast = useToast();
 
-  logger.debug('useOpenInEditor hook initialized');
-
   return useMutation({
     mutationFn: async (input: OpenInEditorInput) => {
       const { path, displayName } = input;
@@ -168,8 +166,6 @@ export function useOpenInEditor(): UseMutationResult<void, Error, OpenInEditorIn
  */
 export function useRevealInExplorer(): UseMutationResult<void, Error, RevealInExplorerInput> {
   const toast = useToast();
-
-  logger.debug('useRevealInExplorer hook initialized');
 
   return useMutation({
     mutationFn: async (input: RevealInExplorerInput) => {

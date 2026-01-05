@@ -57,8 +57,6 @@ export const executorProfileKeys = {
  * @returns Query result with array of executor profiles
  */
 export function useExecutorProfiles(): UseQueryResult<ExecutorProfile[]> {
-  logger.debug('useExecutorProfiles hook called');
-
   return useQuery({
     queryKey: executorProfileKeys.list(),
     queryFn: async () => {
@@ -96,8 +94,6 @@ export function useCreateExecutorProfile(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useCreateExecutorProfile hook initialized');
 
   return useMutation({
     mutationFn: async (request: CreateExecutorProfileRequest) => {
@@ -148,8 +144,6 @@ export function useUpdateExecutorProfile(): UseMutationResult<
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  logger.debug('useUpdateExecutorProfile hook initialized');
-
   return useMutation({
     mutationFn: async ({ id, request }) => {
       logger.debug('Updating executor profile', {
@@ -196,8 +190,6 @@ export function useDeleteExecutorProfile(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useDeleteExecutorProfile hook initialized');
 
   return useMutation({
     mutationFn: async ({ id }) => {
@@ -263,8 +255,6 @@ export function useRunExecutor(): UseMutationResult<
   { chatId: string; prompt: string; executorProfileId?: string }
 > {
   const toast = useToast();
-
-  logger.debug('useRunExecutor hook initialized');
 
   return useMutation({
     mutationFn: async ({ chatId, prompt, executorProfileId }) => {

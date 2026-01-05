@@ -7,6 +7,7 @@
 //! - `GET /api/processes` - List processes with optional filters
 //! - `GET /api/processes/running` - List all running processes
 //! - `GET /api/processes/:id` - Get a process by ID
+//! - `GET /api/processes/:id/snapshot` - Get process buffer state snapshot
 //! - `DELETE /api/processes/:id` - Delete a process record
 //! - `POST /api/processes/:id/kill` - Kill a running process
 //! - `POST /api/processes/:id/input` - Send input to a process
@@ -17,9 +18,9 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use openflow_contracts::ExecutionProcess;
+use openflow_contracts::{requests::ProcessSnapshot, ExecutionProcess};
 use openflow_core::events::{EntityType, Event};
-use openflow_core::services::process;
+use openflow_core::services::{process, process_manager::ProcessManager};
 use serde::Deserialize;
 
 use crate::{error::ServerResult, state::AppState};
@@ -58,6 +59,7 @@ pub fn routes() -> Router<AppState> {
         .route("/:id/kill", post(kill))
         .route("/:id/input", post(send_input))
         .route("/:id/resize", post(resize))
+        .route("/:id/snapshot", get(get_snapshot))
 }
 
 /// GET /api/processes
@@ -151,6 +153,26 @@ async fn resize(
         .process_service
         .resize(&id, request.cols, request.rows)?;
     Ok(())
+}
+
+/// GET /api/processes/{id}/snapshot
+///
+/// Get the current state snapshot of a process buffer.
+/// Used for client synchronization - new or reconnecting clients
+/// can get the full current state before subscribing to updates.
+async fn get_snapshot(
+    State(_state): State<AppState>,
+    Path(id): Path<String>,
+) -> ServerResult<Json<ProcessSnapshot>> {
+    let manager = ProcessManager::global();
+
+    if let Some(snapshot) = manager.get_snapshot(&id) {
+        Ok(Json(snapshot))
+    } else {
+        // Return an empty snapshot if no buffer exists
+        // This allows clients to query for any process
+        Ok(Json(ProcessSnapshot::new(&id)))
+    }
 }
 
 #[cfg(test)]

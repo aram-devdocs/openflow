@@ -82,8 +82,6 @@ export const projectKeys = {
  * @returns Query result with array of projects
  */
 export function useProjects(): UseQueryResult<Project[]> {
-  logger.debug('useProjects hook called');
-
   return useQuery({
     queryKey: projectKeys.list(),
     queryFn: async () => {
@@ -112,8 +110,6 @@ export function useProjects(): UseQueryResult<Project[]> {
  * @returns Query result with project data
  */
 export function useProject(id: string): UseQueryResult<Project> {
-  logger.debug('useProject hook called', { id, enabled: Boolean(id) });
-
   return useQuery({
     queryKey: projectKeys.detail(id),
     queryFn: async () => {
@@ -144,8 +140,6 @@ export function useProject(id: string): UseQueryResult<Project> {
  * @returns Query result with array of archived projects
  */
 export function useArchivedProjects(): UseQueryResult<Project[]> {
-  logger.debug('useArchivedProjects hook called');
-
   return useQuery({
     queryKey: projectKeys.archived(),
     queryFn: async () => {
@@ -179,8 +173,6 @@ export function useArchivedProjects(): UseQueryResult<Project[]> {
 export function useCreateProject(): UseMutationResult<Project, Error, CreateProjectRequest> {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useCreateProject hook initialized');
 
   return useMutation({
     mutationFn: async (request: CreateProjectRequest) => {
@@ -231,8 +223,6 @@ export function useUpdateProject(): UseMutationResult<
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  logger.debug('useUpdateProject hook initialized');
-
   return useMutation({
     mutationFn: async ({ id, request }) => {
       logger.debug('Updating project', { id, request });
@@ -275,8 +265,6 @@ export function useDeleteProject(): UseMutationResult<void, Error, { id: string;
   const queryClient = useQueryClient();
   const toast = useToast();
 
-  logger.debug('useDeleteProject hook initialized');
-
   return useMutation({
     mutationFn: async ({ id }) => {
       logger.debug('Deleting project', { id });
@@ -318,8 +306,6 @@ export function useArchiveProject(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useArchiveProject hook initialized');
 
   return useMutation({
     mutationFn: async ({ id }) => {
@@ -368,8 +354,6 @@ export function useUnarchiveProject(): UseMutationResult<
 > {
   const queryClient = useQueryClient();
   const toast = useToast();
-
-  logger.debug('useUnarchiveProject hook initialized');
 
   return useMutation({
     mutationFn: async ({ id }) => {

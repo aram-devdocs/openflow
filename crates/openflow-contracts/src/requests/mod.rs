@@ -32,8 +32,8 @@ pub use message::{
     UpdateMessageRequest,
 };
 pub use process::{
-    CreateProcessRequest, KillProcessRequest, ListProcessesRequest, ResizeProcessRequest,
-    SendProcessInputRequest, StartProcessRequest, UpdateProcessRequest,
+    CreateProcessRequest, KillProcessRequest, ListProcessesRequest, ProcessSnapshot,
+    ResizeProcessRequest, SendProcessInputRequest, StartProcessRequest, UpdateProcessRequest,
 };
 pub use project::{CreateProjectRequest, UpdateProjectRequest};
 pub use search::SearchRequest;

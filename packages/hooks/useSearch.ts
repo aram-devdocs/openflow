@@ -101,16 +101,6 @@ export function useSearch(
 
   const isEnabled = query.length >= minQueryLength;
 
-  logger.debug('useSearch hook called', {
-    query: query.substring(0, 50), // Truncate for logging
-    queryLength: query.length,
-    projectId,
-    resultTypes,
-    limit,
-    minQueryLength,
-    enabled: isEnabled,
-  });
-
   return useQuery({
     queryKey: searchKeys.search(query, projectId, resultTypes),
     queryFn: async () => {

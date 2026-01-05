@@ -11,7 +11,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   ASSISTANT_AVATAR_CLASSES,
-  ASSISTANT_BUBBLE_CLASSES,
   AVATAR_ICON_SIZE_CLASSES,
   AVATAR_SIZE_CLASSES,
   DEFAULT_ASSISTANT_LABEL,
@@ -23,6 +22,10 @@ import {
   DEFAULT_TOOL_RUNNING_LABEL,
   // Constants
   DEFAULT_USER_LABEL,
+  // New CLI-style message classes (replaced bubble classes)
+  MESSAGE_BLOCK_CLASSES,
+  MESSAGE_CONTENT_CLASSES,
+  MESSAGE_HEADER_CLASSES,
   RAW_OUTPUT_CONTAINER_CLASSES,
   RAW_OUTPUT_CONTENT_CLASSES,
   RAW_OUTPUT_HEADER_CLASSES,
@@ -52,7 +55,6 @@ import {
   // Types
   type ToolInfo,
   USER_AVATAR_CLASSES,
-  USER_BUBBLE_CLASSES,
   // Utility functions
   formatTimestamp,
   formatTimestampForSR,
@@ -105,9 +107,10 @@ describe('getToolStatus', () => {
     expect(getToolStatus(tool)).toBe('running');
   });
 
-  it('returns "running" when output is empty string', () => {
+  it('returns "complete" when output is empty string', () => {
+    // Empty string is still considered as having output
     const tool: ToolInfo = { name: 'test', output: '' };
-    expect(getToolStatus(tool)).toBe('running');
+    expect(getToolStatus(tool)).toBe('complete');
   });
 
   it('returns "error" when isError is true', () => {
@@ -216,11 +219,11 @@ describe('Default Label Constants', () => {
   });
 
   it('has assistant label', () => {
-    expect(DEFAULT_ASSISTANT_LABEL).toBe('Assistant');
+    expect(DEFAULT_ASSISTANT_LABEL).toBe('Claude');
   });
 
   it('has streaming label', () => {
-    expect(DEFAULT_STREAMING_LABEL).toBe('Assistant is thinking...');
+    expect(DEFAULT_STREAMING_LABEL).toBe('Thinking...');
   });
 
   it('has expand label', () => {
@@ -249,95 +252,93 @@ describe('Default Label Constants', () => {
 // ============================================================================
 
 describe('AVATAR_SIZE_CLASSES', () => {
-  it('has sm size with responsive sizing', () => {
-    expect(AVATAR_SIZE_CLASSES.sm).toContain('h-6');
-    expect(AVATAR_SIZE_CLASSES.sm).toContain('w-6');
-    expect(AVATAR_SIZE_CLASSES.sm).toContain('md:h-7');
-    expect(AVATAR_SIZE_CLASSES.sm).toContain('md:w-7');
+  it('has sm size', () => {
+    expect(AVATAR_SIZE_CLASSES.sm).toContain('h-5');
+    expect(AVATAR_SIZE_CLASSES.sm).toContain('w-5');
   });
 
-  it('has md size with responsive sizing', () => {
-    expect(AVATAR_SIZE_CLASSES.md).toContain('h-7');
-    expect(AVATAR_SIZE_CLASSES.md).toContain('w-7');
-    expect(AVATAR_SIZE_CLASSES.md).toContain('md:h-8');
-    expect(AVATAR_SIZE_CLASSES.md).toContain('md:w-8');
+  it('has md size', () => {
+    expect(AVATAR_SIZE_CLASSES.md).toContain('h-5');
+    expect(AVATAR_SIZE_CLASSES.md).toContain('w-5');
   });
 
-  it('has lg size with responsive sizing', () => {
-    expect(AVATAR_SIZE_CLASSES.lg).toContain('h-8');
-    expect(AVATAR_SIZE_CLASSES.lg).toContain('w-8');
-    expect(AVATAR_SIZE_CLASSES.lg).toContain('md:h-9');
-    expect(AVATAR_SIZE_CLASSES.lg).toContain('md:w-9');
+  it('has lg size', () => {
+    expect(AVATAR_SIZE_CLASSES.lg).toContain('h-6');
+    expect(AVATAR_SIZE_CLASSES.lg).toContain('w-6');
   });
 
   it('sizes increase progressively', () => {
-    // sm < md < lg
-    expect(AVATAR_SIZE_CLASSES.sm).toContain('h-6');
-    expect(AVATAR_SIZE_CLASSES.md).toContain('h-7');
-    expect(AVATAR_SIZE_CLASSES.lg).toContain('h-8');
+    // sm and md are same, lg is larger
+    expect(AVATAR_SIZE_CLASSES.sm).toContain('h-5');
+    expect(AVATAR_SIZE_CLASSES.md).toContain('h-5');
+    expect(AVATAR_SIZE_CLASSES.lg).toContain('h-6');
   });
 });
 
 describe('AVATAR_ICON_SIZE_CLASSES', () => {
-  it('has sm size with responsive sizing', () => {
+  it('has sm size', () => {
     expect(AVATAR_ICON_SIZE_CLASSES.sm).toContain('h-3');
     expect(AVATAR_ICON_SIZE_CLASSES.sm).toContain('w-3');
-    expect(AVATAR_ICON_SIZE_CLASSES.sm).toContain('md:h-3.5');
   });
 
-  it('has md size with responsive sizing', () => {
-    expect(AVATAR_ICON_SIZE_CLASSES.md).toContain('h-3.5');
-    expect(AVATAR_ICON_SIZE_CLASSES.md).toContain('w-3.5');
-    expect(AVATAR_ICON_SIZE_CLASSES.md).toContain('md:h-4');
+  it('has md size', () => {
+    expect(AVATAR_ICON_SIZE_CLASSES.md).toContain('h-3');
+    expect(AVATAR_ICON_SIZE_CLASSES.md).toContain('w-3');
   });
 
   it('has lg size', () => {
-    expect(AVATAR_ICON_SIZE_CLASSES.lg).toContain('h-4');
-    expect(AVATAR_ICON_SIZE_CLASSES.lg).toContain('w-4');
+    expect(AVATAR_ICON_SIZE_CLASSES.lg).toContain('h-3.5');
+    expect(AVATAR_ICON_SIZE_CLASSES.lg).toContain('w-3.5');
   });
 });
 
 // ============================================================================
-// Message Bubble Classes Tests
+// Message Block Classes Tests (CLI-style layout)
 // ============================================================================
 
-describe('USER_BUBBLE_CLASSES', () => {
+describe('MESSAGE_BLOCK_CLASSES', () => {
+  it('has border styling', () => {
+    expect(MESSAGE_BLOCK_CLASSES).toContain('border');
+    expect(MESSAGE_BLOCK_CLASSES).toContain('border-border');
+  });
+
   it('has rounded corners', () => {
-    expect(USER_BUBBLE_CLASSES).toContain('rounded-2xl');
-    expect(USER_BUBBLE_CLASSES).toContain('rounded-tr-sm');
+    expect(MESSAGE_BLOCK_CLASSES).toContain('rounded-lg');
   });
 
-  it('uses primary background', () => {
-    expect(USER_BUBBLE_CLASSES).toContain('bg-[rgb(var(--primary))]');
+  it('uses card background', () => {
+    expect(MESSAGE_BLOCK_CLASSES).toContain('bg-card');
   });
 
-  it('uses primary-foreground text', () => {
-    expect(USER_BUBBLE_CLASSES).toContain('text-[rgb(var(--primary-foreground))]');
-  });
-
-  it('has responsive padding', () => {
-    expect(USER_BUBBLE_CLASSES).toContain('px-3');
-    expect(USER_BUBBLE_CLASSES).toContain('py-2');
-    expect(USER_BUBBLE_CLASSES).toContain('md:px-4');
-    expect(USER_BUBBLE_CLASSES).toContain('md:py-3');
+  it('handles overflow', () => {
+    expect(MESSAGE_BLOCK_CLASSES).toContain('overflow-hidden');
   });
 });
 
-describe('ASSISTANT_BUBBLE_CLASSES', () => {
-  it('has rounded corners', () => {
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('rounded-2xl');
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('rounded-tl-sm');
+describe('MESSAGE_HEADER_CLASSES', () => {
+  it('is a flex container', () => {
+    expect(MESSAGE_HEADER_CLASSES).toContain('flex');
+    expect(MESSAGE_HEADER_CLASSES).toContain('items-center');
   });
 
-  it('uses muted background', () => {
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('bg-[rgb(var(--muted))]');
+  it('has gap for spacing', () => {
+    expect(MESSAGE_HEADER_CLASSES).toContain('gap-2');
   });
 
-  it('has responsive padding', () => {
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('px-3');
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('py-2');
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('md:px-4');
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('md:py-3');
+  it('has padding', () => {
+    expect(MESSAGE_HEADER_CLASSES).toContain('px-3');
+    expect(MESSAGE_HEADER_CLASSES).toContain('py-2');
+  });
+
+  it('has border bottom', () => {
+    expect(MESSAGE_HEADER_CLASSES).toContain('border-b');
+  });
+});
+
+describe('MESSAGE_CONTENT_CLASSES', () => {
+  it('has padding', () => {
+    expect(MESSAGE_CONTENT_CLASSES).toContain('px-3');
+    expect(MESSAGE_CONTENT_CLASSES).toContain('py-3');
   });
 });
 
@@ -352,12 +353,12 @@ describe('USER_AVATAR_CLASSES', () => {
     expect(USER_AVATAR_CLASSES).toContain('justify-center');
   });
 
-  it('is rounded full (circle)', () => {
-    expect(USER_AVATAR_CLASSES).toContain('rounded-full');
+  it('is rounded', () => {
+    expect(USER_AVATAR_CLASSES).toContain('rounded');
   });
 
-  it('uses primary background', () => {
-    expect(USER_AVATAR_CLASSES).toContain('bg-[rgb(var(--primary))]');
+  it('uses primary background with opacity', () => {
+    expect(USER_AVATAR_CLASSES).toContain('bg-primary/20');
   });
 
   it('prevents shrinking', () => {
@@ -372,14 +373,14 @@ describe('ASSISTANT_AVATAR_CLASSES', () => {
     expect(ASSISTANT_AVATAR_CLASSES).toContain('justify-center');
   });
 
-  it('is rounded full (circle)', () => {
-    expect(ASSISTANT_AVATAR_CLASSES).toContain('rounded-full');
+  it('is rounded', () => {
+    expect(ASSISTANT_AVATAR_CLASSES).toContain('rounded');
   });
 
   it('uses gradient background', () => {
     expect(ASSISTANT_AVATAR_CLASSES).toContain('bg-gradient-to-br');
-    expect(ASSISTANT_AVATAR_CLASSES).toContain('from-orange-500');
-    expect(ASSISTANT_AVATAR_CLASSES).toContain('to-amber-600');
+    expect(ASSISTANT_AVATAR_CLASSES).toContain('from-orange-500/20');
+    expect(ASSISTANT_AVATAR_CLASSES).toContain('to-amber-600/20');
   });
 
   it('prevents shrinking', () => {
@@ -397,11 +398,11 @@ describe('TIMESTAMP_CLASSES', () => {
   });
 
   it('uses muted foreground color', () => {
-    expect(TIMESTAMP_CLASSES).toContain('text-[rgb(var(--muted-foreground))]');
+    expect(TIMESTAMP_CLASSES).toContain('text-muted-foreground');
   });
 
-  it('has top margin', () => {
-    expect(TIMESTAMP_CLASSES).toContain('mt-1');
+  it('has margin auto for alignment', () => {
+    expect(TIMESTAMP_CLASSES).toContain('ml-auto');
   });
 });
 
@@ -411,7 +412,7 @@ describe('TIMESTAMP_CLASSES', () => {
 
 describe('TOOL_CARD_BASE_CLASSES', () => {
   it('has rounded corners', () => {
-    expect(TOOL_CARD_BASE_CLASSES).toContain('rounded-xl');
+    expect(TOOL_CARD_BASE_CLASSES).toContain('rounded');
   });
 
   it('has border', () => {
@@ -428,28 +429,28 @@ describe('TOOL_CARD_DEFAULT_CLASSES', () => {
     expect(TOOL_CARD_DEFAULT_CLASSES).toContain('border-border');
   });
 
-  it('uses card background', () => {
-    expect(TOOL_CARD_DEFAULT_CLASSES).toContain('bg-card');
+  it('uses background', () => {
+    expect(TOOL_CARD_DEFAULT_CLASSES).toContain('bg-background');
   });
 });
 
 describe('TOOL_CARD_ERROR_CLASSES', () => {
-  it('uses error border color with opacity', () => {
-    expect(TOOL_CARD_ERROR_CLASSES).toContain('border-error/30');
+  it('uses destructive border color with opacity', () => {
+    expect(TOOL_CARD_ERROR_CLASSES).toContain('border-destructive/30');
   });
 
-  it('uses error background with opacity', () => {
-    expect(TOOL_CARD_ERROR_CLASSES).toContain('bg-error/5');
+  it('uses destructive background with opacity', () => {
+    expect(TOOL_CARD_ERROR_CLASSES).toContain('bg-destructive/5');
   });
 });
 
 describe('TOOL_CARD_RUNNING_CLASSES', () => {
-  it('uses info border color with opacity', () => {
-    expect(TOOL_CARD_RUNNING_CLASSES).toContain('border-info/30');
+  it('uses blue border color with opacity', () => {
+    expect(TOOL_CARD_RUNNING_CLASSES).toContain('border-blue-500/30');
   });
 
-  it('uses info background with opacity', () => {
-    expect(TOOL_CARD_RUNNING_CLASSES).toContain('bg-info/5');
+  it('uses blue background with opacity', () => {
+    expect(TOOL_CARD_RUNNING_CLASSES).toContain('bg-blue-500/5');
   });
 });
 
@@ -458,17 +459,17 @@ describe('TOOL_HEADER_CLASSES', () => {
     expect(TOOL_HEADER_CLASSES).toContain('w-full');
   });
 
-  it('meets touch target accessibility (44px)', () => {
-    expect(TOOL_HEADER_CLASSES).toContain('min-h-[44px]');
+  it('has minimum height for touch targets', () => {
+    expect(TOOL_HEADER_CLASSES).toContain('min-h-[36px]');
   });
 
-  it('has focus ring with offset', () => {
+  it('has focus ring', () => {
     expect(TOOL_HEADER_CLASSES).toContain('focus-visible:ring-2');
-    expect(TOOL_HEADER_CLASSES).toContain('focus-visible:ring-offset-2');
+    expect(TOOL_HEADER_CLASSES).toContain('focus-visible:ring-ring');
   });
 
   it('has hover state', () => {
-    expect(TOOL_HEADER_CLASSES).toContain('hover:bg-[rgb(var(--muted))]/50');
+    expect(TOOL_HEADER_CLASSES).toContain('hover:bg-muted/50');
   });
 
   it('has transition', () => {
@@ -482,8 +483,8 @@ describe('TOOL_HEADER_CLASSES', () => {
 
 describe('TOOL_ICON_CONTAINER_CLASSES', () => {
   it('is fixed size', () => {
-    expect(TOOL_ICON_CONTAINER_CLASSES).toContain('h-7');
-    expect(TOOL_ICON_CONTAINER_CLASSES).toContain('w-7');
+    expect(TOOL_ICON_CONTAINER_CLASSES).toContain('h-5');
+    expect(TOOL_ICON_CONTAINER_CLASSES).toContain('w-5');
   });
 
   it('is flex container centered', () => {
@@ -493,7 +494,7 @@ describe('TOOL_ICON_CONTAINER_CLASSES', () => {
   });
 
   it('has rounded corners', () => {
-    expect(TOOL_ICON_CONTAINER_CLASSES).toContain('rounded-lg');
+    expect(TOOL_ICON_CONTAINER_CLASSES).toContain('rounded');
   });
 });
 
@@ -504,14 +505,14 @@ describe('TOOL_ICON_DEFAULT_CLASSES', () => {
 });
 
 describe('TOOL_ICON_ERROR_CLASSES', () => {
-  it('uses error background with opacity', () => {
-    expect(TOOL_ICON_ERROR_CLASSES).toContain('bg-error/20');
+  it('uses destructive background with opacity', () => {
+    expect(TOOL_ICON_ERROR_CLASSES).toContain('bg-destructive/20');
   });
 });
 
 describe('TOOL_ICON_RUNNING_CLASSES', () => {
-  it('uses info background with opacity', () => {
-    expect(TOOL_ICON_RUNNING_CLASSES).toContain('bg-info/20');
+  it('uses blue background with opacity', () => {
+    expect(TOOL_ICON_RUNNING_CLASSES).toContain('bg-blue-500/20');
   });
 });
 
@@ -521,18 +522,18 @@ describe('TOOL_CONTENT_CLASSES', () => {
   });
 
   it('has padding', () => {
-    expect(TOOL_CONTENT_CLASSES).toContain('px-4');
-    expect(TOOL_CONTENT_CLASSES).toContain('py-3');
+    expect(TOOL_CONTENT_CLASSES).toContain('px-3');
+    expect(TOOL_CONTENT_CLASSES).toContain('py-2');
   });
 
   it('has spacing between children', () => {
-    expect(TOOL_CONTENT_CLASSES).toContain('space-y-3');
+    expect(TOOL_CONTENT_CLASSES).toContain('space-y-2');
   });
 });
 
 describe('TOOL_SECTION_LABEL_CLASSES', () => {
   it('has small text size', () => {
-    expect(TOOL_SECTION_LABEL_CLASSES).toContain('text-xs');
+    expect(TOOL_SECTION_LABEL_CLASSES).toContain('text-[10px]');
   });
 
   it('has medium font weight', () => {
@@ -540,7 +541,7 @@ describe('TOOL_SECTION_LABEL_CLASSES', () => {
   });
 
   it('uses muted foreground color', () => {
-    expect(TOOL_SECTION_LABEL_CLASSES).toContain('text-[rgb(var(--muted-foreground))]');
+    expect(TOOL_SECTION_LABEL_CLASSES).toContain('text-muted-foreground');
   });
 });
 
@@ -550,11 +551,11 @@ describe('TOOL_PRE_CLASSES', () => {
   });
 
   it('has rounded corners', () => {
-    expect(TOOL_PRE_CLASSES).toContain('rounded-lg');
+    expect(TOOL_PRE_CLASSES).toContain('rounded');
   });
 
   it('uses background color', () => {
-    expect(TOOL_PRE_CLASSES).toContain('bg-[rgb(var(--background))]');
+    expect(TOOL_PRE_CLASSES).toContain('bg-background');
   });
 });
 
@@ -563,9 +564,9 @@ describe('TOOL_OUTPUT_ERROR_CLASSES', () => {
     expect(TOOL_OUTPUT_ERROR_CLASSES).toContain('max-h-48');
   });
 
-  it('uses error styling', () => {
-    expect(TOOL_OUTPUT_ERROR_CLASSES).toContain('bg-error/10');
-    expect(TOOL_OUTPUT_ERROR_CLASSES).toContain('text-error');
+  it('uses destructive styling', () => {
+    expect(TOOL_OUTPUT_ERROR_CLASSES).toContain('bg-destructive/10');
+    expect(TOOL_OUTPUT_ERROR_CLASSES).toContain('text-destructive');
   });
 });
 
@@ -604,16 +605,16 @@ describe('STATUS_BADGE_CLASSES', () => {
 });
 
 describe('STATUS_BADGE_ERROR_CLASSES', () => {
-  it('uses error colors', () => {
-    expect(STATUS_BADGE_ERROR_CLASSES).toContain('bg-error/20');
-    expect(STATUS_BADGE_ERROR_CLASSES).toContain('text-error');
+  it('uses destructive colors', () => {
+    expect(STATUS_BADGE_ERROR_CLASSES).toContain('bg-destructive/20');
+    expect(STATUS_BADGE_ERROR_CLASSES).toContain('text-destructive');
   });
 });
 
 describe('STATUS_BADGE_RUNNING_CLASSES', () => {
-  it('uses info colors', () => {
-    expect(STATUS_BADGE_RUNNING_CLASSES).toContain('bg-info/20');
-    expect(STATUS_BADGE_RUNNING_CLASSES).toContain('text-info');
+  it('uses blue colors', () => {
+    expect(STATUS_BADGE_RUNNING_CLASSES).toContain('bg-blue-500/20');
+    expect(STATUS_BADGE_RUNNING_CLASSES).toContain('text-blue-500');
   });
 });
 
@@ -623,7 +624,7 @@ describe('STATUS_BADGE_RUNNING_CLASSES', () => {
 
 describe('RESULT_BASE_CLASSES', () => {
   it('has rounded corners', () => {
-    expect(RESULT_BASE_CLASSES).toContain('rounded-lg');
+    expect(RESULT_BASE_CLASSES).toContain('rounded');
   });
 
   it('has padding', () => {
@@ -641,23 +642,23 @@ describe('RESULT_BASE_CLASSES', () => {
 });
 
 describe('RESULT_SUCCESS_CLASSES', () => {
-  it('uses success colors', () => {
-    expect(RESULT_SUCCESS_CLASSES).toContain('bg-success/10');
-    expect(RESULT_SUCCESS_CLASSES).toContain('text-success');
+  it('uses green colors', () => {
+    expect(RESULT_SUCCESS_CLASSES).toContain('bg-green-500/10');
+    expect(RESULT_SUCCESS_CLASSES).toContain('text-green-500');
   });
 });
 
 describe('RESULT_ERROR_CLASSES', () => {
-  it('uses error colors', () => {
-    expect(RESULT_ERROR_CLASSES).toContain('bg-error/10');
-    expect(RESULT_ERROR_CLASSES).toContain('text-error');
+  it('uses destructive colors', () => {
+    expect(RESULT_ERROR_CLASSES).toContain('bg-destructive/10');
+    expect(RESULT_ERROR_CLASSES).toContain('text-destructive');
   });
 });
 
 describe('RESULT_INFO_CLASSES', () => {
-  it('uses info colors', () => {
-    expect(RESULT_INFO_CLASSES).toContain('bg-info/10');
-    expect(RESULT_INFO_CLASSES).toContain('text-info');
+  it('uses blue colors', () => {
+    expect(RESULT_INFO_CLASSES).toContain('bg-blue-500/10');
+    expect(RESULT_INFO_CLASSES).toContain('text-blue-500');
   });
 });
 
@@ -675,7 +676,7 @@ describe('STREAMING_INDICATOR_CLASSES', () => {
   });
 
   it('uses muted foreground color', () => {
-    expect(STREAMING_INDICATOR_CLASSES).toContain('text-[rgb(var(--muted-foreground))]');
+    expect(STREAMING_INDICATOR_CLASSES).toContain('text-muted-foreground');
   });
 });
 
@@ -685,7 +686,7 @@ describe('STREAMING_INDICATOR_CLASSES', () => {
 
 describe('RAW_OUTPUT_CONTAINER_CLASSES', () => {
   it('has rounded corners', () => {
-    expect(RAW_OUTPUT_CONTAINER_CLASSES).toContain('rounded-xl');
+    expect(RAW_OUTPUT_CONTAINER_CLASSES).toContain('rounded');
   });
 
   it('has border', () => {
@@ -693,7 +694,7 @@ describe('RAW_OUTPUT_CONTAINER_CLASSES', () => {
   });
 
   it('uses card background', () => {
-    expect(RAW_OUTPUT_CONTAINER_CLASSES).toContain('bg-[rgb(var(--card))]');
+    expect(RAW_OUTPUT_CONTAINER_CLASSES).toContain('bg-card');
   });
 });
 
@@ -702,13 +703,13 @@ describe('RAW_OUTPUT_HEADER_CLASSES', () => {
     expect(RAW_OUTPUT_HEADER_CLASSES).toContain('w-full');
   });
 
-  it('meets touch target accessibility (44px)', () => {
-    expect(RAW_OUTPUT_HEADER_CLASSES).toContain('min-h-[44px]');
+  it('has minimum height for touch targets', () => {
+    expect(RAW_OUTPUT_HEADER_CLASSES).toContain('min-h-[36px]');
   });
 
-  it('has focus ring with offset', () => {
+  it('has focus ring', () => {
     expect(RAW_OUTPUT_HEADER_CLASSES).toContain('focus-visible:ring-2');
-    expect(RAW_OUTPUT_HEADER_CLASSES).toContain('focus-visible:ring-offset-2');
+    expect(RAW_OUTPUT_HEADER_CLASSES).toContain('focus-visible:ring-ring');
   });
 
   it('removes default focus outline', () => {
@@ -865,26 +866,24 @@ describe('BubbleMessageListItem component behavior', () => {
 // ============================================================================
 
 describe('Touch target accessibility', () => {
-  it('Tool header meets 44px minimum', () => {
-    expect(TOOL_HEADER_CLASSES).toContain('min-h-[44px]');
+  it('Tool header has minimum height', () => {
+    expect(TOOL_HEADER_CLASSES).toContain('min-h-[36px]');
   });
 
-  it('Raw output header meets 44px minimum', () => {
-    expect(RAW_OUTPUT_HEADER_CLASSES).toContain('min-h-[44px]');
+  it('Raw output header has minimum height', () => {
+    expect(RAW_OUTPUT_HEADER_CLASSES).toContain('min-h-[36px]');
   });
 });
 
 describe('Focus ring visibility', () => {
-  it('Tool header has visible focus ring with offset', () => {
+  it('Tool header has visible focus ring', () => {
     expect(TOOL_HEADER_CLASSES).toContain('focus-visible:ring-2');
     expect(TOOL_HEADER_CLASSES).toContain('focus-visible:ring-ring');
-    expect(TOOL_HEADER_CLASSES).toContain('focus-visible:ring-offset-2');
-    expect(TOOL_HEADER_CLASSES).toContain('focus-visible:ring-offset-background');
   });
 
-  it('Raw output header has visible focus ring with offset', () => {
+  it('Raw output header has visible focus ring', () => {
     expect(RAW_OUTPUT_HEADER_CLASSES).toContain('focus-visible:ring-2');
-    expect(RAW_OUTPUT_HEADER_CLASSES).toContain('focus-visible:ring-offset-2');
+    expect(RAW_OUTPUT_HEADER_CLASSES).toContain('focus-visible:ring-ring');
   });
 });
 
@@ -897,28 +896,30 @@ describe('Color contrast and status indication', () => {
   });
 
   it('Uses different semantic colors for different states', () => {
-    // Error uses error color
-    expect(TOOL_CARD_ERROR_CLASSES).toContain('border-error');
-    expect(STATUS_BADGE_ERROR_CLASSES).toContain('text-error');
+    // Error uses destructive color
+    expect(TOOL_CARD_ERROR_CLASSES).toContain('border-destructive');
+    expect(STATUS_BADGE_ERROR_CLASSES).toContain('text-destructive');
 
-    // Running uses info color
-    expect(TOOL_CARD_RUNNING_CLASSES).toContain('border-info');
-    expect(STATUS_BADGE_RUNNING_CLASSES).toContain('text-info');
+    // Running uses blue color
+    expect(TOOL_CARD_RUNNING_CLASSES).toContain('border-blue-500');
+    expect(STATUS_BADGE_RUNNING_CLASSES).toContain('text-blue-500');
 
-    // Success uses success color
-    expect(RESULT_SUCCESS_CLASSES).toContain('text-success');
+    // Success uses green color
+    expect(RESULT_SUCCESS_CLASSES).toContain('text-green-500');
   });
 });
 
 describe('Responsive design', () => {
-  it('Avatar sizes have responsive breakpoints', () => {
-    expect(AVATAR_SIZE_CLASSES.md).toContain('md:');
+  it('Avatar sizes are consistent', () => {
+    // Simple avatar sizing without responsive breakpoints
+    expect(AVATAR_SIZE_CLASSES.md).toContain('h-5');
   });
 
-  it('Bubble padding has responsive breakpoints', () => {
-    expect(USER_BUBBLE_CLASSES).toContain('md:px-4');
-    expect(USER_BUBBLE_CLASSES).toContain('md:py-3');
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('md:px-4');
-    expect(ASSISTANT_BUBBLE_CLASSES).toContain('md:py-3');
+  it('Message blocks use consistent styling', () => {
+    // CLI-style blocks use consistent padding
+    expect(MESSAGE_HEADER_CLASSES).toContain('px-3');
+    expect(MESSAGE_HEADER_CLASSES).toContain('py-2');
+    expect(MESSAGE_CONTENT_CLASSES).toContain('px-3');
+    expect(MESSAGE_CONTENT_CLASSES).toContain('py-3');
   });
 });

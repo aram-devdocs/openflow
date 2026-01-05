@@ -145,7 +145,6 @@ export function useProjectDetailSession({
   // Track initialization logging
   const hasLoggedInit = useRef(false);
   if (!hasLoggedInit.current) {
-    logger.debug('Hook initialized', { projectId });
     hasLoggedInit.current = true;
   }
 

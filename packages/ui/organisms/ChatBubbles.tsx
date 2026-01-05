@@ -1,8 +1,9 @@
 /**
- * Chat Bubble Components for standalone chat view
+ * Chat Components for standalone chat view - CLI-style UI
  *
- * These components render messages in a conversational bubble format,
- * with user messages right-aligned and assistant messages left-aligned.
+ * These components render messages in a terminal/CLI-like format,
+ * similar to Claude Code's terminal output but as actual UI components.
+ * Full-width bordered blocks with clear sender labels.
  * Stateless - receives all data via props.
  *
  * Accessibility:
@@ -15,7 +16,18 @@
 
 import { Box, Flex, Text, VisuallyHidden } from '@openflow/primitives';
 import { cn } from '@openflow/utils';
-import { Bot, ChevronDown, ChevronRight, Code2, User, Wrench } from 'lucide-react';
+import {
+  Bot,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Code2,
+  FileCode,
+  Terminal,
+  User,
+  Wrench,
+  X,
+} from 'lucide-react';
 import { type ReactNode, forwardRef, useId, useState } from 'react';
 import { Icon } from '../atoms/Icon';
 import { Spinner } from '../atoms/Spinner';
@@ -67,13 +79,13 @@ export type ResponsiveValue<T> = T | Partial<Record<ChatBubblesBreakpoint, T>>;
 export type ChatBubblesSize = 'sm' | 'md' | 'lg';
 
 // ============================================================================
-// Constants
+// Constants - CLI Style
 // ============================================================================
 
 /** Default labels */
 export const DEFAULT_USER_LABEL = 'You';
-export const DEFAULT_ASSISTANT_LABEL = 'Assistant';
-export const DEFAULT_STREAMING_LABEL = 'Assistant is thinking...';
+export const DEFAULT_ASSISTANT_LABEL = 'Claude';
+export const DEFAULT_STREAMING_LABEL = 'Thinking...';
 export const DEFAULT_EXPAND_LABEL = 'Show details';
 export const DEFAULT_COLLAPSE_LABEL = 'Hide details';
 export const DEFAULT_TOOL_RUNNING_LABEL = 'Running';
@@ -82,84 +94,88 @@ export const DEFAULT_RAW_OUTPUT_LABEL = 'Raw output';
 
 /** Avatar size classes */
 export const AVATAR_SIZE_CLASSES = {
-  sm: 'h-6 w-6 md:h-7 md:w-7',
-  md: 'h-7 w-7 md:h-8 md:w-8',
-  lg: 'h-8 w-8 md:h-9 md:w-9',
+  sm: 'h-5 w-5',
+  md: 'h-5 w-5',
+  lg: 'h-6 w-6',
 } as const;
 
 /** Avatar icon size classes */
 export const AVATAR_ICON_SIZE_CLASSES = {
-  sm: 'h-3 w-3 md:h-3.5 md:w-3.5',
-  md: 'h-3.5 w-3.5 md:h-4 md:w-4',
-  lg: 'h-4 w-4 md:h-4.5 md:w-4.5',
+  sm: 'h-3 w-3',
+  md: 'h-3 w-3',
+  lg: 'h-3.5 w-3.5',
 } as const;
 
-/** Message bubble classes */
-export const USER_BUBBLE_CLASSES =
-  'rounded-2xl rounded-tr-sm bg-[rgb(var(--primary))] px-3 py-2 text-[rgb(var(--primary-foreground))] md:px-4 md:py-3';
-export const ASSISTANT_BUBBLE_CLASSES =
-  'rounded-2xl rounded-tl-sm bg-[rgb(var(--muted))] px-3 py-2 md:px-4 md:py-3';
+/** CLI-style message block classes */
+export const MESSAGE_BLOCK_CLASSES = 'rounded-lg border border-border bg-card overflow-hidden';
 
-/** User avatar classes */
+/** Message header classes - CLI style */
+export const MESSAGE_HEADER_CLASSES =
+  'flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border';
+
+/** Message content area classes */
+export const MESSAGE_CONTENT_CLASSES = 'px-3 py-3';
+
+/** User avatar classes - smaller, inline with header */
 export const USER_AVATAR_CLASSES =
-  'flex shrink-0 items-center justify-center rounded-full bg-[rgb(var(--primary))]';
+  'flex shrink-0 items-center justify-center rounded bg-primary/20';
 
-/** Assistant avatar classes */
+/** Assistant avatar classes - smaller, inline with header */
 export const ASSISTANT_AVATAR_CLASSES =
-  'flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-600';
+  'flex shrink-0 items-center justify-center rounded bg-gradient-to-br from-orange-500/20 to-amber-600/20';
 
 /** Timestamp classes */
-export const TIMESTAMP_CLASSES = 'mt-1 text-[10px] text-[rgb(var(--muted-foreground))]';
+export const TIMESTAMP_CLASSES = 'text-[10px] text-muted-foreground ml-auto';
 
-/** Tool card classes */
-export const TOOL_CARD_BASE_CLASSES = 'overflow-hidden rounded-xl border';
-export const TOOL_CARD_DEFAULT_CLASSES = 'border-border bg-card';
-export const TOOL_CARD_ERROR_CLASSES = 'border-error/30 bg-error/5';
-export const TOOL_CARD_RUNNING_CLASSES = 'border-info/30 bg-info/5';
+/** Tool card classes - CLI style */
+export const TOOL_CARD_BASE_CLASSES = 'rounded border overflow-hidden mt-2 first:mt-0';
+export const TOOL_CARD_DEFAULT_CLASSES = 'border-border bg-background';
+export const TOOL_CARD_ERROR_CLASSES = 'border-destructive/30 bg-destructive/5';
+export const TOOL_CARD_RUNNING_CLASSES = 'border-blue-500/30 bg-blue-500/5';
 
 /** Tool header button classes */
 export const TOOL_HEADER_CLASSES =
-  'flex w-full min-h-[44px] items-center gap-3 px-4 py-3 text-left hover:bg-[rgb(var(--muted))]/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'flex w-full min-h-[36px] items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 /** Tool icon container classes */
-export const TOOL_ICON_CONTAINER_CLASSES = 'flex h-7 w-7 items-center justify-center rounded-lg';
+export const TOOL_ICON_CONTAINER_CLASSES = 'flex h-5 w-5 items-center justify-center rounded';
 export const TOOL_ICON_DEFAULT_CLASSES = 'bg-primary/10';
-export const TOOL_ICON_ERROR_CLASSES = 'bg-error/20';
-export const TOOL_ICON_RUNNING_CLASSES = 'bg-info/20';
+export const TOOL_ICON_ERROR_CLASSES = 'bg-destructive/20';
+export const TOOL_ICON_RUNNING_CLASSES = 'bg-blue-500/20';
 
 /** Tool content classes */
-export const TOOL_CONTENT_CLASSES = 'border-t border-[rgb(var(--border))] px-4 py-3 space-y-3';
+export const TOOL_CONTENT_CLASSES = 'border-t border-border px-3 py-2 space-y-2';
 export const TOOL_SECTION_LABEL_CLASSES =
-  'mb-1.5 text-xs font-medium text-[rgb(var(--muted-foreground))]';
+  'text-[10px] font-medium text-muted-foreground uppercase tracking-wide';
 export const TOOL_PRE_CLASSES =
-  'overflow-x-auto rounded-lg bg-[rgb(var(--background))] p-3 text-xs text-[rgb(var(--muted-foreground))]';
+  'overflow-x-auto rounded bg-background p-2 text-xs font-mono text-muted-foreground max-h-48';
 export const TOOL_OUTPUT_ERROR_CLASSES =
-  'max-h-48 overflow-auto rounded-lg p-3 text-xs bg-error/10 text-error';
+  'max-h-48 overflow-auto rounded p-2 text-xs font-mono bg-destructive/10 text-destructive';
 export const TOOL_OUTPUT_SUCCESS_CLASSES =
-  'max-h-48 overflow-auto rounded-lg p-3 text-xs bg-background text-muted-foreground';
+  'max-h-48 overflow-auto rounded p-2 text-xs font-mono bg-background text-muted-foreground';
 
 /** Status badge classes */
 export const STATUS_BADGE_CLASSES = 'rounded px-1.5 py-0.5 text-[10px] font-medium';
-export const STATUS_BADGE_ERROR_CLASSES = 'bg-error/20 text-error';
-export const STATUS_BADGE_RUNNING_CLASSES = 'bg-info/20 text-info';
+export const STATUS_BADGE_ERROR_CLASSES = 'bg-destructive/20 text-destructive';
+export const STATUS_BADGE_RUNNING_CLASSES = 'bg-blue-500/20 text-blue-500';
 
 /** Result indicator classes */
-export const RESULT_BASE_CLASSES = 'rounded-lg px-3 py-2 text-xs font-medium';
-export const RESULT_SUCCESS_CLASSES = 'bg-success/10 text-success';
-export const RESULT_ERROR_CLASSES = 'bg-error/10 text-error';
-export const RESULT_INFO_CLASSES = 'bg-info/10 text-info';
+export const RESULT_BASE_CLASSES =
+  'flex items-center gap-2 rounded px-3 py-2 text-xs font-medium mt-2';
+export const RESULT_SUCCESS_CLASSES = 'bg-green-500/10 text-green-500';
+export const RESULT_ERROR_CLASSES = 'bg-destructive/10 text-destructive';
+export const RESULT_INFO_CLASSES = 'bg-blue-500/10 text-blue-500';
 
 /** Streaming indicator classes */
 export const STREAMING_INDICATOR_CLASSES =
-  'flex items-center gap-2 px-1 text-sm text-[rgb(var(--muted-foreground))]';
+  'flex items-center gap-2 px-1 py-1 text-xs text-muted-foreground';
 
 /** Raw output section classes */
-export const RAW_OUTPUT_CONTAINER_CLASSES =
-  'rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--card))]';
+export const RAW_OUTPUT_CONTAINER_CLASSES = 'rounded border border-border bg-card mt-2';
 export const RAW_OUTPUT_HEADER_CLASSES =
-  'flex w-full min-h-[44px] items-center gap-3 px-4 py-3 text-left hover:bg-[rgb(var(--muted))]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'flex w-full min-h-[36px] items-center gap-2 px-3 py-2 text-left hover:bg-muted/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 export const RAW_OUTPUT_CONTENT_CLASSES =
-  'border-t border-[rgb(var(--border))] max-h-64 overflow-auto p-4 font-mono text-xs text-[rgb(var(--muted-foreground))]';
+  'border-t border-border max-h-64 overflow-auto p-3 font-mono text-xs text-muted-foreground';
 
 // ============================================================================
 // Utility Functions
@@ -188,10 +204,12 @@ export function formatTimestampForSR(timestamp: string): string {
 
 /**
  * Get tool status for accessibility
+ * Note: output can be empty string for successful tools (like Write)
+ * Only undefined means the tool is still running
  */
 export function getToolStatus(tool: ToolInfo): 'running' | 'error' | 'complete' {
   if (tool.isError) return 'error';
-  if (!tool.output || tool.output.length === 0) return 'running';
+  if (tool.output === undefined) return 'running';
   return 'complete';
 }
 
@@ -231,8 +249,27 @@ export function parseToolData<T>(jsonString: string | undefined, fallback: T): T
   }
 }
 
+/**
+ * Get tool icon based on tool name
+ */
+function getToolIcon(toolName: string) {
+  const name = toolName.toLowerCase();
+  if (name.includes('bash') || name.includes('terminal') || name.includes('exec')) {
+    return Terminal;
+  }
+  if (
+    name.includes('file') ||
+    name.includes('read') ||
+    name.includes('write') ||
+    name.includes('edit')
+  ) {
+    return FileCode;
+  }
+  return Wrench;
+}
+
 // ============================================================================
-// User Message Bubble
+// User Message Block
 // ============================================================================
 
 export interface UserMessageBubbleProps {
@@ -249,8 +286,8 @@ export interface UserMessageBubbleProps {
 }
 
 /**
- * UserMessageBubble displays a user message in a chat bubble format.
- * Right-aligned with primary color background.
+ * UserMessageBubble displays a user message in a CLI-style block.
+ * Full-width container with right-aligned header and text content.
  *
  * @accessibility
  * - Uses article role with aria-label for message context
@@ -268,7 +305,7 @@ export const UserMessageBubble = forwardRef<HTMLElement, UserMessageBubbleProps>
       <Box
         as="article"
         ref={ref}
-        className={cn('flex justify-end', className)}
+        className={cn(MESSAGE_BLOCK_CLASSES, className)}
         aria-label={`${userLabel} said`}
         data-testid={testId}
         data-sender="user"
@@ -281,30 +318,32 @@ export const UserMessageBubble = forwardRef<HTMLElement, UserMessageBubbleProps>
           </Text>
         </VisuallyHidden>
 
-        {/* Wider on mobile (90%) to maximize space, narrower on desktop (80%) */}
-        <Flex className="max-w-[90%] gap-2 md:max-w-[80%] md:gap-3" aria-hidden={true}>
-          <Box className={cn(USER_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md, 'order-2')}>
-            <User
-              className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-[rgb(var(--primary-foreground))]')}
-            />
-          </Box>
-          <Box className="order-1 min-w-0">
-            <Box className={USER_BUBBLE_CLASSES}>
-              <Text as="p" size="sm" leading="relaxed" className="whitespace-pre-wrap break-words">
-                {content}
-              </Text>
+        {/* Header - right-aligned for user messages */}
+        <Box className={cn(MESSAGE_HEADER_CLASSES, 'justify-end')} aria-hidden={true}>
+          {timestamp && (
+            <Box as="time" dateTime={timestamp} className={TIMESTAMP_CLASSES}>
+              {formatTimestamp(timestamp)}
             </Box>
-            {timestamp && (
-              <Box
-                as="time"
-                dateTime={timestamp}
-                className={cn(TIMESTAMP_CLASSES, 'block text-right')}
-              >
-                {formatTimestamp(timestamp)}
-              </Box>
-            )}
+          )}
+          <Text as="span" size="xs" weight="semibold" className="text-foreground">
+            {userLabel}
+          </Text>
+          <Box className={cn(USER_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)}>
+            <User className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-primary')} />
           </Box>
-        </Flex>
+        </Box>
+
+        {/* Content - right-aligned text for user messages */}
+        <Box className={MESSAGE_CONTENT_CLASSES} aria-hidden={true}>
+          <Text
+            as="p"
+            size="sm"
+            leading="relaxed"
+            className="whitespace-pre-wrap text-foreground text-right"
+          >
+            {content}
+          </Text>
+        </Box>
       </Box>
     );
   }
@@ -313,7 +352,7 @@ export const UserMessageBubble = forwardRef<HTMLElement, UserMessageBubbleProps>
 UserMessageBubble.displayName = 'UserMessageBubble';
 
 // ============================================================================
-// Assistant Message Bubble
+// Assistant Message Block
 // ============================================================================
 
 export interface AssistantMessageBubbleProps {
@@ -325,7 +364,7 @@ export interface AssistantMessageBubbleProps {
   toolResults?: string;
   /** Message timestamp (ISO string) */
   timestamp?: string;
-  /** Label for screen readers (default: "Assistant") */
+  /** Label for screen readers (default: "Claude") */
   assistantLabel?: string;
   /** Additional CSS classes */
   className?: string;
@@ -335,7 +374,7 @@ export interface AssistantMessageBubbleProps {
 
 /**
  * AssistantMessageBubble displays a persisted assistant message.
- * Left-aligned with muted background, shows tool calls if present.
+ * Full-width CLI-style block with header showing "Claude".
  *
  * @accessibility
  * - Uses article role with aria-label for message context
@@ -383,7 +422,7 @@ export const AssistantMessageBubble = forwardRef<HTMLElement, AssistantMessageBu
       <Box
         as="article"
         ref={ref}
-        className={cn('flex gap-3', className)}
+        className={cn(MESSAGE_BLOCK_CLASSES, className)}
         aria-label={`${assistantLabel} said`}
         data-testid={testId}
         data-sender="assistant"
@@ -397,40 +436,47 @@ export const AssistantMessageBubble = forwardRef<HTMLElement, AssistantMessageBu
           </Text>
         </VisuallyHidden>
 
-        <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden={true}>
-          <Bot className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-white')} />
+        {/* Header */}
+        <Box className={MESSAGE_HEADER_CLASSES} aria-hidden={true}>
+          <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)}>
+            <Bot className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-orange-500')} />
+          </Box>
+          <Text as="span" size="xs" weight="semibold" className="text-foreground">
+            {assistantLabel}
+          </Text>
+          {timestamp && (
+            <Box as="time" dateTime={timestamp} className={TIMESTAMP_CLASSES}>
+              {formatTimestamp(timestamp)}
+            </Box>
+          )}
         </Box>
 
-        <Box className="min-w-0 flex-1 space-y-3" aria-hidden={true}>
+        {/* Content */}
+        <Box className={MESSAGE_CONTENT_CLASSES} aria-hidden={true}>
           {/* Text content */}
           {content && (
-            <Box className={ASSISTANT_BUBBLE_CLASSES}>
-              <Text
-                as="p"
-                size="sm"
-                leading="relaxed"
-                className="whitespace-pre-wrap text-[rgb(var(--foreground))]"
-              >
-                {content}
-              </Text>
-            </Box>
+            <Text
+              as="p"
+              size="sm"
+              leading="relaxed"
+              className="whitespace-pre-wrap text-foreground"
+            >
+              {content}
+            </Text>
           )}
 
           {/* Tool calls */}
           {toolsWithResults.length > 0 && (
-            <Box role="list" aria-label={`${toolCount} tool call${toolCount === 1 ? '' : 's'}`}>
+            <Box
+              role="list"
+              aria-label={`${toolCount} tool call${toolCount === 1 ? '' : 's'}`}
+              className="mt-3 space-y-2"
+            >
               {toolsWithResults.map((tool) => (
                 <Box key={tool.id} role="listitem">
                   <ToolCallCard tool={tool} />
                 </Box>
               ))}
-            </Box>
-          )}
-
-          {/* Timestamp */}
-          {timestamp && (
-            <Box as="time" dateTime={timestamp} className={TIMESTAMP_CLASSES}>
-              {formatTimestamp(timestamp)}
             </Box>
           )}
         </Box>
@@ -456,7 +502,7 @@ export interface StreamingResponseProps {
   rawOutput?: string[];
   /** Label for streaming indicator */
   streamingLabel?: string;
-  /** Label for screen readers (default: "Assistant") */
+  /** Label for screen readers (default: "Claude") */
   assistantLabel?: string;
   /** Additional CSS classes */
   className?: string;
@@ -466,7 +512,7 @@ export interface StreamingResponseProps {
 
 /**
  * StreamingResponse renders Claude's streaming response with text, tools, and results.
- * Left-aligned with assistant avatar.
+ * CLI-style block with header showing "Claude".
  *
  * @accessibility
  * - Uses article role with aria-label for streaming context
@@ -498,7 +544,7 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
       <Box
         as="article"
         ref={ref}
-        className={cn('flex gap-3', className)}
+        className={cn(MESSAGE_BLOCK_CLASSES, className)}
         aria-label={isStreaming ? `${assistantLabel} is responding` : `${assistantLabel} response`}
         aria-busy={isStreaming}
         data-testid={testId}
@@ -512,32 +558,48 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
           </Box>
         </VisuallyHidden>
 
-        <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)} aria-hidden={true}>
-          <Bot className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-white')} />
+        {/* Header */}
+        <Box className={MESSAGE_HEADER_CLASSES} aria-hidden={true}>
+          <Box className={cn(ASSISTANT_AVATAR_CLASSES, AVATAR_SIZE_CLASSES.md)}>
+            <Bot className={cn(AVATAR_ICON_SIZE_CLASSES.md, 'text-orange-500')} />
+          </Box>
+          <Text as="span" size="xs" weight="semibold" className="text-foreground">
+            {assistantLabel}
+          </Text>
+          {isStreaming && (
+            <Flex align="center" gap="1" className="ml-2">
+              <Spinner size="sm" announce={false} />
+              <Text as="span" size="xs" className="text-muted-foreground">
+                {streamingLabel}
+              </Text>
+            </Flex>
+          )}
         </Box>
 
-        <Box className="min-w-0 flex-1 space-y-3" aria-hidden={true}>
+        {/* Content */}
+        <Box className={MESSAGE_CONTENT_CLASSES} aria-hidden={true}>
           {/* Render display items */}
           {displayItems.map((item, index) => {
             if (item.type === 'text') {
               return (
-                <Box key={`text-${index}`} className={ASSISTANT_BUBBLE_CLASSES}>
-                  <Box className="prose prose-sm prose-invert max-w-none">
-                    <Text
-                      as="p"
-                      size="sm"
-                      leading="relaxed"
-                      className="whitespace-pre-wrap text-[rgb(var(--foreground))]"
-                    >
-                      {item.content}
-                    </Text>
-                  </Box>
-                </Box>
+                <Text
+                  key={`text-${index}`}
+                  as="p"
+                  size="sm"
+                  leading="relaxed"
+                  className="whitespace-pre-wrap text-foreground"
+                >
+                  {item.content}
+                </Text>
               );
             }
 
             if (item.type === 'tool') {
-              return <ToolCallCard key={`tool-${index}`} tool={item.tool} />;
+              return (
+                <Box key={`tool-${index}`} className="mt-2">
+                  <ToolCallCard tool={item.tool} />
+                </Box>
+              );
             }
 
             if (item.type === 'result') {
@@ -556,8 +618,10 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
                   role="status"
                 >
                   <VisuallyHidden>{getResultAnnouncement(item.subtype)}</VisuallyHidden>
+                  {isSuccess && <Check className="h-3.5 w-3.5" />}
+                  {isError && <X className="h-3.5 w-3.5" />}
                   <Text as="span" aria-hidden={true}>
-                    {isSuccess ? '✓ Completed successfully' : `Result: ${item.subtype}`}
+                    {isSuccess ? 'Completed successfully' : `Result: ${item.subtype}`}
                   </Text>
                 </Box>
               );
@@ -565,14 +629,6 @@ export const StreamingResponse = forwardRef<HTMLElement, StreamingResponseProps>
 
             return null;
           })}
-
-          {/* Streaming indicator */}
-          {isStreaming && (
-            <Box className={STREAMING_INDICATOR_CLASSES} role="status">
-              <Spinner size="sm" announce={false} aria-hidden={true} />
-              <Text as="span">{streamingLabel}</Text>
-            </Box>
-          )}
 
           {/* Raw output toggle */}
           {showRawOutput && rawOutput.length > 0 && <RawOutputSection output={rawOutput} />}
@@ -603,6 +659,7 @@ export interface ToolCallCardProps {
 
 /**
  * ToolCallCard displays a tool call with expandable input/output sections.
+ * CLI-style with tool name prominent and status indicators.
  *
  * @accessibility
  * - Button has aria-expanded state
@@ -624,11 +681,14 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
   ) => {
     const [expanded, setExpanded] = useState(false);
     const contentId = useId();
-    const hasOutput = tool.output && tool.output.length > 0;
+    // hasOutput checks if there's non-empty content to display in the expanded section
+    const hasOutput = tool.output !== undefined && tool.output.length > 0;
     const hasInput = tool.input && Object.keys(tool.input).length > 0;
-    const isInProgress = !hasOutput && !tool.isError;
+    // isInProgress checks if tool is still running (output undefined, not just empty)
+    const isInProgress = tool.output === undefined && !tool.isError;
     const hasExpandableContent = hasInput || hasOutput;
     const status = getToolStatus(tool);
+    const ToolIcon = getToolIcon(tool.name);
 
     return (
       <Box
@@ -671,13 +731,15 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
             {isInProgress ? (
               <Spinner size="sm" announce={false} />
             ) : (
-              <Wrench className={cn('h-3.5 w-3.5', tool.isError ? 'text-error' : 'text-primary')} />
+              <ToolIcon
+                className={cn('h-3 w-3', tool.isError ? 'text-destructive' : 'text-primary')}
+              />
             )}
           </Box>
 
           <Box className="min-w-0 flex-1">
             <Flex align="center" gap="2">
-              <Box as="code" className="text-sm font-semibold text-foreground">
+              <Box as="code" className="text-xs font-semibold text-foreground font-mono">
                 {tool.name}
               </Box>
               {tool.isError && (
@@ -704,7 +766,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
           <Icon
             icon={expanded ? ChevronDown : ChevronRight}
             size="sm"
-            className="text-[rgb(var(--muted-foreground))]"
+            className="text-muted-foreground"
             aria-hidden={true}
           />
         </Box>
@@ -714,7 +776,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
           <Box id={contentId} className={TOOL_CONTENT_CLASSES}>
             {hasInput && (
               <Box>
-                <Text as="p" size="xs" weight="medium" className={TOOL_SECTION_LABEL_CLASSES}>
+                <Text as="p" className={TOOL_SECTION_LABEL_CLASSES}>
                   Input
                 </Text>
                 <Box as="pre" className={TOOL_PRE_CLASSES}>
@@ -725,7 +787,7 @@ export const ToolCallCard = forwardRef<HTMLDivElement, ToolCallCardProps>(
 
             {hasOutput && (
               <Box>
-                <Text as="p" size="xs" weight="medium" className={TOOL_SECTION_LABEL_CLASSES}>
+                <Text as="p" className={TOOL_SECTION_LABEL_CLASSES}>
                   Output
                 </Text>
                 <Box
@@ -795,14 +857,14 @@ export const RawOutputSection = forwardRef<HTMLDivElement, RawOutputSectionProps
           aria-controls={contentId}
           aria-label={`${label}, ${lineCount} line${lineCount === 1 ? '' : 's'}. ${expanded ? 'Collapse' : 'Expand'}`}
         >
-          <Code2 className="h-4 w-4 text-[rgb(var(--muted-foreground))]" aria-hidden={true} />
-          <Text as="span" size="xs" weight="medium" className="text-[rgb(var(--muted-foreground))]">
+          <Code2 className="h-3.5 w-3.5 text-muted-foreground" aria-hidden={true} />
+          <Text as="span" size="xs" weight="medium" className="text-muted-foreground">
             {label} ({lineCount} {lineCount === 1 ? 'line' : 'lines'})
           </Text>
           <Icon
             icon={expanded ? ChevronDown : ChevronRight}
             size="sm"
-            className="ml-auto text-[rgb(var(--muted-foreground))]"
+            className="ml-auto text-muted-foreground"
             aria-hidden={true}
           />
         </Box>
@@ -820,11 +882,11 @@ export const RawOutputSection = forwardRef<HTMLDivElement, RawOutputSectionProps
 RawOutputSection.displayName = 'RawOutputSection';
 
 // ============================================================================
-// Bubble Message List
+// Message List
 // ============================================================================
 
 export interface BubbleMessageListProps {
-  /** Child message bubbles */
+  /** Child message blocks */
   children: ReactNode;
   /** Accessible label for the message list */
   'aria-label'?: string;
@@ -835,7 +897,7 @@ export interface BubbleMessageListProps {
 }
 
 /**
- * BubbleMessageList wraps message bubbles in a proper list structure.
+ * BubbleMessageList wraps message blocks in a proper list structure.
  *
  * @accessibility
  * - Uses role="list" for proper semantics
@@ -851,7 +913,7 @@ export const BubbleMessageList = forwardRef<HTMLDivElement, BubbleMessageListPro
         ref={ref}
         role="list"
         aria-label={ariaLabel}
-        className={cn('space-y-4', className)}
+        className={cn('space-y-3', className)}
         data-testid={testId}
       >
         {children}
@@ -863,11 +925,11 @@ export const BubbleMessageList = forwardRef<HTMLDivElement, BubbleMessageListPro
 BubbleMessageList.displayName = 'BubbleMessageList';
 
 // ============================================================================
-// Bubble Message List Item
+// Message List Item
 // ============================================================================
 
 export interface BubbleMessageListItemProps {
-  /** Child message bubble */
+  /** Child message block */
   children: ReactNode;
   /** Additional CSS classes */
   className?: string;

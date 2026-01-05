@@ -277,6 +277,7 @@ pub fn run() {
             commands::is_process_running,
             commands::running_process_count,
             commands::delete_process,
+            commands::get_process_snapshot,
             // Git commands
             commands::create_worktree,
             commands::delete_worktree,

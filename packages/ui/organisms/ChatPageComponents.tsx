@@ -39,8 +39,12 @@ import {
   StreamingResponse,
   UserMessageBubble,
 } from './ChatBubbles';
+import { ChatTerminal, type ChatTerminalHandle } from './ChatTerminal';
 import type { PermissionRequest } from './PermissionDialog';
 import { PermissionDialog } from './PermissionDialog';
+
+/** View mode for chat content */
+export type ChatViewMode = 'clean' | 'terminal';
 
 // ============================================================================
 // Types
@@ -64,6 +68,8 @@ export const DEFAULT_BACK_LABEL = 'Go back';
 export const DEFAULT_UNTITLED_CHAT = 'Untitled Chat';
 export const DEFAULT_TOGGLE_RAW_LABEL_SHOW = 'Show raw output';
 export const DEFAULT_TOGGLE_RAW_LABEL_HIDE = 'Show formatted output';
+export const DEFAULT_TOGGLE_TERMINAL_LABEL = 'Show terminal';
+export const DEFAULT_TOGGLE_CLEAN_LABEL = 'Show formatted';
 export const DEFAULT_EMPTY_TITLE = 'Start a conversation';
 export const DEFAULT_EMPTY_DESCRIPTION =
   'Send a message to start working with Claude. You can ask questions, request code changes, or give instructions.';
@@ -84,8 +90,9 @@ export const SR_PROCESSING = 'Claude is responding...';
 export const SR_SEND_HINT = 'Press Enter to send, Shift+Enter for new line';
 
 /** Layout class constants */
-export const CHAT_PAGE_LAYOUT_CLASSES = 'flex h-full flex-col bg-[rgb(var(--background))]';
-export const CHAT_PAGE_CONTENT_WRAPPER_CLASSES = 'flex-1 overflow-y-auto';
+export const CHAT_PAGE_LAYOUT_CLASSES = 'flex h-screen flex-col bg-[rgb(var(--background))]';
+export const CHAT_PAGE_CONTENT_WRAPPER_CLASSES = 'flex-1 min-h-0 overflow-hidden';
+export const CHAT_PAGE_CONTENT_INNER_CLASSES = 'h-full overflow-y-auto';
 export const CHAT_PAGE_CONTENT_CONTAINER_CLASSES = 'mx-auto max-w-4xl px-3 py-4 md:px-4 md:py-6';
 
 /** Skeleton classes */
@@ -206,6 +213,13 @@ export function getToggleButtonLabel(showRawOutput: boolean): string {
   return showRawOutput ? DEFAULT_TOGGLE_RAW_LABEL_HIDE : DEFAULT_TOGGLE_RAW_LABEL_SHOW;
 }
 
+/**
+ * Get view mode toggle button label
+ */
+export function getViewModeToggleLabel(viewMode: ChatViewMode): string {
+  return viewMode === 'terminal' ? DEFAULT_TOGGLE_CLEAN_LABEL : DEFAULT_TOGGLE_TERMINAL_LABEL;
+}
+
 // ============================================================================
 // Chat Page Layout
 // ============================================================================
@@ -219,6 +233,8 @@ export interface ChatPageLayoutProps {
   inputArea: ReactNode;
   /** Permission dialog (optional) */
   permissionDialog?: ReactNode;
+  /** Ref for the scroll container - use this for auto-scroll behavior */
+  scrollContainerRef?: React.RefObject<HTMLDivElement>;
   /** Additional CSS classes */
   className?: string;
   /** Data test id */
@@ -227,10 +243,22 @@ export interface ChatPageLayoutProps {
 
 /**
  * ChatPageLayout provides the main structure for the chat page.
+ * Uses h-screen to fill the viewport with:
+ * - Fixed header at top
+ * - Flexible content area with scroll
+ * - Fixed input area at bottom
  */
 export const ChatPageLayout = forwardRef<HTMLDivElement, ChatPageLayoutProps>(
   function ChatPageLayout(
-    { header, children, inputArea, permissionDialog, className, 'data-testid': testId },
+    {
+      header,
+      children,
+      inputArea,
+      permissionDialog,
+      scrollContainerRef,
+      className,
+      'data-testid': testId,
+    },
     ref
   ) {
     return (
@@ -238,8 +266,10 @@ export const ChatPageLayout = forwardRef<HTMLDivElement, ChatPageLayoutProps>(
         {permissionDialog}
         {header}
         <Box className={CHAT_PAGE_CONTENT_WRAPPER_CLASSES}>
-          <Box as="main" className={CHAT_PAGE_CONTENT_CONTAINER_CLASSES}>
-            {children}
+          <Box ref={scrollContainerRef} className={CHAT_PAGE_CONTENT_INNER_CLASSES}>
+            <Box as="main" className={CHAT_PAGE_CONTENT_CONTAINER_CLASSES}>
+              {children}
+            </Box>
           </Box>
         </Box>
         {inputArea}
@@ -442,10 +472,14 @@ export interface ChatHeaderProps {
   title?: string;
   /** Project name */
   projectName?: string;
-  /** Whether raw output is shown */
-  showRawOutput: boolean;
-  /** Callback to toggle raw output */
-  onToggleRawOutput: () => void;
+  /** Current view mode */
+  viewMode?: ChatViewMode;
+  /** Callback to toggle view mode */
+  onToggleViewMode?: () => void;
+  /** Whether raw output is shown (deprecated, use viewMode) */
+  showRawOutput?: boolean;
+  /** Callback to toggle raw output (deprecated, use onToggleViewMode) */
+  onToggleRawOutput?: () => void;
   /** Callback when back button is clicked */
   onBack: () => void;
   /** Custom back button label */
@@ -463,6 +497,8 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
   {
     title,
     projectName,
+    viewMode = 'clean',
+    onToggleViewMode,
     showRawOutput,
     onToggleRawOutput,
     onBack,
@@ -472,7 +508,10 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
   },
   ref
 ) {
-  const toggleLabel = getToggleButtonLabel(showRawOutput);
+  // Use viewMode if available, fall back to showRawOutput for backward compatibility
+  const isTerminalMode = viewMode === 'terminal' || showRawOutput;
+  const handleToggle = onToggleViewMode ?? onToggleRawOutput;
+  const toggleLabel = getViewModeToggleLabel(viewMode);
   const accessibleLabel = buildHeaderAccessibleLabel(title, projectName);
 
   return (
@@ -515,19 +554,25 @@ export const ChatHeader = forwardRef<HTMLElement, ChatHeaderProps>(function Chat
       </Flex>
 
       {/* View toggle */}
-      <Button
-        variant={showRawOutput ? 'secondary' : 'ghost'}
-        size="sm"
-        onClick={onToggleRawOutput}
-        className={HEADER_TOGGLE_BUTTON_CLASSES}
-        aria-label={toggleLabel}
-        aria-pressed={showRawOutput}
-      >
-        <Terminal className="h-3.5 w-3.5" aria-hidden={true} />
-        <Text as="span" className="hidden sm:inline">
-          {showRawOutput ? 'Formatted' : 'Raw'}
-        </Text>
-      </Button>
+      {handleToggle && (
+        <Button
+          variant={isTerminalMode ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={handleToggle}
+          className={HEADER_TOGGLE_BUTTON_CLASSES}
+          aria-label={toggleLabel}
+          aria-pressed={isTerminalMode}
+        >
+          {isTerminalMode ? (
+            <MessageSquare className="h-3.5 w-3.5" aria-hidden={true} />
+          ) : (
+            <Terminal className="h-3.5 w-3.5" aria-hidden={true} />
+          )}
+          <Text as="span" className="hidden sm:inline">
+            {isTerminalMode ? 'Formatted' : 'Terminal'}
+          </Text>
+        </Button>
+      )}
     </Box>
   );
 });
@@ -607,7 +652,7 @@ export interface ChatMessageListProps {
   /** Whether Claude is currently responding */
   isRunning: boolean;
   /** Whether to show raw output */
-  showRawOutput: boolean;
+  showRawOutput?: boolean;
   /** Raw output lines */
   rawOutput: string[];
   /** Ref for scroll anchor */
@@ -676,12 +721,13 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
           )}
         </BubbleMessageList>
 
-        {/* Claude's streaming response */}
-        {activeProcessId && (displayItems.length > 0 || isRunning) && (
+        {/* Claude's streaming response - show when we have content or are running */}
+        {/* Note: displayItems should persist after process completes until persisted to messages */}
+        {(displayItems.length > 0 || (activeProcessId && isRunning)) && (
           <StreamingResponse
             displayItems={displayItems}
             isStreaming={isRunning}
-            showRawOutput={showRawOutput}
+            showRawOutput={showRawOutput ?? false}
             rawOutput={rawOutput}
           />
         )}
@@ -868,10 +914,20 @@ export interface ChatContentProps {
   activeProcessId: string | null;
   /** Whether Claude is currently responding */
   isRunning: boolean;
-  /** Whether to show raw output */
-  showRawOutput: boolean;
+  /** View mode: 'clean' for formatted messages, 'terminal' for xterm.js */
+  viewMode?: ChatViewMode;
+  /** Whether to show raw output (deprecated, use viewMode instead) */
+  showRawOutput?: boolean;
   /** Raw output lines */
   rawOutput: string[];
+  /** Whether connected to terminal stream (for terminal view) */
+  terminalConnected?: boolean;
+  /** Total bytes received by terminal (for terminal view) */
+  terminalBytes?: number;
+  /** Terminal stream error (for terminal view) */
+  terminalError?: Error | null;
+  /** Ref for the terminal to write data to */
+  terminalRef?: RefObject<ChatTerminalHandle>;
   /** Ref for scroll anchor */
   scrollRef?: RefObject<HTMLDivElement>;
   /** Additional CSS classes */
@@ -882,7 +938,8 @@ export interface ChatContentProps {
 
 /**
  * ChatContent handles the empty vs content state switching.
- * Shows empty state when no content, otherwise shows message list.
+ * Shows empty state when no content, terminal when in terminal mode,
+ * otherwise shows message list.
  */
 export const ChatContent = forwardRef<HTMLDivElement, ChatContentProps>(function ChatContent(
   {
@@ -892,18 +949,46 @@ export const ChatContent = forwardRef<HTMLDivElement, ChatContentProps>(function
     displayItems,
     activeProcessId,
     isRunning,
+    viewMode = 'clean',
     showRawOutput,
     rawOutput,
+    terminalConnected = false,
+    terminalBytes = 0,
+    terminalError,
+    terminalRef,
     scrollRef,
     className,
     'data-testid': testId,
   },
   ref
 ) {
+  // Show empty state only when there's no content and not processing
   if (!hasContent && !isProcessing) {
     return <ChatEmptyState className={className} data-testid={testId} ref={ref} />;
   }
 
+  // Terminal view mode - show xterm.js terminal
+  if (viewMode === 'terminal') {
+    // Convert rawOutput array to single string for historical display
+    const historicalContent = rawOutput.length > 0 ? rawOutput.join('') : undefined;
+
+    return (
+      <Box ref={ref} className={cn('h-full w-full', className)} data-testid={testId}>
+        <ChatTerminal
+          ref={terminalRef}
+          processId={activeProcessId}
+          initialContent={historicalContent}
+          isConnected={terminalConnected}
+          totalBytes={terminalBytes}
+          streamError={terminalError}
+          colorMode="dark"
+          data-testid={testId ? `${testId}-terminal` : undefined}
+        />
+      </Box>
+    );
+  }
+
+  // Clean view mode - show formatted messages
   return (
     <ChatMessageList
       ref={ref}

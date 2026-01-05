@@ -53,8 +53,9 @@
 use std::sync::Arc;
 
 use openflow_contracts::events::{
-    process_output_channel, process_status_channel, DataChangedEvent, ProcessOutputEvent,
-    ProcessStatusEvent, WsServerMessage, CHANNEL_DATA_CHANGED,
+    claude_event_channel, process_output_channel, process_status_channel, tool_state_channel,
+    ClaudeEventData, DataChangedEvent, ProcessOutputEvent, ProcessStatusEvent, ToolStateEvent,
+    WsServerMessage, CHANNEL_DATA_CHANGED,
 };
 use openflow_core::events::{
     DataAction as CoreDataAction, EntityType as CoreEntityType, Event as CoreEvent,
@@ -181,6 +182,36 @@ impl WsBroadcaster {
                     parent_id: None,
                 };
                 let message = WsServerMessage::data_changed(&contract_event);
+                (channel, message)
+            }
+
+            CoreEvent::ClaudeEvent {
+                process_id,
+                event,
+                timestamp,
+            } => {
+                let channel = claude_event_channel(&process_id);
+                let contract_event = ClaudeEventData {
+                    process_id: process_id.clone(),
+                    event,
+                    timestamp,
+                };
+                let message = WsServerMessage::claude_event(&contract_event);
+                (channel, message)
+            }
+
+            CoreEvent::ToolStateChange {
+                process_id,
+                tool_state,
+                timestamp,
+            } => {
+                let channel = tool_state_channel(&process_id);
+                let contract_event = ToolStateEvent {
+                    process_id: process_id.clone(),
+                    tool_state,
+                    timestamp,
+                };
+                let message = WsServerMessage::tool_state_event(&contract_event);
                 (channel, message)
             }
         }

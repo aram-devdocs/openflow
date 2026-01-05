@@ -27,7 +27,7 @@ function StandaloneChatRoute() {
   });
 
   useKeyboardShortcuts([
-    { key: 't', meta: true, action: session.toggleRawOutput },
+    { key: 't', meta: true, action: session.toggleViewMode },
     { key: 'Escape', action: () => navigate({ to: '/' }) },
   ]);
 
@@ -50,8 +50,8 @@ function StandaloneChatRoute() {
       header={{
         title: session.chat.title,
         projectName: session.project?.name,
-        showRawOutput: session.showRawOutput,
-        onToggleRawOutput: session.toggleRawOutput,
+        viewMode: session.viewMode,
+        onToggleViewMode: session.toggleViewMode,
         onBack: () => navigate({ to: '/' }),
       }}
       content={{
@@ -61,9 +61,10 @@ function StandaloneChatRoute() {
         displayItems: session.displayItems,
         activeProcessId: session.activeProcessId,
         isRunning: session.isRunning,
-        showRawOutput: session.showRawOutput,
+        viewMode: session.viewMode,
         rawOutput: session.rawOutput,
         scrollRef: session.messagesEndRef,
+        scrollContainerRef: session.scrollContainerRef,
       }}
       inputArea={{
         inputValue: session.inputValue,
