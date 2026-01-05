@@ -47,9 +47,11 @@
 //! ```
 
 pub mod claude_code;
+pub mod gemini_cli;
 
 // Re-export provider implementations
 pub use claude_code::ClaudeCodeProvider;
+pub use gemini_cli::GeminiCLIProvider;
 
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -367,8 +369,8 @@ pub trait AgentProvider: Send + Sync + Debug {
 pub fn get_provider(id: &str) -> Option<Arc<dyn AgentProvider>> {
     match id {
         claude_code::PROVIDER_ID => Some(Arc::new(ClaudeCodeProvider::new())),
-        // TODO: Add provider implementations in Phase 3.3-3.5
-        // "gemini-cli" => Some(Arc::new(GeminiCLIProvider)),
+        gemini_cli::PROVIDER_ID => Some(Arc::new(GeminiCLIProvider::new())),
+        // TODO: Add provider implementations in Phase 3.4-3.5
         // "codex-cli" => Some(Arc::new(CodexCLIProvider)),
         // "mock" => Some(Arc::new(MockProvider::default())),
         _ => None,
@@ -383,7 +385,8 @@ pub fn get_provider(id: &str) -> Option<Arc<dyn AgentProvider>> {
 pub fn list_provider_ids() -> Vec<&'static str> {
     vec![
         claude_code::PROVIDER_ID,
-        // TODO: Add more provider IDs as they are implemented
+        gemini_cli::PROVIDER_ID,
+        // TODO: Add more provider IDs as they are implemented (codex-cli, mock)
     ]
 }
 
@@ -533,6 +536,16 @@ mod tests {
     }
 
     #[test]
+    fn test_get_provider_gemini_cli() {
+        let provider = get_provider("gemini-cli");
+        assert!(provider.is_some());
+        let provider = provider.unwrap();
+        assert_eq!(provider.provider_id(), "gemini-cli");
+        assert_eq!(provider.display_name(), "Gemini CLI");
+        assert_eq!(provider.command(), "gemini");
+    }
+
+    #[test]
     fn test_get_provider_unknown() {
         assert!(get_provider("unknown-provider").is_none());
     }
@@ -540,6 +553,7 @@ mod tests {
     #[test]
     fn test_provider_exists() {
         assert!(provider_exists("claude-code"));
+        assert!(provider_exists("gemini-cli"));
         assert!(!provider_exists("unknown-provider"));
     }
 
@@ -547,5 +561,7 @@ mod tests {
     fn test_list_provider_ids() {
         let ids = list_provider_ids();
         assert!(ids.contains(&"claude-code"));
+        assert!(ids.contains(&"gemini-cli"));
+        assert_eq!(ids.len(), 2);
     }
 }
