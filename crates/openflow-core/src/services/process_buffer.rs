@@ -468,8 +468,8 @@ mod tests {
         let (_, changed) = buffer.append_raw(tool_use.as_bytes());
 
         assert_eq!(changed.len(), 1);
-        assert_eq!(changed[0].id, "tool-1");
-        assert_eq!(changed[0].name, "Read");
+        assert_eq!(changed[0].tool_use_id, "tool-1");
+        assert_eq!(changed[0].tool_name, "Read");
         assert_eq!(changed[0].status, ToolStatus::Running);
 
         // Simulate tool_result event
@@ -478,9 +478,9 @@ mod tests {
         let (_, changed) = buffer.append_raw(tool_result.as_bytes());
 
         assert_eq!(changed.len(), 1);
-        assert_eq!(changed[0].id, "tool-1");
-        assert_eq!(changed[0].status, ToolStatus::Complete);
-        assert!(!changed[0].is_error);
+        assert_eq!(changed[0].tool_use_id, "tool-1");
+        assert_eq!(changed[0].status, ToolStatus::Completed);
+        assert_eq!(changed[0].is_error, 0);
     }
 
     #[test]
@@ -499,7 +499,7 @@ mod tests {
 
         assert_eq!(changed.len(), 1);
         assert_eq!(changed[0].status, ToolStatus::Error);
-        assert!(changed[0].is_error);
+        assert_eq!(changed[0].is_error, 1);
     }
 
     #[test]
