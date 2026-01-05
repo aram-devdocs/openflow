@@ -13,6 +13,7 @@
 //!
 //! # Available Services
 //!
+//! - **agent_session**: Agent session lifecycle and event persistence
 //! - **artifact**: Task artifact file management
 //! - **project**: Project CRUD operations
 //! - **task**: Task CRUD operations
@@ -31,6 +32,7 @@
 mod error;
 
 // Service modules
+pub mod agent_session;
 pub mod artifact;
 pub mod chat;
 pub mod executor;
