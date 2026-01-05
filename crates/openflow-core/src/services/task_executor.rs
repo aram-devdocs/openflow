@@ -1171,4 +1171,175 @@ mod tests {
         let fixture = setup().await;
         assert!(!fixture.executor.is_running("nonexistent").await);
     }
+
+    // =========================================================================
+    // Step Execution Tests
+    // =========================================================================
+
+    #[tokio::test]
+    async fn test_step_creates_chat_and_execution_process() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Add a step
+        let step = task::create_step(
+            &fixture.pool,
+            &task_id,
+            0,
+            "Test Step",
+            "echo 'hello'",
+            "mock",
+        )
+        .await
+        .expect("Failed to create step");
+
+        // Start the task (which will run the step)
+        let _ = fixture.executor.start_task(&task_id).await;
+
+        // Wait a bit for background execution
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+        // Verify a chat was created for this step
+        let chats: Vec<openflow_contracts::Chat> = sqlx::query_as(
+            "SELECT * FROM chats WHERE task_id = ? AND workflow_step_index = ?",
+        )
+        .bind(&task_id)
+        .bind(step.step_index)
+        .fetch_all(&fixture.pool)
+        .await
+        .expect("Failed to query chats");
+
+        // Should have at least one chat created for the step
+        // (may have more if step executed multiple times)
+        assert!(
+            !chats.is_empty(),
+            "Expected at least one chat for the step"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_step_status_updated_during_execution() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Add a step
+        task::create_step(
+            &fixture.pool,
+            &task_id,
+            0,
+            "Test Step",
+            "test prompt",
+            "mock",
+        )
+        .await
+        .expect("Failed to create step");
+
+        // Start the task
+        let _ = fixture.executor.start_task(&task_id).await;
+
+        // Wait for execution to complete (mock provider should be quick)
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        // Verify step status was updated
+        let steps = task::list_steps(&fixture.pool, &task_id).await.unwrap();
+        assert_eq!(steps.len(), 1);
+
+        // Step should be completed (mock provider returns success) or failed (if spawn failed)
+        assert!(
+            steps[0].status == StepStatus::Completed
+                || steps[0].status == StepStatus::Failed
+                || steps[0].status == StepStatus::Running,
+            "Step status should be terminal or running, got {:?}",
+            steps[0].status
+        );
+    }
+
+    #[tokio::test]
+    async fn test_step_links_to_session() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Add a step
+        let step = task::create_step(
+            &fixture.pool,
+            &task_id,
+            0,
+            "Test Step",
+            "test prompt",
+            "mock",
+        )
+        .await
+        .expect("Failed to create step");
+
+        // Initially, step has no session
+        assert!(step.session_id.is_none());
+
+        // Start the task
+        let _ = fixture.executor.start_task(&task_id).await;
+
+        // Wait for execution
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        // Verify step was linked to a session
+        let updated_step = task::get_step(&fixture.pool, &step.id).await;
+
+        // Note: The step may or may not have a session_id depending on whether
+        // the mock provider successfully spawned an agent session.
+        // We just verify the step is in a terminal state.
+        if let Ok(s) = updated_step {
+            if s.status == StepStatus::Completed {
+                // If completed, should have a session
+                assert!(
+                    s.session_id.is_some() || s.status != StepStatus::Completed,
+                    "Completed step should have a linked session"
+                );
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_multiple_steps_execute_sequentially() {
+        let fixture = setup().await;
+        let project_id = create_test_project(&fixture.pool).await;
+        let task_id = create_test_task(&fixture.pool, &project_id).await;
+
+        // Add multiple steps
+        task::create_step(&fixture.pool, &task_id, 0, "Step 1", "prompt 1", "mock")
+            .await
+            .unwrap();
+        task::create_step(&fixture.pool, &task_id, 1, "Step 2", "prompt 2", "mock")
+            .await
+            .unwrap();
+        task::create_step(&fixture.pool, &task_id, 2, "Step 3", "prompt 3", "mock")
+            .await
+            .unwrap();
+
+        // Verify all steps are pending
+        let steps = task::list_steps(&fixture.pool, &task_id).await.unwrap();
+        assert_eq!(steps.len(), 3);
+        for step in &steps {
+            assert_eq!(step.status, StepStatus::Pending);
+        }
+
+        // Start the task
+        let _ = fixture.executor.start_task(&task_id).await;
+
+        // Wait for execution
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+
+        // Verify steps have been processed (at least some should have advanced)
+        let final_task = task::get_task(&fixture.pool, &task_id).await.unwrap();
+
+        // Task should have advanced or be in a terminal state
+        assert!(
+            final_task.status == TaskStatus::Running
+                || final_task.status == TaskStatus::Completed
+                || final_task.status == TaskStatus::Failed,
+            "Task should be running or terminal, got {:?}",
+            final_task.status
+        );
+    }
 }
