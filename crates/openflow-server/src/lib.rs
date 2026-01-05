@@ -179,6 +179,17 @@ pub async fn start_server_with_shutdown(
         client_manager.clone(),
     );
 
+    // Initialize bridge manager (start Agent SDK subprocess)
+    if let Err(e) = state.initialize_bridge().await {
+        tracing::warn!(
+            "Failed to start agent bridge: {}. Agent SDK features may not be available.",
+            e
+        );
+        // Don't fail server startup - the bridge can be started on-demand
+    } else {
+        tracing::info!("Agent bridge initialized successfully");
+    }
+
     // Create router
     let app = create_router(state);
 

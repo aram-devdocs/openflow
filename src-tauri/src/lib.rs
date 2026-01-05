@@ -137,6 +137,20 @@ pub fn run() {
             // Create the application state
             let state = AppState::new(pool, broadcaster);
 
+            // Initialize the bridge manager (start Agent SDK subprocess)
+            // This runs in the setup block, so we use block_on
+            tauri::async_runtime::block_on(async {
+                if let Err(e) = state.initialize_bridge().await {
+                    eprintln!(
+                        "Warning: Failed to start agent bridge: {}. Agent SDK features may not be available.",
+                        e
+                    );
+                    // Don't fail app startup - the bridge can be started on-demand
+                } else {
+                    println!("Agent bridge initialized successfully");
+                }
+            });
+
             // Extract shared resources for the HTTP server
             let http_pool = state.get_pool().clone();
 

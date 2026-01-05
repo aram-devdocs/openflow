@@ -76,6 +76,8 @@ lerna-debug.log*
 src-tauri/WixTools/
 src-tauri/bundle/
 src-tauri/gen/schemas/
+src-tauri/resources/agent-bridge/*
+!src-tauri/resources/agent-bridge/.gitkeep
 
 # TypeScript
 *.tsbuildinfo

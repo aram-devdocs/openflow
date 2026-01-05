@@ -38,11 +38,11 @@ pub mod worktrees;
 
 use sqlx::SqlitePool;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 
 use openflow_core::events::EventBroadcaster;
 use openflow_core::services::process::ProcessService;
-use openflow_core::services::{AgentOrchestrator, TaskExecutor};
+use openflow_core::services::{AgentOrchestrator, BridgeManager, TaskExecutor};
 
 /// Application state shared across all Tauri commands.
 ///
@@ -53,6 +53,7 @@ use openflow_core::services::{AgentOrchestrator, TaskExecutor};
 /// - Database pool (wrapped in Mutex for Tauri command access)
 /// - Process service for managing PTY processes
 /// - Event broadcaster for real-time updates
+/// - Bridge manager for Agent SDK subprocess
 ///
 /// The raw pool is also stored for sharing with the embedded HTTP server.
 pub struct AppState {
@@ -68,6 +69,8 @@ pub struct AppState {
     pub agent_orchestrator: Arc<AgentOrchestrator>,
     /// Task executor for autonomous task execution.
     pub task_executor: Arc<TaskExecutor>,
+    /// Bridge manager for the Agent SDK subprocess.
+    pub bridge_manager: Arc<RwLock<BridgeManager>>,
 }
 
 impl AppState {
@@ -79,6 +82,9 @@ impl AppState {
     /// The broadcaster is passed to the ProcessService so it can emit
     /// real-time events for process output and status changes.
     pub fn new(pool: SqlitePool, broadcaster: Arc<dyn EventBroadcaster>) -> Self {
+        // Create bridge manager for Agent SDK subprocess
+        let bridge_manager = Arc::new(RwLock::new(BridgeManager::default_port()));
+
         // Create agent orchestrator (needs pool and broadcaster)
         let agent_orchestrator = Arc::new(AgentOrchestrator::new(
             pool.clone(),
@@ -100,6 +106,7 @@ impl AppState {
             broadcaster,
             agent_orchestrator,
             task_executor,
+            bridge_manager,
         }
     }
 
@@ -126,6 +133,28 @@ impl AppState {
     /// Get a clone of the task executor.
     pub fn get_task_executor(&self) -> Arc<TaskExecutor> {
         Arc::clone(&self.task_executor)
+    }
+
+    /// Get a clone of the bridge manager.
+    pub fn get_bridge_manager(&self) -> Arc<RwLock<BridgeManager>> {
+        Arc::clone(&self.bridge_manager)
+    }
+
+    /// Initialize the bridge manager (start the subprocess).
+    ///
+    /// This should be called during app setup to ensure the bridge
+    /// is running before any agent operations are attempted.
+    pub async fn initialize_bridge(&self) -> Result<(), String> {
+        let mut manager = self.bridge_manager.write().await;
+        manager.start().await.map_err(|e| e.to_string())
+    }
+
+    /// Stop the bridge manager (shutdown the subprocess).
+    ///
+    /// This should be called during app shutdown.
+    pub async fn shutdown_bridge(&self) -> Result<(), String> {
+        let mut manager = self.bridge_manager.write().await;
+        manager.stop().await.map_err(|e| e.to_string())
     }
 }
 

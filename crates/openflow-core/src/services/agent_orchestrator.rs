@@ -204,8 +204,25 @@ impl AgentOutputSink {
             self.session_id, event_type, sequence
         );
 
-        // Handle tool state tracking
+        // Handle tool state tracking and session ID persistence
         match &event {
+            UnifiedAgentEvent::Init { session_id, .. } => {
+                // Persist the external session ID for resume capability
+                if let Err(e) = agent_session::set_external_session_id(
+                    &self.pool,
+                    &self.session_id,
+                    session_id,
+                )
+                .await
+                {
+                    warn!("Failed to set external session ID: {}", e);
+                } else {
+                    info!(
+                        "Persisted external session ID: internal={}, external={}",
+                        self.session_id, session_id
+                    );
+                }
+            }
             UnifiedAgentEvent::ToolUse {
                 tool_id,
                 tool_name,
