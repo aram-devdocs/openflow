@@ -216,10 +216,11 @@ impl AuditAction {
 ///
 /// This enum maps to the actor column in the audit_logs table.
 #[typeshare]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum AuditActor {
     /// System-initiated action (background processes, automation)
+    #[default]
     System,
     /// User-initiated action (UI interaction, CLI command)
     User,
@@ -248,12 +249,6 @@ impl std::str::FromStr for AuditActor {
             "agent" => Ok(Self::Agent),
             _ => Err(format!("Unknown audit actor: {}", s)),
         }
-    }
-}
-
-impl Default for AuditActor {
-    fn default() -> Self {
-        Self::System
     }
 }
 

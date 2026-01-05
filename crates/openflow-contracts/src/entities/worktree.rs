@@ -24,11 +24,12 @@ use typeshare::typeshare;
 ///
 /// Tracks the lifecycle of a worktree from creation through merge or deletion.
 #[typeshare]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type, Default)]
 #[serde(rename_all = "snake_case")]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
 pub enum DbWorktreeStatus {
     /// Worktree is active and in use
+    #[default]
     Active,
     /// Worktree has been merged back to base branch
     Merged,
@@ -57,12 +58,6 @@ impl DbWorktreeStatus {
     /// Check if the worktree can be worked on
     pub fn is_workable(&self) -> bool {
         matches!(self, Self::Active | Self::Conflict)
-    }
-}
-
-impl Default for DbWorktreeStatus {
-    fn default() -> Self {
-        Self::Active
     }
 }
 
