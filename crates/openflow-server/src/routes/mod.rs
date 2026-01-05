@@ -13,6 +13,7 @@
 //! - `/api/messages` - Message CRUD operations
 //! - `/api/processes` - Process management
 //! - `/api/executor` - Executor profiles and running
+//! - `/api/agents` - Agent session management
 //! - `/api/git` - Git operations (worktrees, diff, commits)
 //! - `/api/github` - GitHub operations (PRs, CLI status)
 //! - `/api/settings` - Settings management
@@ -22,6 +23,7 @@
 //!
 //! Additionally, a WebSocket endpoint is available at `/ws` for real-time events.
 
+pub mod agents;
 pub mod chats;
 pub mod executor;
 pub mod git;
@@ -80,6 +82,7 @@ fn api_routes() -> Router<AppState> {
         .nest("/messages", messages::routes())
         .nest("/processes", processes::routes())
         .nest("/executor", executor::routes())
+        .nest("/agents", agents::routes())
         .nest("/git", git::routes())
         .nest("/github", github::routes())
         .nest("/settings", settings::routes())
