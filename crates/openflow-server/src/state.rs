@@ -9,6 +9,8 @@
 //! - **Process Service**: Manages PTY processes and their lifecycle
 //! - **Event Broadcaster**: Sends real-time updates to WebSocket clients
 //! - **Client Manager**: Manages WebSocket client connections and subscriptions
+//! - **Agent Orchestrator**: Manages AI agent processes and output parsing
+//! - **Task Executor**: Autonomous task execution engine
 //!
 //! # Usage
 //!
@@ -31,6 +33,7 @@ use std::sync::Arc;
 
 use openflow_core::events::EventBroadcaster;
 use openflow_core::services::process::ProcessService;
+use openflow_core::services::{AgentOrchestrator, TaskExecutor};
 use sqlx::SqlitePool;
 
 use crate::ws::ClientManager;
@@ -66,10 +69,25 @@ pub struct AppState {
     /// Tracks connected WebSocket clients and their channel subscriptions.
     /// Used by the WebSocket handler to route events to subscribed clients.
     pub client_manager: Arc<ClientManager>,
+
+    /// Agent orchestrator for managing AI agent processes
+    ///
+    /// Spawns and monitors agent processes via providers (Claude, Gemini, Codex).
+    /// Handles output parsing, event persistence, and permission prompts.
+    pub agent_orchestrator: Arc<AgentOrchestrator>,
+
+    /// Task executor for autonomous task execution
+    ///
+    /// Runs tasks from start to finish in background threads.
+    /// Coordinates with AgentOrchestrator to execute steps sequentially.
+    pub task_executor: Arc<TaskExecutor>,
 }
 
 impl AppState {
     /// Create new application state
+    ///
+    /// This constructor creates the `AgentOrchestrator` and `TaskExecutor`
+    /// automatically from the provided pool and broadcaster.
     ///
     /// # Arguments
     ///
@@ -83,11 +101,26 @@ impl AppState {
         broadcaster: Arc<dyn EventBroadcaster>,
         client_manager: Arc<ClientManager>,
     ) -> Self {
+        // Create agent orchestrator (needs pool and broadcaster)
+        let agent_orchestrator = Arc::new(AgentOrchestrator::new(
+            pool.clone(),
+            Arc::clone(&broadcaster),
+        ));
+
+        // Create task executor (needs pool, agent orchestrator, and broadcaster)
+        let task_executor = Arc::new(TaskExecutor::new(
+            pool.clone(),
+            Arc::clone(&agent_orchestrator),
+            Arc::clone(&broadcaster),
+        ));
+
         Self {
             pool,
             process_service,
             broadcaster,
             client_manager,
+            agent_orchestrator,
+            task_executor,
         }
     }
 
@@ -100,11 +133,27 @@ impl AppState {
     pub fn new_test(pool: SqlitePool, process_service: Arc<ProcessService>) -> Self {
         use openflow_core::events::NullBroadcaster;
 
+        let broadcaster: Arc<dyn EventBroadcaster> = Arc::new(NullBroadcaster);
+        let client_manager = ClientManager::new();
+
+        // Create agent orchestrator and task executor for testing
+        let agent_orchestrator = Arc::new(AgentOrchestrator::new(
+            pool.clone(),
+            Arc::clone(&broadcaster),
+        ));
+        let task_executor = Arc::new(TaskExecutor::new(
+            pool.clone(),
+            Arc::clone(&agent_orchestrator),
+            Arc::clone(&broadcaster),
+        ));
+
         Self {
             pool,
             process_service,
-            broadcaster: Arc::new(NullBroadcaster),
-            client_manager: ClientManager::new(),
+            broadcaster,
+            client_manager,
+            agent_orchestrator,
+            task_executor,
         }
     }
 
@@ -147,6 +196,26 @@ impl AppState {
         &self.client_manager
     }
 
+    /// Get a reference to the agent orchestrator
+    pub fn agent_orchestrator(&self) -> &AgentOrchestrator {
+        &self.agent_orchestrator
+    }
+
+    /// Get a clone of the agent orchestrator Arc
+    pub fn get_agent_orchestrator(&self) -> Arc<AgentOrchestrator> {
+        Arc::clone(&self.agent_orchestrator)
+    }
+
+    /// Get a reference to the task executor
+    pub fn task_executor(&self) -> &TaskExecutor {
+        &self.task_executor
+    }
+
+    /// Get a clone of the task executor Arc
+    pub fn get_task_executor(&self) -> Arc<TaskExecutor> {
+        Arc::clone(&self.task_executor)
+    }
+
     /// Broadcast an event to connected clients
     ///
     /// Convenience method that calls the broadcaster.
@@ -162,6 +231,8 @@ impl std::fmt::Debug for AppState {
             .field("process_service", &"ProcessService")
             .field("broadcaster", &"EventBroadcaster")
             .field("client_manager", &"ClientManager")
+            .field("agent_orchestrator", &"AgentOrchestrator")
+            .field("task_executor", &"TaskExecutor")
             .finish()
     }
 }

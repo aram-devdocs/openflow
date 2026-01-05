@@ -160,6 +160,8 @@ pub enum EntityType {
     Project,
     /// Task entity
     Task,
+    /// Task step entity
+    Step,
     /// Chat entity
     Chat,
     /// Message entity
@@ -174,6 +176,10 @@ pub enum EntityType {
     WorkflowTemplate,
     /// Git worktree
     Worktree,
+    /// Agent session entity
+    Session,
+    /// Permission entity
+    Permission,
 }
 
 impl std::fmt::Display for EntityType {
@@ -181,6 +187,7 @@ impl std::fmt::Display for EntityType {
         match self {
             EntityType::Project => write!(f, "project"),
             EntityType::Task => write!(f, "task"),
+            EntityType::Step => write!(f, "step"),
             EntityType::Chat => write!(f, "chat"),
             EntityType::Message => write!(f, "message"),
             EntityType::ExecutorProfile => write!(f, "executor_profile"),
@@ -188,6 +195,8 @@ impl std::fmt::Display for EntityType {
             EntityType::Setting => write!(f, "setting"),
             EntityType::WorkflowTemplate => write!(f, "workflow_template"),
             EntityType::Worktree => write!(f, "worktree"),
+            EntityType::Session => write!(f, "session"),
+            EntityType::Permission => write!(f, "permission"),
         }
     }
 }
@@ -199,6 +208,7 @@ impl std::str::FromStr for EntityType {
         match s.to_lowercase().as_str() {
             "project" => Ok(EntityType::Project),
             "task" => Ok(EntityType::Task),
+            "step" | "task_step" | "taskstep" => Ok(EntityType::Step),
             "chat" => Ok(EntityType::Chat),
             "message" => Ok(EntityType::Message),
             "executor_profile" | "executorprofile" => Ok(EntityType::ExecutorProfile),
@@ -206,6 +216,8 @@ impl std::str::FromStr for EntityType {
             "setting" => Ok(EntityType::Setting),
             "workflow_template" | "workflowtemplate" => Ok(EntityType::WorkflowTemplate),
             "worktree" => Ok(EntityType::Worktree),
+            "session" | "agent_session" | "agentsession" => Ok(EntityType::Session),
+            "permission" => Ok(EntityType::Permission),
             _ => Err(format!("Invalid entity type: {}", s)),
         }
     }
@@ -227,6 +239,7 @@ impl EntityType {
         match self {
             EntityType::Project => "projects",
             EntityType::Task => "tasks",
+            EntityType::Step => "steps",
             EntityType::Chat => "chats",
             EntityType::Message => "messages",
             EntityType::ExecutorProfile => "executorProfiles",
@@ -234,6 +247,8 @@ impl EntityType {
             EntityType::Setting => "settings",
             EntityType::WorkflowTemplate => "workflowTemplates",
             EntityType::Worktree => "worktrees",
+            EntityType::Session => "sessions",
+            EntityType::Permission => "permissions",
         }
     }
 
@@ -242,6 +257,7 @@ impl EntityType {
         &[
             EntityType::Project,
             EntityType::Task,
+            EntityType::Step,
             EntityType::Chat,
             EntityType::Message,
             EntityType::ExecutorProfile,
@@ -249,6 +265,8 @@ impl EntityType {
             EntityType::Setting,
             EntityType::WorkflowTemplate,
             EntityType::Worktree,
+            EntityType::Session,
+            EntityType::Permission,
         ]
     }
 }

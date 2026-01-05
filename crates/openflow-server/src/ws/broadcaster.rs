@@ -292,12 +292,15 @@ fn convert_entity_type(entity: CoreEntityType) -> openflow_contracts::events::En
     match entity {
         CoreEntityType::Project => openflow_contracts::events::EntityType::Project,
         CoreEntityType::Task => openflow_contracts::events::EntityType::Task,
+        CoreEntityType::Step => openflow_contracts::events::EntityType::Step,
         CoreEntityType::Chat => openflow_contracts::events::EntityType::Chat,
         CoreEntityType::Message => openflow_contracts::events::EntityType::Message,
         CoreEntityType::ExecutorProfile => openflow_contracts::events::EntityType::ExecutorProfile,
         CoreEntityType::Setting => openflow_contracts::events::EntityType::Setting,
         CoreEntityType::Process => openflow_contracts::events::EntityType::Process,
         CoreEntityType::Worktree => openflow_contracts::events::EntityType::Worktree,
+        CoreEntityType::Session => openflow_contracts::events::EntityType::Session,
+        CoreEntityType::Permission => openflow_contracts::events::EntityType::Permission,
     }
 }
 

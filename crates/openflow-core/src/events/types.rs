@@ -13,6 +13,8 @@ pub enum EntityType {
     Project,
     /// Task entity
     Task,
+    /// TaskStep entity
+    Step,
     /// Chat entity
     Chat,
     /// Message entity
@@ -25,6 +27,10 @@ pub enum EntityType {
     Process,
     /// Worktree entity
     Worktree,
+    /// AgentSession entity
+    Session,
+    /// Permission entity
+    Permission,
 }
 
 impl EntityType {
@@ -33,12 +39,15 @@ impl EntityType {
         match self {
             Self::Project => "project",
             Self::Task => "task",
+            Self::Step => "step",
             Self::Chat => "chat",
             Self::Message => "message",
             Self::ExecutorProfile => "executor_profile",
             Self::Setting => "setting",
             Self::Process => "process",
             Self::Worktree => "worktree",
+            Self::Session => "session",
+            Self::Permission => "permission",
         }
     }
 }
