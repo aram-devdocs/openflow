@@ -57,6 +57,13 @@ export {
   diffHunkSchema,
   fileDiffSchema,
   pullRequestResultSchema,
+  // Agent session schemas
+  writeAgentInputRequestSchema,
+  resizeAgentSessionRequestSchema,
+  respondPermissionRequestSchema,
+  sessionSummarySchema,
+  entryMetadataSchema,
+  normalizedEntrySchema,
   // Inferred types - Input types
   type TaskStatusInput,
   type StepStatusInput,
@@ -91,4 +98,10 @@ export {
   type DiffHunkOutput,
   type FileDiffOutput,
   type PullRequestResultOutput,
+  // Agent session types
+  type WriteAgentInputRequestInput,
+  type ResizeAgentSessionRequestInput,
+  type RespondPermissionRequestInput,
+  type SessionSummaryInput,
+  type NormalizedEntryInput,
 } from './schemas';

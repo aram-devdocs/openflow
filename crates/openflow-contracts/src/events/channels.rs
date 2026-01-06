@@ -22,6 +22,9 @@
 //! │                                      │ permission-request-{sess_id}│     │
 //! │                                      │ process-output-{process_id} │     │
 //! │                                      │ process-status-{process_id} │     │
+//! │                                      │ raw-output-{session_id}     │     │
+//! │                                      │ normalized-{session_id}     │     │
+//! │                                      │ execution-error-{session_id}│     │
 //! │                                      │ task:{task_id}              │     │
 //! │                                      │ session:{session_id}        │     │
 //! │                                      └─────────────────────────────┘     │
@@ -113,6 +116,18 @@ pub const CHANNEL_TASK_FMT: &str = "task:{}";
 /// Use: `format!(CHANNEL_SESSION_FMT, session_id)` → `"session:{session_id}"`
 pub const CHANNEL_SESSION_FMT: &str = "session:{}";
 
+/// Format string for raw output channel
+/// Use: `format!(CHANNEL_RAW_OUTPUT_FMT, session_id)` → `"raw-output-{session_id}"`
+pub const CHANNEL_RAW_OUTPUT_FMT: &str = "raw-output-{}";
+
+/// Format string for normalized event channel
+/// Use: `format!(CHANNEL_NORMALIZED_FMT, session_id)` → `"normalized-{session_id}"`
+pub const CHANNEL_NORMALIZED_FMT: &str = "normalized-{}";
+
+/// Format string for execution error channel
+/// Use: `format!(CHANNEL_EXECUTION_ERROR_FMT, session_id)` → `"execution-error-{session_id}"`
+pub const CHANNEL_EXECUTION_ERROR_FMT: &str = "execution-error-{}";
+
 // =============================================================================
 // Channel Prefixes (for parsing)
 // =============================================================================
@@ -146,6 +161,15 @@ pub const PREFIX_TASK: &str = "task:";
 
 /// Prefix for entity-scoped session channels
 pub const PREFIX_SESSION: &str = "session:";
+
+/// Prefix for raw output channels
+pub const PREFIX_RAW_OUTPUT: &str = "raw-output-";
+
+/// Prefix for normalized event channels
+pub const PREFIX_NORMALIZED: &str = "normalized-";
+
+/// Prefix for execution error channels
+pub const PREFIX_EXECUTION_ERROR: &str = "execution-error-";
 
 // =============================================================================
 // Entity-Scoped Channel Helpers
@@ -453,6 +477,105 @@ pub fn parse_tool_state_channel(channel: &str) -> Option<String> {
 }
 
 // =============================================================================
+// Raw Output Channel Helpers
+// =============================================================================
+
+/// Generate the channel name for raw output events
+///
+/// This channel receives raw, unparsed output from the agent process,
+/// suitable for terminal display.
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::channels::raw_output_channel;
+/// let channel = raw_output_channel("session-abc");
+/// assert_eq!(channel, "raw-output-session-abc");
+/// ```
+pub fn raw_output_channel(session_id: &str) -> String {
+    format!("raw-output-{}", session_id)
+}
+
+/// Parse a session ID from a raw output channel name
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::channels::parse_raw_output_channel;
+/// let id = parse_raw_output_channel("raw-output-session-abc");
+/// assert_eq!(id, Some("session-abc".to_string()));
+/// ```
+pub fn parse_raw_output_channel(channel: &str) -> Option<String> {
+    channel
+        .strip_prefix(PREFIX_RAW_OUTPUT)
+        .map(|s| s.to_string())
+}
+
+// =============================================================================
+// Normalized Event Channel Helpers
+// =============================================================================
+
+/// Generate the channel name for normalized event stream
+///
+/// This channel receives parsed and normalized events from the agent,
+/// suitable for UI rendering and business logic.
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::channels::normalized_channel;
+/// let channel = normalized_channel("session-xyz");
+/// assert_eq!(channel, "normalized-session-xyz");
+/// ```
+pub fn normalized_channel(session_id: &str) -> String {
+    format!("normalized-{}", session_id)
+}
+
+/// Parse a session ID from a normalized event channel name
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::channels::parse_normalized_channel;
+/// let id = parse_normalized_channel("normalized-session-xyz");
+/// assert_eq!(id, Some("session-xyz".to_string()));
+/// ```
+pub fn parse_normalized_channel(channel: &str) -> Option<String> {
+    channel
+        .strip_prefix(PREFIX_NORMALIZED)
+        .map(|s| s.to_string())
+}
+
+// =============================================================================
+// Execution Error Channel Helpers
+// =============================================================================
+
+/// Generate the channel name for execution error events
+///
+/// This channel receives structured error events that occur during
+/// agent execution.
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::channels::execution_error_channel;
+/// let channel = execution_error_channel("session-123");
+/// assert_eq!(channel, "execution-error-session-123");
+/// ```
+pub fn execution_error_channel(session_id: &str) -> String {
+    format!("execution-error-{}", session_id)
+}
+
+/// Parse a session ID from an execution error channel name
+///
+/// # Example
+/// ```
+/// use openflow_contracts::events::channels::parse_execution_error_channel;
+/// let id = parse_execution_error_channel("execution-error-session-123");
+/// assert_eq!(id, Some("session-123".to_string()));
+/// ```
+pub fn parse_execution_error_channel(channel: &str) -> Option<String> {
+    channel
+        .strip_prefix(PREFIX_EXECUTION_ERROR)
+        .map(|s| s.to_string())
+}
+
+// =============================================================================
 // Channel Type Detection
 // =============================================================================
 
@@ -483,6 +606,12 @@ pub enum ChannelType {
     Task(String),
     /// Entity-scoped session channel with session ID
     Session(String),
+    /// Raw output channel with session ID
+    RawOutput(String),
+    /// Normalized event channel with session ID
+    Normalized(String),
+    /// Execution error channel with session ID
+    ExecutionError(String),
     /// Unknown channel type
     Unknown(String),
 }
@@ -541,6 +670,15 @@ impl ChannelType {
         if let Some(id) = parse_tool_state_channel(channel) {
             return ChannelType::ToolState(id);
         }
+        if let Some(id) = parse_raw_output_channel(channel) {
+            return ChannelType::RawOutput(id);
+        }
+        if let Some(id) = parse_normalized_channel(channel) {
+            return ChannelType::Normalized(id);
+        }
+        if let Some(id) = parse_execution_error_channel(channel) {
+            return ChannelType::ExecutionError(id);
+        }
 
         ChannelType::Unknown(channel.to_string())
     }
@@ -558,6 +696,9 @@ impl ChannelType {
             | ChannelType::ToolState(id)
             | ChannelType::Task(id)
             | ChannelType::Session(id)
+            | ChannelType::RawOutput(id)
+            | ChannelType::Normalized(id)
+            | ChannelType::ExecutionError(id)
             | ChannelType::Unknown(id) => Some(id),
             ChannelType::DataChanged | ChannelType::Wildcard => None,
         }
@@ -585,6 +726,9 @@ impl ChannelType {
                 | ChannelType::ProcessStatus(_)
                 | ChannelType::ClaudeEvent(_)
                 | ChannelType::ToolState(_)
+                | ChannelType::RawOutput(_)
+                | ChannelType::Normalized(_)
+                | ChannelType::ExecutionError(_)
         )
     }
 }
@@ -939,5 +1083,126 @@ mod tests {
         assert_eq!(PREFIX_TOOL_STATE, "tool-state-");
         assert_eq!(PREFIX_TASK, "task:");
         assert_eq!(PREFIX_SESSION, "session:");
+        assert_eq!(PREFIX_RAW_OUTPUT, "raw-output-");
+        assert_eq!(PREFIX_NORMALIZED, "normalized-");
+        assert_eq!(PREFIX_EXECUTION_ERROR, "execution-error-");
+    }
+
+    // =========================================================================
+    // Raw Output Channel Tests
+    // =========================================================================
+
+    #[test]
+    fn test_raw_output_channel() {
+        assert_eq!(raw_output_channel("session-abc"), "raw-output-session-abc");
+        assert_eq!(raw_output_channel("xyz-123"), "raw-output-xyz-123");
+    }
+
+    #[test]
+    fn test_parse_raw_output_channel() {
+        assert_eq!(
+            parse_raw_output_channel("raw-output-session-abc"),
+            Some("session-abc".to_string())
+        );
+        assert_eq!(
+            parse_raw_output_channel("raw-output-xyz-123"),
+            Some("xyz-123".to_string())
+        );
+        assert_eq!(parse_raw_output_channel("normalized-abc"), None);
+        assert_eq!(parse_raw_output_channel("invalid"), None);
+    }
+
+    // =========================================================================
+    // Normalized Event Channel Tests
+    // =========================================================================
+
+    #[test]
+    fn test_normalized_channel() {
+        assert_eq!(normalized_channel("session-xyz"), "normalized-session-xyz");
+        assert_eq!(normalized_channel("abc-456"), "normalized-abc-456");
+    }
+
+    #[test]
+    fn test_parse_normalized_channel() {
+        assert_eq!(
+            parse_normalized_channel("normalized-session-xyz"),
+            Some("session-xyz".to_string())
+        );
+        assert_eq!(
+            parse_normalized_channel("normalized-abc-456"),
+            Some("abc-456".to_string())
+        );
+        assert_eq!(parse_normalized_channel("raw-output-xyz"), None);
+        assert_eq!(parse_normalized_channel("invalid"), None);
+    }
+
+    // =========================================================================
+    // Execution Error Channel Tests
+    // =========================================================================
+
+    #[test]
+    fn test_execution_error_channel() {
+        assert_eq!(
+            execution_error_channel("session-123"),
+            "execution-error-session-123"
+        );
+        assert_eq!(execution_error_channel("err-789"), "execution-error-err-789");
+    }
+
+    #[test]
+    fn test_parse_execution_error_channel() {
+        assert_eq!(
+            parse_execution_error_channel("execution-error-session-123"),
+            Some("session-123".to_string())
+        );
+        assert_eq!(
+            parse_execution_error_channel("execution-error-err-789"),
+            Some("err-789".to_string())
+        );
+        assert_eq!(parse_execution_error_channel("normalized-123"), None);
+        assert_eq!(parse_execution_error_channel("invalid"), None);
+    }
+
+    // =========================================================================
+    // New ChannelType Tests
+    // =========================================================================
+
+    #[test]
+    fn test_channel_type_parse_new_channels() {
+        assert_eq!(
+            ChannelType::parse("raw-output-sess-abc"),
+            ChannelType::RawOutput("sess-abc".to_string())
+        );
+        assert_eq!(
+            ChannelType::parse("normalized-sess-xyz"),
+            ChannelType::Normalized("sess-xyz".to_string())
+        );
+        assert_eq!(
+            ChannelType::parse("execution-error-sess-123"),
+            ChannelType::ExecutionError("sess-123".to_string())
+        );
+    }
+
+    #[test]
+    fn test_channel_type_is_event_type_new_channels() {
+        assert!(ChannelType::RawOutput("abc".to_string()).is_event_type());
+        assert!(ChannelType::Normalized("xyz".to_string()).is_event_type());
+        assert!(ChannelType::ExecutionError("123".to_string()).is_event_type());
+    }
+
+    #[test]
+    fn test_channel_type_id_new_channels() {
+        assert_eq!(
+            ChannelType::RawOutput("sess-abc".to_string()).id(),
+            Some("sess-abc")
+        );
+        assert_eq!(
+            ChannelType::Normalized("sess-xyz".to_string()).id(),
+            Some("sess-xyz")
+        );
+        assert_eq!(
+            ChannelType::ExecutionError("sess-123".to_string()).id(),
+            Some("sess-123")
+        );
     }
 }

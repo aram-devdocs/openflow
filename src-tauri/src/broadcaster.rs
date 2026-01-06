@@ -299,6 +299,42 @@ impl<R: Runtime> EventBroadcaster for TauriBroadcaster<R> {
                     log::error!("Failed to emit permission response event: {}", e);
                 }
             }
+
+            // Raw output event
+            Event::RawOutput {
+                session_id,
+                output,
+                timestamp,
+            } => {
+                let channel = format!("raw-output-{}", session_id);
+                let payload = serde_json::json!({
+                    "session_id": session_id,
+                    "output": output,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit raw output event: {}", e);
+                }
+            }
+
+            // Normalized entry event
+            Event::NormalizedEntry {
+                session_id,
+                entry,
+                timestamp,
+            } => {
+                let channel = format!("normalized-{}", session_id);
+                let payload = serde_json::json!({
+                    "session_id": session_id,
+                    "entry": entry,
+                    "timestamp": timestamp,
+                });
+
+                if let Err(e) = self.app_handle.emit(&channel, &payload) {
+                    log::error!("Failed to emit normalized entry event: {}", e);
+                }
+            }
         }
     }
 }

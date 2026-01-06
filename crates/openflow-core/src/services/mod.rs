@@ -32,6 +32,9 @@
 //! - **search**: Full-text search operations
 //! - **settings**: Application settings
 //! - **workflow**: Workflow template parsing and management
+//! - **line_buffer**: Line buffering and ANSI stripping for PTY output
+//! - **normalizer**: Event normalization to canonical format
+//! - **permission_detector**: Permission prompt detection and tracking
 
 mod error;
 
@@ -45,10 +48,11 @@ pub mod executor;
 pub mod executor_profile;
 pub mod git;
 pub mod github;
+pub mod line_buffer;
 pub mod message;
+pub mod normalizer;
+pub mod permission_detector;
 pub mod process;
-pub mod process_buffer;
-pub mod process_manager;
 pub mod project;
 pub mod search;
 pub mod settings;

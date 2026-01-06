@@ -31,7 +31,9 @@ import type {
   AgentSession,
   AgentSessionSummary,
   AgentSessionWithState,
+  NormalizedEntry,
   Permission,
+  ToolState,
 } from '@openflow/generated';
 import { createLogger } from '@openflow/utils';
 import { invoke } from './utils.js';
@@ -338,6 +340,55 @@ export const agentSessionQueries = {
     }
   },
 
+  /**
+   * Get normalized events for an agent session.
+   *
+   * Returns normalized events ordered by sequence (ascending). Use `afterSequence` to
+   * get only new events since a previous fetch for efficient polling.
+   *
+   * Normalized events are the canonical format for all agent events after
+   * transformation from provider-specific formats. They include rich metadata
+   * and are suitable for UI rendering.
+   *
+   * @param sessionId - Session ID
+   * @param options - Query options
+   * @param options.afterSequence - Only return events with sequence > this value
+   * @returns Promise resolving to array of normalized events
+   */
+  getNormalizedEvents: async (
+    sessionId: string,
+    options?: { afterSequence?: number }
+  ): Promise<NormalizedEntry[]> => {
+    logger.debug('Getting normalized events', {
+      sessionId,
+      afterSequence: options?.afterSequence,
+    });
+
+    try {
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const events = await invoke<NormalizedEntry[]>('get_normalized_events', {
+        id: sessionId,
+        sessionId,
+        afterSequence: options?.afterSequence,
+      });
+
+      logger.debug('Normalized events retrieved', {
+        sessionId,
+        count: events.length,
+        latestSequence: events.length > 0 ? events[events.length - 1]?.sequence : null,
+      });
+
+      return events;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to get normalized events', {
+        sessionId,
+        error: errorMessage,
+      });
+      throw error;
+    }
+  },
+
   // ===========================================================================
   // Permission Operations
   // ===========================================================================
@@ -636,6 +687,66 @@ export const agentSessionQueries = {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('Failed to recover stale sessions', { error: errorMessage });
+      throw error;
+    }
+  },
+
+  // ===========================================================================
+  // Tool State Operations
+  // ===========================================================================
+
+  /**
+   * Get all tool states for an agent session.
+   *
+   * Returns tool states ordered by started_at ASC (chronological order).
+   * Tool states track individual tool invocations from ToolUse event to ToolResult.
+   *
+   * Each tool state includes:
+   * - Tool execution metadata (name, input, command, file_path)
+   * - Status (running, completed, error)
+   * - Execution results (output, exit_code, stderr)
+   * - Timing information (started_at, completed_at, duration_ms)
+   *
+   * @param sessionId - Session ID
+   * @returns Promise resolving to array of tool states
+   *
+   * @example
+   * ```ts
+   * // Get all tool states for a session
+   * const toolStates = await agentSessionQueries.getToolStates('session-123');
+   *
+   * // Filter by status
+   * const running = toolStates.filter(t => t.status === 'running');
+   * const completed = toolStates.filter(t => t.status === 'completed');
+   *
+   * // Calculate total execution time
+   * const totalDuration = toolStates
+   *   .filter(t => t.durationMs)
+   *   .reduce((sum, t) => sum + (t.durationMs || 0), 0);
+   * ```
+   */
+  getToolStates: async (sessionId: string): Promise<ToolState[]> => {
+    logger.debug('Getting tool states for session', { sessionId });
+
+    try {
+      // Pass both id (for HTTP) and sessionId (for Tauri)
+      const toolStates = await invoke<ToolState[]>('get_agent_tool_states', {
+        id: sessionId,
+        sessionId,
+      });
+
+      logger.debug('Tool states retrieved', {
+        sessionId,
+        count: toolStates.length,
+        running: toolStates.filter((t) => t.status === 'running').length,
+        completed: toolStates.filter((t) => t.status === 'completed').length,
+        error: toolStates.filter((t) => t.status === 'error').length,
+      });
+
+      return toolStates;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to get tool states', { sessionId, error: errorMessage });
       throw error;
     }
   },

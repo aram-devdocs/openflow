@@ -113,7 +113,7 @@ pub async fn get_agent_session_events(
     after_sequence: Option<i32>,
 ) -> Result<Vec<AgentEventRecord>, String> {
     let pool = state.db.lock().await;
-    agent_session::get_events(&pool, &session_id, after_sequence.map(|s| s as i64))
+    agent_session::get_events(&pool, &session_id, after_sequence)
         .await
         .map_err(|e| e.to_string())
 }
@@ -126,7 +126,7 @@ pub async fn get_agent_session_events(
 pub async fn get_agent_latest_sequence(
     state: State<'_, AppState>,
     session_id: String,
-) -> Result<Option<i64>, String> {
+) -> Result<Option<i32>, String> {
     let pool = state.db.lock().await;
     agent_session::get_latest_sequence(&pool, &session_id)
         .await

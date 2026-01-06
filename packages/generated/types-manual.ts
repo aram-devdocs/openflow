@@ -183,3 +183,59 @@ export interface UnifiedAgentEventPermission {
   /** Optional file path if the operation involves a specific file */
   file_path?: string;
 }
+
+// =============================================================================
+// Agent Session Request Types
+// =============================================================================
+
+/**
+ * Request to write input to an agent session
+ */
+export interface WriteAgentInputRequest {
+  /** The input string to send to the agent's stdin */
+  input: string;
+}
+
+/**
+ * Request to resize an agent session terminal
+ */
+export interface ResizeAgentSessionRequest {
+  /** Number of terminal columns */
+  cols: number;
+  /** Number of terminal rows */
+  rows: number;
+}
+
+/**
+ * Request to respond to a permission prompt
+ */
+export interface RespondPermissionRequest {
+  /** The permission ID to respond to */
+  permissionId: string;
+  /** Whether to approve (true) or deny (false) the permission */
+  approved: boolean;
+}
+
+/**
+ * Session summary for list views
+ */
+export interface SessionSummary {
+  /** Session ID */
+  id: string;
+  /** Process ID */
+  processId: string;
+  /** Provider ID (e.g., "claude-code") */
+  providerId: string;
+  /** Session status */
+  status: string;
+  /** When the session started (ISO 8601) */
+  startedAt: string;
+  /** When the session ended (ISO 8601), null if still running */
+  endedAt?: string;
+  /** Number of events in this session */
+  eventCount: number;
+  /** Number of tool invocations */
+  toolCount: number;
+  /** Whether there's a pending permission request */
+  hasPendingPermission: boolean;
+}

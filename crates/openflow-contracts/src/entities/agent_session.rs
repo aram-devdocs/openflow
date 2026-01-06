@@ -150,7 +150,7 @@ impl SessionStatus {
 ///
 /// # Database
 /// Matches CHECK constraint in permissions table (migration 014):
-/// CHECK (status IN ('pending', 'approved', 'denied', 'expired', 'cancelled'))
+/// CHECK (status IN ('pending', 'approved', 'denied', 'expired', 'cancelled', 'timed_out'))
 #[typeshare]
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq, Hash, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
@@ -167,6 +167,10 @@ pub enum PermissionStatus {
     Expired,
     /// Permission was cancelled (session ended before response)
     Cancelled,
+    /// Permission request timed out (auto-denied after timeout_seconds)
+    #[serde(rename = "timed_out")]
+    #[sqlx(rename = "timed_out")]
+    TimedOut,
 }
 
 impl std::fmt::Display for PermissionStatus {
@@ -177,6 +181,7 @@ impl std::fmt::Display for PermissionStatus {
             PermissionStatus::Denied => write!(f, "denied"),
             PermissionStatus::Expired => write!(f, "expired"),
             PermissionStatus::Cancelled => write!(f, "cancelled"),
+            PermissionStatus::TimedOut => write!(f, "timed_out"),
         }
     }
 }
@@ -189,8 +194,9 @@ impl std::str::FromStr for PermissionStatus {
             "pending" | "waiting" => Ok(PermissionStatus::Pending),
             "approved" | "accepted" | "allowed" | "yes" => Ok(PermissionStatus::Approved),
             "denied" | "rejected" | "disallowed" | "no" => Ok(PermissionStatus::Denied),
-            "expired" | "timeout" | "timed_out" => Ok(PermissionStatus::Expired),
+            "expired" => Ok(PermissionStatus::Expired),
             "cancelled" | "canceled" => Ok(PermissionStatus::Cancelled),
+            "timed_out" | "timeout" => Ok(PermissionStatus::TimedOut),
             _ => Err(format!("Invalid permission status: {}", s)),
         }
     }
@@ -238,6 +244,7 @@ impl PermissionStatus {
             PermissionStatus::Denied,
             PermissionStatus::Expired,
             PermissionStatus::Cancelled,
+            PermissionStatus::TimedOut,
         ]
     }
 }
@@ -265,8 +272,11 @@ impl PermissionStatus {
 ///   "filePath": "/tmp/test",
 ///   "status": "pending",
 ///   "createdAt": "2024-01-15T10:30:00Z",
+///   "detectedAt": "2024-01-15T10:30:00Z",
 ///   "respondedAt": null,
-///   "expiredAt": null
+///   "expiredAt": null,
+///   "timeoutAt": "2024-01-15T10:35:00Z",
+///   "timeoutSeconds": 300
 /// }
 /// ```
 #[typeshare]
@@ -294,11 +304,20 @@ pub struct Permission {
     /// When the permission was created (ISO 8601)
     pub created_at: String,
 
+    /// When the permission prompt was detected (ISO 8601)
+    pub detected_at: String,
+
     /// When user responded (ISO 8601), null if pending
     pub responded_at: Option<String>,
 
     /// When permission expired (ISO 8601), null if not expired
     pub expired_at: Option<String>,
+
+    /// When permission will timeout (ISO 8601), null if no timeout configured
+    pub timeout_at: Option<String>,
+
+    /// Timeout duration in seconds (default: 300 = 5 minutes)
+    pub timeout_seconds: i32,
 }
 
 impl Permission {
@@ -309,7 +328,10 @@ impl Permission {
         tool_name: impl Into<String>,
         description: impl Into<String>,
     ) -> Self {
-        let now = chrono::Utc::now().to_rfc3339();
+        let now = chrono::Utc::now();
+        let timeout_seconds = 300; // 5 minutes default
+        let timeout_at = now + chrono::Duration::seconds(timeout_seconds as i64);
+        
         Self {
             id: id.into(),
             session_id: session_id.into(),
@@ -317,9 +339,12 @@ impl Permission {
             description: description.into(),
             file_path: None,
             status: PermissionStatus::Pending,
-            created_at: now,
+            created_at: now.to_rfc3339(),
+            detected_at: now.to_rfc3339(),
             responded_at: None,
             expired_at: None,
+            timeout_at: Some(timeout_at.to_rfc3339()),
+            timeout_seconds,
         }
     }
 
@@ -347,6 +372,21 @@ impl Permission {
     /// Check if the permission has been responded to
     pub fn has_response(&self) -> bool {
         self.responded_at.is_some()
+    }
+
+    /// Check if the permission has timed out
+    pub fn is_timed_out(&self) -> bool {
+        self.status == PermissionStatus::TimedOut
+    }
+
+    /// Check if the permission should timeout (timeout_at is in the past)
+    pub fn should_timeout(&self) -> bool {
+        if let Some(timeout_at) = &self.timeout_at {
+            if let Ok(timeout_dt) = chrono::DateTime::parse_from_rfc3339(timeout_at) {
+                return chrono::Utc::now() > timeout_dt;
+            }
+        }
+        false
     }
 }
 
@@ -693,8 +733,11 @@ mod tests {
             file_path: Some("/tmp/test".to_string()),
             status: PermissionStatus::Pending,
             created_at: "2024-01-15T10:30:00Z".to_string(),
+            detected_at: "2024-01-15T10:30:00Z".to_string(),
             responded_at: None,
             expired_at: None,
+            timeout_at: Some("2024-01-15T10:35:00Z".to_string()),
+            timeout_seconds: 300,
         }
     }
 
@@ -830,6 +873,7 @@ mod tests {
         assert_eq!(PermissionStatus::Denied.to_string(), "denied");
         assert_eq!(PermissionStatus::Expired.to_string(), "expired");
         assert_eq!(PermissionStatus::Cancelled.to_string(), "cancelled");
+        assert_eq!(PermissionStatus::TimedOut.to_string(), "timed_out");
     }
 
     #[test]
@@ -866,7 +910,11 @@ mod tests {
         );
         assert_eq!(
             "timeout".parse::<PermissionStatus>().unwrap(),
-            PermissionStatus::Expired
+            PermissionStatus::TimedOut
+        );
+        assert_eq!(
+            "timed_out".parse::<PermissionStatus>().unwrap(),
+            PermissionStatus::TimedOut
         );
 
         assert!("invalid".parse::<PermissionStatus>().is_err());
@@ -886,6 +934,7 @@ mod tests {
         assert!(PermissionStatus::Denied.is_terminal());
         assert!(PermissionStatus::Expired.is_terminal());
         assert!(PermissionStatus::Cancelled.is_terminal());
+        assert!(PermissionStatus::TimedOut.is_terminal());
     }
 
     #[test]
@@ -895,12 +944,13 @@ mod tests {
         assert!(!PermissionStatus::Denied.allows_action());
         assert!(!PermissionStatus::Expired.allows_action());
         assert!(!PermissionStatus::Cancelled.allows_action());
+        assert!(!PermissionStatus::TimedOut.allows_action());
     }
 
     #[test]
     fn test_permission_status_all() {
         let all = PermissionStatus::all();
-        assert_eq!(all.len(), 5);
+        assert_eq!(all.len(), 6);
     }
 
     #[test]
@@ -916,6 +966,14 @@ mod tests {
 
         let deserialized: PermissionStatus = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized, PermissionStatus::Approved);
+
+        // Test TimedOut variant
+        let timed_out = PermissionStatus::TimedOut;
+        let json = serde_json::to_string(&timed_out).unwrap();
+        assert_eq!(json, "\"timed_out\"");
+
+        let deserialized: PermissionStatus = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, PermissionStatus::TimedOut);
     }
 
     // =========================================================================
@@ -980,6 +1038,47 @@ mod tests {
 
         perm.responded_at = Some("2024-01-15T10:31:00Z".to_string());
         assert!(perm.has_response());
+    }
+
+    #[test]
+    fn test_permission_is_timed_out() {
+        let mut perm = create_test_permission("sess-1");
+        assert!(!perm.is_timed_out());
+
+        perm.status = PermissionStatus::TimedOut;
+        assert!(perm.is_timed_out());
+    }
+
+    #[test]
+    fn test_permission_should_timeout() {
+        let mut perm = create_test_permission("sess-1");
+        
+        // Timeout in the past - should timeout
+        perm.timeout_at = Some("2020-01-15T10:35:00Z".to_string());
+        assert!(perm.should_timeout());
+
+        // Timeout in the future - should not timeout
+        let future = chrono::Utc::now() + chrono::Duration::hours(1);
+        perm.timeout_at = Some(future.to_rfc3339());
+        assert!(!perm.should_timeout());
+
+        // No timeout_at - should not timeout
+        perm.timeout_at = None;
+        assert!(!perm.should_timeout());
+    }
+
+    #[test]
+    fn test_permission_new_has_timeout() {
+        let perm = Permission::new("perm-1", "sess-1", "Write", "Create file");
+        
+        // Should have timeout_at set
+        assert!(perm.timeout_at.is_some());
+        
+        // Should have timeout_seconds of 300 (5 minutes)
+        assert_eq!(perm.timeout_seconds, 300);
+        
+        // Should have detected_at equal to created_at
+        assert_eq!(perm.detected_at, perm.created_at);
     }
 
     #[test]

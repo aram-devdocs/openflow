@@ -107,6 +107,9 @@ impl AppState {
             Arc::clone(&broadcaster),
         ));
 
+        // Start permission timeout background task
+        agent_orchestrator.spawn_permission_timeout_task();
+
         // Create task executor (needs pool, agent orchestrator, and broadcaster)
         let task_executor = Arc::new(TaskExecutor::new(
             pool.clone(),
@@ -141,6 +144,10 @@ impl AppState {
             pool.clone(),
             Arc::clone(&broadcaster),
         ));
+        
+        // Start permission timeout background task (even in tests)
+        agent_orchestrator.spawn_permission_timeout_task();
+        
         let task_executor = Arc::new(TaskExecutor::new(
             pool.clone(),
             Arc::clone(&agent_orchestrator),

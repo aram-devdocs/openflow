@@ -104,7 +104,7 @@ static PERMISSION_REGEX: LazyLock<Regex> = LazyLock::new(|| {
 
 /// Alternative patterns for sandbox/approval prompts
 static SANDBOX_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)(?:Run|Write|Read|Delete|Create)\s+.*\?\s*(?:\[y/n\]|\(y/n\))")
+    Regex::new(r"(?i)(?:Run|Write|Read|Delete|Create|Execute)\s+.*\?\s*(?:\[y/n\]|\(y/n\))")
         .expect("Invalid sandbox regex")
 });
 
@@ -750,6 +750,126 @@ impl AgentProvider for CodexCLIProvider {
         env.insert("FORCE_COLOR".to_string(), "0".to_string());
         env.insert("TERM".to_string(), "dumb".to_string());
         env
+    }
+
+    fn permission_patterns(&self) -> Vec<&Regex> {
+        vec![&PERMISSION_REGEX, &SANDBOX_REGEX]
+    }
+
+    fn extract_tool_context(&self, tool_name: &str, input: &serde_json::Value) -> super::ToolContext {
+        let mut context = super::ToolContext::new();
+
+        // Codex uses item types like "command_execution", "file_change"
+        match tool_name {
+            "shell" | "command_execution" => {
+                // Extract command
+                if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                } else if let Some(cmd) = input.get("cmd").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                } else if let Some(cmd) = input.get("script").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                }
+
+                // Extract working directory
+                if let Some(wd) = input.get("working_directory").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                } else if let Some(wd) = input.get("cwd").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                } else if let Some(wd) = input.get("directory").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                }
+            }
+            "file" | "file_change" | "file_read" | "file_write" | "file_delete" => {
+                // Extract file path
+                if let Some(path) = input.get("file_path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("filePath").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("file").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                }
+            }
+            _ => {
+                // Generic extraction for unknown tools
+                if let Some(path) = input.get("file_path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                }
+
+                if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                }
+
+                if let Some(wd) = input.get("working_directory").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                }
+            }
+        }
+
+        context
+    }
+
+    fn parse_error_output(&self, line: &str) -> Option<super::ExecutionError> {
+        let trimmed = line.trim();
+
+        // Try to parse as JSON first
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            // Check for Codex CLI error formats
+            if let Some(event_type) = value.get("type").and_then(|t| t.as_str()) {
+                match event_type {
+                    "error" => {
+                        let message = value
+                            .get("message")
+                            .and_then(|m| m.as_str())
+                            .unwrap_or("Unknown error")
+                            .to_string();
+                        let code = value
+                            .get("code")
+                            .and_then(|c| c.as_str())
+                            .unwrap_or("error")
+                            .to_string();
+
+                        return Some(super::ExecutionError::provider_error(
+                            PROVIDER_ID,
+                            code,
+                            message,
+                        ));
+                    }
+                    "turn.failed" => {
+                        let message = value
+                            .get("message")
+                            .and_then(|m| m.as_str())
+                            .unwrap_or("Turn failed")
+                            .to_string();
+                        let code = value
+                            .get("error_type")
+                            .or_else(|| value.get("code"))
+                            .and_then(|c| c.as_str())
+                            .unwrap_or("turn_failed")
+                            .to_string();
+
+                        return Some(super::ExecutionError::provider_error(
+                            PROVIDER_ID,
+                            code,
+                            message,
+                        ));
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Check for common error patterns in plain text
+        let lower = trimmed.to_lowercase();
+        if lower.contains("error:") || lower.contains("failed:") || lower.contains("exception:") {
+            return Some(super::ExecutionError::other(trimmed.to_string()));
+        }
+
+        None
     }
 }
 

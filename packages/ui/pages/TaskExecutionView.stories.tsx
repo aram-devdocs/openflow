@@ -164,8 +164,11 @@ function createMockPermission(): Permission {
     filePath: 'src/auth/oauth.ts',
     status: PermissionStatus.Pending,
     createdAt: new Date().toISOString(),
+    detectedAt: new Date().toISOString(),
     respondedAt: undefined,
     expiredAt: undefined,
+    timeoutAt: undefined,
+    timeoutSeconds: 300,
   };
 }
 

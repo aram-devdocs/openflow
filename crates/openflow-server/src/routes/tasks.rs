@@ -381,7 +381,7 @@ async fn delete_step(
 #[serde(rename_all = "camelCase")]
 pub struct GetStepEventsQuery {
     /// Only return events with sequence > this value
-    pub after_sequence: Option<i64>,
+    pub after_sequence: Option<i32>,
 }
 
 /// GET /api/tasks/{id}/steps/{step_index}/events

@@ -132,7 +132,7 @@ async fn list_running(State(state): State<AppState>) -> ServerResult<Json<Vec<Ag
 #[serde(rename_all = "camelCase")]
 pub struct GetEventsQuery {
     /// Only return events with sequence > this value
-    pub after_sequence: Option<i64>,
+    pub after_sequence: Option<i32>,
 }
 
 /// GET /api/agents/sessions/{id}/events
@@ -153,7 +153,7 @@ async fn get_session_events(
 async fn get_latest_sequence(
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> ServerResult<Json<Option<i64>>> {
+) -> ServerResult<Json<Option<i32>>> {
     let sequence = agent_session::get_latest_sequence(&state.pool, &id).await?;
     Ok(Json(sequence))
 }
@@ -746,7 +746,7 @@ mod tests {
         let body = axum::body::to_bytes(response.into_body(), usize::MAX)
             .await
             .unwrap();
-        let sequence: Option<i64> = serde_json::from_slice(&body).unwrap();
+        let sequence: Option<i32> = serde_json::from_slice(&body).unwrap();
         assert!(sequence.is_none());
 
         // Add events
@@ -773,7 +773,7 @@ mod tests {
         let body = axum::body::to_bytes(response.into_body(), usize::MAX)
             .await
             .unwrap();
-        let sequence: Option<i64> = serde_json::from_slice(&body).unwrap();
+        let sequence: Option<i32> = serde_json::from_slice(&body).unwrap();
         assert_eq!(sequence, Some(1));
     }
 

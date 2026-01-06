@@ -1107,6 +1107,8 @@ mod tests {
             prompt: format!("Do step {}", index),
             provider_id: "claude-code".to_string(),
             status: StepStatus::Pending,
+            parallel_group: None,
+            worktree_id: None,
             session_id: None,
             started_at: None,
             ended_at: None,

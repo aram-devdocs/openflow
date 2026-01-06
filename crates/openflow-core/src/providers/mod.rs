@@ -70,6 +70,7 @@ use std::path::PathBuf;
 
 use openflow_contracts::events::{PermissionRequest, UnifiedAgentEvent};
 use openflow_process::PtyConfig;
+use regex::Regex;
 
 // =============================================================================
 // Agent Configuration
@@ -178,6 +179,131 @@ impl Default for AgentConfig {
             model: None,
             cols: 120,
             rows: 40,
+        }
+    }
+}
+
+// =============================================================================
+// Tool Context
+// =============================================================================
+
+/// Context information extracted from a tool use event.
+///
+/// Different tools require different context information. This struct
+/// captures the relevant details for tool state tracking and metadata.
+///
+/// # Example
+/// ```
+/// use openflow_core::providers::ToolContext;
+///
+/// // For a Bash tool
+/// let context = ToolContext::new()
+///     .with_command("cargo build")
+///     .with_working_directory("/project");
+///
+/// // For a Read tool
+/// let context = ToolContext::new()
+///     .with_file_path("/src/main.rs");
+/// ```
+#[derive(Debug, Clone, Default)]
+pub struct ToolContext {
+    /// Command being executed (for Bash/shell operations)
+    pub command: Option<String>,
+
+    /// File path for file operations (Read, Write, etc.)
+    pub file_path: Option<String>,
+
+    /// Working directory for the operation
+    pub working_directory: Option<String>,
+}
+
+impl ToolContext {
+    /// Create an empty tool context
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Set the command
+    pub fn with_command(mut self, command: impl Into<String>) -> Self {
+        self.command = Some(command.into());
+        self
+    }
+
+    /// Set the file path
+    pub fn with_file_path(mut self, file_path: impl Into<String>) -> Self {
+        self.file_path = Some(file_path.into());
+        self
+    }
+
+    /// Set the working directory
+    pub fn with_working_directory(mut self, working_directory: impl Into<String>) -> Self {
+        self.working_directory = Some(working_directory.into());
+        self
+    }
+
+    /// Check if context is empty
+    pub fn is_empty(&self) -> bool {
+        self.command.is_none() && self.file_path.is_none() && self.working_directory.is_none()
+    }
+}
+
+// =============================================================================
+// Provider Execution Error
+// =============================================================================
+
+/// Minimal execution error types for provider-level error parsing.
+///
+/// This is intentionally a simpler type than `openflow_contracts::errors::ExecutionError`.
+/// It's used by providers to parse error output lines into structured errors.
+/// The orchestrator can convert these to the full `ExecutionError` type when needed,
+/// adding session context and other metadata.
+#[derive(Debug, Clone)]
+pub enum ExecutionError {
+    /// Parse error when processing output
+    Parse {
+        line: String,
+        error: String,
+        line_number: Option<u64>,
+    },
+
+    /// Provider-specific error
+    ProviderError {
+        provider_id: String,
+        code: String,
+        message: String,
+    },
+
+    /// Generic error (catch-all)
+    Other { message: String },
+}
+
+impl ExecutionError {
+    /// Create a parse error
+    pub fn parse(line: impl Into<String>, error: impl Into<String>) -> Self {
+        Self::Parse {
+            line: line.into(),
+            error: error.into(),
+            line_number: None,
+        }
+    }
+
+    /// Create a provider error
+    pub fn provider_error(
+        provider_id: impl Into<String>,
+        code: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
+        Self::ProviderError {
+            provider_id: provider_id.into(),
+            code: code.into(),
+            message: message.into(),
+        }
+    }
+
+    /// Create a generic error
+    pub fn other(message: impl Into<String>) -> Self {
+        Self::Other {
+            message: message.into(),
         }
     }
 }
@@ -349,6 +475,129 @@ pub trait AgentProvider: Send + Sync + Debug {
         env.insert("FORCE_COLOR".to_string(), "0".to_string());
         env.insert("TERM".to_string(), "dumb".to_string());
         env
+    }
+
+    /// Get permission detection patterns.
+    ///
+    /// Returns a list of regex patterns that match permission prompts
+    /// specific to this provider. The patterns should detect prompts
+    /// where the agent is asking for user approval to perform an action.
+    ///
+    /// # Returns
+    ///
+    /// A vector of regex references that can be used to detect permission prompts.
+    ///
+    /// # Default Implementation
+    ///
+    /// The default implementation returns an empty vector, meaning no
+    /// permission detection. Providers should override this if they
+    /// have permission prompts.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// fn permission_patterns(&self) -> Vec<&Regex> {
+    ///     static PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| vec![
+    ///         Regex::new(r"Allow.*to (read|write|execute).*\?").unwrap(),
+    ///     ]);
+    ///     PATTERNS.iter().collect()
+    /// }
+    /// ```
+    fn permission_patterns(&self) -> Vec<&Regex> {
+        vec![]
+    }
+
+    /// Extract tool execution context from tool use event.
+    ///
+    /// Parses the tool input to extract relevant context information
+    /// like file paths, commands, or working directories. This context
+    /// is used for tool state tracking and metadata enrichment.
+    ///
+    /// # Arguments
+    ///
+    /// * `tool_name` - Name of the tool being used (e.g., "Bash", "Read", "Write")
+    /// * `input` - JSON input arguments to the tool
+    ///
+    /// # Returns
+    ///
+    /// A `ToolContext` containing extracted information, or empty context
+    /// if no relevant information could be extracted.
+    ///
+    /// # Default Implementation
+    ///
+    /// The default implementation attempts to extract common fields:
+    /// - `command` or `cmd` for Bash tools
+    /// - `file_path`, `filePath`, or `path` for file operations
+    /// - `working_directory` or `cwd` for working directory
+    ///
+    /// Providers can override this for custom tool formats.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let input = json!({"filePath": "/src/main.rs"});
+    /// let context = provider.extract_tool_context("Read", &input);
+    /// assert_eq!(context.file_path, Some("/src/main.rs".to_string()));
+    /// ```
+    fn extract_tool_context(&self, _tool_name: &str, input: &serde_json::Value) -> ToolContext {
+        let mut context = ToolContext::new();
+
+        // Try to extract command (for Bash tools)
+        if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
+            context.command = Some(cmd.to_string());
+        } else if let Some(cmd) = input.get("cmd").and_then(|v| v.as_str()) {
+            context.command = Some(cmd.to_string());
+        }
+
+        // Try to extract file path (for Read/Write tools)
+        if let Some(path) = input.get("file_path").and_then(|v| v.as_str()) {
+            context.file_path = Some(path.to_string());
+        } else if let Some(path) = input.get("filePath").and_then(|v| v.as_str()) {
+            context.file_path = Some(path.to_string());
+        } else if let Some(path) = input.get("path").and_then(|v| v.as_str()) {
+            context.file_path = Some(path.to_string());
+        }
+
+        // Try to extract working directory
+        if let Some(wd) = input.get("working_directory").and_then(|v| v.as_str()) {
+            context.working_directory = Some(wd.to_string());
+        } else if let Some(wd) = input.get("cwd").and_then(|v| v.as_str()) {
+            context.working_directory = Some(wd.to_string());
+        }
+
+        context
+    }
+
+    /// Parse a line of output for execution errors.
+    ///
+    /// Attempts to parse provider-specific error messages from the output.
+    /// This is separate from the regular event parsing and focuses on
+    /// detecting and extracting error information.
+    ///
+    /// # Arguments
+    ///
+    /// * `line` - A line of output from the provider
+    ///
+    /// # Returns
+    ///
+    /// - `Some(ExecutionError)` if an error was detected and parsed
+    /// - `None` if the line doesn't contain a recognized error
+    ///
+    /// # Default Implementation
+    ///
+    /// The default implementation returns None, meaning no error detection.
+    /// Providers should override this to parse their specific error formats.
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// let line = "ERROR: Rate limit exceeded";
+    /// if let Some(error) = provider.parse_error_output(line) {
+    ///     // Handle the error
+    /// }
+    /// ```
+    fn parse_error_output(&self, _line: &str) -> Option<ExecutionError> {
+        None
     }
 }
 
