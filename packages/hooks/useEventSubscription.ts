@@ -32,6 +32,19 @@
  * this hook delegates all state to the backend (via TanStack Query).
  * Events are used purely to invalidate caches, triggering refetches.
  *
+ * ## Agent Session Channels
+ *
+ * For agent sessions, there are three specialized channels:
+ *
+ * - **raw-output-{sessionId}**: Raw, unparsed PTY output for terminal display
+ * - **normalized-{sessionId}**: Parsed and normalized events for UI rendering
+ * - **tool-state-{sessionId}**: Tool execution state updates (start/complete/fail)
+ *
+ * Use the convenience hooks:
+ * - `useRawOutputSubscription()` - For terminal output display
+ * - `useNormalizedEventsSubscription()` - For structured event rendering
+ * - `useToolStateSubscription()` - For tool execution tracking
+ *
  * @example
  * ```tsx
  * // Subscribe to task events and invalidate task queries
@@ -45,6 +58,11 @@
  *   onEvent: (event) => {
  *     console.log('Task progress:', event);
  *   },
+ * });
+ *
+ * // Subscribe to raw output for terminal display
+ * useRawOutputSubscription(sessionId, {
+ *   onEvent: (output) => appendToTerminal(output),
  * });
  * ```
  *
@@ -131,6 +149,9 @@ export const CHANNELS = {
   PREFIX_TOOL_STATE: 'tool-state-',
   PREFIX_TASK: 'task:',
   PREFIX_SESSION: 'session:',
+  PREFIX_RAW_OUTPUT: 'raw-output-',
+  PREFIX_NORMALIZED: 'normalized-',
+  PREFIX_EXECUTION_ERROR: 'execution-error-',
 } as const;
 
 /**
@@ -204,6 +225,30 @@ export function taskChannel(taskId: string): string {
  */
 export function sessionChannel(sessionId: string): string {
   return `${CHANNELS.PREFIX_SESSION}${sessionId}`;
+}
+
+/**
+ * Generate channel name for raw output events.
+ * Receives raw, unparsed output from the agent process for terminal display.
+ */
+export function rawOutputChannel(sessionId: string): string {
+  return `${CHANNELS.PREFIX_RAW_OUTPUT}${sessionId}`;
+}
+
+/**
+ * Generate channel name for normalized event stream.
+ * Receives parsed and normalized events from the agent for UI rendering.
+ */
+export function normalizedChannel(sessionId: string): string {
+  return `${CHANNELS.PREFIX_NORMALIZED}${sessionId}`;
+}
+
+/**
+ * Generate channel name for execution error events.
+ * Receives structured error events that occur during agent execution.
+ */
+export function executionErrorChannel(sessionId: string): string {
+  return `${CHANNELS.PREFIX_EXECUTION_ERROR}${sessionId}`;
 }
 
 // =============================================================================
@@ -544,13 +589,13 @@ export function useSessionSubscription<T = unknown>(
 ): UseEventSubscriptionResult {
   const defaultKeys: QueryKey[] = sessionId
     ? [
-        ['agentSessions'],
-        ['agentSessions', 'detail', sessionId],
-        ['agentSessions', 'withState', sessionId],
-        ['agentSessions', 'summary', sessionId],
-        ['agentSessions', 'events', sessionId],
-        ['agentSessions', 'permission', sessionId],
-        ['agentSessions', 'rawOutput', sessionId],
+        ['agent-sessions'],
+        ['agent-sessions', 'sessions', sessionId],
+        ['agent-sessions', 'sessions', sessionId, 'with-state'],
+        ['agent-sessions', 'sessions', sessionId, 'summary'],
+        ['agent-sessions', 'events', sessionId],
+        ['agent-sessions', 'permissions', 'pending', sessionId],
+        ['agent-sessions', 'raw-output', sessionId],
       ]
     : [];
 
@@ -619,6 +664,124 @@ export function useProcessStatusSubscription<T = unknown>(
     : [];
 
   return useEventSubscription<T>(processId ? processStatusChannel(processId) : null, {
+    ...options,
+    invalidateKeys: [...defaultKeys, ...(options.invalidateKeys ?? [])],
+  });
+}
+
+/**
+ * Subscribe to raw output events for an agent session.
+ *
+ * This channel receives raw, unparsed output from the agent process,
+ * suitable for terminal display. The output includes ANSI codes and
+ * is streamed as it arrives from the PTY.
+ *
+ * @param sessionId - Session ID to subscribe to
+ * @param options - Subscription options
+ *
+ * @example
+ * ```tsx
+ * useRawOutputSubscription(sessionId, {
+ *   onEvent: (output) => {
+ *     appendToTerminal(output);
+ *   },
+ * });
+ * ```
+ */
+export function useRawOutputSubscription<T = unknown>(
+  sessionId: string | null,
+  options: Omit<UseEventSubscriptionOptions<T>, 'invalidateKeys'> & {
+    invalidateKeys?: QueryKey[];
+  } = {}
+): UseEventSubscriptionResult {
+  const defaultKeys: QueryKey[] = sessionId
+    ? [
+        ['agent-sessions', 'raw-output', sessionId],
+        ['agent-sessions', 'sessions', sessionId],
+      ]
+    : [];
+
+  return useEventSubscription<T>(sessionId ? rawOutputChannel(sessionId) : null, {
+    ...options,
+    invalidateKeys: [...defaultKeys, ...(options.invalidateKeys ?? [])],
+  });
+}
+
+/**
+ * Subscribe to normalized event stream for an agent session.
+ *
+ * This channel receives parsed and normalized events from the agent,
+ * transformed into a consistent format suitable for UI rendering.
+ * Events include messages, tool use, tool results, and system events.
+ *
+ * @param sessionId - Session ID to subscribe to
+ * @param options - Subscription options
+ *
+ * @example
+ * ```tsx
+ * useNormalizedEventsSubscription(sessionId, {
+ *   onEvent: (entry) => {
+ *     console.log('Normalized event:', entry);
+ *   },
+ * });
+ * ```
+ */
+export function useNormalizedEventsSubscription<T = unknown>(
+  sessionId: string | null,
+  options: Omit<UseEventSubscriptionOptions<T>, 'invalidateKeys'> & {
+    invalidateKeys?: QueryKey[];
+  } = {}
+): UseEventSubscriptionResult {
+  const defaultKeys: QueryKey[] = sessionId
+    ? [
+        ['agent-sessions', 'normalized-events', sessionId],
+        ['agent-sessions', 'events', sessionId],
+        ['agent-sessions', 'sessions', sessionId],
+      ]
+    : [];
+
+  return useEventSubscription<T>(sessionId ? normalizedChannel(sessionId) : null, {
+    ...options,
+    invalidateKeys: [...defaultKeys, ...(options.invalidateKeys ?? [])],
+  });
+}
+
+/**
+ * Subscribe to tool state updates for an agent session.
+ *
+ * This channel receives updates when tool calls start, complete, or fail.
+ * Each event includes the full tool state with execution context like
+ * command, file path, exit code, and duration.
+ *
+ * @param sessionId - Session ID to subscribe to
+ * @param options - Subscription options
+ *
+ * @example
+ * ```tsx
+ * useToolStateSubscription(sessionId, {
+ *   onEvent: (toolState) => {
+ *     if (toolState.status === 'completed') {
+ *       console.log(`Tool ${toolState.toolName} completed in ${toolState.durationMs}ms`);
+ *     }
+ *   },
+ * });
+ * ```
+ */
+export function useToolStateSubscription<T = unknown>(
+  sessionId: string | null,
+  options: Omit<UseEventSubscriptionOptions<T>, 'invalidateKeys'> & {
+    invalidateKeys?: QueryKey[];
+  } = {}
+): UseEventSubscriptionResult {
+  const defaultKeys: QueryKey[] = sessionId
+    ? [
+        ['agent-sessions', 'tool-states', sessionId],
+        ['agent-sessions', 'sessions', sessionId, 'with-state'],
+        ['agent-sessions', 'sessions', sessionId],
+      ]
+    : [];
+
+  return useEventSubscription<T>(sessionId ? toolStateChannel(sessionId) : null, {
     ...options,
     invalidateKeys: [...defaultKeys, ...(options.invalidateKeys ?? [])],
   });

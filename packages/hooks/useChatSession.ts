@@ -7,16 +7,7 @@
  * Uses the AgentOrchestrator backend for agent execution and event streaming.
  */
 
-import type {
-  AgentEventRecord,
-  Chat,
-  Message,
-  Project,
-  UnifiedAgentEvent,
-  UnifiedAgentEventMessage,
-  UnifiedAgentEventToolResult,
-  UnifiedAgentEventToolUse,
-} from '@openflow/generated';
+import type { AgentEventRecord, Chat, ContentBlock, Message, Project } from '@openflow/generated';
 import {
   AgentMessageRole,
   CompletionStatus,
@@ -35,10 +26,11 @@ import {
   useAgentSessionEvents,
   useAgentSessionWithState,
   useAgentSessionsByProcess,
-  useRespondAgentPermission,
+  useRespondAgentPermissionSdk,
 } from './useAgentSession';
 import { useChat, useUpdateChat } from './useChats';
-import { useExecutorProfiles, useRunExecutor } from './useExecutorProfiles';
+import { useSessionSubscription } from './useEventSubscription';
+import { useExecutorProfiles, useRunExecutorSdk } from './useExecutorProfiles';
 import { useCreateMessage, useMessages } from './useMessages';
 import { useProcessLifecycle } from './useProcessLifecycle';
 import { useKillProcess, useProcessesByChat } from './useProcesses';
@@ -144,7 +136,37 @@ export interface ChatSessionState {
 // ============================================================================
 
 /**
- * Extract content from UnifiedAgentEvents for message persistence.
+ * NormalizedEntry payload structure from the backend.
+ * The entire NormalizedEntry is serialized as the payload.
+ */
+interface NormalizedEntryPayload {
+  id: string;
+  sessionId: string;
+  sequence: number;
+  entryType: {
+    type: string;
+    content?: {
+      role?: string;
+      toolId?: string;
+      toolName?: string;
+      input?: unknown;
+      status?: string;
+      output?: string;
+    };
+  };
+  content: string; // Human-readable content for display
+  timestamp: string;
+  metadata?: {
+    filePath?: string;
+    command?: string;
+    exitCode?: number;
+    parentToolId?: string;
+  };
+}
+
+/**
+ * Extract content from agent events for message persistence.
+ * Handles NormalizedEntry format where text is in payload.content (string).
  */
 function extractContentFromUnifiedEvents(events: AgentEventRecord[]): {
   textContent: string;
@@ -155,51 +177,128 @@ function extractContentFromUnifiedEvents(events: AgentEventRecord[]): {
   const toolCalls: ToolCall[] = [];
   const toolResults: ToolResult[] = [];
 
-  for (const record of events) {
-    const event = record.payload as UnifiedAgentEvent;
-    if (!event || typeof event !== 'object' || !('type' in event)) continue;
+  logger.debug('Extracting content from events', {
+    eventCount: events.length,
+    eventTypes: events.map((e) => e.eventType),
+  });
 
-    if (event.type === 'message') {
-      const msgEvent = event as UnifiedAgentEventMessage;
-      if (msgEvent.role === AgentMessageRole.Assistant) {
-        for (const block of msgEvent.content) {
-          if (block.type === 'text' && block.text) {
-            textParts.push(block.text);
-          } else if (block.type === 'tool_use' && block.id && block.name) {
-            toolCalls.push({
-              id: block.id,
-              name: block.name,
-              input: (block.input as Record<string, unknown>) ?? {},
-            });
+  for (const record of events) {
+    // Parse payload if it's a JSON string
+    let payload: unknown = record.payload;
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload);
+      } catch {
+        logger.warn('Failed to parse event payload as JSON', { sequence: record.sequence });
+        continue;
+      }
+    }
+
+    const eventType = record.eventType;
+    if (!payload || typeof payload !== 'object') {
+      continue;
+    }
+
+    const payloadObj = payload as Record<string, unknown>;
+
+    // Check if this is a NormalizedEntry (has entryType and top-level content string)
+    const isNormalizedEntry = 'entryType' in payloadObj && 'content' in payloadObj;
+
+    if (isNormalizedEntry) {
+      // Handle NormalizedEntry format
+      const entry = payloadObj as unknown as NormalizedEntryPayload;
+      const entryTypeData = entry.entryType?.content;
+
+      logger.debug('Processing NormalizedEntry', {
+        sequence: record.sequence,
+        eventType,
+        entryTypeType: entry.entryType?.type,
+        contentPreview: entry.content?.slice(0, 200),
+        role: entryTypeData?.role,
+      });
+
+      if (eventType === 'message') {
+        const role = entryTypeData?.role;
+        // For assistant messages, extract the content string
+        if (role === 'assistant' || role === 'Assistant') {
+          if (entry.content && entry.content !== '(empty message)') {
+            textParts.push(entry.content);
           }
         }
-      } else if (msgEvent.role === AgentMessageRole.User) {
-        for (const block of msgEvent.content) {
-          if (block.type === 'tool_result' && block.tool_use_id) {
-            toolResults.push({
-              toolUseId: block.tool_use_id,
-              content: block.content ?? '',
-              isError: block.is_error,
-            });
-          }
+      } else if (eventType === 'tool_use') {
+        if (entryTypeData?.toolId && entryTypeData?.toolName) {
+          toolCalls.push({
+            id: entryTypeData.toolId,
+            name: entryTypeData.toolName,
+            input: (entryTypeData.input as Record<string, unknown>) ?? {},
+          });
+        }
+      } else if (eventType === 'tool_result') {
+        if (entryTypeData?.toolId) {
+          toolResults.push({
+            toolUseId: entryTypeData.toolId,
+            content: entryTypeData.output ?? entry.content ?? '',
+            isError: entryTypeData.status === 'error' || entryTypeData.status === 'Error',
+          });
         }
       }
-    } else if (event.type === 'tool_use') {
-      const toolEvent = event as UnifiedAgentEventToolUse;
-      toolCalls.push({
-        id: toolEvent.tool_id,
-        name: toolEvent.tool_name,
-        input: (toolEvent.input as Record<string, unknown>) ?? {},
-      });
-    } else if (event.type === 'tool_result') {
-      const resultEvent = event as UnifiedAgentEventToolResult;
-      toolResults.push({
-        toolUseId: resultEvent.tool_id,
-        content: resultEvent.output,
-        isError: resultEvent.status === ToolResultStatus.Error,
-      });
+    } else {
+      // Legacy format: payload contains event data directly
+      if (eventType === 'message') {
+        const msgPayload = payloadObj as { role: AgentMessageRole; content: ContentBlock[] };
+        if (msgPayload.role === AgentMessageRole.Assistant) {
+          for (const block of msgPayload.content ?? []) {
+            if (block.type === 'text' && block.text) {
+              textParts.push(block.text);
+            } else if (block.type === 'thinking' && block.thinking) {
+              textParts.push(`[Thinking]\n${block.thinking}`);
+            } else if (block.type === 'tool_use' && block.id && block.name) {
+              toolCalls.push({
+                id: block.id,
+                name: block.name,
+                input: (block.input as Record<string, unknown>) ?? {},
+              });
+            }
+          }
+        } else if (msgPayload.role === AgentMessageRole.User) {
+          for (const block of msgPayload.content ?? []) {
+            if (block.type === 'tool_result' && block.tool_use_id) {
+              toolResults.push({
+                toolUseId: block.tool_use_id,
+                content: block.content ?? '',
+                isError: block.is_error,
+              });
+            }
+          }
+        }
+      } else if (eventType === 'tool_use') {
+        const toolPayload = payloadObj as { tool_id: string; tool_name: string; input: unknown };
+        toolCalls.push({
+          id: toolPayload.tool_id,
+          name: toolPayload.tool_name,
+          input: (toolPayload.input as Record<string, unknown>) ?? {},
+        });
+      } else if (eventType === 'tool_result') {
+        const resultPayload = payloadObj as {
+          tool_id: string;
+          status: ToolResultStatus;
+          output: string;
+        };
+        toolResults.push({
+          toolUseId: resultPayload.tool_id,
+          content: resultPayload.output,
+          isError: resultPayload.status === ToolResultStatus.Error,
+        });
+      }
     }
   }
+
+  logger.debug('Extraction complete', {
+    textPartsCount: textParts.length,
+    toolCallsCount: toolCalls.length,
+    toolResultsCount: toolResults.length,
+    textPreview: textParts.join('').substring(0, 100),
+  });
 
   return {
     textContent: textParts.join('\n\n'),
@@ -209,78 +308,149 @@ function extractContentFromUnifiedEvents(events: AgentEventRecord[]): {
 }
 
 /**
- * Process UnifiedAgentEvents into display items for rendering.
+ * Process agent events into display items for rendering.
+ * Handles NormalizedEntry format where text is in payload.content (string).
  */
 function processUnifiedEventsToDisplayItems(events: AgentEventRecord[]): DisplayItem[] {
   const items: DisplayItem[] = [];
   const toolIndexMap = new Map<string, number>();
 
   for (const record of events) {
-    const event = record.payload as UnifiedAgentEvent;
-    if (!event || typeof event !== 'object' || !('type' in event)) continue;
+    // Parse payload if it's a JSON string
+    let payload: unknown = record.payload;
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload);
+      } catch {
+        continue;
+      }
+    }
 
-    if (event.type === 'message') {
-      const msgEvent = event as UnifiedAgentEventMessage;
-      if (msgEvent.role === AgentMessageRole.Assistant) {
-        for (const block of msgEvent.content) {
-          if (block.type === 'text' && block.text) {
-            items.push({ type: 'text', content: block.text });
-          } else if (block.type === 'tool_use' && block.id && block.name) {
-            items.push({
-              type: 'tool',
-              tool: {
-                id: block.id,
-                name: block.name,
-                input: block.input as Record<string, unknown>,
-                output: undefined,
-                isError: false,
-              },
-            });
-            toolIndexMap.set(block.id, items.length - 1);
+    const eventType = record.eventType;
+    if (!payload || typeof payload !== 'object') continue;
+
+    const payloadObj = payload as Record<string, unknown>;
+
+    // Check if this is a NormalizedEntry (has entryType and top-level content string)
+    const isNormalizedEntry = 'entryType' in payloadObj && 'content' in payloadObj;
+
+    if (isNormalizedEntry) {
+      // Handle NormalizedEntry format
+      const entry = payloadObj as unknown as NormalizedEntryPayload;
+      const entryTypeData = entry.entryType?.content;
+
+      if (eventType === 'message') {
+        const role = entryTypeData?.role;
+        // For assistant messages, extract the content string
+        if (role === 'assistant' || role === 'Assistant') {
+          if (entry.content && entry.content !== '(empty message)') {
+            items.push({ type: 'text', content: entry.content });
           }
         }
-      } else if (msgEvent.role === AgentMessageRole.User) {
-        for (const block of msgEvent.content) {
-          if (block.type === 'tool_result' && block.tool_use_id) {
-            const toolIndex = toolIndexMap.get(block.tool_use_id);
-            if (toolIndex !== undefined) {
-              const existingItem = items[toolIndex];
-              if (existingItem?.type === 'tool') {
-                existingItem.tool.output = block.content ?? '';
-                existingItem.tool.isError = block.is_error ?? false;
+      } else if (eventType === 'tool_use') {
+        if (entryTypeData?.toolId && entryTypeData?.toolName) {
+          items.push({
+            type: 'tool',
+            tool: {
+              id: entryTypeData.toolId,
+              name: entryTypeData.toolName,
+              input: (entryTypeData.input as Record<string, unknown>) ?? {},
+              output: undefined,
+              isError: false,
+            },
+          });
+          toolIndexMap.set(entryTypeData.toolId, items.length - 1);
+        }
+      } else if (eventType === 'tool_result') {
+        if (entryTypeData?.toolId) {
+          const toolIndex = toolIndexMap.get(entryTypeData.toolId);
+          if (toolIndex !== undefined) {
+            const existingItem = items[toolIndex];
+            if (existingItem?.type === 'tool') {
+              existingItem.tool.output = entryTypeData.output ?? entry.content ?? '';
+              existingItem.tool.isError =
+                entryTypeData.status === 'error' || entryTypeData.status === 'Error';
+            }
+            toolIndexMap.delete(entryTypeData.toolId);
+          }
+        }
+      } else if (eventType === 'complete') {
+        // NormalizedEntry complete status is in entryType.content.status
+        const status = entry.entryType?.type === 'complete' ? 'complete' : 'error';
+        items.push({ type: 'result', subtype: status });
+      }
+    } else {
+      // Legacy format: payload contains event data directly
+      if (eventType === 'message') {
+        const msgPayload = payloadObj as { role: AgentMessageRole; content: ContentBlock[] };
+        if (msgPayload.role === AgentMessageRole.Assistant) {
+          for (const block of msgPayload.content ?? []) {
+            if (block.type === 'text' && block.text) {
+              items.push({ type: 'text', content: block.text });
+            } else if (block.type === 'thinking' && block.thinking) {
+              items.push({ type: 'text', content: `[Thinking]\n${block.thinking}` });
+            } else if (block.type === 'tool_use' && block.id && block.name) {
+              items.push({
+                type: 'tool',
+                tool: {
+                  id: block.id,
+                  name: block.name,
+                  input: block.input as Record<string, unknown>,
+                  output: undefined,
+                  isError: false,
+                },
+              });
+              toolIndexMap.set(block.id, items.length - 1);
+            }
+          }
+        } else if (msgPayload.role === AgentMessageRole.User) {
+          for (const block of msgPayload.content ?? []) {
+            if (block.type === 'tool_result' && block.tool_use_id) {
+              const toolIndex = toolIndexMap.get(block.tool_use_id);
+              if (toolIndex !== undefined) {
+                const existingItem = items[toolIndex];
+                if (existingItem?.type === 'tool') {
+                  existingItem.tool.output = block.content ?? '';
+                  existingItem.tool.isError = block.is_error ?? false;
+                }
+                toolIndexMap.delete(block.tool_use_id);
               }
-              toolIndexMap.delete(block.tool_use_id);
             }
           }
         }
-      }
-    } else if (event.type === 'tool_use') {
-      const toolEvent = event as UnifiedAgentEventToolUse;
-      items.push({
-        type: 'tool',
-        tool: {
-          id: toolEvent.tool_id,
-          name: toolEvent.tool_name,
-          input: toolEvent.input as Record<string, unknown>,
-          output: undefined,
-          isError: false,
-        },
-      });
-      toolIndexMap.set(toolEvent.tool_id, items.length - 1);
-    } else if (event.type === 'tool_result') {
-      const resultEvent = event as UnifiedAgentEventToolResult;
-      const toolIndex = toolIndexMap.get(resultEvent.tool_id);
-      if (toolIndex !== undefined) {
-        const existingItem = items[toolIndex];
-        if (existingItem?.type === 'tool') {
-          existingItem.tool.output = resultEvent.output;
-          existingItem.tool.isError = resultEvent.status === ToolResultStatus.Error;
+      } else if (eventType === 'tool_use') {
+        const toolPayload = payloadObj as { tool_id: string; tool_name: string; input: unknown };
+        items.push({
+          type: 'tool',
+          tool: {
+            id: toolPayload.tool_id,
+            name: toolPayload.tool_name,
+            input: toolPayload.input as Record<string, unknown>,
+            output: undefined,
+            isError: false,
+          },
+        });
+        toolIndexMap.set(toolPayload.tool_id, items.length - 1);
+      } else if (eventType === 'tool_result') {
+        const resultPayload = payloadObj as {
+          tool_id: string;
+          status: ToolResultStatus;
+          output: string;
+        };
+        const toolIndex = toolIndexMap.get(resultPayload.tool_id);
+        if (toolIndex !== undefined) {
+          const existingItem = items[toolIndex];
+          if (existingItem?.type === 'tool') {
+            existingItem.tool.output = resultPayload.output;
+            existingItem.tool.isError = resultPayload.status === ToolResultStatus.Error;
+          }
+          toolIndexMap.delete(resultPayload.tool_id);
         }
-        toolIndexMap.delete(resultEvent.tool_id);
+      } else if (eventType === 'complete') {
+        const completePayload = payloadObj as { status: CompletionStatus };
+        const status = completePayload.status === CompletionStatus.Success ? 'complete' : 'error';
+        items.push({ type: 'result', subtype: status });
       }
-    } else if (event.type === 'complete') {
-      const status = event.status === CompletionStatus.Success ? 'complete' : 'error';
-      items.push({ type: 'result', subtype: status });
     }
   }
 
@@ -363,11 +533,11 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   }, [chat, messages.length]);
 
   // Mutations
-  const runExecutor = useRunExecutor();
+  const runExecutor = useRunExecutorSdk();
   const createMessage = useCreateMessage();
   const updateChat = useUpdateChat();
   const killProcess = useKillProcess();
-  const respondPermission = useRespondAgentPermission();
+  const respondPermission = useRespondAgentPermissionSdk();
 
   // Discover existing processes for this chat (for page loads with history)
   // Only query when we don't have an active process
@@ -398,13 +568,17 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   });
   const agentSessionId = agentSessions[0]?.id ?? null;
 
+  // Subscribe to session events via WebSocket - invalidates queries when events arrive
+  // This replaces polling with push-based updates for better efficiency
+  useSessionSubscription(agentSessionId);
+
   // Get session state for status tracking
+  // No polling needed - WebSocket subscription handles updates
   const { data: sessionState } = useAgentSessionWithState(agentSessionId ?? '', {
     enabled: !!agentSessionId,
-    refetchInterval: agentSessionId ? 500 : false,
   });
 
-  // Determine if session is running for refetch intervals
+  // Determine if session is running for enabled conditions
   const isSessionRunning = sessionState?.session.status === SessionStatus.Running;
 
   // Get events for the agent session - accumulate in local state
@@ -415,10 +589,9 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   const initiatedSessionRef = useRef<string | null>(null);
 
   // Query for events - don't use afterSequence in query key to get all events on initial load
+  // No polling needed - WebSocket subscription handles updates
   const { data: fetchedEvents = [] } = useAgentSessionEvents(agentSessionId ?? '', {
     enabled: !!agentSessionId,
-    // Only poll for new events when session is running
-    refetchInterval: isSessionRunning ? 500 : false,
   });
 
   // Accumulate events when new ones arrive
@@ -454,16 +627,17 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
   // Use accumulated events for display
   const agentEvents = accumulatedEvents;
 
-  // Get pending permission
+  // Get pending permission - keep minimal polling as fallback for time-sensitive permission requests
+  // WebSocket subscription handles most updates, polling is just a safety net
   const { data: pendingPermission } = useAgentPendingPermission(agentSessionId ?? '', {
     enabled: !!agentSessionId,
-    refetchInterval: isSessionRunning ? 1000 : false,
+    refetchInterval: isSessionRunning ? 2000 : false,
   });
 
-  // Get raw output
+  // Get raw output - only query when session is running (OutputPipeline only exists for active sessions)
+  // No polling needed - WebSocket subscription handles updates
   const { data: rawOutputData } = useAgentRawOutput(agentSessionId ?? '', {
-    enabled: !!agentSessionId,
-    refetchInterval: isSessionRunning ? 500 : false,
+    enabled: !!agentSessionId && isSessionRunning,
   });
   const rawOutput = useMemo(() => {
     // Safely handle the case where rawOutputData might be an object, null, or undefined
@@ -551,6 +725,17 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
       return;
     }
 
+    // Wait for events to be populated based on session state
+    // This prevents the race condition where completion triggers before events are accumulated
+    const expectedEventCount = sessionState?.eventCount ?? 0;
+    if (expectedEventCount > 0 && agentEvents.length < expectedEventCount) {
+      logger.debug('Waiting for events before processing completion', {
+        expectedCount: expectedEventCount,
+        currentCount: agentEvents.length,
+      });
+      return; // Don't process yet - effect will re-run when agentEvents updates
+    }
+
     lifecycle.markCompleting();
 
     const { textContent, toolCalls, toolResults } = extractContentFromUnifiedEvents(agentEvents);
@@ -569,18 +754,24 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
         eventCount: agentEvents.length,
       });
 
+      // Clear events BEFORE creating the message to prevent duplicate display
+      // We've already extracted the content, so we don't need events anymore
+      // This prevents the race condition where both displayItems (from events)
+      // and messages (from database) show the same content simultaneously
+      clearEvents();
+
+      // Only persist text content - tool calls were already shown during streaming
+      // This prevents duplicate display of tool calls in the final message
       createMessage.mutate(
         {
           chatId,
           role: MessageRole.Assistant,
           content: contentToSave,
-          toolCalls: toolCalls.length > 0 ? JSON.stringify(toolCalls) : undefined,
-          toolResults: toolResults.length > 0 ? JSON.stringify(toolResults) : undefined,
+          // Don't persist toolCalls/toolResults - they were visible during execution
         },
         {
           onSuccess: () => {
             logger.info('Assistant response persisted successfully', { chatId });
-            clearEvents();
             initiatedSessionRef.current = null; // Reset after successful persistence
             lifecycle.clearProcess();
           },
@@ -612,6 +803,7 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
     clearEvents,
     agentEvents,
     agentSessionId,
+    sessionState?.eventCount,
     toast,
   ]);
 

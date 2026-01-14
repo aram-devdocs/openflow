@@ -324,7 +324,7 @@ pub async fn get_task_step_events(
     };
 
     // Get events for the session
-    agent_session::get_events(&pool, session_id, after_sequence.map(|s| s as i64))
+    agent_session::get_events(&pool, session_id, after_sequence)
         .await
         .map_err(|e| e.to_string())
 }

@@ -30,7 +30,9 @@ import type {
   AgentSession,
   AgentSessionSummary,
   AgentSessionWithState,
+  NormalizedEntry,
   Permission,
+  ToolState,
 } from '@openflow/generated';
 import { agentSessionQueries } from '@openflow/queries';
 import { createLogger } from '@openflow/utils';
@@ -41,6 +43,11 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import {
+  normalizedChannel,
+  rawOutputChannel,
+  useEventSubscription,
+} from './useEventSubscription.js';
 
 const logger = createLogger('useAgentSession');
 
@@ -79,6 +86,10 @@ export const agentSessionKeys = {
     [...agentSessionKeys.events(), sessionId, 'latest-sequence'] as const,
   eventCount: (sessionId: string) => [...agentSessionKeys.events(), sessionId, 'count'] as const,
 
+  // Normalized events
+  normalizedEvents: (sessionId: string, afterSequence?: number) =>
+    [...agentSessionKeys.all, 'normalized-events', sessionId, { afterSequence }] as const,
+
   // Permissions
   permissions: () => [...agentSessionKeys.all, 'permissions'] as const,
   pendingPermission: (sessionId: string) =>
@@ -91,6 +102,9 @@ export const agentSessionKeys = {
 
   // Raw output
   rawOutput: (sessionId: string) => [...agentSessionKeys.all, 'raw-output', sessionId] as const,
+
+  // Tool states
+  toolStates: (sessionId: string) => [...agentSessionKeys.all, 'tool-states', sessionId] as const,
 };
 
 // =============================================================================
@@ -159,6 +173,8 @@ export function useAgentSessionWithState(
     queryFn: () => agentSessionQueries.getWithState(sessionId),
     enabled: Boolean(sessionId) && options?.enabled !== false,
     refetchInterval: options?.refetchInterval,
+    retry: 1, // Only retry once to handle transient errors
+    staleTime: 1000, // Consider data fresh for 1 second to reduce unnecessary refetches
   });
 }
 
@@ -307,6 +323,127 @@ export function useAgentEventCount(
   });
 }
 
+/**
+ * Options for useAgentNormalizedEvents hook.
+ */
+export interface UseAgentNormalizedEventsOptions {
+  /** Only return events with sequence > this value */
+  afterSequence?: number;
+  /** Whether to enable the query */
+  enabled?: boolean;
+  /** Polling interval in ms (default: disabled) */
+  refetchInterval?: number | false;
+  /** Callback when new events are received via WebSocket */
+  onEvent?: (event: NormalizedEntry) => void;
+}
+
+/**
+ * Get normalized events for an agent session with real-time updates.
+ *
+ * This hook provides access to normalized agent events - the canonical format
+ * for all agent events after transformation from provider-specific formats.
+ * Unlike raw events (AgentEventRecord), normalized events include:
+ * - Rich metadata (file paths, commands, exit codes)
+ * - Strongly typed event variants (Init, Message, ToolUse, ToolResult, etc.)
+ * - Consistent structure across all providers
+ *
+ * The hook combines polling and WebSocket subscriptions:
+ * - Queries the database for current events
+ * - Subscribes to the normalized-{sessionId} channel for real-time updates
+ * - Automatically invalidates cache when new events arrive
+ *
+ * Use afterSequence for efficient incremental fetching - only events with
+ * sequence > afterSequence will be returned.
+ *
+ * @param sessionId - Session ID
+ * @param options - Query options
+ * @returns Query result with array of NormalizedEntry
+ *
+ * @example
+ * ```tsx
+ * function AgentEventStream({ sessionId }: { sessionId: string }) {
+ *   const [lastSequence, setLastSequence] = useState<number | undefined>();
+ *
+ *   // Get normalized events with real-time updates
+ *   const { data: events, isLoading } = useAgentNormalizedEvents(sessionId, {
+ *     afterSequence: lastSequence,
+ *     refetchInterval: 1000, // Poll every second as fallback
+ *     onEvent: (event) => {
+ *       console.log('New event:', event.entryType.type);
+ *     },
+ *   });
+ *
+ *   useEffect(() => {
+ *     if (events?.length) {
+ *       setLastSequence(events[events.length - 1].sequence);
+ *     }
+ *   }, [events]);
+ *
+ *   if (isLoading) return <Loading />;
+ *
+ *   return (
+ *     <div>
+ *       {events?.map((event) => (
+ *         <EventCard key={event.id} event={event} />
+ *       ))}
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // For a running session, use polling
+ * const { data: sessionState } = useAgentSessionWithState(sessionId);
+ * const isRunning = sessionState?.session.status === 'running';
+ *
+ * const { data: events } = useAgentNormalizedEvents(sessionId, {
+ *   refetchInterval: isRunning ? 500 : false,
+ * });
+ * ```
+ */
+export function useAgentNormalizedEvents(
+  sessionId: string,
+  options?: UseAgentNormalizedEventsOptions
+): UseQueryResult<NormalizedEntry[]> {
+  const { afterSequence, enabled = true, refetchInterval, onEvent } = options ?? {};
+
+  // Subscribe to normalized event channel for real-time updates
+  useEventSubscription<NormalizedEntry>(sessionId ? normalizedChannel(sessionId) : null, {
+    enabled: enabled && Boolean(sessionId),
+    invalidateKeys: [agentSessionKeys.normalizedEvents(sessionId, afterSequence)],
+    onEvent: (event: NormalizedEntry) => {
+      logger.debug('Normalized event received', {
+        sessionId,
+        eventId: event.id,
+        sequence: event.sequence,
+        type: event.entryType.type,
+      });
+
+      // Call optional callback
+      if (onEvent) {
+        try {
+          onEvent(event);
+        } catch (error) {
+          logger.error('Error in onEvent callback', {
+            sessionId,
+            eventId: event.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+    },
+  });
+
+  // Query the current normalized events
+  return useQuery({
+    queryKey: agentSessionKeys.normalizedEvents(sessionId, afterSequence),
+    queryFn: () => agentSessionQueries.getNormalizedEvents(sessionId, { afterSequence }),
+    enabled: Boolean(sessionId) && enabled,
+    refetchInterval,
+  });
+}
+
 // =============================================================================
 // Permission Hooks
 // =============================================================================
@@ -342,8 +479,9 @@ export function useAgentPendingPermission(
 }
 
 /**
- * Respond to a permission request.
+ * Respond to a permission request (legacy PTY-based flow).
  *
+ * @deprecated Use useRespondAgentPermissionSdk for new code using the SDK bridge
  * @returns Mutation for responding to permission
  *
  * @example
@@ -400,6 +538,82 @@ export function useRespondAgentPermission(): UseMutationResult<
     },
     onError: (error, variables) => {
       logger.error('Failed to respond to permission', {
+        sessionId: variables.sessionId,
+        permissionId: variables.permissionId,
+        error: error.message,
+      });
+    },
+  });
+}
+
+/**
+ * Respond to a permission request using the SDK bridge (new architecture).
+ *
+ * Uses the AgentServiceBridge to respond to permission requests via the TypeScript
+ * agent-service, which forwards the response to the SDK's canUseTool callback.
+ * This provides:
+ * - Type-safe permission handling
+ * - Structured response with optional reason and modified input
+ * - Better reliability than PTY stdin writes
+ *
+ * This is the preferred method for new code.
+ *
+ * @returns Mutation for responding to permission via SDK
+ *
+ * @example
+ * ```tsx
+ * const respondPermission = useRespondAgentPermissionSdk();
+ *
+ * <div>
+ *   <button onClick={() => respondPermission.mutate({
+ *     sessionId,
+ *     permissionId: permission.id,
+ *     approved: true,
+ *   })}>
+ *     Approve
+ *   </button>
+ *   <button onClick={() => respondPermission.mutate({
+ *     sessionId,
+ *     permissionId: permission.id,
+ *     approved: false,
+ *     reason: 'User denied file access',
+ *   })}>
+ *     Deny
+ *   </button>
+ * </div>
+ * ```
+ */
+export function useRespondAgentPermissionSdk(): UseMutationResult<
+  void,
+  Error,
+  { sessionId: string; permissionId: string; approved: boolean; reason?: string }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, permissionId, approved, reason }) =>
+      agentSessionQueries.respondToPermissionSdk(sessionId, permissionId, approved, reason),
+    onSuccess: (_result, variables) => {
+      logger.info('Permission response sent via SDK', {
+        sessionId: variables.sessionId,
+        permissionId: variables.permissionId,
+        approved: variables.approved,
+      });
+      // Invalidate pending permission query
+      queryClient.invalidateQueries({
+        queryKey: agentSessionKeys.pendingPermission(variables.sessionId),
+      });
+      // Invalidate session state
+      queryClient.invalidateQueries({
+        queryKey: agentSessionKeys.sessionWithState(variables.sessionId),
+      });
+      // Invalidate events as agent may produce new output
+      queryClient.invalidateQueries({
+        queryKey: agentSessionKeys.events(),
+      });
+    },
+    onError: (error, variables) => {
+      logger.error('Failed to respond to permission via SDK', {
         sessionId: variables.sessionId,
         permissionId: variables.permissionId,
         error: error.message,
@@ -472,8 +686,9 @@ export function useActiveAgentSessions(options?: {
 // =============================================================================
 
 /**
- * Kill an agent session.
+ * Kill an agent session (legacy PTY-based flow).
  *
+ * @deprecated Use useKillAgentSessionSdk for new code using the SDK bridge
  * @returns Mutation for killing a session
  *
  * @example
@@ -500,6 +715,48 @@ export function useKillAgentSession(): UseMutationResult<AgentSession, Error, st
     },
     onError: (error, sessionId) => {
       logger.error('Failed to kill agent session', { sessionId, error: error.message });
+    },
+  });
+}
+
+/**
+ * Kill an agent session using the SDK bridge (new architecture).
+ *
+ * Uses the AgentServiceBridge to kill an agent session via the TypeScript
+ * agent-service, which aborts the SDK's agent process cleanly.
+ * This provides:
+ * - Proper cleanup of SDK resources
+ * - Graceful termination with abort signal
+ * - Better reliability than PTY kill signals
+ *
+ * This is the preferred method for new code.
+ *
+ * @returns Mutation for killing a session via SDK
+ *
+ * @example
+ * ```tsx
+ * const killSession = useKillAgentSessionSdk();
+ *
+ * <button onClick={() => killSession.mutate(sessionId)} disabled={killSession.isPending}>
+ *   {killSession.isPending ? 'Killing...' : 'Kill Session'}
+ * </button>
+ * ```
+ */
+export function useKillAgentSessionSdk(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sessionId: string) => agentSessionQueries.killSdk(sessionId),
+    onSuccess: (_result, sessionId) => {
+      logger.info('Agent session killed via SDK', { sessionId });
+      // Invalidate session queries
+      queryClient.invalidateQueries({ queryKey: agentSessionKeys.session(sessionId) });
+      queryClient.invalidateQueries({ queryKey: agentSessionKeys.sessionWithState(sessionId) });
+      queryClient.invalidateQueries({ queryKey: agentSessionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: agentSessionKeys.active() });
+    },
+    onError: (error, sessionId) => {
+      logger.error('Failed to kill agent session via SDK', { sessionId, error: error.message });
     },
   });
 }
@@ -572,6 +829,97 @@ export function useAgentRawOutput(
     queryFn: () => agentSessionQueries.getRawOutput(sessionId),
     enabled: Boolean(sessionId) && options?.enabled !== false,
     refetchInterval: options?.refetchInterval,
+    retry: false, // Don't retry - OutputPipeline only exists for active sessions
+  });
+}
+
+/**
+ * Options for useAgentRawStream hook.
+ */
+export interface UseAgentRawStreamOptions {
+  /** Whether to enable the subscription */
+  enabled?: boolean;
+  /** Callback when raw output data is received */
+  onData?: (data: string) => void;
+}
+
+/**
+ * Subscribe to raw terminal output stream for an agent session.
+ *
+ * This hook subscribes to the raw-output-{sessionId} channel and provides
+ * real-time streaming of raw PTY output for terminal display. Unlike
+ * useAgentRawOutput which polls the buffered output, this hook receives
+ * output as it's produced by the agent process.
+ *
+ * The hook follows the "pure view layer" principle:
+ * - Does NOT accumulate output in local state
+ * - Invalidates the raw output query cache on new data
+ * - Provides optional callback for custom handling (e.g., appending to terminal)
+ *
+ * @param sessionId - Session ID to subscribe to
+ * @param options - Subscription options
+ * @returns Query result with current raw output string
+ *
+ * @example
+ * ```tsx
+ * function AgentTerminal({ sessionId }: { sessionId: string }) {
+ *   const terminalRef = useRef<HTMLDivElement>(null);
+ *
+ *   // Subscribe to raw output stream
+ *   const { data: output } = useAgentRawStream(sessionId, {
+ *     onData: (chunk) => {
+ *       // Append new chunk to terminal display
+ *       if (terminalRef.current) {
+ *         terminalRef.current.textContent += chunk;
+ *       }
+ *     },
+ *   });
+ *
+ *   return (
+ *     <div>
+ *       <div ref={terminalRef}>{output}</div>
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export function useAgentRawStream(
+  sessionId: string,
+  options?: UseAgentRawStreamOptions
+): UseQueryResult<string> {
+  const { enabled = true, onData } = options ?? {};
+
+  // Subscribe to raw output channel
+  useEventSubscription<string>(sessionId ? rawOutputChannel(sessionId) : null, {
+    enabled: enabled && Boolean(sessionId),
+    invalidateKeys: [agentSessionKeys.rawOutput(sessionId)],
+    onEvent: (data: string) => {
+      logger.debug('Raw output received', {
+        sessionId,
+        length: data.length,
+      });
+
+      // Call optional callback
+      if (onData) {
+        try {
+          onData(data);
+        } catch (error) {
+          logger.error('Error in onData callback', {
+            sessionId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+    },
+  });
+
+  // Query the current buffered raw output
+  return useQuery({
+    queryKey: agentSessionKeys.rawOutput(sessionId),
+    queryFn: () => agentSessionQueries.getRawOutput(sessionId),
+    enabled: Boolean(sessionId) && enabled,
+    // Don't poll - rely on WebSocket subscription for updates
+    refetchInterval: false,
   });
 }
 
@@ -593,5 +941,154 @@ export function useRecoverStaleSessions(): UseMutationResult<number, Error, void
     onError: (error) => {
       logger.error('Failed to recover stale sessions', { error: error.message });
     },
+  });
+}
+
+// =============================================================================
+// Tool State Hooks
+// =============================================================================
+
+/**
+ * Options for useAgentToolStates hook.
+ */
+export interface UseAgentToolStatesOptions {
+  /** Whether to enable the query */
+  enabled?: boolean;
+  /** Polling interval in ms (default: disabled) */
+  refetchInterval?: number | false;
+}
+
+/**
+ * Get all tool states for an agent session.
+ *
+ * Tool states track individual tool invocations from ToolUse event to ToolResult.
+ * Each tool state includes execution metadata, status, results, and timing information.
+ *
+ * This hook is useful for:
+ * - Displaying tool execution progress in the UI
+ * - Showing running tools with their commands/file paths
+ * - Analyzing tool execution history and performance
+ * - Debugging tool failures with exit codes and stderr
+ *
+ * The hook supports polling for real-time updates during active sessions.
+ * Tool states are ordered chronologically (by started_at ASC).
+ *
+ * @param sessionId - Session ID
+ * @param options - Query options
+ * @returns Query result with array of ToolState
+ *
+ * @example
+ * ```tsx
+ * function ToolStateList({ sessionId }: { sessionId: string }) {
+ *   const { data: sessionState } = useAgentSessionWithState(sessionId);
+ *   const isRunning = sessionState?.session.status === 'running';
+ *
+ *   // Get tool states with polling while session is running
+ *   const { data: toolStates, isLoading } = useAgentToolStates(sessionId, {
+ *     refetchInterval: isRunning ? 1000 : false,
+ *   });
+ *
+ *   if (isLoading) return <Loading />;
+ *
+ *   // Separate by status
+ *   const running = toolStates?.filter((t) => t.status === 'running') || [];
+ *   const completed = toolStates?.filter((t) => t.status === 'completed') || [];
+ *   const errored = toolStates?.filter((t) => t.status === 'error') || [];
+ *
+ *   return (
+ *     <div>
+ *       <h3>Running Tools ({running.length})</h3>
+ *       {running.map((tool) => (
+ *         <ToolCard key={tool.id} tool={tool} />
+ *       ))}
+ *
+ *       <h3>Completed ({completed.length})</h3>
+ *       {completed.map((tool) => (
+ *         <ToolCard key={tool.id} tool={tool} />
+ *       ))}
+ *
+ *       {errored.length > 0 && (
+ *         <>
+ *           <h3>Failed ({errored.length})</h3>
+ *           {errored.map((tool) => (
+ *             <ToolCard key={tool.id} tool={tool} showError />
+ *           ))}
+ *         </>
+ *       )}
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Display tool execution statistics
+ * function ToolStats({ sessionId }: { sessionId: string }) {
+ *   const { data: toolStates } = useAgentToolStates(sessionId);
+ *
+ *   if (!toolStates) return null;
+ *
+ *   const totalDuration = toolStates
+ *     .filter((t) => t.durationMs)
+ *     .reduce((sum, t) => sum + (t.durationMs || 0), 0);
+ *
+ *   const avgDuration = toolStates.length > 0
+ *     ? totalDuration / toolStates.length
+ *     : 0;
+ *
+ *   const successRate = toolStates.length > 0
+ *     ? (toolStates.filter((t) => t.status === 'completed').length / toolStates.length) * 100
+ *     : 0;
+ *
+ *   return (
+ *     <div>
+ *       <p>Total Tools: {toolStates.length}</p>
+ *       <p>Total Duration: {totalDuration}ms</p>
+ *       <p>Average Duration: {avgDuration.toFixed(0)}ms</p>
+ *       <p>Success Rate: {successRate.toFixed(1)}%</p>
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Show currently running bash commands
+ * function RunningCommands({ sessionId }: { sessionId: string }) {
+ *   const { data: toolStates } = useAgentToolStates(sessionId, {
+ *     refetchInterval: 1000,
+ *   });
+ *
+ *   const runningBashTools = toolStates?.filter(
+ *     (t) => t.status === 'running' && t.command
+ *   ) || [];
+ *
+ *   if (runningBashTools.length === 0) return null;
+ *
+ *   return (
+ *     <div>
+ *       <h4>Running Commands</h4>
+ *       {runningBashTools.map((tool) => (
+ *         <div key={tool.id}>
+ *           <code>{tool.command}</code>
+ *           <span>Started: {new Date(tool.startedAt).toLocaleTimeString()}</span>
+ *         </div>
+ *       ))}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export function useAgentToolStates(
+  sessionId: string,
+  options?: UseAgentToolStatesOptions
+): UseQueryResult<ToolState[]> {
+  const { enabled = true, refetchInterval } = options ?? {};
+
+  return useQuery({
+    queryKey: agentSessionKeys.toolStates(sessionId),
+    queryFn: () => agentSessionQueries.getToolStates(sessionId),
+    enabled: Boolean(sessionId) && enabled,
+    refetchInterval,
   });
 }

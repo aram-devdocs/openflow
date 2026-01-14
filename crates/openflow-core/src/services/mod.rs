@@ -32,11 +32,15 @@
 //! - **search**: Full-text search operations
 //! - **settings**: Application settings
 //! - **workflow**: Workflow template parsing and management
+//! - **line_buffer**: Line buffering and ANSI stripping for PTY output
+//! - **normalizer**: Event normalization to canonical format
+//! - **permission_detector**: Permission prompt detection and tracking
 
 mod error;
 
 // Service modules
 pub mod agent_orchestrator;
+pub mod agent_service_bridge;
 pub mod agent_session;
 pub mod artifact;
 pub mod audit;
@@ -45,10 +49,11 @@ pub mod executor;
 pub mod executor_profile;
 pub mod git;
 pub mod github;
+pub mod line_buffer;
 pub mod message;
+pub mod normalizer;
+pub mod permission_detector;
 pub mod process;
-pub mod process_buffer;
-pub mod process_manager;
 pub mod project;
 pub mod search;
 pub mod settings;
@@ -60,5 +65,6 @@ pub mod workflow;
 pub mod worktree;
 
 pub use agent_orchestrator::{AgentOrchestrator, AgentOutputSink, SpawnAgentRequest};
+pub use agent_service_bridge::{AgentServiceBridge, AgentConfig as SdkAgentConfig, AgentEvent as SdkAgentEvent, PermissionRequest as SdkPermissionRequest};
 pub use error::{ServiceError, ServiceResult};
 pub use task_executor::TaskExecutor;

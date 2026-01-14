@@ -20,7 +20,7 @@ use axum::{
 };
 use openflow_contracts::{requests::ProcessSnapshot, ExecutionProcess};
 use openflow_core::events::{EntityType, Event};
-use openflow_core::services::{process, process_manager::ProcessManager};
+use openflow_core::services::process;
 use serde::Deserialize;
 
 use crate::{error::ServerResult, state::AppState};
@@ -164,15 +164,7 @@ async fn get_snapshot(
     State(_state): State<AppState>,
     Path(id): Path<String>,
 ) -> ServerResult<Json<ProcessSnapshot>> {
-    let manager = ProcessManager::global();
-
-    if let Some(snapshot) = manager.get_snapshot(&id) {
-        Ok(Json(snapshot))
-    } else {
-        // Return an empty snapshot if no buffer exists
-        // This allows clients to query for any process
-        Ok(Json(ProcessSnapshot::new(&id)))
-    }
+    Ok(Json(ProcessSnapshot::new(&id)))
 }
 
 #[cfg(test)]

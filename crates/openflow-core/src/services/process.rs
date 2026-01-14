@@ -47,7 +47,6 @@ use openflow_contracts::{
 };
 use openflow_process::{PtyConfig, PtyManager, PtySize};
 
-use super::process_manager::ProcessManager;
 use super::{ServiceError, ServiceResult};
 use crate::events::{
     Event, EventBroadcaster, NullBroadcaster, OutputType, ProcessStatus as EventProcessStatus,
@@ -699,10 +698,6 @@ impl ProcessService {
         let _ = self.pty_manager.close(id);
         debug!("kill: closed PTY for process id={}", id);
 
-        // Mark buffer as killed
-        ProcessManager::global().mark_killed(id);
-        debug!("kill: marked process buffer id={} as killed", id);
-
         // Update database
         info!("kill: successfully killed process id={}", id);
         let killed_process = mark_killed(pool, id).await?;
@@ -731,10 +726,6 @@ impl ProcessService {
         // Create database record
         let process = create(pool, create_request).await?;
         debug!("start: created database record id={}", process.id);
-
-        // Create process buffer for state management
-        ProcessManager::global().create_buffer(&process.id);
-        debug!("start: created process buffer for id={}", process.id);
 
         // Spawn the process
         if start_request.use_pty {
@@ -898,23 +889,7 @@ impl ProcessService {
                         break;
                     }
                     Ok(n) => {
-                        // Feed raw bytes to the process buffer
-                        let manager = ProcessManager::global();
-                        if let Some((new_events, new_tool_states)) = manager.append_raw(&process_id, &buffer[..n]) {
-                            // Broadcast new parsed Claude events
-                            for event_json in new_events {
-                                let event = Event::claude_event(&process_id, event_json);
-                                broadcaster.broadcast(event);
-                            }
-
-                            // Broadcast tool state changes
-                            for tool_state in new_tool_states {
-                                let event = Event::tool_state(&process_id, tool_state);
-                                broadcaster.broadcast(event);
-                            }
-                        }
-
-                        // Also broadcast raw output for terminal display
+                        // Broadcast raw output for terminal display
                         let content = String::from_utf8_lossy(&buffer[..n]).into_owned();
                         if !content.is_empty() {
                             let event =
@@ -940,7 +915,6 @@ impl ProcessService {
                 let mut attempts = 0;
                 const MAX_ATTEMPTS: u32 = 20; // 2 seconds max wait
                 const RETRY_DELAY_MS: u64 = 100;
-                let manager = ProcessManager::global();
 
                 loop {
                     match pty_manager.try_wait(&process_id) {
@@ -956,9 +930,6 @@ impl ProcessService {
                                 EventProcessStatus::Failed
                             };
 
-                            // Update buffer with exit code immediately
-                            manager.set_exit_code(&process_id, code);
-
                             debug!(
                                 "spawn_pty_output_streamer: process {} exited with status {:?} code={} (after {} attempts)",
                                 process_id, event_status, code, attempts
@@ -969,7 +940,6 @@ impl ProcessService {
                             attempts += 1;
                             if attempts >= MAX_ATTEMPTS {
                                 // Process still running after max wait - treat as killed
-                                manager.mark_killed(&process_id);
                                 debug!(
                                     "spawn_pty_output_streamer: stream closed but process {} still running after {} attempts, treating as killed",
                                     process_id, attempts

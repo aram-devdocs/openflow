@@ -15,7 +15,7 @@ use tauri::{AppHandle, Emitter, State};
 
 use crate::commands::AppState;
 use openflow_contracts::{requests::ProcessSnapshot, ExecutionProcess};
-use openflow_core::services::{process, process_manager::ProcessManager};
+use openflow_core::services::process;
 
 /// Get a process by ID.
 ///
@@ -174,9 +174,5 @@ pub async fn delete_process(state: State<'_, AppState>, id: String) -> Result<()
 /// Returns an empty snapshot if no buffer exists for the process.
 #[tauri::command]
 pub async fn get_process_snapshot(id: String) -> Result<ProcessSnapshot, String> {
-    let manager = ProcessManager::global();
-    // Return existing snapshot or empty snapshot for non-existent buffers (process may have ended)
-    Ok(manager
-        .get_snapshot(&id)
-        .unwrap_or_else(|| ProcessSnapshot::new(&id)))
+    Ok(ProcessSnapshot::new(&id))
 }

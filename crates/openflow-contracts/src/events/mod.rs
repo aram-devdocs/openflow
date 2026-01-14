@@ -71,6 +71,7 @@
 pub mod agent_event;
 pub mod channels;
 pub mod envelope;
+pub mod normalized;
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -81,6 +82,12 @@ pub use agent_event::{
     ToolResultStatus, UnifiedAgentEvent,
 };
 
+// Re-export normalized event types
+pub use normalized::{EntryMetadata, EntryType, NormalizedEntry};
+
+// Re-export error types
+pub use crate::errors::{ExecutionError, PermissionDeniedReason};
+
 // Re-export channel constants and helpers from dedicated module
 pub use channels::{
     // Static channel constants
@@ -89,9 +96,12 @@ pub use channels::{
     // Format string constants
     CHANNEL_AGENT_EVENT_FMT,
     CHANNEL_CLAUDE_EVENT_FMT,
+    CHANNEL_EXECUTION_ERROR_FMT,
+    CHANNEL_NORMALIZED_FMT,
     CHANNEL_PERMISSION_REQUEST_FMT,
     CHANNEL_PROCESS_OUTPUT_FMT,
     CHANNEL_PROCESS_STATUS_FMT,
+    CHANNEL_RAW_OUTPUT_FMT,
     CHANNEL_SESSION_FMT,
     CHANNEL_STEP_PROGRESS_FMT,
     CHANNEL_TASK_FMT,
@@ -100,9 +110,12 @@ pub use channels::{
     // Prefix constants
     PREFIX_AGENT_EVENT,
     PREFIX_CLAUDE_EVENT,
+    PREFIX_EXECUTION_ERROR,
+    PREFIX_NORMALIZED,
     PREFIX_PERMISSION_REQUEST,
     PREFIX_PROCESS_OUTPUT,
     PREFIX_PROCESS_STATUS,
+    PREFIX_RAW_OUTPUT,
     PREFIX_SESSION,
     PREFIX_STEP_PROGRESS,
     PREFIX_TASK,
@@ -111,11 +124,16 @@ pub use channels::{
     // Channel helper functions
     agent_event_channel,
     claude_event_channel,
+    execution_error_channel,
+    normalized_channel,
     parse_agent_event_channel,
     parse_claude_event_channel,
+    parse_execution_error_channel,
+    parse_normalized_channel,
     parse_permission_request_channel,
     parse_process_output_channel,
     parse_process_status_channel,
+    parse_raw_output_channel,
     parse_session_channel,
     parse_step_progress_channel,
     parse_task_channel,
@@ -124,6 +142,7 @@ pub use channels::{
     permission_request_channel,
     process_output_channel,
     process_status_channel,
+    raw_output_channel,
     session_channel,
     step_progress_channel,
     task_channel,
@@ -180,6 +199,8 @@ pub enum EntityType {
     Session,
     /// Permission entity
     Permission,
+    /// Tool state entity
+    ToolState,
 }
 
 impl std::fmt::Display for EntityType {
@@ -197,6 +218,7 @@ impl std::fmt::Display for EntityType {
             EntityType::Worktree => write!(f, "worktree"),
             EntityType::Session => write!(f, "session"),
             EntityType::Permission => write!(f, "permission"),
+            EntityType::ToolState => write!(f, "tool_state"),
         }
     }
 }
@@ -218,6 +240,7 @@ impl std::str::FromStr for EntityType {
             "worktree" => Ok(EntityType::Worktree),
             "session" | "agent_session" | "agentsession" => Ok(EntityType::Session),
             "permission" => Ok(EntityType::Permission),
+            "tool_state" | "toolstate" => Ok(EntityType::ToolState),
             _ => Err(format!("Invalid entity type: {}", s)),
         }
     }
@@ -249,6 +272,7 @@ impl EntityType {
             EntityType::Worktree => "worktrees",
             EntityType::Session => "sessions",
             EntityType::Permission => "permissions",
+            EntityType::ToolState => "toolStates",
         }
     }
 
@@ -267,6 +291,7 @@ impl EntityType {
             EntityType::Worktree,
             EntityType::Session,
             EntityType::Permission,
+            EntityType::ToolState,
         ]
     }
 }
@@ -821,6 +846,18 @@ pub enum Event {
     ProcessOutput(ProcessOutputEvent),
     /// Process status event
     ProcessStatus(ProcessStatusEvent),
+    /// Raw output from agent (for terminal display)
+    RawOutput {
+        /// Session ID producing the output
+        #[serde(rename = "sessionId")]
+        session_id: String,
+        /// Raw output line
+        output: String,
+    },
+    /// Normalized agent event entry
+    NormalizedEntry(NormalizedEntry),
+    /// Execution error event
+    ExecutionError(ExecutionError),
 }
 
 impl Event {
@@ -830,6 +867,16 @@ impl Event {
             Event::DataChanged(_) => CHANNEL_DATA_CHANGED.to_string(),
             Event::ProcessOutput(e) => process_output_channel(&e.process_id),
             Event::ProcessStatus(e) => process_status_channel(&e.process_id),
+            Event::RawOutput { session_id, .. } => raw_output_channel(session_id),
+            Event::NormalizedEntry(e) => normalized_channel(&e.session_id),
+            Event::ExecutionError(e) => {
+                // Use session-specific error channel if session_id is available,
+                // otherwise fall back to data-changed for global errors
+                match e.session_id() {
+                    Some(session_id) => execution_error_channel(session_id),
+                    None => CHANNEL_DATA_CHANGED.to_string(),
+                }
+            }
         }
     }
 
@@ -839,7 +886,49 @@ impl Event {
             Event::DataChanged(e) => WsServerMessage::data_changed(e),
             Event::ProcessOutput(e) => WsServerMessage::process_output(e),
             Event::ProcessStatus(e) => WsServerMessage::process_status(e),
+            Event::RawOutput { session_id, output } => {
+                WsServerMessage::event(
+                    raw_output_channel(session_id),
+                    serde_json::json!({
+                        "sessionId": session_id,
+                        "output": output,
+                    }),
+                )
+            }
+            Event::NormalizedEntry(e) => {
+                WsServerMessage::event(
+                    normalized_channel(&e.session_id),
+                    serde_json::to_value(e).unwrap_or_default(),
+                )
+            }
+            Event::ExecutionError(e) => {
+                // Use session-specific error channel if session_id is available,
+                // otherwise fall back to data-changed for global errors
+                let channel = match e.session_id() {
+                    Some(session_id) => execution_error_channel(session_id),
+                    None => CHANNEL_DATA_CHANGED.to_string(),
+                };
+                WsServerMessage::event(channel, serde_json::to_value(e).unwrap_or_default())
+            }
         }
+    }
+
+    /// Create a raw output event
+    pub fn raw_output(session_id: impl Into<String>, output: impl Into<String>) -> Self {
+        Event::RawOutput {
+            session_id: session_id.into(),
+            output: output.into(),
+        }
+    }
+
+    /// Create a normalized entry event
+    pub fn normalized_entry(entry: NormalizedEntry) -> Self {
+        Event::NormalizedEntry(entry)
+    }
+
+    /// Create an execution error event
+    pub fn execution_error(error: ExecutionError) -> Self {
+        Event::ExecutionError(error)
     }
 }
 
@@ -858,6 +947,18 @@ impl From<ProcessOutputEvent> for Event {
 impl From<ProcessStatusEvent> for Event {
     fn from(event: ProcessStatusEvent) -> Self {
         Event::ProcessStatus(event)
+    }
+}
+
+impl From<NormalizedEntry> for Event {
+    fn from(entry: NormalizedEntry) -> Self {
+        Event::NormalizedEntry(entry)
+    }
+}
+
+impl From<ExecutionError> for Event {
+    fn from(error: ExecutionError) -> Self {
+        Event::ExecutionError(error)
     }
 }
 
@@ -970,9 +1071,12 @@ mod tests {
     #[test]
     fn test_entity_type_all() {
         let all = EntityType::all();
-        assert_eq!(all.len(), 9);
+        assert_eq!(all.len(), 13);
         assert!(all.contains(&EntityType::Project));
         assert!(all.contains(&EntityType::Worktree));
+        assert!(all.contains(&EntityType::Session));
+        assert!(all.contains(&EntityType::Permission));
+        assert!(all.contains(&EntityType::ToolState));
     }
 
     #[test]
@@ -1359,5 +1463,94 @@ mod tests {
 
         let deserialized: Event = serde_json::from_str(&json).unwrap();
         assert!(matches!(deserialized, Event::DataChanged(_)));
+    }
+
+    #[test]
+    fn test_event_raw_output() {
+        let event = Event::raw_output("session-123", "output line");
+        assert_eq!(event.channel(), "raw-output-session-123");
+
+        if let Event::RawOutput { session_id, output } = event {
+            assert_eq!(session_id, "session-123");
+            assert_eq!(output, "output line");
+        } else {
+            panic!("Expected RawOutput variant");
+        }
+    }
+
+    #[test]
+    fn test_event_normalized_entry() {
+        let entry = NormalizedEntry::new(
+            "entry-1",
+            "session-123",
+            0,
+            EntryType::message(AgentMessageRole::Assistant),
+            "Hello",
+        );
+        let event = Event::normalized_entry(entry.clone());
+        assert_eq!(event.channel(), "normalized-session-123");
+
+        if let Event::NormalizedEntry(e) = event {
+            assert_eq!(e.id, "entry-1");
+            assert_eq!(e.session_id, "session-123");
+        } else {
+            panic!("Expected NormalizedEntry variant");
+        }
+    }
+
+    #[test]
+    fn test_event_execution_error() {
+        let error = ExecutionError::Connection {
+            reason: "Connection lost".to_string(),
+            recoverable: true,
+        };
+        let event = Event::execution_error(error.clone());
+
+        if let Event::ExecutionError(e) = event {
+            assert_eq!(e, error);
+        } else {
+            panic!("Expected ExecutionError variant");
+        }
+    }
+
+    #[test]
+    fn test_event_from_normalized_entry() {
+        let entry = NormalizedEntry::new(
+            "e1",
+            "s1",
+            0,
+            EntryType::system("test"),
+            "content",
+        );
+        let event: Event = entry.into();
+        assert!(matches!(event, Event::NormalizedEntry(_)));
+    }
+
+    #[test]
+    fn test_event_from_execution_error() {
+        let error = ExecutionError::Timeout {
+            duration_seconds: 60,
+            context: "Test timeout".to_string(),
+            session_id: "s1".to_string(),
+        };
+        let event: Event = error.into();
+        assert!(matches!(event, Event::ExecutionError(_)));
+    }
+
+    #[test]
+    fn test_event_raw_output_serialization() {
+        let event = Event::raw_output("session-1", "raw output");
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"eventType\":\"raw_output\""));
+        assert!(json.contains("\"sessionId\":\"session-1\""));
+        assert!(json.contains("\"output\":\"raw output\""));
+
+        let deserialized: Event = serde_json::from_str(&json).unwrap();
+        if let Event::RawOutput { session_id, output } = deserialized {
+            assert_eq!(session_id, "session-1");
+            assert_eq!(output, "raw output");
+        } else {
+            panic!("Expected RawOutput variant");
+        }
     }
 }

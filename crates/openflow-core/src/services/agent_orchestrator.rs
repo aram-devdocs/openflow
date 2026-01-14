@@ -22,12 +22,14 @@
 //! │   └───────────┘         └───────────┘           └───────────┘          │
 //! │                                                                         │
 //! │   ┌──────────────────────────────────────────────────────────────────┐ │
-//! │   │                   AgentOutputSink                                │ │
-//! │   │  - Receives PTY output chunks                                    │ │
-//! │   │  - Parses lines via Provider                                     │ │
-//! │   │  - Persists events to DB                                         │ │
-//! │   │  - Broadcasts to clients                                         │ │
+//! │   │                  AgentOutputPipeline                             │ │
+//! │   │  - Buffers PTY output into complete lines                        │ │
 //! │   │  - Detects permission prompts                                    │ │
+//! │   │  - Parses lines via Provider                                     │ │
+//! │   │  - Normalizes events to canonical format                         │ │
+//! │   │  - Persists normalized events to DB                              │ │
+//! │   │  - Tracks tool states                                            │ │
+//! │   │  - Broadcasts to clients                                         │ │
 //! │   └──────────────────────────────────────────────────────────────────┘ │
 //! │                                                                         │
 //! └─────────────────────────────────────────────────────────────────────────┘
@@ -56,9 +58,10 @@
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicI32, Ordering};
 
 use async_trait::async_trait;
-use log::{debug, error, info, warn};
+use log::{debug, error, info, trace, warn};
 use sqlx::SqlitePool;
 use tokio::sync::RwLock;
 
@@ -66,7 +69,7 @@ use openflow_contracts::{
     AgentSession, AuditAction, Permission, SessionStatus,
 };
 use openflow_contracts::events::{
-    agent_event_channel, PermissionRequest, UnifiedAgentEvent,
+    agent_event_channel, EntryType, NormalizedEntry, PermissionRequest, UnifiedAgentEvent,
 };
 use openflow_process::{
     NativePtyExecutor, OutputChunk, OutputSink, ProcessExecutor, ProcessResult, SpawnConfig,
@@ -75,9 +78,16 @@ use openflow_process::{
 use crate::events::{Event, EventBroadcaster};
 use crate::providers::{get_provider, AgentConfig, AgentProvider};
 
+use super::agent_service_bridge::{
+    AgentConfig as SdkAgentConfig, AgentEvent as SdkAgentEvent,
+    AgentServiceBridge, PermissionRequest as SdkPermissionRequest,
+};
 use super::agent_session::{self, CreateSessionRequest};
 use super::tool_state;
 use super::audit;
+use super::line_buffer::LineBuffer;
+use super::normalizer::EventNormalizer;
+use super::permission_detector::PermissionDetector;
 use super::{ServiceError, ServiceResult};
 
 // =============================================================================
@@ -355,6 +365,514 @@ impl OutputSink for AgentOutputSink {
 }
 
 // =============================================================================
+// Agent Output Pipeline
+// =============================================================================
+
+/// Agent output pipeline - unified processing of PTY output.
+///
+/// This pipeline provides:
+///
+/// 1. **Line Buffering** - Accumulates bytes and extracts complete lines
+/// 2. **Permission Detection** - Detects permission prompts before parsing
+/// 3. **Event Parsing** - Parses lines via provider to UnifiedAgentEvent
+/// 4. **Event Normalization** - Transforms to canonical NormalizedEntry format
+/// 5. **State Tracking** - Updates tool states in database
+/// 6. **Event Persistence** - Stores normalized events in database
+/// 7. **Broadcasting** - Sends events to connected clients via WebSocket
+///
+/// # Architecture
+///
+/// ```text
+/// ┌─────────────────────────────────────────────────────────────────────────┐
+/// │                      AgentOutputPipeline                                 │
+/// ├─────────────────────────────────────────────────────────────────────────┤
+/// │                                                                          │
+/// │  PTY Bytes → LineBuffer → PermissionDetector → Provider.parse_line      │
+/// │                ↓                                       ↓                 │
+/// │           Raw Output                          UnifiedAgentEvent          │
+/// │                                                       ↓                  │
+/// │                                            EventNormalizer               │
+/// │                                                       ↓                  │
+/// │                                            NormalizedEntry               │
+/// │                                                       ↓                  │
+/// │                                         ┌─────────────┴──────────────┐   │
+/// │                                         │                            │   │
+/// │                                    Persistence                  Broadcast│
+/// │                                    (Database)                 (WebSocket)│
+/// │                                                                          │
+/// └─────────────────────────────────────────────────────────────────────────┘
+/// ```
+///
+/// # Key Features
+///
+/// - **Single Responsibility**: Each component has one job
+/// - **No Duplication**: Single line buffer, single normalization step
+/// - **Type Safety**: Strongly typed events throughout pipeline
+/// - **Observable**: Raw and normalized streams available separately
+/// - **Testable**: Components can be tested independently
+/// - Uses PermissionDetector for robust permission prompt detection
+/// - Tracks sequence numbers with AtomicI32 for thread safety
+/// - Separates raw output from normalized events
+///
+pub struct AgentOutputPipeline {
+    /// Session ID for this pipeline
+    session_id: String,
+    
+    /// Database pool for persistence
+    pool: SqlitePool,
+    
+    /// Event broadcaster for real-time updates
+    broadcaster: Arc<dyn EventBroadcaster>,
+    
+    /// Provider for parsing output
+    provider: Arc<dyn AgentProvider>,
+    
+    // =========================================================================
+    // Pipeline Components (Single instances, no duplication)
+    // =========================================================================
+    
+    /// Line buffer - accumulates bytes and extracts complete lines
+    /// Wrapped in Mutex for interior mutability (thread-safe async)
+    line_buffer: Arc<tokio::sync::Mutex<LineBuffer>>,
+    
+    /// Event normalizer - transforms UnifiedAgentEvent to NormalizedEntry
+    /// Stateless, no need for interior mutability
+    normalizer: EventNormalizer,
+    
+    /// Permission detector - detects and tracks permission prompts
+    /// Wrapped in Mutex for interior mutability (maintains pending permissions)
+    permission_detector: Arc<tokio::sync::Mutex<PermissionDetector>>,
+    
+    // =========================================================================
+    // State
+    // =========================================================================
+    
+    /// Raw output buffer for terminal display (shared, thread-safe)
+    raw_output: Arc<RwLock<String>>,
+    
+    /// Next sequence number for events (atomic for thread safety)
+    next_sequence: AtomicI32,
+}
+
+impl AgentOutputPipeline {
+    /// Create a new output pipeline.
+    ///
+    /// # Arguments
+    /// * `session_id` - Session ID for this pipeline
+    /// * `pool` - Database connection pool
+    /// * `broadcaster` - Event broadcaster for real-time updates
+    /// * `provider` - Provider for parsing output
+    pub fn new(
+        session_id: String,
+        pool: SqlitePool,
+        broadcaster: Arc<dyn EventBroadcaster>,
+        provider: Arc<dyn AgentProvider>,
+    ) -> Self {
+        debug!("Creating AgentOutputPipeline for session {}", session_id);
+        
+        Self {
+            session_id,
+            pool,
+            broadcaster,
+            provider,
+            line_buffer: Arc::new(tokio::sync::Mutex::new(LineBuffer::new())),
+            normalizer: EventNormalizer::new(),
+            permission_detector: Arc::new(tokio::sync::Mutex::new(PermissionDetector::new())),
+            raw_output: Arc::new(RwLock::new(String::new())),
+            next_sequence: AtomicI32::new(0),
+        }
+    }
+    
+    /// Get the raw output buffer.
+    ///
+    /// Returns the accumulated raw PTY output for terminal display.
+    pub async fn get_raw_output(&self) -> String {
+        self.raw_output.read().await.clone()
+    }
+    
+    /// Get the current sequence number (for debugging/monitoring).
+    pub fn current_sequence(&self) -> i32 {
+        self.next_sequence.load(Ordering::SeqCst)
+    }
+    
+    /// Get statistics about the line buffer (for monitoring).
+    pub async fn buffer_stats(&self) -> super::line_buffer::LineBufferStats {
+        self.line_buffer.lock().await.stats()
+    }
+    
+    /// Get the number of pending permissions.
+    pub async fn pending_permissions_count(&self) -> usize {
+        self.permission_detector.lock().await.pending_count_for_session(&self.session_id)
+    }
+    
+    // =========================================================================
+    // Pipeline Processing Methods
+    // =========================================================================
+    
+    /// Process complete lines extracted from the buffer.
+    ///
+    /// This is the core of the pipeline that:
+    /// 1. Detects permission prompts
+    /// 2. Parses events via provider
+    /// 3. Normalizes events to canonical format
+    /// 4. Persists to database
+    /// 5. Tracks tool states
+    /// 6. Broadcasts to clients
+    async fn process_complete_lines(&self, lines: Vec<String>) -> ProcessResult<()> {
+        for line in lines {
+            if let Err(e) = self.process_line(&line).await {
+                warn!(
+                    "Error processing line for session {}: {}",
+                    self.session_id, e
+                );
+            }
+        }
+        Ok(())
+    }
+    
+    /// Process a single complete line through the pipeline.
+    async fn process_line(&self, line: &str) -> ProcessResult<()> {
+        // Skip empty lines
+        if line.trim().is_empty() {
+            return Ok(());
+        }
+        
+        trace!(
+            "Processing line for session {}: {}",
+            self.session_id, line
+        );
+        
+        // Step 1: Detect permission prompts
+        if let Some(perm_request) = self.detect_permission(line).await {
+            self.handle_permission_prompt(perm_request).await?;
+            return Ok(());
+        }
+        
+        // Step 2: Parse line via provider
+        if let Some(event) = self.parse_line(line) {
+            // Step 3: Normalize event
+            let normalized = self.normalize_event(event)?;
+            
+            // Step 4: Track tool state
+            self.track_tool_state(&normalized).await?;
+            
+            // Step 5: Persist event
+            self.persist_event(&normalized).await?;
+            
+            // Step 6: Broadcast events
+            self.broadcast_events(&normalized, line).await;
+        }
+        
+        Ok(())
+    }
+    
+    /// Detect permission prompts from output line.
+    async fn detect_permission(&self, line: &str) -> Option<PermissionRequest> {
+        self.permission_detector.lock().await.detect(line)
+    }
+    
+    /// Parse line via provider to UnifiedAgentEvent.
+    fn parse_line(&self, line: &str) -> Option<UnifiedAgentEvent> {
+        self.provider.parse_line(line)
+    }
+    
+    /// Normalize a UnifiedAgentEvent to NormalizedEntry.
+    fn normalize_event(&self, event: UnifiedAgentEvent) -> ProcessResult<NormalizedEntry> {
+        let sequence = self.next_sequence.fetch_add(1, Ordering::SeqCst);
+        
+        self.normalizer
+            .normalize(event, &self.session_id, sequence)
+            .map_err(|e| {
+                error!(
+                    "Failed to normalize event for session {}: {}",
+                    self.session_id, e
+                );
+                openflow_process::ProcessError::Internal(e.to_string())
+            })
+    }
+    
+    /// Track tool state in database.
+    async fn track_tool_state(&self, entry: &NormalizedEntry) -> ProcessResult<()> {
+        match &entry.entry_type {
+            EntryType::ToolUse {
+                tool_id,
+                tool_name,
+                input,
+            } => {
+                if let Err(e) = tool_state::create_from_tool_use(
+                    &self.pool,
+                    &self.session_id,
+                    tool_id,
+                    tool_name,
+                    input,
+                )
+                .await
+                {
+                    warn!(
+                        "Failed to create tool state for session {} tool {}: {}",
+                        self.session_id, tool_id, e
+                    );
+                }
+            }
+            EntryType::ToolResult {
+                tool_id,
+                status,
+                output,
+                ..
+            } => {
+                if let Err(e) = tool_state::complete_from_tool_result(
+                    &self.pool,
+                    &self.session_id,
+                    tool_id,
+                    status.clone(),
+                    output,
+                )
+                .await
+                {
+                    warn!(
+                        "Failed to complete tool state for session {} tool {}: {}",
+                        self.session_id, tool_id, e
+                    );
+                }
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+    
+    /// Persist normalized entry to database.
+    async fn persist_event(&self, entry: &NormalizedEntry) -> ProcessResult<()> {
+        // Serialize entry to JSON for storage
+        let payload = serde_json::to_value(entry)
+            .unwrap_or_else(|_| serde_json::json!({"error": "Failed to serialize entry"}));
+        
+        // Determine event type string
+        let event_type = entry.entry_type.type_name();
+        
+        // Persist to database
+        agent_session::add_event(&self.pool, &self.session_id, event_type, &payload)
+            .await
+            .map_err(|e| {
+                error!(
+                    "Failed to persist event for session {}: {}",
+                    self.session_id, e
+                );
+                openflow_process::ProcessError::Internal(e.to_string())
+            })?;
+        
+        debug!(
+            "Persisted normalized event: session={}, type={}, sequence={}",
+            self.session_id, event_type, entry.sequence
+        );
+        
+        Ok(())
+    }
+    
+    /// Broadcast events to connected clients via multiple channels.
+    ///
+    /// This method broadcasts to three separate channels:
+    /// 1. raw-output-{session_id} - Raw output for terminal display
+    /// 2. normalized-{session_id} - Normalized events for UI rendering
+    /// 3. data-changed - Tool state updates (for tool events only)
+    async fn broadcast_events(&self, entry: &NormalizedEntry, raw_line: &str) {
+        // 1. Broadcast raw output to raw-output channel (for terminal display)
+        self.broadcaster.broadcast(Event::raw_output(
+            &self.session_id,
+            raw_line,
+        ));
+        
+        // 2. Broadcast normalized entry to normalized channel (for UI rendering)
+        self.broadcaster.broadcast(Event::normalized_entry(
+            &self.session_id,
+            entry.clone(),
+        ));
+        
+        // 3. Broadcast tool state updates for tool events
+        match &entry.entry_type {
+            EntryType::ToolUse { tool_id, .. } | EntryType::ToolResult { tool_id, .. } => {
+                // Fetch the tool state from database
+                if let Ok(Some(tool_state)) = tool_state::get_by_tool_use_id(
+                    &self.pool,
+                    &self.session_id,
+                    tool_id,
+                ).await {
+                    // Broadcast tool state as a data changed event
+                    self.broadcaster.broadcast(Event::updated(
+                        crate::events::EntityType::ToolState,
+                        &tool_state.id,
+                        &tool_state,
+                    ));
+                    
+                    debug!(
+                        "Broadcasted tool state: session={}, tool_id={}, status={:?}",
+                        self.session_id, tool_id, tool_state.status
+                    );
+                }
+            }
+            _ => {}
+        }
+        
+        debug!(
+            "Broadcasted events: session={}, sequence={}, channels=[raw-output, normalized, data-changed]",
+            self.session_id, entry.sequence
+        );
+    }
+    
+    /// Handle a detected permission prompt.
+    async fn handle_permission_prompt(&self, request: PermissionRequest) -> ProcessResult<()> {
+        info!(
+            "Permission prompt detected: session={}, tool={}, file={:?}",
+            self.session_id, request.tool_name, request.file_path
+        );
+        
+        // Create permission record in database
+        let permission = agent_session::create_permission(
+            &self.pool,
+            &self.session_id,
+            &request.tool_name,
+            &request.description,
+            request.file_path.as_deref(),
+        )
+        .await
+        .map_err(|e| {
+            error!(
+                "Failed to create permission record for session {}: {}",
+                self.session_id, e
+            );
+            openflow_process::ProcessError::Internal(e.to_string())
+        })?;
+        
+        // Broadcast permission request to clients
+        // Note: Using Process entity type as Permission is not in EntityType enum
+        // The permission data includes session_id for filtering
+        self.broadcaster.broadcast(Event::data_changed(
+            crate::events::EntityType::Process,
+            crate::events::DataAction::Updated,
+            &self.session_id,
+            Some(serde_json::json!({
+                "type": "permission_request",
+                "permission": serde_json::to_value(&permission).unwrap_or_default()
+            })),
+        ));
+        
+        Ok(())
+    }
+}
+
+// =============================================================================
+// OutputSink Implementation for AgentOutputPipeline
+// =============================================================================
+
+#[async_trait]
+impl OutputSink for AgentOutputPipeline {
+    /// Receive bytes from PTY and process them through the pipeline.
+    ///
+    /// This is the main entry point for all PTY output. The pipeline:
+    /// 1. Appends to raw output buffer (for terminal display)
+    /// 2. Adds bytes to line buffer
+    /// 3. Extracts complete lines
+    /// 4. Processes each line through the full pipeline
+    async fn send(&self, chunk: OutputChunk) -> ProcessResult<()> {
+        trace!(
+            "Received output chunk: session={}, bytes={}",
+            self.session_id, chunk.content.len()
+        );
+        
+        // Step 1: Append to raw output buffer (for terminal display)
+        {
+            let mut raw = self.raw_output.write().await;
+            raw.push_str(&chunk.content);
+            
+            // Limit buffer size to 10MB to prevent unbounded growth
+            const MAX_BUFFER_SIZE: usize = 10 * 1024 * 1024;
+            if raw.len() > MAX_BUFFER_SIZE {
+                let excess = raw.len() - MAX_BUFFER_SIZE;
+                raw.drain(..excess);
+                warn!(
+                    "Raw output buffer exceeded max size for session {}, truncated {} bytes",
+                    self.session_id, excess
+                );
+            }
+        }
+        
+        // Step 2: Add bytes to line buffer and extract complete lines
+        let lines = {
+            let mut buffer = self.line_buffer.lock().await;
+            buffer.add_bytes(chunk.content.as_bytes())
+                .map_err(|e| {
+                    error!(
+                        "Failed to add bytes to line buffer for session {}: {}",
+                        self.session_id, e
+                    );
+                    openflow_process::ProcessError::Internal(e.to_string())
+                })?
+        };
+        
+        // Step 3: Process complete lines through the pipeline
+        if !lines.is_empty() {
+            debug!(
+                "Extracted {} complete lines from buffer for session {}",
+                lines.len(), self.session_id
+            );
+            self.process_complete_lines(lines).await?;
+        }
+        
+        Ok(())
+    }
+    
+    /// Close the output sink and process any remaining buffered data.
+    ///
+    /// This is called when the PTY process has finished. Any incomplete
+    /// lines remaining in the buffer are flushed and processed.
+    async fn close(&self) -> ProcessResult<()> {
+        debug!(
+            "Closing output pipeline: session={}, sequence={}",
+            self.session_id, self.next_sequence.load(Ordering::SeqCst)
+        );
+        
+        // Flush any remaining data from line buffer
+        let remaining_line = {
+            let mut buffer = self.line_buffer.lock().await;
+            buffer.flush()
+                .map_err(|e| {
+                    error!(
+                        "Failed to flush line buffer for session {}: {}",
+                        self.session_id, e
+                    );
+                    openflow_process::ProcessError::Internal(e.to_string())
+                })?
+        };
+        
+        // Process the remaining line if present
+        if let Some(line) = remaining_line {
+            debug!(
+                "Processing remaining incomplete line for session {}",
+                self.session_id
+            );
+            if let Err(e) = self.process_line(&line).await {
+                warn!(
+                    "Error processing final line for session {}: {}",
+                    self.session_id, e
+                );
+            }
+        }
+        
+        // Log final statistics
+        let stats = self.line_buffer.lock().await.stats();
+        info!(
+            "Output pipeline closed: session={}, total_bytes={}, lines={}, discarded={}, final_seq={}",
+            self.session_id,
+            stats.total_bytes_received,
+            stats.lines_extracted,
+            stats.bytes_discarded,
+            self.next_sequence.load(Ordering::SeqCst)
+        );
+        
+        Ok(())
+    }
+}
+
+// =============================================================================
 // Agent Orchestrator
 // =============================================================================
 
@@ -401,8 +919,8 @@ pub struct AgentOrchestrator {
     executor: Arc<NativePtyExecutor>,
     /// Active sessions (session_id -> info)
     active_sessions: Arc<RwLock<HashMap<String, ActiveSession>>>,
-    /// Output sinks for active sessions
-    output_sinks: Arc<RwLock<HashMap<String, Arc<AgentOutputSink>>>>,
+    /// Output pipelines for active sessions
+    output_pipelines: Arc<RwLock<HashMap<String, Arc<AgentOutputPipeline>>>>,
 }
 
 impl AgentOrchestrator {
@@ -417,7 +935,7 @@ impl AgentOrchestrator {
             broadcaster,
             executor: Arc::new(NativePtyExecutor::new()),
             active_sessions: Arc::new(RwLock::new(HashMap::new())),
-            output_sinks: Arc::new(RwLock::new(HashMap::new())),
+            output_pipelines: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -434,7 +952,7 @@ impl AgentOrchestrator {
             broadcaster,
             executor,
             active_sessions: Arc::new(RwLock::new(HashMap::new())),
-            output_sinks: Arc::new(RwLock::new(HashMap::new())),
+            output_pipelines: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -499,24 +1017,24 @@ impl AgentOrchestrator {
             config
         };
 
-        // Create output sink
-        let sink = Arc::new(AgentOutputSink::new(
+        // Create output pipeline
+        let pipeline = Arc::new(AgentOutputPipeline::new(
             session.id.clone(),
             self.pool.clone(),
             Arc::clone(&self.broadcaster),
             provider.clone(),
         ));
 
-        // Store sink for later access
+        // Store pipeline for later access
         {
-            let mut sinks = self.output_sinks.write().await;
-            sinks.insert(session.id.clone(), Arc::clone(&sink));
+            let mut pipelines = self.output_pipelines.write().await;
+            pipelines.insert(session.id.clone(), Arc::clone(&pipeline));
         }
 
         // Spawn the process
         let handle = self
             .executor
-            .spawn(&session.id, spawn_config, sink)
+            .spawn(&session.id, spawn_config, pipeline)
             .await
             .map_err(|e| {
                 error!("Failed to spawn process: {}", e);
@@ -557,13 +1075,336 @@ impl AgentOrchestrator {
         Ok(session)
     }
 
+    /// Spawn a new agent via the Claude SDK bridge.
+    ///
+    /// This method uses the TypeScript agent-service (wrapping Claude Agent SDK)
+    /// instead of direct PTY spawning. It provides:
+    /// - Type-safe permission handling via canUseTool callback
+    /// - Structured tool inputs (no text parsing)
+    /// - Clean event streaming
+    ///
+    /// # Arguments
+    /// * `bridge` - Reference to the AgentServiceBridge
+    /// * `process_id` - Process ID for the session
+    /// * `prompt` - The prompt to send to the agent
+    /// * `working_directory` - Working directory for the agent
+    ///
+    /// # Returns
+    /// The created AgentSession record.
+    pub async fn spawn_agent_via_bridge(
+        &self,
+        bridge: &AgentServiceBridge,
+        process_id: &str,
+        prompt: &str,
+        working_directory: Option<String>,
+    ) -> ServiceResult<AgentSession> {
+        info!(
+            "Spawning agent via SDK bridge: process_id={}",
+            process_id
+        );
+
+        // Create session in database with SDK provider
+        let session_request = CreateSessionRequest::new(process_id, "claude-sdk");
+        let session = agent_session::create(&self.pool, session_request).await?;
+
+        debug!("Created session: id={}", session.id);
+
+        // Clone resources for callbacks (they need to be 'static)
+        let pool_for_events = self.pool.clone();
+        let broadcaster_for_events = Arc::clone(&self.broadcaster);
+        let session_id_for_events = session.id.clone();
+
+        // Use atomic counter for event sequence
+        let sequence_counter = Arc::new(AtomicI32::new(1));
+
+        // Event handler callback - persists events and broadcasts
+        let event_handler = {
+            let pool = pool_for_events.clone();
+            let broadcaster = broadcaster_for_events.clone();
+            let session_id = session_id_for_events.clone();
+            let sequence_counter = Arc::clone(&sequence_counter);
+
+            move |event: SdkAgentEvent| {
+                let pool = pool.clone();
+                let broadcaster = broadcaster.clone();
+                let session_id = session_id.clone();
+                let sequence = sequence_counter.fetch_add(1, Ordering::SeqCst);
+
+                // Spawn task for async database work
+                tokio::spawn(async move {
+                    // Convert to normalized entry
+                    let entry = event.to_normalized_entry(sequence);
+
+                    // Persist to database using add_event
+                    let event_type = match &event {
+                        SdkAgentEvent::SessionStart { .. } => "session_start",
+                        SdkAgentEvent::SessionComplete { .. } => "session_complete",
+                        SdkAgentEvent::SessionError { .. } => "session_error",
+                        SdkAgentEvent::Message { .. } => "message",
+                        SdkAgentEvent::ToolUse { .. } => "tool_use",
+                        SdkAgentEvent::ToolResult { .. } => "tool_result",
+                        SdkAgentEvent::System { .. } => "system",
+                        SdkAgentEvent::PermissionRequest(_) => "permission_request",
+                    };
+                    let payload = serde_json::to_value(&entry).unwrap_or_default();
+                    if let Err(e) = agent_session::add_event(&pool, &session_id, event_type, &payload).await {
+                        error!("Failed to persist SDK event: {}", e);
+                    }
+
+                    // Handle tool state tracking
+                    match &event {
+                        SdkAgentEvent::ToolUse {
+                            tool_id,
+                            tool_name,
+                            tool_input,
+                            ..
+                        } => {
+                            if let Err(e) = tool_state::create_from_tool_use(
+                                &pool,
+                                &session_id,
+                                tool_id,
+                                tool_name,
+                                tool_input,
+                            )
+                            .await
+                            {
+                                warn!("Failed to create tool state: {}", e);
+                            }
+                        }
+                        SdkAgentEvent::ToolResult {
+                            tool_id,
+                            output,
+                            is_error,
+                            ..
+                        } => {
+                            let status = if *is_error {
+                                openflow_contracts::events::ToolResultStatus::Error
+                            } else {
+                                openflow_contracts::events::ToolResultStatus::Success
+                            };
+                            if let Err(e) = tool_state::complete_from_tool_result(
+                                &pool,
+                                &session_id,
+                                tool_id,
+                                status,
+                                output,
+                            )
+                            .await
+                            {
+                                warn!("Failed to complete tool state: {}", e);
+                            }
+                        }
+                        SdkAgentEvent::SessionComplete { .. } => {
+                            // Update session status
+                            if let Err(e) = agent_session::update_status(
+                                &pool,
+                                &session_id,
+                                SessionStatus::Completed,
+                                Some(0),
+                            )
+                            .await
+                            {
+                                error!("Failed to update session status: {}", e);
+                            }
+                        }
+                        SdkAgentEvent::SessionError { error, .. } => {
+                            // Update session status with error
+                            error!("Session {} failed: {}", session_id, error);
+                            if let Err(e) = agent_session::update_status(
+                                &pool,
+                                &session_id,
+                                SessionStatus::Failed,
+                                Some(1),
+                            )
+                            .await
+                            {
+                                error!("Failed to update session status: {}", e);
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    // Broadcast to frontend using Event type
+                    broadcaster.broadcast(Event::normalized_entry(&session_id, entry));
+                });
+            }
+        };
+
+        // Permission handler callback - creates permission record and broadcasts
+        let permission_handler = {
+            let pool = pool_for_events;
+            let broadcaster = broadcaster_for_events;
+            let session_id = session_id_for_events.clone();
+
+            move |request: SdkPermissionRequest| {
+                let pool = pool.clone();
+                let broadcaster = broadcaster.clone();
+                let session_id = session_id.clone();
+
+                // Spawn task for async database work
+                tokio::spawn(async move {
+                    info!(
+                        "Permission requested: session={}, tool={}, id={}",
+                        session_id, request.tool_name, request.id
+                    );
+
+                    // Create permission record in database with the same ID as agent-service
+                    // This is critical: the ID must match so respond_to_permission can route correctly
+                    let permission = match agent_session::create_permission_with_id(
+                        &pool,
+                        &request.id, // Use agent-service's permission ID
+                        &session_id,
+                        &request.tool_name,
+                        &request.description,
+                        request.file_path.as_deref(),
+                    )
+                    .await
+                    {
+                        Ok(perm) => perm,
+                        Err(e) => {
+                            error!("Failed to create permission record: {}", e);
+                            return;
+                        }
+                    };
+
+                    // Broadcast permission request event using the Event helper
+                    broadcaster.broadcast(Event::permission_request(
+                        &permission.id,
+                        &session_id,
+                        &request.tool_name,
+                        &request.description,
+                        request.file_path.clone(),
+                    ));
+                });
+            }
+        };
+
+        // Build SDK config
+        let sdk_config = SdkAgentConfig {
+            working_directory,
+            allowed_tools: None,
+            max_tokens: None,
+            system_prompt: None,
+        };
+
+        // Track active session
+        {
+            let mut sessions = self.active_sessions.write().await;
+            sessions.insert(
+                session.id.clone(),
+                ActiveSession::new(session.clone(), "claude-sdk".to_string()),
+            );
+        }
+
+        // Start session via bridge
+        bridge
+            .start_session(
+                session.id.clone(),
+                prompt.to_string(),
+                Some(sdk_config),
+                event_handler,
+                permission_handler,
+            )
+            .await?;
+
+        // Audit log
+        let _ = audit::log_session(
+            &self.pool,
+            &session.id,
+            AuditAction::Started,
+            Some(serde_json::json!({
+                "provider_id": "claude-sdk",
+                "process_id": process_id,
+                "via": "sdk_bridge",
+            })),
+        )
+        .await;
+
+        info!(
+            "Agent spawned via SDK bridge: session_id={}",
+            session.id
+        );
+
+        Ok(session)
+    }
+
+    /// Respond to a permission request via the SDK bridge.
+    ///
+    /// # Arguments
+    /// * `bridge` - Reference to the AgentServiceBridge
+    /// * `session_id` - The session ID
+    /// * `permission_id` - The permission request ID
+    /// * `approved` - Whether the permission was approved
+    /// * `reason` - Optional reason for denial
+    pub async fn respond_permission_via_bridge(
+        &self,
+        bridge: &AgentServiceBridge,
+        session_id: &str,
+        permission_id: &str,
+        approved: bool,
+        reason: Option<String>,
+    ) -> ServiceResult<()> {
+        info!(
+            "Responding to permission via bridge: session={}, permission={}, approved={}",
+            session_id, permission_id, approved
+        );
+
+        // Update permission record in database
+        agent_session::respond_to_permission(
+            &self.pool,
+            permission_id,
+            approved,
+        )
+        .await?;
+
+        // Forward response to agent-service via bridge
+        bridge
+            .respond_to_permission(session_id, permission_id, approved, reason)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Kill an agent session via the SDK bridge.
+    ///
+    /// # Arguments
+    /// * `bridge` - Reference to the AgentServiceBridge
+    /// * `session_id` - The session ID to kill
+    pub async fn kill_agent_via_bridge(
+        &self,
+        bridge: &AgentServiceBridge,
+        session_id: &str,
+    ) -> ServiceResult<()> {
+        info!("Killing agent via bridge: session={}", session_id);
+
+        // Update session status
+        agent_session::update_status(
+            &self.pool,
+            session_id,
+            SessionStatus::Killed,
+            None,
+        )
+        .await?;
+
+        // Kill via bridge
+        bridge.kill_session(session_id).await?;
+
+        // Remove from active sessions
+        {
+            let mut sessions = self.active_sessions.write().await;
+            sessions.remove(session_id);
+        }
+
+        Ok(())
+    }
+
     /// Spawn a background task to monitor session completion.
     fn spawn_session_monitor(&self, session_id: String, _provider: Arc<dyn AgentProvider>) {
         let executor = Arc::clone(&self.executor);
         let pool = self.pool.clone();
         let broadcaster = Arc::clone(&self.broadcaster);
         let active_sessions = Arc::clone(&self.active_sessions);
-        let output_sinks = Arc::clone(&self.output_sinks);
+        let output_pipelines = Arc::clone(&self.output_pipelines);
 
         tokio::spawn(async move {
             debug!("Session monitor started for {}", session_id);
@@ -636,8 +1477,8 @@ impl AgentOrchestrator {
                 sessions.remove(&session_id);
             }
             {
-                let mut sinks = output_sinks.write().await;
-                sinks.remove(&session_id);
+                let mut pipelines = output_pipelines.write().await;
+                pipelines.remove(&session_id);
             }
 
             // Close the process in executor
@@ -649,6 +1490,106 @@ impl AgentOrchestrator {
                 "Session {} finalized: status={:?}, exit_code={:?}",
                 session_id, status, exit_code
             );
+        });
+    }
+
+    /// Spawn a background task to check for and timeout expired permissions.
+    ///
+    /// This task runs continuously, checking every 30 seconds for permissions
+    /// that have exceeded their timeout and marks them as timed out, sending
+    /// denial responses to the agent stdin.
+    pub fn spawn_permission_timeout_task(&self) {
+        let pool = self.pool.clone();
+        let broadcaster = Arc::clone(&self.broadcaster);
+        let executor = Arc::clone(&self.executor);
+        let active_sessions = Arc::clone(&self.active_sessions);
+
+        tokio::spawn(async move {
+            info!("Permission timeout task started");
+
+            loop {
+                // Check every 30 seconds
+                tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+
+                trace!("Checking for expired permissions");
+
+                // Get all expired permissions
+                let expired = match agent_session::get_expired_permissions(&pool).await {
+                    Ok(perms) => perms,
+                    Err(e) => {
+                        error!("Failed to fetch expired permissions: {}", e);
+                        continue;
+                    }
+                };
+
+                if expired.is_empty() {
+                    continue;
+                }
+
+                debug!("Found {} expired permissions to timeout", expired.len());
+
+                // Process each expired permission
+                for permission in expired {
+                    let session_id = permission.session_id.clone();
+                    let permission_id = permission.id.clone();
+
+                    debug!(
+                        "Timing out permission: id={}, session={}, tool={}",
+                        permission_id, session_id, permission.tool_name
+                    );
+
+                    // Mark permission as timed out in database
+                    let timed_out_permission = match agent_session::timeout_permission(&pool, &permission_id).await {
+                        Ok(p) => p,
+                        Err(e) => {
+                            error!(
+                                "Failed to timeout permission {}: {}",
+                                permission_id, e
+                            );
+                            continue;
+                        }
+                    };
+
+                    // Send denial response to agent stdin if session is still active
+                    let provider_id = {
+                        let sessions = active_sessions.read().await;
+                        sessions.get(&session_id).map(|s| s.provider_id.clone())
+                    };
+
+                    if let Some(provider_id) = provider_id {
+                        if let Some(provider) = get_provider(&provider_id) {
+                            let response = provider.approval_response(false); // denial
+                            if let Err(e) = executor.write(&session_id, response).await {
+                                warn!(
+                                    "Failed to send timeout denial to session {}: {}",
+                                    session_id, e
+                                );
+                            } else {
+                                debug!(
+                                    "Sent timeout denial response to session {}",
+                                    session_id
+                                );
+                            }
+                        }
+                    }
+
+                    // Broadcast timeout event
+                    broadcaster.broadcast(Event::data_changed(
+                        crate::events::EntityType::Process,
+                        crate::events::DataAction::Updated,
+                        &session_id,
+                        Some(serde_json::json!({
+                            "type": "permission_timeout",
+                            "permission": serde_json::to_value(&timed_out_permission).unwrap_or_default()
+                        })),
+                    ));
+
+                    info!(
+                        "Permission timed out: id={}, session={}, tool={}",
+                        permission_id, session_id, permission.tool_name
+                    );
+                }
+            }
         });
     }
 
@@ -802,8 +1743,8 @@ impl AgentOrchestrator {
             sessions.remove(session_id);
         }
         {
-            let mut sinks = self.output_sinks.write().await;
-            sinks.remove(session_id);
+            let mut pipelines = self.output_pipelines.write().await;
+            pipelines.remove(session_id);
         }
 
         info!("Agent session killed: {}", session_id);
@@ -894,14 +1835,13 @@ impl AgentOrchestrator {
     ///
     /// Returns the buffered raw PTY output for terminal display.
     pub async fn get_raw_output(&self, session_id: &str) -> ServiceResult<String> {
-        let sinks = self.output_sinks.read().await;
-        if let Some(sink) = sinks.get(session_id) {
-            Ok(sink.get_raw_output().await)
+        let pipelines = self.output_pipelines.read().await;
+        if let Some(pipeline) = pipelines.get(session_id) {
+            Ok(pipeline.get_raw_output().await)
         } else {
-            Err(ServiceError::NotFound {
-                entity: "OutputSink",
-                id: session_id.to_string(),
-            })
+            // Return empty string instead of error for completed sessions
+            // This prevents frontend query errors when pipeline is cleaned up
+            Ok(String::new())
         }
     }
 
@@ -990,8 +1930,8 @@ impl AgentOrchestrator {
             sessions.remove(session_id);
         }
         {
-            let mut sinks = self.output_sinks.write().await;
-            sinks.remove(session_id);
+            let mut pipelines = self.output_pipelines.write().await;
+            pipelines.remove(session_id);
         }
 
         // Try to close the process in executor (may already be closed)
@@ -1097,8 +2037,10 @@ mod tests {
 
     /// Helper to create a test execution process
     async fn create_test_process(pool: &SqlitePool) -> String {
-        let id = uuid::Uuid::new_v4().to_string();
+        let process_id = uuid::Uuid::new_v4().to_string();
         let project_id = uuid::Uuid::new_v4().to_string();
+        let task_id = uuid::Uuid::new_v4().to_string();
+        let chat_id = uuid::Uuid::new_v4().to_string();
 
         // Create project
         sqlx::query(
@@ -1109,20 +2051,41 @@ mod tests {
         .await
         .expect("Failed to create test project");
 
+        // Create task
+        sqlx::query(
+            "INSERT INTO tasks (id, project_id, title, status) VALUES (?, ?, 'Test Task', 'pending')",
+        )
+        .bind(&task_id)
+        .bind(&project_id)
+        .execute(pool)
+        .await
+        .expect("Failed to create test task");
+
+        // Create chat (project_id is required since migration 003)
+        sqlx::query(
+            "INSERT INTO chats (id, task_id, project_id, chat_role) VALUES (?, ?, ?, 'main')",
+        )
+        .bind(&chat_id)
+        .bind(&task_id)
+        .bind(&project_id)
+        .execute(pool)
+        .await
+        .expect("Failed to create test chat");
+
         // Create execution process
         sqlx::query(
             r#"
-            INSERT INTO execution_processes (id, project_id, process_type, status, working_directory)
-            VALUES (?, ?, 'agent', 'running', '/tmp/test')
+            INSERT INTO execution_processes (id, chat_id, status, executor_action, run_reason)
+            VALUES (?, ?, 'running', 'test', 'codingagent')
             "#,
         )
-        .bind(&id)
-        .bind(&project_id)
+        .bind(&process_id)
+        .bind(&chat_id)
         .execute(pool)
         .await
         .expect("Failed to create test process");
 
-        id
+        process_id
     }
 
     #[tokio::test]
@@ -1230,7 +2193,7 @@ mod tests {
             // Create session in DB
             let session_request =
                 super::super::agent_session::CreateSessionRequest::new(&process_id, "mock");
-            let session = super::super::agent_session::create(pool, session_request)
+            let _session = super::super::agent_session::create(pool, session_request)
                 .await
                 .expect("Failed to create session");
 
@@ -1238,13 +2201,13 @@ mod tests {
             let provider = MockProvider::with_greeting("Hello from mock provider");
 
             let sink = AgentOutputSink::new(
-                session.id.clone(),
+                _session.id.clone(),
                 pool.clone(),
                 broadcaster,
                 Arc::new(provider),
             );
 
-            (session.id, sink)
+            (_session.id, sink)
         }
 
         #[tokio::test]
@@ -1453,7 +2416,7 @@ mod tests {
             let config = AgentConfig::new("echo done", "/tmp");
             let request = SpawnAgentRequest::new(&process_id, "mock", config);
 
-            if let Ok(session) = fixture.orchestrator.spawn_agent(request).await {
+            if let Ok(_session) = fixture.orchestrator.spawn_agent(request).await {
                 // Wait for the process to complete and cleanup
                 tokio::time::sleep(Duration::from_millis(500)).await;
 
@@ -1648,6 +2611,8 @@ mod tests {
                 "tool-1",
                 "Bash",
                 Some(&serde_json::json!({"command": "echo hello"})),
+                Some("echo hello"),
+                None,
             )
             .await
             .expect("Failed to create tool state");

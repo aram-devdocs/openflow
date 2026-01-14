@@ -1698,6 +1698,38 @@ mod tests {
             .id
     }
 
+    async fn create_test_process(pool: &SqlitePool, project_id: &str) -> String {
+        let process_id = uuid::Uuid::new_v4().to_string();
+        let task_id = create_test_task(pool, project_id).await;
+        let chat_id = uuid::Uuid::new_v4().to_string();
+
+        // Create chat (project_id is required since migration 003)
+        sqlx::query(
+            "INSERT INTO chats (id, task_id, project_id, chat_role) VALUES (?, ?, ?, 'main')",
+        )
+        .bind(&chat_id)
+        .bind(&task_id)
+        .bind(project_id)
+        .execute(pool)
+        .await
+        .expect("Failed to create test chat");
+
+        // Create execution process
+        sqlx::query(
+            r#"
+            INSERT INTO execution_processes (id, chat_id, status, executor_action, run_reason)
+            VALUES (?, ?, 'running', 'test', 'codingagent')
+            "#,
+        )
+        .bind(&process_id)
+        .bind(&chat_id)
+        .execute(pool)
+        .await
+        .expect("Failed to create test process");
+
+        process_id
+    }
+
     #[tokio::test]
     async fn test_executor_creation() {
         let fixture = setup().await;
@@ -2297,18 +2329,7 @@ mod tests {
         let task_id = create_test_task(&fixture.pool, &project_id).await;
 
         // Create an execution process for the session
-        let process_id = uuid::Uuid::new_v4().to_string();
-        sqlx::query(
-            r#"
-            INSERT INTO execution_processes (id, project_id, process_type, status, working_directory)
-            VALUES (?, ?, 'agent', 'running', '/tmp/test')
-            "#,
-        )
-        .bind(&process_id)
-        .bind(&project_id)
-        .execute(&fixture.pool)
-        .await
-        .expect("Failed to create process");
+        let process_id = create_test_process(&fixture.pool, &project_id).await;
 
         // Create a session
         let session = agent_session::create(
@@ -2509,9 +2530,22 @@ mod tests {
             .await
             .unwrap();
 
-        // Link to a worktree (using a fake ID for testing)
-        let worktree_id = "fake-worktree-id";
-        let linked = task::link_step_worktree(&fixture.pool, &step.id, worktree_id)
+        // Create a real worktree entry (required by foreign key constraint)
+        let worktree_id = uuid::Uuid::new_v4().to_string();
+        sqlx::query(
+            r#"
+            INSERT INTO worktrees (id, project_id, branch_name, path, status)
+            VALUES (?, ?, 'test-branch', '/tmp/test-worktree', 'active')
+            "#,
+        )
+        .bind(&worktree_id)
+        .bind(&project_id)
+        .execute(&fixture.pool)
+        .await
+        .expect("Failed to create worktree");
+
+        // Link to the worktree
+        let linked = task::link_step_worktree(&fixture.pool, &step.id, &worktree_id)
             .await
             .unwrap();
 

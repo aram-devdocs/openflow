@@ -90,3 +90,22 @@ CREATE INDEX idx_tasks_parent ON tasks(parent_task_id);
 
 -- Step 7: Add index for worktree queries (once worktrees table is created)
 CREATE INDEX idx_tasks_worktree ON tasks(worktree_id);
+
+-- Step 8: Recreate search triggers (lost when table was dropped/recreated)
+-- Insert task into search index when created
+CREATE TRIGGER tasks_search_insert AFTER INSERT ON tasks BEGIN
+    INSERT INTO search_index(id, type, title, description, project_id)
+    VALUES (NEW.id, 'task', NEW.title, NEW.description, NEW.project_id);
+END;
+
+-- Update search index when task is modified
+CREATE TRIGGER tasks_search_update AFTER UPDATE ON tasks BEGIN
+    DELETE FROM search_index WHERE id = OLD.id AND type = 'task';
+    INSERT INTO search_index(id, type, title, description, project_id)
+    VALUES (NEW.id, 'task', NEW.title, NEW.description, NEW.project_id);
+END;
+
+-- Remove from search index when task is deleted
+CREATE TRIGGER tasks_search_delete AFTER DELETE ON tasks BEGIN
+    DELETE FROM search_index WHERE id = OLD.id AND type = 'task';
+END;

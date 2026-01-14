@@ -824,13 +824,18 @@ impl AgentProvider for MockProvider {
             "Tool"
         };
 
-        // Try to extract file path
-        let file_path = trimmed
-            .split("to ")
-            .nth(1)
-            .and_then(|s| s.split('?').next())
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty() && *s != tool_name.to_lowercase());
+        // Try to extract file path from patterns like:
+        // "Allow Mock to write to /src/main.rs? (y/n)"
+        // "Allow Mock to read /config/settings.json? (y/n)"
+        let file_path = if let Some(path_start) = trimmed.find('/') {
+            trimmed[path_start..]
+                .split('?')
+                .next()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        } else {
+            None
+        };
 
         Some(PermissionRequest {
             tool_name: tool_name.to_string(),
@@ -857,6 +862,102 @@ impl AgentProvider for MockProvider {
         env.insert("MOCK_PROVIDER".to_string(), "1".to_string());
         env.insert("NO_COLOR".to_string(), "1".to_string());
         env
+    }
+
+    fn permission_patterns(&self) -> Vec<&regex::Regex> {
+        // Mock provider doesn't use regex patterns, it has simple string matching
+        vec![]
+    }
+
+    fn extract_tool_context(&self, tool_name: &str, input: &serde_json::Value) -> super::ToolContext {
+        let mut context = super::ToolContext::new();
+
+        // Mock provider supports generic extraction
+        match tool_name {
+            "Bash" | "bash" | "shell" => {
+                if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                } else if let Some(cmd) = input.get("cmd").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                } else if let Some(cmd) = input.get("input").and_then(|v| v.as_str()) {
+                    // Mock might use "input" as a generic field
+                    context.command = Some(cmd.to_string());
+                }
+
+                if let Some(wd) = input.get("working_directory").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                } else if let Some(wd) = input.get("cwd").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                }
+            }
+            "Read" | "read" | "Write" | "write" | "Edit" | "edit" | "Delete" | "delete" => {
+                if let Some(path) = input.get("file_path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("file").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("input").and_then(|v| v.as_str()) {
+                    // Mock might use "input" as a generic field
+                    context.file_path = Some(path.to_string());
+                }
+            }
+            _ => {
+                // Generic extraction for any tool
+                if let Some(path) = input.get("file_path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                }
+
+                if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                }
+
+                if let Some(wd) = input.get("working_directory").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                }
+            }
+        }
+
+        context
+    }
+
+    fn parse_error_output(&self, line: &str) -> Option<super::ExecutionError> {
+        let trimmed = line.trim();
+
+        // Try to parse as JSON first
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            // Check for mock error format
+            if let Some(event_type) = value.get("type").and_then(|t| t.as_str()) {
+                if event_type == "error" {
+                    let code = value
+                        .get("code")
+                        .and_then(|c| c.as_str())
+                        .unwrap_or("mock_error")
+                        .to_string();
+                    let message = value
+                        .get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or("Mock error")
+                        .to_string();
+
+                    return Some(super::ExecutionError::provider_error(
+                        PROVIDER_ID,
+                        code,
+                        message,
+                    ));
+                }
+            }
+        }
+
+        // Check for common error patterns in plain text
+        let lower = trimmed.to_lowercase();
+        if lower.contains("error:") || lower.contains("failed:") || lower.contains("exception:") {
+            return Some(super::ExecutionError::other(trimmed.to_string()));
+        }
+
+        None
     }
 }
 

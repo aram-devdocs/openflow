@@ -63,11 +63,38 @@ pub const COMMAND: &str = "claude";
 // Permission Detection Regex
 // =============================================================================
 
-/// Regex for detecting Claude Code permission prompts.
-/// Matches patterns like: "Allow Claude to write to file.txt? (y/n)"
-static PERMISSION_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?i)Allow\s+.*\s+to\s+(read|write|execute|bash|run|delete|create).*\?\s*\(y/n\)")
-        .expect("Invalid permission regex")
+/// Comprehensive regex patterns for detecting Claude Code permission prompts.
+/// Covers multiple prompt formats including standard, bracket, and tool-specific patterns.
+static PERMISSION_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
+    vec![
+        // Standard format with parentheses: "Allow Claude to write to file.txt? (y/n)"
+        Regex::new(r"(?i)Allow\s+.*\s+to\s+(read|write|execute|bash|run|delete|create).*\?\s*\(y/n\)")
+            .expect("Invalid permission regex: standard format"),
+        
+        // Bracket format: "Allow to run this command? [y/n]"
+        Regex::new(r"(?i)Allow\s+.*\s+to\s+(read|write|execute|bash|run|delete|create).*\?\s*\[y/n\]")
+            .expect("Invalid permission regex: bracket format"),
+        
+        // Question mark only - catches prompts without explicit (y/n): "read file.txt?"
+        Regex::new(r"(?i)(read|write|execute|run|delete|create)\s+.*\?\s*$")
+            .expect("Invalid permission regex: question only"),
+        
+        // Tool-specific: Claude writing to path
+        Regex::new(r"(?i)Allow\s+Claude\s+to\s+write\s+to\s+(.+)\?")
+            .expect("Invalid permission regex: Claude write"),
+        
+        // Tool-specific: Claude reading file with optional quotes (backtick, single, double)
+        Regex::new(r#"(?i)Allow\s+Claude\s+to\s+read\s+file\s+[`'"]?(.+)[`'"]?\?"#)
+            .expect("Invalid permission regex: Claude read"),
+        
+        // Tool-specific: Claude executing bash
+        Regex::new(r"(?i)Allow\s+Claude\s+to\s+execute\s+bash\s+command\?")
+            .expect("Invalid permission regex: Claude bash"),
+        
+        // Generic "Allow" with question - catches edge cases
+        Regex::new(r"(?i)Allow\s+.*\?\s*[\(\[]?y/n[\)\]]?")
+            .expect("Invalid permission regex: generic allow"),
+    ]
 });
 
 /// Regex for extracting file path from permission prompt
@@ -371,9 +398,9 @@ impl ClaudeCodeProvider {
     /// Extract tool name from permission prompt
     fn extract_tool_name(prompt: &str) -> String {
         let lower = prompt.to_lowercase();
-        if lower.contains("write") || lower.contains("create") {
+        if lower.contains("write") || lower.contains("create") || lower.contains("modify") {
             "Write".to_string()
-        } else if lower.contains("read") {
+        } else if lower.contains("read") || lower.contains("access") {
             "Read".to_string()
         } else if lower.contains("execute")
             || lower.contains("bash")
@@ -535,25 +562,69 @@ impl AgentProvider for ClaudeCodeProvider {
     fn is_permission_prompt(&self, line: &str) -> Option<PermissionRequest> {
         let trimmed = line.trim();
 
-        // Check if this looks like a permission prompt
-        if !PERMISSION_REGEX.is_match(trimmed) {
-            // Also check for simpler patterns
-            if !trimmed.contains("Allow")
-                || (!trimmed.contains("(y/n)") && !trimmed.contains("? [y/n]"))
-            {
-                return None;
-            }
+        // Early exit for obviously non-permission lines
+        if trimmed.is_empty() || !trimmed.contains('?') {
+            return None;
         }
 
-        let tool_name = Self::extract_tool_name(trimmed);
-        let file_path = Self::extract_file_path(trimmed);
+        // Primary detection: Check if any comprehensive permission pattern matches
+        let regex_match = PERMISSION_PATTERNS.iter().any(|pattern| pattern.is_match(trimmed));
+        
+        if regex_match {
+            let tool_name = Self::extract_tool_name(trimmed);
+            let file_path = Self::extract_file_path(trimmed);
 
-        Some(PermissionRequest {
-            tool_name,
-            description: trimmed.to_string(),
-            file_path,
-            command: None,
-        })
+            return Some(PermissionRequest {
+                tool_name,
+                description: trimmed.to_string(),
+                file_path,
+                command: None,
+            });
+        }
+
+        // Fallback heuristics for edge cases that regex patterns might miss
+        let lower = trimmed.to_lowercase();
+        
+        // Heuristic 1: Contains "allow" keyword and ends with question mark
+        let has_allow = lower.contains("allow");
+        let ends_with_question = trimmed.trim_end().ends_with('?');
+        
+        // Heuristic 2: Contains y/n or yes/no prompt indicators
+        let has_yn_prompt = lower.contains("(y/n)") 
+            || lower.contains("[y/n]") 
+            || lower.contains("(yes/no)")
+            || lower.contains("[yes/no]");
+        
+        // Heuristic 3: Contains permission-related action verbs
+        let has_permission_verb = lower.contains("read") 
+            || lower.contains("write") 
+            || lower.contains("execute") 
+            || lower.contains("run") 
+            || lower.contains("delete") 
+            || lower.contains("create")
+            || lower.contains("modify")
+            || lower.contains("access");
+        
+        // Combine heuristics: if it has allow + question mark, or has y/n prompt + permission verb
+        // Note: (has_allow && has_permission_verb && ends_with_question) is redundant 
+        // since (has_allow && ends_with_question) is a superset
+        let is_likely_permission =
+            (has_allow && ends_with_question) || (has_yn_prompt && has_permission_verb);
+        
+        if is_likely_permission {
+            let tool_name = Self::extract_tool_name(trimmed);
+            let file_path = Self::extract_file_path(trimmed);
+
+            return Some(PermissionRequest {
+                tool_name,
+                description: trimmed.to_string(),
+                file_path,
+                command: None,
+            });
+        }
+
+        // No match found
+        None
     }
 
     fn resume_args(&self, session_id: &str) -> Vec<String> {
@@ -577,6 +648,102 @@ impl AgentProvider for ClaudeCodeProvider {
         // Claude Code specific - ensure JSON output
         env.insert("CLAUDE_CODE_ENTRYPOINT".to_string(), "cli".to_string());
         env
+    }
+
+    fn permission_patterns(&self) -> Vec<&Regex> {
+        PERMISSION_PATTERNS.iter().collect()
+    }
+
+    fn extract_tool_context(&self, tool_name: &str, input: &serde_json::Value) -> super::ToolContext {
+        let mut context = super::ToolContext::new();
+
+        // Extract based on tool type
+        match tool_name {
+            "Bash" | "bash" | "shell" => {
+                // Try to extract command from various field names
+                if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                } else if let Some(cmd) = input.get("cmd").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                } else if let Some(cmd) = input.get("script").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                }
+
+                // Try to extract working directory
+                if let Some(wd) = input.get("working_directory").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                } else if let Some(wd) = input.get("cwd").and_then(|v| v.as_str()) {
+                    context.working_directory = Some(wd.to_string());
+                }
+            }
+            "Read" | "read" | "Write" | "write" | "Edit" | "edit" => {
+                // Try to extract file path from various field names
+                if let Some(path) = input.get("file_path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("filePath").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("file").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                }
+            }
+            _ => {
+                // For other tools, try generic extraction
+                if let Some(path) = input.get("file_path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                } else if let Some(path) = input.get("path").and_then(|v| v.as_str()) {
+                    context.file_path = Some(path.to_string());
+                }
+
+                if let Some(cmd) = input.get("command").and_then(|v| v.as_str()) {
+                    context.command = Some(cmd.to_string());
+                }
+            }
+        }
+
+        context
+    }
+
+    fn parse_error_output(&self, line: &str) -> Option<super::ExecutionError> {
+        let trimmed = line.trim();
+
+        // Try to parse as JSON first
+        if let Ok(value) = serde_json::from_str::<serde_json::Value>(trimmed) {
+            // Check for Claude Code error format
+            if let Some(event_type) = value.get("type").and_then(|t| t.as_str()) {
+                if event_type == "system" {
+                    if let Some(subtype) = value.get("subtype").and_then(|s| s.as_str()) {
+                        if subtype == "error" {
+                            let code = value
+                                .get("code")
+                                .and_then(|c| c.as_str())
+                                .unwrap_or("unknown_error")
+                                .to_string();
+                            let message = value
+                                .get("message")
+                                .and_then(|m| m.as_str())
+                                .unwrap_or("Unknown error")
+                                .to_string();
+
+                            return Some(super::ExecutionError::provider_error(
+                                PROVIDER_ID,
+                                code,
+                                message,
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check for common error patterns in plain text
+        let lower = trimmed.to_lowercase();
+        if lower.contains("error:") || lower.contains("failed:") || lower.contains("exception:") {
+            return Some(super::ExecutionError::other(trimmed.to_string()));
+        }
+
+        None
     }
 }
 
@@ -971,6 +1138,295 @@ mod tests {
     }
 
     // =========================================================================
+    // Enhanced Permission Pattern Tests
+    // =========================================================================
+
+    #[test]
+    fn test_permission_prompt_various_formats() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Standard format
+        let perm = provider
+            .is_permission_prompt("Allow Claude to write to /src/main.rs? (y/n)")
+            .expect("Should detect standard format");
+        assert_eq!(perm.tool_name, "Write");
+        assert_eq!(perm.file_path, Some("/src/main.rs".to_string()));
+
+        // Bracket format
+        let perm = provider
+            .is_permission_prompt("Allow Claude to run bash command? [y/n]")
+            .expect("Should detect bracket format");
+        assert_eq!(perm.tool_name, "Bash");
+
+        // With backticks
+        let perm = provider
+            .is_permission_prompt("Allow Claude to read file `/etc/config`? (y/n)")
+            .expect("Should detect backtick format");
+        assert_eq!(perm.tool_name, "Read");
+        assert_eq!(perm.file_path, Some("/etc/config".to_string()));
+
+        // With double quotes
+        let perm = provider
+            .is_permission_prompt(r#"Allow Claude to read file "/home/user/test.txt"? (y/n)"#)
+            .expect("Should detect double quote format");
+        assert_eq!(perm.tool_name, "Read");
+
+        // With single quotes
+        let perm = provider
+            .is_permission_prompt("Allow Claude to read file '/var/log/app.log'? (y/n)")
+            .expect("Should detect single quote format");
+        assert_eq!(perm.tool_name, "Read");
+    }
+
+    #[test]
+    fn test_permission_prompt_all_tool_types() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Read
+        let perm = provider
+            .is_permission_prompt("Allow Claude to read file.txt? (y/n)")
+            .expect("Should detect read");
+        assert_eq!(perm.tool_name, "Read");
+
+        // Write
+        let perm = provider
+            .is_permission_prompt("Allow Claude to write to output.txt? (y/n)")
+            .expect("Should detect write");
+        assert_eq!(perm.tool_name, "Write");
+
+        // Create (treated as Write)
+        let perm = provider
+            .is_permission_prompt("Allow Claude to create new file? (y/n)")
+            .expect("Should detect create");
+        assert_eq!(perm.tool_name, "Write");
+
+        // Execute/Bash
+        let perm = provider
+            .is_permission_prompt("Allow Claude to execute bash command? (y/n)")
+            .expect("Should detect execute");
+        assert_eq!(perm.tool_name, "Bash");
+
+        // Run (treated as Bash)
+        let perm = provider
+            .is_permission_prompt("Allow Claude to run script? (y/n)")
+            .expect("Should detect run");
+        assert_eq!(perm.tool_name, "Bash");
+
+        // Delete
+        let perm = provider
+            .is_permission_prompt("Allow Claude to delete old_file.txt? (y/n)")
+            .expect("Should detect delete");
+        assert_eq!(perm.tool_name, "Delete");
+    }
+
+    #[test]
+    fn test_permission_prompt_case_insensitive() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Lowercase
+        let perm = provider
+            .is_permission_prompt("allow claude to write to file? (y/n)")
+            .expect("Should detect lowercase");
+        assert_eq!(perm.tool_name, "Write");
+
+        // Uppercase
+        let perm = provider
+            .is_permission_prompt("ALLOW CLAUDE TO READ FILE? (Y/N)")
+            .expect("Should detect uppercase");
+        assert_eq!(perm.tool_name, "Read");
+
+        // Mixed case
+        let perm = provider
+            .is_permission_prompt("AlLoW ClAuDe To ExEcUtE bAsH? (y/n)")
+            .expect("Should detect mixed case");
+        assert_eq!(perm.tool_name, "Bash");
+    }
+
+    #[test]
+    fn test_permission_prompt_without_explicit_yn() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Question mark only format
+        let perm = provider
+            .is_permission_prompt("Allow Claude to write to config.json?")
+            .expect("Should detect question-only format");
+        assert_eq!(perm.tool_name, "Write");
+    }
+
+    #[test]
+    fn test_permission_prompt_edge_cases() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Extra whitespace between words
+        let perm = provider
+            .is_permission_prompt("Allow  Claude  to  write  to  file?  (y/n)")
+            .expect("Should handle extra whitespace");
+        assert_eq!(perm.tool_name, "Write");
+
+        // No space before question mark
+        let perm = provider
+            .is_permission_prompt("Allow Claude to read file? (y/n)")
+            .expect("Should handle no space before ?");
+        assert_eq!(perm.tool_name, "Read");
+
+        // Trailing whitespace
+        let perm = provider
+            .is_permission_prompt("Allow Claude to execute bash? (y/n)   ")
+            .expect("Should handle trailing whitespace");
+        assert_eq!(perm.tool_name, "Bash");
+    }
+
+    // =========================================================================
+    // Fallback Heuristics Tests
+    // =========================================================================
+
+    #[test]
+    fn test_fallback_heuristic_allow_with_question() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Unusual format that regex might miss but has "allow" + "?"
+        let perm = provider
+            .is_permission_prompt("Allow modify the configuration file?")
+            .expect("Should detect via fallback: allow + action + question");
+        assert_eq!(perm.tool_name, "Write");
+
+        // Another variant - "access" maps to Read
+        let perm = provider
+            .is_permission_prompt("Allow access to sensitive data?")
+            .expect("Should detect via fallback: allow + access + question");
+        assert_eq!(perm.tool_name, "Read");
+    }
+
+    #[test]
+    fn test_fallback_heuristic_yn_with_verb() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Has y/n indicator and permission verb but unusual structure
+        let perm = provider
+            .is_permission_prompt("Read the file now? (y/n)")
+            .expect("Should detect via fallback: y/n + read verb");
+        assert_eq!(perm.tool_name, "Read");
+
+        // Another format
+        let perm = provider
+            .is_permission_prompt("Delete this resource? [yes/no]")
+            .expect("Should detect via fallback: yes/no + delete verb");
+        assert_eq!(perm.tool_name, "Delete");
+
+        // Execute variant
+        let perm = provider
+            .is_permission_prompt("Execute this script? (y/n)")
+            .expect("Should detect via fallback: y/n + execute verb");
+        assert_eq!(perm.tool_name, "Bash");
+    }
+
+    #[test]
+    fn test_fallback_heuristic_combined_indicators() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Has allow, permission verb, and question mark in non-standard format
+        let perm = provider
+            .is_permission_prompt("Allow: write operation to file?")
+            .expect("Should detect via fallback: allow + write + question");
+        assert_eq!(perm.tool_name, "Write");
+
+        // Create variant
+        let perm = provider
+            .is_permission_prompt("Allow create new directory?")
+            .expect("Should detect via fallback: allow + create + question");
+        assert_eq!(perm.tool_name, "Write");
+
+        // Run variant
+        let perm = provider
+            .is_permission_prompt("Allow run this command?")
+            .expect("Should detect via fallback: allow + run + question");
+        assert_eq!(perm.tool_name, "Bash");
+    }
+
+    #[test]
+    fn test_fallback_does_not_trigger_false_positives() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Has question mark but not permission-related
+        assert!(provider
+            .is_permission_prompt("What is the weather today?")
+            .is_none());
+
+        // Has "allow" but no action verb or proper format
+        assert!(provider
+            .is_permission_prompt("Allow me to explain...")
+            .is_none());
+
+        // Has action verb but not a permission prompt
+        assert!(provider
+            .is_permission_prompt("I will read the documentation")
+            .is_none());
+
+        // Has y/n but no permission verb
+        assert!(provider
+            .is_permission_prompt("Do you like this? (y/n)")
+            .is_none());
+
+        // No question mark
+        assert!(provider
+            .is_permission_prompt("Allow Claude to write to file")
+            .is_none());
+    }
+
+    #[test]
+    fn test_fallback_with_file_paths() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Fallback should still extract file paths
+        let perm = provider
+            .is_permission_prompt("Allow modify /etc/config? (y/n)")
+            .expect("Should detect and extract path");
+        assert_eq!(perm.tool_name, "Write");
+        assert_eq!(perm.file_path, Some("/etc/config".to_string()));
+
+        // Path with quotes
+        let perm = provider
+            .is_permission_prompt("Allow write to `/tmp/output.txt`?")
+            .expect("Should detect and extract quoted path");
+        assert_eq!(perm.tool_name, "Write");
+        assert_eq!(perm.file_path, Some("/tmp/output.txt".to_string()));
+    }
+
+    #[test]
+    fn test_fallback_case_insensitive() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Uppercase
+        let perm = provider
+            .is_permission_prompt("ALLOW DELETE THIS FILE? (Y/N)")
+            .expect("Should detect uppercase via fallback");
+        assert_eq!(perm.tool_name, "Delete");
+
+        // Mixed case - "access" maps to Read
+        let perm = provider
+            .is_permission_prompt("AlLoW aCcEsS tO rEsOuRcE?")
+            .expect("Should detect mixed case via fallback");
+        assert_eq!(perm.tool_name, "Read");
+    }
+
+    #[test]
+    fn test_empty_and_invalid_lines_with_fallback() {
+        let provider = ClaudeCodeProvider::new();
+
+        // Empty
+        assert!(provider.is_permission_prompt("").is_none());
+        
+        // Just whitespace
+        assert!(provider.is_permission_prompt("    ").is_none());
+        
+        // No question mark
+        assert!(provider.is_permission_prompt("Allow to write").is_none());
+        
+        // Not permission-related despite having ?
+        assert!(provider.is_permission_prompt("Hello?").is_none());
+    }
+
+    // =========================================================================
     // Tool Name Extraction Tests
     // =========================================================================
 
@@ -984,7 +1440,15 @@ mod tests {
             ClaudeCodeProvider::extract_tool_name("create new file"),
             "Write"
         );
+        assert_eq!(
+            ClaudeCodeProvider::extract_tool_name("modify the config"),
+            "Write"
+        );
         assert_eq!(ClaudeCodeProvider::extract_tool_name("read file"), "Read");
+        assert_eq!(
+            ClaudeCodeProvider::extract_tool_name("access the data"),
+            "Read"
+        );
         assert_eq!(
             ClaudeCodeProvider::extract_tool_name("execute command"),
             "Bash"

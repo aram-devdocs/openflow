@@ -417,3 +417,163 @@ export const updateStepSchema = z.object({
   status: stepStatusSchema.optional(),
 });
 export type UpdateStepInput = z.infer<typeof updateStepSchema>;
+
+// =============================================================================
+// Agent Session Schemas
+// =============================================================================
+
+/**
+ * Schema for writing input to an agent session
+ */
+export const writeAgentInputRequestSchema = z.object({
+  /** The input string to send to the agent's stdin */
+  input: z.string(),
+});
+export type WriteAgentInputRequestInput = z.infer<typeof writeAgentInputRequestSchema>;
+
+/**
+ * Schema for resizing an agent session terminal
+ */
+export const resizeAgentSessionRequestSchema = z.object({
+  /** Number of terminal columns */
+  cols: z.number().int().positive(),
+  /** Number of terminal rows */
+  rows: z.number().int().positive(),
+});
+export type ResizeAgentSessionRequestInput = z.infer<typeof resizeAgentSessionRequestSchema>;
+
+/**
+ * Schema for responding to a permission prompt
+ */
+export const respondPermissionRequestSchema = z.object({
+  /** The permission ID to respond to */
+  permissionId: z.string().min(1),
+  /** Whether to approve (true) or deny (false) the permission */
+  approved: z.boolean(),
+});
+export type RespondPermissionRequestInput = z.infer<typeof respondPermissionRequestSchema>;
+
+/**
+ * Schema for session summary
+ */
+export const sessionSummarySchema = z.object({
+  /** Session ID */
+  id: z.string(),
+  /** Process ID */
+  processId: z.string(),
+  /** Provider ID (e.g., "claude-code") */
+  providerId: z.string(),
+  /** Session status */
+  status: z.string(),
+  /** When the session started (ISO 8601) */
+  startedAt: z.string(),
+  /** When the session ended (ISO 8601), null if still running */
+  endedAt: z.string().optional(),
+  /** Number of events in this session */
+  eventCount: z.number().int().nonnegative(),
+  /** Number of tool invocations */
+  toolCount: z.number().int().nonnegative(),
+  /** Whether there's a pending permission request */
+  hasPendingPermission: z.boolean(),
+});
+export type SessionSummaryInput = z.infer<typeof sessionSummarySchema>;
+
+/**
+ * Schema for entry metadata
+ */
+export const entryMetadataSchema = z.object({
+  /** File path if the operation involves a specific file */
+  filePath: z.string().optional(),
+  /** Command being executed (for Bash/shell operations) */
+  command: z.string().optional(),
+  /** Exit code for completed operations */
+  exitCode: z.number().int().optional(),
+  /** Parent tool ID for nested operations */
+  parentToolId: z.string().optional(),
+});
+
+/**
+ * Schema for entry types (discriminated union)
+ */
+const entryTypeInitSchema = z.object({
+  type: z.literal('init'),
+  sessionId: z.string(),
+  model: z.string(),
+  tools: z.array(z.string()),
+});
+
+const entryTypeMessageSchema = z.object({
+  type: z.literal('message'),
+  role: z.enum(['user', 'assistant', 'system']),
+});
+
+const entryTypeToolUseSchema = z.object({
+  type: z.literal('toolUse'),
+  toolId: z.string(),
+  toolName: z.string(),
+  input: z.unknown(),
+});
+
+const entryTypeToolResultSchema = z.object({
+  type: z.literal('toolResult'),
+  toolId: z.string(),
+  status: z.enum(['success', 'error', 'cancelled']),
+  output: z.string(),
+  durationMs: z.number().int().nonnegative().optional(),
+});
+
+const entryTypeErrorSchema = z.object({
+  type: z.literal('error'),
+  code: z.string(),
+  recoverable: z.boolean(),
+});
+
+const entryTypeSystemSchema = z.object({
+  type: z.literal('system'),
+  subtype: z.string(),
+});
+
+const entryTypeCompleteSchema = z.object({
+  type: z.literal('complete'),
+  status: z.enum(['success', 'error', 'cancelled', 'interrupted']),
+  stats: z
+    .object({
+      inputTokens: z.number().int().nonnegative().optional(),
+      outputTokens: z.number().int().nonnegative().optional(),
+      cacheReadTokens: z.number().int().nonnegative().optional(),
+      cacheWriteTokens: z.number().int().nonnegative().optional(),
+      durationMs: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
+});
+
+const entryTypeSchema = z.discriminatedUnion('type', [
+  entryTypeInitSchema,
+  entryTypeMessageSchema,
+  entryTypeToolUseSchema,
+  entryTypeToolResultSchema,
+  entryTypeErrorSchema,
+  entryTypeSystemSchema,
+  entryTypeCompleteSchema,
+]);
+
+/**
+ * Schema for normalized entry
+ */
+export const normalizedEntrySchema = z.object({
+  /** Unique identifier (UUID v4) */
+  id: z.string(),
+  /** Session ID this entry belongs to */
+  sessionId: z.string(),
+  /** Monotonic sequence number within the session */
+  sequence: z.number().int().nonnegative(),
+  /** Type of entry with associated data */
+  entryType: entryTypeSchema,
+  /** Human-readable content for display */
+  content: z.string(),
+  /** When this entry was created (ISO 8601) */
+  timestamp: z.string(),
+  /** Optional metadata for additional context */
+  metadata: entryMetadataSchema.optional(),
+});
+export type NormalizedEntryInput = z.infer<typeof normalizedEntrySchema>;

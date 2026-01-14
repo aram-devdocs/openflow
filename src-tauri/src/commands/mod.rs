@@ -42,7 +42,7 @@ use tokio::sync::Mutex;
 
 use openflow_core::events::EventBroadcaster;
 use openflow_core::services::process::ProcessService;
-use openflow_core::services::{AgentOrchestrator, TaskExecutor};
+use openflow_core::services::{AgentOrchestrator, AgentServiceBridge, TaskExecutor};
 
 /// Application state shared across all Tauri commands.
 ///
@@ -68,6 +68,8 @@ pub struct AppState {
     pub agent_orchestrator: Arc<AgentOrchestrator>,
     /// Task executor for autonomous task execution.
     pub task_executor: Arc<TaskExecutor>,
+    /// Agent service bridge for SDK-based agent communication.
+    pub agent_bridge: Arc<AgentServiceBridge>,
 }
 
 impl AppState {
@@ -85,12 +87,18 @@ impl AppState {
             Arc::clone(&broadcaster),
         ));
 
+        // Note: spawn_permission_timeout_task() must be called separately from within
+        // a Tokio runtime context (e.g., inside tauri::async_runtime::spawn)
+
         // Create task executor (needs pool, agent orchestrator, and broadcaster)
         let task_executor = Arc::new(TaskExecutor::new(
             pool.clone(),
             Arc::clone(&agent_orchestrator),
             Arc::clone(&broadcaster),
         ));
+
+        // Create agent service bridge for SDK-based agent communication
+        let agent_bridge = Arc::new(AgentServiceBridge::new());
 
         Self {
             db: Arc::new(Mutex::new(pool.clone())),
@@ -100,7 +108,14 @@ impl AppState {
             broadcaster,
             agent_orchestrator,
             task_executor,
+            agent_bridge,
         }
+    }
+
+    /// Start background tasks that require a Tokio runtime context.
+    /// Must be called from within a Tokio async context (e.g., inside tauri::async_runtime::spawn).
+    pub fn start_background_tasks(&self) {
+        self.agent_orchestrator.spawn_permission_timeout_task();
     }
 
     /// Get a reference to the raw pool for sharing with the HTTP server.
@@ -126,6 +141,11 @@ impl AppState {
     /// Get a clone of the task executor.
     pub fn get_task_executor(&self) -> Arc<TaskExecutor> {
         Arc::clone(&self.task_executor)
+    }
+
+    /// Get a clone of the agent service bridge.
+    pub fn get_agent_bridge(&self) -> Arc<AgentServiceBridge> {
+        Arc::clone(&self.agent_bridge)
     }
 }
 

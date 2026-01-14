@@ -336,6 +336,38 @@ impl WsBroadcaster {
                 let message = WsServerMessage::event(channel.clone(), payload);
                 (channel, message)
             }
+
+            // Raw output event
+            CoreEvent::RawOutput {
+                session_id,
+                output,
+                timestamp,
+            } => {
+                let channel = format!("raw-output-{}", session_id);
+                let payload = serde_json::json!({
+                    "session_id": session_id,
+                    "output": output,
+                    "timestamp": timestamp,
+                });
+                let message = WsServerMessage::event(channel.clone(), payload);
+                (channel, message)
+            }
+
+            // Normalized entry event
+            CoreEvent::NormalizedEntry {
+                session_id,
+                entry,
+                timestamp,
+            } => {
+                let channel = format!("normalized-{}", session_id);
+                let payload = serde_json::json!({
+                    "session_id": session_id,
+                    "entry": entry,
+                    "timestamp": timestamp,
+                });
+                let message = WsServerMessage::event(channel.clone(), payload);
+                (channel, message)
+            }
         }
     }
 }
@@ -423,6 +455,7 @@ fn convert_entity_type(entity: CoreEntityType) -> openflow_contracts::events::En
         CoreEntityType::Worktree => openflow_contracts::events::EntityType::Worktree,
         CoreEntityType::Session => openflow_contracts::events::EntityType::Session,
         CoreEntityType::Permission => openflow_contracts::events::EntityType::Permission,
+        CoreEntityType::ToolState => openflow_contracts::events::EntityType::ToolState,
     }
 }
 

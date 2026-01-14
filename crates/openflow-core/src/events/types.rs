@@ -50,6 +50,8 @@ pub enum EntityType {
     Session,
     /// Permission entity
     Permission,
+    /// ToolState entity
+    ToolState,
 }
 
 impl EntityType {
@@ -67,6 +69,7 @@ impl EntityType {
             Self::Worktree => "worktree",
             Self::Session => "session",
             Self::Permission => "permission",
+            Self::ToolState => "tool_state",
         }
     }
 }
@@ -189,6 +192,32 @@ pub enum Event {
         process_id: String,
         /// The tool state
         tool_state: ToolState,
+        /// Timestamp (ISO 8601)
+        timestamp: String,
+    },
+
+    /// Raw output from agent (for terminal display)
+    ///
+    /// Sent when raw output is received from the agent process.
+    /// Channel: `raw-output-{session_id}`
+    RawOutput {
+        /// Session ID producing the output
+        session_id: String,
+        /// Raw output line
+        output: String,
+        /// Timestamp (ISO 8601)
+        timestamp: String,
+    },
+
+    /// Normalized agent event entry
+    ///
+    /// Sent when a normalized event is processed from the agent.
+    /// Channel: `normalized-{session_id}`
+    NormalizedEntry {
+        /// Session ID
+        session_id: String,
+        /// The normalized entry
+        entry: openflow_contracts::events::NormalizedEntry,
         /// Timestamp (ISO 8601)
         timestamp: String,
     },
@@ -334,6 +363,9 @@ impl Event {
             // Permission events
             Self::PermissionRequest { session_id, .. } => permission_request_channel(session_id),
             Self::PermissionResponse { session_id, .. } => format!("session:{}", session_id),
+            // Raw output and normalized events
+            Self::RawOutput { session_id, .. } => format!("raw-output-{}", session_id),
+            Self::NormalizedEntry { session_id, .. } => format!("normalized-{}", session_id),
         }
     }
 
@@ -450,6 +482,27 @@ impl Event {
         Self::ToolStateChange {
             process_id: process_id.into(),
             tool_state,
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    /// Create a raw output event
+    pub fn raw_output(session_id: impl Into<String>, output: impl Into<String>) -> Self {
+        Self::RawOutput {
+            session_id: session_id.into(),
+            output: output.into(),
+            timestamp: chrono::Utc::now().to_rfc3339(),
+        }
+    }
+
+    /// Create a normalized entry event
+    pub fn normalized_entry(
+        session_id: impl Into<String>,
+        entry: openflow_contracts::events::NormalizedEntry,
+    ) -> Self {
+        Self::NormalizedEntry {
+            session_id: session_id.into(),
+            entry,
             timestamp: chrono::Utc::now().to_rfc3339(),
         }
     }

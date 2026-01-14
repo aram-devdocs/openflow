@@ -18,6 +18,7 @@
 //! │  requests/    - Request types (CreateProjectRequest, etc.)              │
 //! │  responses/   - Response types and API responses                        │
 //! │  events/      - WebSocket/Tauri event types                             │
+//! │  errors/      - Structured error types for execution                    │
 //! │  validation/  - Validation attribute definitions                        │
 //! │  endpoints/   - Endpoint metadata definitions                           │
 //! └─────────────────────────────────────────────────────────────────────────┘
@@ -30,6 +31,7 @@
 
 pub mod endpoints;
 pub mod entities;
+pub mod errors;
 pub mod events;
 pub mod requests;
 pub mod responses;
@@ -116,6 +118,16 @@ pub use events::{
     CHANNEL_AGENT_EVENT_FMT, CHANNEL_DATA_CHANGED, CHANNEL_PROCESS_OUTPUT_FMT,
     CHANNEL_PROCESS_STATUS_FMT, CHANNEL_WILDCARD,
 };
+// Normalized event types
+pub use events::{EntryMetadata, EntryType, NormalizedEntry};
+// New channel helpers for normalized events, raw output, and execution errors
+pub use events::{
+    execution_error_channel, normalized_channel, parse_execution_error_channel,
+    parse_normalized_channel, parse_raw_output_channel, raw_output_channel,
+};
+pub use events::{
+    CHANNEL_EXECUTION_ERROR_FMT, CHANNEL_NORMALIZED_FMT, CHANNEL_RAW_OUTPUT_FMT,
+};
 // Event envelope types (for real-time delivery with ordering/deduplication)
 pub use events::{
     parse_permission_request_channel, parse_step_progress_channel, parse_task_progress_channel,
@@ -125,6 +137,8 @@ pub use events::{
 };
 // Response types
 pub use responses::{AuthStatusResponse, CliInstalledResponse};
+// Error types
+pub use errors::{ExecutionError, PermissionDeniedReason};
 // Endpoint metadata
 pub use endpoints::{endpoint_count, endpoints_by_domain, Endpoint, HttpMethod, ENDPOINTS};
 pub use endpoints::{validate_unique_commands, validate_unique_path_methods};

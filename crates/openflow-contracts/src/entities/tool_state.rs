@@ -168,6 +168,21 @@ pub struct ToolState {
     /// Whether the tool output is an error (1 = true, 0 = false)
     pub is_error: i32,
 
+    /// Command executed (for Bash tools)
+    pub command: Option<String>,
+
+    /// File path accessed (for Read/Write tools)
+    pub file_path: Option<String>,
+
+    /// Exit code from tool execution
+    pub exit_code: Option<i32>,
+
+    /// Execution duration in milliseconds (truncated to i32 for typeshare, ~24 day max)
+    pub duration_ms: Option<i32>,
+
+    /// Standard error output from tool execution
+    pub stderr: Option<String>,
+
     /// When the tool call was started (ISO 8601)
     pub started_at: String,
 
@@ -194,6 +209,11 @@ impl ToolState {
             status: ToolStatus::Running,
             output: None,
             is_error: 0,
+            command: None,
+            file_path: None,
+            exit_code: None,
+            duration_ms: None,
+            stderr: None,
             started_at: chrono::Utc::now().to_rfc3339(),
             completed_at: None,
         }
@@ -225,6 +245,11 @@ impl ToolState {
             status: ToolStatus::Running,
             output: None,
             is_error: 0,
+            command: None,
+            file_path: None,
+            exit_code: None,
+            duration_ms: None,
+            stderr: None,
             started_at: chrono::Utc::now().to_rfc3339(),
             completed_at: None,
         }
@@ -236,6 +261,10 @@ impl ToolState {
         self.output = Some(output.into());
         self.is_error = 0;
         self.completed_at = Some(chrono::Utc::now().to_rfc3339());
+        // Calculate and store duration
+        if let Some(duration) = self.calculate_duration_ms() {
+            self.duration_ms = Some(duration);
+        }
     }
 
     /// Mark the tool as complete with output (alias for mark_completed)
@@ -249,6 +278,10 @@ impl ToolState {
         self.output = Some(error.into());
         self.is_error = 1;
         self.completed_at = Some(chrono::Utc::now().to_rfc3339());
+        // Calculate and store duration
+        if let Some(duration) = self.calculate_duration_ms() {
+            self.duration_ms = Some(duration);
+        }
     }
 
     /// Check if this tool has finished (completed or error)
@@ -273,14 +306,29 @@ impl ToolState {
             .and_then(|s| serde_json::from_str(s).ok())
     }
 
-    /// Calculate duration in milliseconds if completed
-    pub fn duration_ms(&self) -> Option<i64> {
+    /// Get duration in milliseconds if completed
+    ///
+    /// Returns the stored duration if available, otherwise calculates it
+    /// from the timestamps.
+    pub fn duration_ms(&self) -> Option<i32> {
+        // Prefer stored duration for performance
+        if let Some(duration) = self.duration_ms {
+            return Some(duration);
+        }
+        // Fall back to calculation for backward compatibility
+        self.calculate_duration_ms()
+    }
+
+    /// Calculate duration in milliseconds from timestamps
+    ///
+    /// Returns i32 (truncated, ~24 day max duration for typeshare compatibility)
+    fn calculate_duration_ms(&self) -> Option<i32> {
         let started = chrono::DateTime::parse_from_rfc3339(&self.started_at).ok()?;
         let completed = self
             .completed_at
             .as_ref()
             .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())?;
-        Some((completed - started).num_milliseconds())
+        Some((completed - started).num_milliseconds() as i32)
     }
 }
 
@@ -315,8 +363,7 @@ impl From<&ToolState> for ToolStateSummary {
             status: state.status.clone(),
             is_error: state.is_error != 0,
             started_at: state.started_at.clone(),
-            // Truncate i64 to i32 for typeshare compatibility (~24 day max duration)
-            duration_ms: state.duration_ms().map(|d| d as i32),
+            duration_ms: state.duration_ms(),
         }
     }
 }

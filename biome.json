@@ -78,7 +78,8 @@
       "src-tauri/target",
       "packages/generated/types.ts",
       "src/routeTree.gen.ts",
-      "storybook-static"
+      "storybook-static",
+      ".pnpm-store"
     ]
   },
   "overrides": [
