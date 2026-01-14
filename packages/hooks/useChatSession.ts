@@ -760,13 +760,14 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
       // and messages (from database) show the same content simultaneously
       clearEvents();
 
+      // Only persist text content - tool calls were already shown during streaming
+      // This prevents duplicate display of tool calls in the final message
       createMessage.mutate(
         {
           chatId,
           role: MessageRole.Assistant,
           content: contentToSave,
-          toolCalls: toolCalls.length > 0 ? JSON.stringify(toolCalls) : undefined,
-          toolResults: toolResults.length > 0 ? JSON.stringify(toolResults) : undefined,
+          // Don't persist toolCalls/toolResults - they were visible during execution
         },
         {
           onSuccess: () => {

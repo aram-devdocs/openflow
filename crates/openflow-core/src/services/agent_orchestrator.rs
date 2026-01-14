@@ -1839,10 +1839,9 @@ impl AgentOrchestrator {
         if let Some(pipeline) = pipelines.get(session_id) {
             Ok(pipeline.get_raw_output().await)
         } else {
-            Err(ServiceError::NotFound {
-                entity: "OutputPipeline",
-                id: session_id.to_string(),
-            })
+            // Return empty string instead of error for completed sessions
+            // This prevents frontend query errors when pipeline is cleaned up
+            Ok(String::new())
         }
     }
 

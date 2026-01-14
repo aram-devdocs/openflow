@@ -671,7 +671,7 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
     {
       messages,
       displayItems,
-      activeProcessId,
+      // activeProcessId not needed - condition simplified to just isRunning
       isRunning,
       showRawOutput,
       rawOutput,
@@ -721,9 +721,10 @@ export const ChatMessageList = forwardRef<HTMLDivElement, ChatMessageListProps>(
           )}
         </BubbleMessageList>
 
-        {/* Claude's streaming response - show when we have content or are running */}
-        {/* Note: displayItems should persist after process completes until persisted to messages */}
-        {(displayItems.length > 0 || (activeProcessId && isRunning)) && (
+        {/* Claude's streaming response - show during agent execution */}
+        {/* Shows loading state when running, content when available */}
+        {/* Hidden when session completes (content persisted to messages) */}
+        {isRunning && (
           <StreamingResponse
             displayItems={displayItems}
             isStreaming={isRunning}
