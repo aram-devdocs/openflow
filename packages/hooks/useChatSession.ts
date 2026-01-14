@@ -754,6 +754,12 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
         eventCount: agentEvents.length,
       });
 
+      // Clear events BEFORE creating the message to prevent duplicate display
+      // We've already extracted the content, so we don't need events anymore
+      // This prevents the race condition where both displayItems (from events)
+      // and messages (from database) show the same content simultaneously
+      clearEvents();
+
       createMessage.mutate(
         {
           chatId,
@@ -765,7 +771,6 @@ export function useChatSession({ chatId, onError }: UseChatSessionOptions): Chat
         {
           onSuccess: () => {
             logger.info('Assistant response persisted successfully', { chatId });
-            clearEvents();
             initiatedSessionRef.current = null; // Reset after successful persistence
             lifecycle.clearProcess();
           },
