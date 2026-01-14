@@ -431,7 +431,7 @@ export const agentSessionQueries = {
   },
 
   /**
-   * Respond to a permission request.
+   * Respond to a permission request (legacy).
    *
    * Approves or denies the permission request and sends the response
    * to the agent. The agent will continue or abort based on the response.
@@ -440,13 +440,14 @@ export const agentSessionQueries = {
    * @param permissionId - Permission request ID
    * @param approved - Whether to approve (true) or deny (false)
    * @returns Promise resolving to the updated permission
+   * @deprecated Use respondToPermissionSdk for new code
    */
   respondToPermission: async (
     sessionId: string,
     permissionId: string,
     approved: boolean
   ): Promise<Permission> => {
-    logger.debug('Responding to permission', { sessionId, permissionId, approved });
+    logger.debug('Responding to permission (legacy)', { sessionId, permissionId, approved });
 
     try {
       // Pass both id (for HTTP) and sessionId (for Tauri)
@@ -468,6 +469,51 @@ export const agentSessionQueries = {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('Failed to respond to permission', {
+        sessionId,
+        permissionId,
+        approved,
+        error: errorMessage,
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Respond to a permission request using the SDK bridge.
+   *
+   * This sends the approval/denial to the TypeScript agent-service,
+   * which forwards it to the Claude Agent SDK's canUseTool callback.
+   * This is the preferred method for new code.
+   *
+   * @param sessionId - Session ID
+   * @param permissionId - Permission request ID
+   * @param approved - Whether to approve (true) or deny (false)
+   * @param reason - Optional reason for denial
+   */
+  respondToPermissionSdk: async (
+    sessionId: string,
+    permissionId: string,
+    approved: boolean,
+    reason?: string
+  ): Promise<void> => {
+    logger.debug('Responding to permission (SDK)', { sessionId, permissionId, approved, reason });
+
+    try {
+      await invoke<void>('respond_agent_permission_sdk', {
+        sessionId,
+        permissionId,
+        approved,
+        reason: reason ?? null,
+      });
+
+      logger.info('Permission response sent via SDK', {
+        sessionId,
+        permissionId,
+        approved,
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to respond to permission via SDK', {
         sessionId,
         permissionId,
         approved,
@@ -554,16 +600,17 @@ export const agentSessionQueries = {
   },
 
   /**
-   * Kill an agent session.
+   * Kill an agent session (legacy).
    *
    * Terminates the agent process and marks the session as killed.
    * Pending permissions and tools will be cancelled/failed.
    *
    * @param sessionId - Session ID to kill
    * @returns Promise resolving to the updated session
+   * @deprecated Use killSdk for new code using the SDK bridge
    */
   kill: async (sessionId: string): Promise<AgentSession> => {
-    logger.debug('Killing agent session', { sessionId });
+    logger.debug('Killing agent session (legacy)', { sessionId });
 
     try {
       // Pass both id (for HTTP) and sessionId (for Tauri)
@@ -581,6 +628,29 @@ export const agentSessionQueries = {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error('Failed to kill agent session', { sessionId, error: errorMessage });
+      throw error;
+    }
+  },
+
+  /**
+   * Kill an agent session using the SDK bridge.
+   *
+   * Terminates the agent via the TypeScript agent-service,
+   * which sends an abort signal to the Claude Agent SDK.
+   * This is the preferred method for new code.
+   *
+   * @param sessionId - Session ID to kill
+   */
+  killSdk: async (sessionId: string): Promise<void> => {
+    logger.debug('Killing agent session (SDK)', { sessionId });
+
+    try {
+      await invoke<void>('kill_agent_session_sdk', { sessionId });
+
+      logger.info('Agent session killed via SDK', { sessionId });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('Failed to kill agent session via SDK', { sessionId, error: errorMessage });
       throw error;
     }
   },

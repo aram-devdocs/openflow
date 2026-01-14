@@ -78,6 +78,10 @@ use openflow_process::{
 use crate::events::{Event, EventBroadcaster};
 use crate::providers::{get_provider, AgentConfig, AgentProvider};
 
+use super::agent_service_bridge::{
+    AgentConfig as SdkAgentConfig, AgentEvent as SdkAgentEvent,
+    AgentServiceBridge, PermissionRequest as SdkPermissionRequest,
+};
 use super::agent_session::{self, CreateSessionRequest};
 use super::tool_state;
 use super::audit;
@@ -1069,6 +1073,329 @@ impl AgentOrchestrator {
         );
 
         Ok(session)
+    }
+
+    /// Spawn a new agent via the Claude SDK bridge.
+    ///
+    /// This method uses the TypeScript agent-service (wrapping Claude Agent SDK)
+    /// instead of direct PTY spawning. It provides:
+    /// - Type-safe permission handling via canUseTool callback
+    /// - Structured tool inputs (no text parsing)
+    /// - Clean event streaming
+    ///
+    /// # Arguments
+    /// * `bridge` - Reference to the AgentServiceBridge
+    /// * `process_id` - Process ID for the session
+    /// * `prompt` - The prompt to send to the agent
+    /// * `working_directory` - Working directory for the agent
+    ///
+    /// # Returns
+    /// The created AgentSession record.
+    pub async fn spawn_agent_via_bridge(
+        &self,
+        bridge: &AgentServiceBridge,
+        process_id: &str,
+        prompt: &str,
+        working_directory: Option<String>,
+    ) -> ServiceResult<AgentSession> {
+        info!(
+            "Spawning agent via SDK bridge: process_id={}",
+            process_id
+        );
+
+        // Create session in database with SDK provider
+        let session_request = CreateSessionRequest::new(process_id, "claude-sdk");
+        let session = agent_session::create(&self.pool, session_request).await?;
+
+        debug!("Created session: id={}", session.id);
+
+        // Clone resources for callbacks (they need to be 'static)
+        let pool_for_events = self.pool.clone();
+        let broadcaster_for_events = Arc::clone(&self.broadcaster);
+        let session_id_for_events = session.id.clone();
+
+        // Use atomic counter for event sequence
+        let sequence_counter = Arc::new(AtomicI32::new(1));
+
+        // Event handler callback - persists events and broadcasts
+        let event_handler = {
+            let pool = pool_for_events.clone();
+            let broadcaster = broadcaster_for_events.clone();
+            let session_id = session_id_for_events.clone();
+            let sequence_counter = Arc::clone(&sequence_counter);
+
+            move |event: SdkAgentEvent| {
+                let pool = pool.clone();
+                let broadcaster = broadcaster.clone();
+                let session_id = session_id.clone();
+                let sequence = sequence_counter.fetch_add(1, Ordering::SeqCst);
+
+                // Spawn task for async database work
+                tokio::spawn(async move {
+                    // Convert to normalized entry
+                    let entry = event.to_normalized_entry(sequence);
+
+                    // Persist to database using add_event
+                    let event_type = match &event {
+                        SdkAgentEvent::SessionStart { .. } => "session_start",
+                        SdkAgentEvent::SessionComplete { .. } => "session_complete",
+                        SdkAgentEvent::SessionError { .. } => "session_error",
+                        SdkAgentEvent::Message { .. } => "message",
+                        SdkAgentEvent::ToolUse { .. } => "tool_use",
+                        SdkAgentEvent::ToolResult { .. } => "tool_result",
+                        SdkAgentEvent::System { .. } => "system",
+                        SdkAgentEvent::PermissionRequest(_) => "permission_request",
+                    };
+                    let payload = serde_json::to_value(&entry).unwrap_or_default();
+                    if let Err(e) = agent_session::add_event(&pool, &session_id, event_type, &payload).await {
+                        error!("Failed to persist SDK event: {}", e);
+                    }
+
+                    // Handle tool state tracking
+                    match &event {
+                        SdkAgentEvent::ToolUse {
+                            tool_id,
+                            tool_name,
+                            tool_input,
+                            ..
+                        } => {
+                            if let Err(e) = tool_state::create_from_tool_use(
+                                &pool,
+                                &session_id,
+                                tool_id,
+                                tool_name,
+                                tool_input,
+                            )
+                            .await
+                            {
+                                warn!("Failed to create tool state: {}", e);
+                            }
+                        }
+                        SdkAgentEvent::ToolResult {
+                            tool_id,
+                            output,
+                            is_error,
+                            ..
+                        } => {
+                            let status = if *is_error {
+                                openflow_contracts::events::ToolResultStatus::Error
+                            } else {
+                                openflow_contracts::events::ToolResultStatus::Success
+                            };
+                            if let Err(e) = tool_state::complete_from_tool_result(
+                                &pool,
+                                &session_id,
+                                tool_id,
+                                status,
+                                output,
+                            )
+                            .await
+                            {
+                                warn!("Failed to complete tool state: {}", e);
+                            }
+                        }
+                        SdkAgentEvent::SessionComplete { .. } => {
+                            // Update session status
+                            if let Err(e) = agent_session::update_status(
+                                &pool,
+                                &session_id,
+                                SessionStatus::Completed,
+                                Some(0),
+                            )
+                            .await
+                            {
+                                error!("Failed to update session status: {}", e);
+                            }
+                        }
+                        SdkAgentEvent::SessionError { error, .. } => {
+                            // Update session status with error
+                            error!("Session {} failed: {}", session_id, error);
+                            if let Err(e) = agent_session::update_status(
+                                &pool,
+                                &session_id,
+                                SessionStatus::Failed,
+                                Some(1),
+                            )
+                            .await
+                            {
+                                error!("Failed to update session status: {}", e);
+                            }
+                        }
+                        _ => {}
+                    }
+
+                    // Broadcast to frontend using Event type
+                    broadcaster.broadcast(Event::normalized_entry(&session_id, entry));
+                });
+            }
+        };
+
+        // Permission handler callback - creates permission record and broadcasts
+        let permission_handler = {
+            let pool = pool_for_events;
+            let broadcaster = broadcaster_for_events;
+            let session_id = session_id_for_events.clone();
+
+            move |request: SdkPermissionRequest| {
+                let pool = pool.clone();
+                let broadcaster = broadcaster.clone();
+                let session_id = session_id.clone();
+
+                // Spawn task for async database work
+                tokio::spawn(async move {
+                    info!(
+                        "Permission requested: session={}, tool={}, id={}",
+                        session_id, request.tool_name, request.id
+                    );
+
+                    // Create permission record in database with the same ID as agent-service
+                    // This is critical: the ID must match so respond_to_permission can route correctly
+                    let permission = match agent_session::create_permission_with_id(
+                        &pool,
+                        &request.id, // Use agent-service's permission ID
+                        &session_id,
+                        &request.tool_name,
+                        &request.description,
+                        request.file_path.as_deref(),
+                    )
+                    .await
+                    {
+                        Ok(perm) => perm,
+                        Err(e) => {
+                            error!("Failed to create permission record: {}", e);
+                            return;
+                        }
+                    };
+
+                    // Broadcast permission request event using the Event helper
+                    broadcaster.broadcast(Event::permission_request(
+                        &permission.id,
+                        &session_id,
+                        &request.tool_name,
+                        &request.description,
+                        request.file_path.clone(),
+                    ));
+                });
+            }
+        };
+
+        // Build SDK config
+        let sdk_config = SdkAgentConfig {
+            working_directory,
+            allowed_tools: None,
+            max_tokens: None,
+            system_prompt: None,
+        };
+
+        // Track active session
+        {
+            let mut sessions = self.active_sessions.write().await;
+            sessions.insert(
+                session.id.clone(),
+                ActiveSession::new(session.clone(), "claude-sdk".to_string()),
+            );
+        }
+
+        // Start session via bridge
+        bridge
+            .start_session(
+                session.id.clone(),
+                prompt.to_string(),
+                Some(sdk_config),
+                event_handler,
+                permission_handler,
+            )
+            .await?;
+
+        // Audit log
+        let _ = audit::log_session(
+            &self.pool,
+            &session.id,
+            AuditAction::Started,
+            Some(serde_json::json!({
+                "provider_id": "claude-sdk",
+                "process_id": process_id,
+                "via": "sdk_bridge",
+            })),
+        )
+        .await;
+
+        info!(
+            "Agent spawned via SDK bridge: session_id={}",
+            session.id
+        );
+
+        Ok(session)
+    }
+
+    /// Respond to a permission request via the SDK bridge.
+    ///
+    /// # Arguments
+    /// * `bridge` - Reference to the AgentServiceBridge
+    /// * `session_id` - The session ID
+    /// * `permission_id` - The permission request ID
+    /// * `approved` - Whether the permission was approved
+    /// * `reason` - Optional reason for denial
+    pub async fn respond_permission_via_bridge(
+        &self,
+        bridge: &AgentServiceBridge,
+        session_id: &str,
+        permission_id: &str,
+        approved: bool,
+        reason: Option<String>,
+    ) -> ServiceResult<()> {
+        info!(
+            "Responding to permission via bridge: session={}, permission={}, approved={}",
+            session_id, permission_id, approved
+        );
+
+        // Update permission record in database
+        agent_session::respond_to_permission(
+            &self.pool,
+            permission_id,
+            approved,
+        )
+        .await?;
+
+        // Forward response to agent-service via bridge
+        bridge
+            .respond_to_permission(session_id, permission_id, approved, reason)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Kill an agent session via the SDK bridge.
+    ///
+    /// # Arguments
+    /// * `bridge` - Reference to the AgentServiceBridge
+    /// * `session_id` - The session ID to kill
+    pub async fn kill_agent_via_bridge(
+        &self,
+        bridge: &AgentServiceBridge,
+        session_id: &str,
+    ) -> ServiceResult<()> {
+        info!("Killing agent via bridge: session={}", session_id);
+
+        // Update session status
+        agent_session::update_status(
+            &self.pool,
+            session_id,
+            SessionStatus::Killed,
+            None,
+        )
+        .await?;
+
+        // Kill via bridge
+        bridge.kill_session(session_id).await?;
+
+        // Remove from active sessions
+        {
+            let mut sessions = self.active_sessions.write().await;
+            sessions.remove(session_id);
+        }
+
+        Ok(())
     }
 
     /// Spawn a background task to monitor session completion.

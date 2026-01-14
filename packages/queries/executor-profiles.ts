@@ -223,12 +223,16 @@ export const executorProfileQueries = {
    * console.log(`Started process ${process.id} with PID ${process.pid}`);
    * ```
    */
+  /**
+   * Run an executor for a chat session (legacy).
+   * @deprecated Use runExecutorSdk for new code using the SDK bridge
+   */
   runExecutor: async (
     chatId: string,
     prompt: string,
     executorProfileId?: string
   ): Promise<ExecutionProcess> => {
-    logger.debug('Running executor', {
+    logger.debug('Running executor (legacy)', {
       chatId,
       promptLength: prompt.length,
       executorProfileId: executorProfileId ?? 'default',
@@ -252,6 +256,67 @@ export const executorProfileQueries = {
       return process;
     } catch (error) {
       logger.error('Failed to run executor', {
+        chatId,
+        executorProfileId: executorProfileId ?? 'default',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  },
+
+  /**
+   * Run an executor using the SDK bridge (new architecture).
+   *
+   * Uses the AgentServiceBridge to spawn an agent via the TypeScript agent-service,
+   * which wraps the official Claude Agent SDK. This provides:
+   * - Type-safe permission handling via canUseTool callback
+   * - Structured tool inputs instead of text pattern matching
+   * - Better reliability and maintainability
+   *
+   * This is the preferred method for new code.
+   *
+   * @param chatId - Chat ID to associate with the execution
+   * @param prompt - The prompt to send to the AI agent
+   * @param executorProfileId - Optional executor profile ID
+   * @returns Promise resolving to the created ExecutionProcess
+   *
+   * @example
+   * ```ts
+   * const process = await executorProfileQueries.runExecutorSdk(
+   *   'chat-123',
+   *   'Refactor the useAuth hook to use React Query'
+   * );
+   * console.log(`Started process ${process.id}`);
+   * ```
+   */
+  runExecutorSdk: async (
+    chatId: string,
+    prompt: string,
+    executorProfileId?: string
+  ): Promise<ExecutionProcess> => {
+    logger.debug('Running executor (SDK)', {
+      chatId,
+      promptLength: prompt.length,
+      executorProfileId: executorProfileId ?? 'default',
+    });
+
+    try {
+      const process = await invoke<ExecutionProcess>('run_executor_sdk', {
+        chatId,
+        prompt,
+        executorProfileId,
+      });
+
+      logger.info('Executor started via SDK', {
+        processId: process.id,
+        chatId,
+        status: process.status,
+        executorProfileId: executorProfileId ?? 'default',
+      });
+
+      return process;
+    } catch (error) {
+      logger.error('Failed to run executor via SDK', {
         chatId,
         executorProfileId: executorProfileId ?? 'default',
         error: error instanceof Error ? error.message : String(error),

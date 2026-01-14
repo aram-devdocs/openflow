@@ -285,3 +285,72 @@ export function useRunExecutor(): UseMutationResult<
     },
   });
 }
+
+/**
+ * Run an executor using the SDK bridge (new architecture).
+ *
+ * Uses the AgentServiceBridge to spawn an agent via the TypeScript agent-service,
+ * which wraps the official Claude Agent SDK. This provides:
+ * - Type-safe permission handling via canUseTool callback
+ * - Structured tool inputs instead of text pattern matching
+ * - Better reliability and maintainability
+ *
+ * This is the preferred method for new code.
+ *
+ * @returns Mutation for running an executor via SDK
+ *
+ * @example
+ * ```tsx
+ * function ChatInput({ chatId }: { chatId: string }) {
+ *   const runExecutorSdk = useRunExecutorSdk();
+ *
+ *   const handleSend = async (content: string) => {
+ *     const process = await runExecutorSdk.mutateAsync({
+ *       chatId,
+ *       prompt: content,
+ *     });
+ *     // Process started via SDK with structured permission handling
+ *   };
+ * }
+ * ```
+ */
+export function useRunExecutorSdk(): UseMutationResult<
+  ExecutionProcess,
+  Error,
+  { chatId: string; prompt: string; executorProfileId?: string }
+> {
+  const toast = useToast();
+
+  return useMutation({
+    mutationFn: async ({ chatId, prompt, executorProfileId }) => {
+      logger.debug('Running executor via SDK', {
+        chatId,
+        promptLength: prompt.length,
+        executorProfileId: executorProfileId || 'default',
+      });
+      try {
+        const process = await executorProfileQueries.runExecutorSdk(
+          chatId,
+          prompt,
+          executorProfileId
+        );
+        logger.info('Executor started via SDK successfully', {
+          processId: process.id,
+          chatId,
+          status: process.status,
+        });
+        return process;
+      } catch (error) {
+        logger.error('Failed to run executor via SDK', {
+          chatId,
+          executorProfileId: executorProfileId || 'default',
+          error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
+    onError: (error) => {
+      toast.error('Failed to start executor', error.message || 'Could not start the AI assistant');
+    },
+  });
+}

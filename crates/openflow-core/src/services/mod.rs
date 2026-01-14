@@ -40,6 +40,7 @@ mod error;
 
 // Service modules
 pub mod agent_orchestrator;
+pub mod agent_service_bridge;
 pub mod agent_session;
 pub mod artifact;
 pub mod audit;
@@ -64,5 +65,6 @@ pub mod workflow;
 pub mod worktree;
 
 pub use agent_orchestrator::{AgentOrchestrator, AgentOutputSink, SpawnAgentRequest};
+pub use agent_service_bridge::{AgentServiceBridge, AgentConfig as SdkAgentConfig, AgentEvent as SdkAgentEvent, PermissionRequest as SdkPermissionRequest};
 pub use error::{ServiceError, ServiceResult};
 pub use task_executor::TaskExecutor;

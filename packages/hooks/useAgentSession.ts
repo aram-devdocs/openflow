@@ -173,6 +173,8 @@ export function useAgentSessionWithState(
     queryFn: () => agentSessionQueries.getWithState(sessionId),
     enabled: Boolean(sessionId) && options?.enabled !== false,
     refetchInterval: options?.refetchInterval,
+    retry: 1, // Only retry once to handle transient errors
+    staleTime: 1000, // Consider data fresh for 1 second to reduce unnecessary refetches
   });
 }
 
@@ -477,8 +479,9 @@ export function useAgentPendingPermission(
 }
 
 /**
- * Respond to a permission request.
+ * Respond to a permission request (legacy PTY-based flow).
  *
+ * @deprecated Use useRespondAgentPermissionSdk for new code using the SDK bridge
  * @returns Mutation for responding to permission
  *
  * @example
@@ -535,6 +538,82 @@ export function useRespondAgentPermission(): UseMutationResult<
     },
     onError: (error, variables) => {
       logger.error('Failed to respond to permission', {
+        sessionId: variables.sessionId,
+        permissionId: variables.permissionId,
+        error: error.message,
+      });
+    },
+  });
+}
+
+/**
+ * Respond to a permission request using the SDK bridge (new architecture).
+ *
+ * Uses the AgentServiceBridge to respond to permission requests via the TypeScript
+ * agent-service, which forwards the response to the SDK's canUseTool callback.
+ * This provides:
+ * - Type-safe permission handling
+ * - Structured response with optional reason and modified input
+ * - Better reliability than PTY stdin writes
+ *
+ * This is the preferred method for new code.
+ *
+ * @returns Mutation for responding to permission via SDK
+ *
+ * @example
+ * ```tsx
+ * const respondPermission = useRespondAgentPermissionSdk();
+ *
+ * <div>
+ *   <button onClick={() => respondPermission.mutate({
+ *     sessionId,
+ *     permissionId: permission.id,
+ *     approved: true,
+ *   })}>
+ *     Approve
+ *   </button>
+ *   <button onClick={() => respondPermission.mutate({
+ *     sessionId,
+ *     permissionId: permission.id,
+ *     approved: false,
+ *     reason: 'User denied file access',
+ *   })}>
+ *     Deny
+ *   </button>
+ * </div>
+ * ```
+ */
+export function useRespondAgentPermissionSdk(): UseMutationResult<
+  void,
+  Error,
+  { sessionId: string; permissionId: string; approved: boolean; reason?: string }
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ sessionId, permissionId, approved, reason }) =>
+      agentSessionQueries.respondToPermissionSdk(sessionId, permissionId, approved, reason),
+    onSuccess: (_result, variables) => {
+      logger.info('Permission response sent via SDK', {
+        sessionId: variables.sessionId,
+        permissionId: variables.permissionId,
+        approved: variables.approved,
+      });
+      // Invalidate pending permission query
+      queryClient.invalidateQueries({
+        queryKey: agentSessionKeys.pendingPermission(variables.sessionId),
+      });
+      // Invalidate session state
+      queryClient.invalidateQueries({
+        queryKey: agentSessionKeys.sessionWithState(variables.sessionId),
+      });
+      // Invalidate events as agent may produce new output
+      queryClient.invalidateQueries({
+        queryKey: agentSessionKeys.events(),
+      });
+    },
+    onError: (error, variables) => {
+      logger.error('Failed to respond to permission via SDK', {
         sessionId: variables.sessionId,
         permissionId: variables.permissionId,
         error: error.message,
@@ -607,8 +686,9 @@ export function useActiveAgentSessions(options?: {
 // =============================================================================
 
 /**
- * Kill an agent session.
+ * Kill an agent session (legacy PTY-based flow).
  *
+ * @deprecated Use useKillAgentSessionSdk for new code using the SDK bridge
  * @returns Mutation for killing a session
  *
  * @example
@@ -635,6 +715,48 @@ export function useKillAgentSession(): UseMutationResult<AgentSession, Error, st
     },
     onError: (error, sessionId) => {
       logger.error('Failed to kill agent session', { sessionId, error: error.message });
+    },
+  });
+}
+
+/**
+ * Kill an agent session using the SDK bridge (new architecture).
+ *
+ * Uses the AgentServiceBridge to kill an agent session via the TypeScript
+ * agent-service, which aborts the SDK's agent process cleanly.
+ * This provides:
+ * - Proper cleanup of SDK resources
+ * - Graceful termination with abort signal
+ * - Better reliability than PTY kill signals
+ *
+ * This is the preferred method for new code.
+ *
+ * @returns Mutation for killing a session via SDK
+ *
+ * @example
+ * ```tsx
+ * const killSession = useKillAgentSessionSdk();
+ *
+ * <button onClick={() => killSession.mutate(sessionId)} disabled={killSession.isPending}>
+ *   {killSession.isPending ? 'Killing...' : 'Kill Session'}
+ * </button>
+ * ```
+ */
+export function useKillAgentSessionSdk(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sessionId: string) => agentSessionQueries.killSdk(sessionId),
+    onSuccess: (_result, sessionId) => {
+      logger.info('Agent session killed via SDK', { sessionId });
+      // Invalidate session queries
+      queryClient.invalidateQueries({ queryKey: agentSessionKeys.session(sessionId) });
+      queryClient.invalidateQueries({ queryKey: agentSessionKeys.sessionWithState(sessionId) });
+      queryClient.invalidateQueries({ queryKey: agentSessionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: agentSessionKeys.active() });
+    },
+    onError: (error, sessionId) => {
+      logger.error('Failed to kill agent session via SDK', { sessionId, error: error.message });
     },
   });
 }
@@ -707,6 +829,7 @@ export function useAgentRawOutput(
     queryFn: () => agentSessionQueries.getRawOutput(sessionId),
     enabled: Boolean(sessionId) && options?.enabled !== false,
     refetchInterval: options?.refetchInterval,
+    retry: false, // Don't retry - OutputPipeline only exists for active sessions
   });
 }
 

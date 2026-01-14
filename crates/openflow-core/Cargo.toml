@@ -42,6 +42,11 @@ shellexpand.workspace = true
 # Async traits
 async-trait = "0.1"
 
+# HTTP client and WebSocket for agent-service bridge
+reqwest.workspace = true
+tokio-tungstenite.workspace = true
+futures-util = "0.3"
+
 [dev-dependencies]
 tempfile.workspace = true
 tokio = { workspace = true, features = ["test-util", "macros"] }

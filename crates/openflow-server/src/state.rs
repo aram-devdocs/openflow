@@ -33,7 +33,7 @@ use std::sync::Arc;
 
 use openflow_core::events::EventBroadcaster;
 use openflow_core::services::process::ProcessService;
-use openflow_core::services::{AgentOrchestrator, TaskExecutor};
+use openflow_core::services::{AgentOrchestrator, AgentServiceBridge, TaskExecutor};
 use sqlx::SqlitePool;
 
 use crate::ws::ClientManager;
@@ -81,6 +81,12 @@ pub struct AppState {
     /// Runs tasks from start to finish in background threads.
     /// Coordinates with AgentOrchestrator to execute steps sequentially.
     pub task_executor: Arc<TaskExecutor>,
+
+    /// Agent service bridge for SDK-based agent communication
+    ///
+    /// Manages the Node.js agent-service process that wraps the Claude Agent SDK.
+    /// Provides type-safe permission handling via structured callbacks.
+    pub agent_bridge: Arc<AgentServiceBridge>,
 }
 
 impl AppState {
@@ -117,6 +123,9 @@ impl AppState {
             Arc::clone(&broadcaster),
         ));
 
+        // Create agent service bridge for SDK-based agent communication
+        let agent_bridge = Arc::new(AgentServiceBridge::new());
+
         Self {
             pool,
             process_service,
@@ -124,6 +133,7 @@ impl AppState {
             client_manager,
             agent_orchestrator,
             task_executor,
+            agent_bridge,
         }
     }
 
@@ -144,15 +154,18 @@ impl AppState {
             pool.clone(),
             Arc::clone(&broadcaster),
         ));
-        
+
         // Start permission timeout background task (even in tests)
         agent_orchestrator.spawn_permission_timeout_task();
-        
+
         let task_executor = Arc::new(TaskExecutor::new(
             pool.clone(),
             Arc::clone(&agent_orchestrator),
             Arc::clone(&broadcaster),
         ));
+
+        // Create agent service bridge for testing
+        let agent_bridge = Arc::new(AgentServiceBridge::new());
 
         Self {
             pool,
@@ -161,6 +174,7 @@ impl AppState {
             client_manager,
             agent_orchestrator,
             task_executor,
+            agent_bridge,
         }
     }
 
@@ -223,6 +237,16 @@ impl AppState {
         Arc::clone(&self.task_executor)
     }
 
+    /// Get a reference to the agent service bridge
+    pub fn agent_bridge(&self) -> &AgentServiceBridge {
+        &self.agent_bridge
+    }
+
+    /// Get a clone of the agent bridge Arc
+    pub fn get_agent_bridge(&self) -> Arc<AgentServiceBridge> {
+        Arc::clone(&self.agent_bridge)
+    }
+
     /// Broadcast an event to connected clients
     ///
     /// Convenience method that calls the broadcaster.
@@ -240,6 +264,7 @@ impl std::fmt::Debug for AppState {
             .field("client_manager", &"ClientManager")
             .field("agent_orchestrator", &"AgentOrchestrator")
             .field("task_executor", &"TaskExecutor")
+            .field("agent_bridge", &"AgentServiceBridge")
             .finish()
     }
 }

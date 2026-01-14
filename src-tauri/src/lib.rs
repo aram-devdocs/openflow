@@ -140,6 +140,13 @@ pub fn run() {
             // Extract shared resources for the HTTP server
             let http_pool = state.get_pool().clone();
 
+            // Start background tasks that require Tokio runtime context
+            // This spawns the permission timeout checker task
+            let orchestrator_for_tasks = state.get_agent_orchestrator();
+            tauri::async_runtime::spawn(async move {
+                orchestrator_for_tasks.spawn_permission_timeout_task();
+            });
+
             // Manage the application state for Tauri commands
             app.manage(state);
 
@@ -245,11 +252,13 @@ pub fn run() {
             commands::get_agent_latest_sequence,
             commands::count_agent_session_events,
             commands::respond_agent_permission,
+            commands::respond_agent_permission_sdk,
             commands::get_agent_pending_permission,
             commands::is_agent_session_active,
             commands::active_agent_session_count,
             commands::list_active_agent_sessions,
             commands::kill_agent_session,
+            commands::kill_agent_session_sdk,
             commands::write_agent_input,
             commands::resize_agent_terminal,
             commands::get_agent_raw_output,
@@ -287,6 +296,7 @@ pub fn run() {
             commands::update_executor_profile,
             commands::delete_executor_profile,
             commands::run_executor,
+            commands::run_executor_sdk,
             // Settings commands
             commands::get_setting,
             commands::set_setting,

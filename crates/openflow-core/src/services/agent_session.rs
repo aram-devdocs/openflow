@@ -983,6 +983,88 @@ pub async fn create_permission(
     Ok(permission)
 }
 
+/// Create a new permission record with a specific ID.
+///
+/// This is used by the SDK bridge flow where the permission ID comes from the agent-service.
+/// The ID must match what the agent-service is tracking so responses can be routed correctly.
+///
+/// # Arguments
+/// * `pool` - Database connection pool
+/// * `permission_id` - The specific ID to use (from agent-service)
+/// * `session_id` - Session ID
+/// * `tool_name` - Name of the tool requesting permission
+/// * `description` - Human-readable description of the action
+/// * `file_path` - Optional file path if the operation involves a specific file
+///
+/// Returns the created permission.
+pub async fn create_permission_with_id(
+    pool: &SqlitePool,
+    permission_id: &str,
+    session_id: &str,
+    tool_name: &str,
+    description: &str,
+    file_path: Option<&str>,
+) -> ServiceResult<Permission> {
+    let now = chrono::Utc::now();
+    let timeout_seconds = 300; // 5 minutes default
+    let timeout_at = now + chrono::Duration::seconds(timeout_seconds as i64);
+
+    debug!(
+        "Creating permission with ID: id={}, session_id={}, tool_name={}, description={}, timeout_at={}",
+        permission_id, session_id, tool_name, description, timeout_at.to_rfc3339()
+    );
+
+    sqlx::query(
+        r#"
+        INSERT INTO permissions (
+            id, session_id, tool_name, description, file_path, status,
+            detected_at, timeout_at, timeout_seconds
+        )
+        VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+        "#,
+    )
+    .bind(permission_id)
+    .bind(session_id)
+    .bind(tool_name)
+    .bind(description)
+    .bind(file_path)
+    .bind(now.to_rfc3339())
+    .bind(timeout_at.to_rfc3339())
+    .bind(timeout_seconds)
+    .execute(pool)
+    .await
+    .map_err(|e| {
+        error!(
+            "Failed to create permission {} for session {}: {}",
+            permission_id, session_id, e
+        );
+        ServiceError::Database(e)
+    })?;
+
+    // Fetch and return the created permission
+    let permission = sqlx::query_as::<_, Permission>(
+        r#"
+        SELECT
+            id, session_id, tool_name, description, file_path,
+            status, created_at, detected_at, responded_at, expired_at,
+            timeout_at, timeout_seconds
+        FROM permissions
+        WHERE id = ?
+        "#,
+    )
+    .bind(permission_id)
+    .fetch_one(pool)
+    .await
+    .map_err(ServiceError::Database)?;
+
+    info!(
+        "Created permission: id={}, session_id={}, tool_name={}, timeout_at={}",
+        permission_id, session_id, tool_name, timeout_at.to_rfc3339()
+    );
+
+    Ok(permission)
+}
+
 /// Respond to a permission request.
 ///
 /// # Arguments

@@ -180,6 +180,51 @@ pub async fn respond_agent_permission(
         .map_err(|e| e.to_string())
 }
 
+/// Respond to a permission request using the SDK bridge.
+///
+/// This sends the approval/denial to the TypeScript agent-service,
+/// which forwards it to the Claude Agent SDK's canUseTool callback.
+///
+/// # Arguments
+/// * `session_id` - The session requesting permission
+/// * `permission_id` - The permission request ID
+/// * `approved` - Whether the permission was approved
+/// * `reason` - Optional reason for denial
+#[tauri::command]
+pub async fn respond_agent_permission_sdk(
+    state: State<'_, AppState>,
+    session_id: String,
+    permission_id: String,
+    approved: bool,
+    reason: Option<String>,
+) -> Result<(), String> {
+    let orchestrator = state.get_agent_orchestrator();
+    let bridge = state.get_agent_bridge();
+
+    orchestrator
+        .respond_permission_via_bridge(&bridge, &session_id, &permission_id, approved, reason)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Kill an agent session using the SDK bridge.
+///
+/// This terminates the agent via the TypeScript agent-service,
+/// which sends an abort signal to the Claude Agent SDK.
+#[tauri::command]
+pub async fn kill_agent_session_sdk(
+    state: State<'_, AppState>,
+    session_id: String,
+) -> Result<(), String> {
+    let orchestrator = state.get_agent_orchestrator();
+    let bridge = state.get_agent_bridge();
+
+    orchestrator
+        .kill_agent_via_bridge(&bridge, &session_id)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 /// Get the pending permission for a session.
 ///
 /// Returns the current pending permission request if one exists, or None

@@ -158,3 +158,55 @@ pub async fn run_executor(
 
     Ok(execution_process)
 }
+
+/// Run an executor using the SDK bridge (new architecture).
+///
+/// Uses the AgentServiceBridge to spawn an agent via the TypeScript agent-service,
+/// which wraps the official Claude Agent SDK. This provides:
+/// - Type-safe permission handling via canUseTool callback
+/// - Structured tool inputs instead of text pattern matching
+/// - Better reliability and maintainability
+///
+/// # Arguments
+/// * `state` - Application state containing the AgentServiceBridge
+/// * `chat_id` - Chat session ID to associate with this execution
+/// * `prompt` - The prompt to send to the AI agent
+/// * `executor_profile_id` - Optional profile ID to use (uses default if None)
+///
+/// # Returns
+/// The created `ExecutionProcess` record with an associated agent session.
+#[tauri::command]
+pub async fn run_executor_sdk(
+    state: State<'_, AppState>,
+    chat_id: String,
+    prompt: String,
+    executor_profile_id: Option<String>,
+) -> Result<ExecutionProcess, String> {
+    let pool = state.db.lock().await;
+
+    // Prepare executor context (resolves profile, chat, project)
+    let context = executor::prepare(&pool, &chat_id, &prompt, executor_profile_id.clone())
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Create the process record first
+    let execution_process = process::create(&pool, context.create_request)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Spawn agent via SDK bridge
+    let orchestrator = state.get_agent_orchestrator();
+    let bridge = state.get_agent_bridge();
+
+    orchestrator
+        .spawn_agent_via_bridge(
+            &bridge,
+            &execution_process.id,
+            &prompt,
+            Some(context.project.git_repo_path.clone()),
+        )
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(execution_process)
+}
